@@ -1,0 +1,3060 @@
+/* Generated — DISPLAY TEXT ONLY (events/pedia/dialog bodies).
+ * The sim never reads these; the interface layer does. On the
+ * Teensy this unit may be left out of the link and the same
+ * content served from microSD. */
+#ifndef COLOPY_TEXT_H
+#define COLOPY_TEXT_H
+#include <stdint.h>
+#include <stddef.h>
+
+#define DAT_DIALOGS_LANDHO_BODY_COUNT 2
+extern const char *const dat_dialogs_landho_body[2];
+#define DAT_DIALOGS_LANDHO_TAIL_COUNT 1
+extern const char *const dat_dialogs_landho_tail[1];
+extern const int32_t dat_dialogs_landho_width;
+extern const char dat_dialogs_landho_default[];
+extern const uint8_t dat_dialogs_landho_small;
+#define DAT_DIALOGS_LANDFALL_BODY_COUNT 2
+extern const char *const dat_dialogs_landfall_body[2];
+#define DAT_DIALOGS_LANDFALL_TAIL_COUNT 2
+extern const char *const dat_dialogs_landfall_tail[2];
+extern const int32_t dat_dialogs_landfall_width;
+extern const char dat_dialogs_landfall_default[];
+extern const uint8_t dat_dialogs_landfall_small;
+#define DAT_DIALOGS_LANDFALL2_BODY_COUNT 3
+extern const char *const dat_dialogs_landfall2_body[3];
+#define DAT_DIALOGS_LANDFALL2_TAIL_COUNT 2
+extern const char *const dat_dialogs_landfall2_tail[2];
+extern const int32_t dat_dialogs_landfall2_width;
+extern const char dat_dialogs_landfall2_default[];
+extern const uint8_t dat_dialogs_landfall2_small;
+#define DAT_DIALOGS_COLONY_BODY_COUNT 1
+extern const char *const dat_dialogs_colony_body[1];
+#define DAT_DIALOGS_COLONY_TAIL_COUNT 1
+extern const char *const dat_dialogs_colony_tail[1];
+extern const int32_t dat_dialogs_colony_width;
+extern const char *const dat_dialogs_colony_default;
+extern const uint8_t dat_dialogs_colony_small;
+#define DAT_DIALOGS_RECRUIT_BODY_COUNT 4
+extern const char *const dat_dialogs_recruit_body[4];
+#define DAT_DIALOGS_RECRUIT_TAIL_COUNT 0
+#define dat_dialogs_recruit_tail NULL
+extern const int32_t dat_dialogs_recruit_width;
+extern const char *const dat_dialogs_recruit_default;
+extern const uint8_t dat_dialogs_recruit_small;
+#define DAT_DIALOGS_PURCHASE_BODY_COUNT 2
+extern const char *const dat_dialogs_purchase_body[2];
+#define DAT_DIALOGS_PURCHASE_TAIL_COUNT 0
+#define dat_dialogs_purchase_tail NULL
+extern const int32_t dat_dialogs_purchase_width;
+extern const char *const dat_dialogs_purchase_default;
+extern const uint8_t dat_dialogs_purchase_small;
+#define DAT_DIALOGS_RENAMECOLONY_BODY_COUNT 1
+extern const char *const dat_dialogs_renamecolony_body[1];
+#define DAT_DIALOGS_RENAMECOLONY_TAIL_COUNT 1
+extern const char *const dat_dialogs_renamecolony_tail[1];
+extern const int32_t dat_dialogs_renamecolony_width;
+extern const char *const dat_dialogs_renamecolony_default;
+extern const uint8_t dat_dialogs_renamecolony_small;
+#define DAT_DIALOGS_SAILAWAY_BODY_COUNT 2
+extern const char *const dat_dialogs_sailaway_body[2];
+#define DAT_DIALOGS_SAILAWAY_TAIL_COUNT 2
+extern const char *const dat_dialogs_sailaway_tail[2];
+extern const int32_t dat_dialogs_sailaway_width;
+extern const char dat_dialogs_sailaway_default[];
+extern const uint8_t dat_dialogs_sailaway_small;
+#define DAT_DIALOGS_SAILHOME_BODY_COUNT 3
+extern const char *const dat_dialogs_sailhome_body[3];
+#define DAT_DIALOGS_SAILHOME_TAIL_COUNT 2
+extern const char *const dat_dialogs_sailhome_tail[2];
+extern const int32_t dat_dialogs_sailhome_width;
+extern const char dat_dialogs_sailhome_default[];
+extern const uint8_t dat_dialogs_sailhome_small;
+#define DAT_DIALOGS_TRADENAME_BODY_COUNT 1
+extern const char *const dat_dialogs_tradename_body[1];
+#define DAT_DIALOGS_TRADENAME_TAIL_COUNT 1
+extern const char *const dat_dialogs_tradename_tail[1];
+extern const int32_t dat_dialogs_tradename_width;
+extern const char *const dat_dialogs_tradename_default;
+extern const uint8_t dat_dialogs_tradename_small;
+#define DAT_DIALOGS_HOWMUCH1_BODY_COUNT 1
+extern const char *const dat_dialogs_howmuch1_body[1];
+#define DAT_DIALOGS_HOWMUCH1_TAIL_COUNT 1
+extern const char *const dat_dialogs_howmuch1_tail[1];
+extern const int32_t dat_dialogs_howmuch1_width;
+extern const char *const dat_dialogs_howmuch1_default;
+extern const uint8_t dat_dialogs_howmuch1_small;
+#define DAT_DIALOGS_HOWMUCH2_BODY_COUNT 1
+extern const char *const dat_dialogs_howmuch2_body[1];
+#define DAT_DIALOGS_HOWMUCH2_TAIL_COUNT 1
+extern const char *const dat_dialogs_howmuch2_tail[1];
+extern const int32_t dat_dialogs_howmuch2_width;
+extern const char *const dat_dialogs_howmuch2_default;
+extern const uint8_t dat_dialogs_howmuch2_small;
+#define DAT_DIALOGS_HOWMUCH3_BODY_COUNT 1
+extern const char *const dat_dialogs_howmuch3_body[1];
+#define DAT_DIALOGS_HOWMUCH3_TAIL_COUNT 1
+extern const char *const dat_dialogs_howmuch3_tail[1];
+extern const int32_t dat_dialogs_howmuch3_width;
+extern const char *const dat_dialogs_howmuch3_default;
+extern const uint8_t dat_dialogs_howmuch3_small;
+#define DAT_DIALOGS_HOWMUCH4_BODY_COUNT 2
+extern const char *const dat_dialogs_howmuch4_body[2];
+#define DAT_DIALOGS_HOWMUCH4_TAIL_COUNT 1
+extern const char *const dat_dialogs_howmuch4_tail[1];
+extern const int32_t dat_dialogs_howmuch4_width;
+extern const char *const dat_dialogs_howmuch4_default;
+extern const uint8_t dat_dialogs_howmuch4_small;
+#define DAT_DIALOGS_HOWMUCH5_BODY_COUNT 1
+extern const char *const dat_dialogs_howmuch5_body[1];
+#define DAT_DIALOGS_HOWMUCH5_TAIL_COUNT 1
+extern const char *const dat_dialogs_howmuch5_tail[1];
+extern const int32_t dat_dialogs_howmuch5_width;
+extern const char *const dat_dialogs_howmuch5_default;
+extern const uint8_t dat_dialogs_howmuch5_small;
+#define DAT_DIALOGS_FINDCITY_BODY_COUNT 1
+extern const char *const dat_dialogs_findcity_body[1];
+#define DAT_DIALOGS_FINDCITY_TAIL_COUNT 1
+extern const char *const dat_dialogs_findcity_tail[1];
+extern const int32_t dat_dialogs_findcity_width;
+extern const char *const dat_dialogs_findcity_default;
+extern const uint8_t dat_dialogs_findcity_small;
+#define DAT_WOODCUTS_COUNT 17
+extern const char *const dat_woodcuts[17];
+#define DAT_SCORENAMES_COUNT 24
+extern const char *const dat_scorenames[24];
+#define DAT_PEDIA_CATEGORIES_COUNT 7
+extern const char *const dat_pedia_categories[7];
+#define DAT_PEDIA_ENTRIES_COUNT 165
+extern const char *const dat_pedia_entries_keys[165];
+extern const char *const dat_pedia_entries_vals[165];
+#define DAT_EVENTS_MISSION0_BODY_COUNT 2
+extern const char *const dat_events_mission0_body[2];
+#define DAT_EVENTS_MISSION0_TAIL_COUNT 0
+#define dat_events_mission0_tail NULL
+extern const int32_t dat_events_mission0_width;
+extern const char *const dat_events_mission0_default;
+extern const uint8_t dat_events_mission0_small;
+#define DAT_EVENTS_MISSION1_BODY_COUNT 2
+extern const char *const dat_events_mission1_body[2];
+#define DAT_EVENTS_MISSION1_TAIL_COUNT 0
+#define dat_events_mission1_tail NULL
+extern const int32_t dat_events_mission1_width;
+extern const char *const dat_events_mission1_default;
+extern const uint8_t dat_events_mission1_small;
+#define DAT_EVENTS_MISSION2_BODY_COUNT 2
+extern const char *const dat_events_mission2_body[2];
+#define DAT_EVENTS_MISSION2_TAIL_COUNT 0
+#define dat_events_mission2_tail NULL
+extern const int32_t dat_events_mission2_width;
+extern const char *const dat_events_mission2_default;
+extern const uint8_t dat_events_mission2_small;
+#define DAT_EVENTS_MISSION3_BODY_COUNT 2
+extern const char *const dat_events_mission3_body[2];
+#define DAT_EVENTS_MISSION3_TAIL_COUNT 0
+#define dat_events_mission3_tail NULL
+extern const int32_t dat_events_mission3_width;
+extern const char *const dat_events_mission3_default;
+extern const uint8_t dat_events_mission3_small;
+#define DAT_EVENTS_HERESY0_BODY_COUNT 3
+extern const char *const dat_events_heresy0_body[3];
+#define DAT_EVENTS_HERESY0_TAIL_COUNT 0
+#define dat_events_heresy0_tail NULL
+extern const int32_t dat_events_heresy0_width;
+extern const char *const dat_events_heresy0_default;
+extern const uint8_t dat_events_heresy0_small;
+#define DAT_EVENTS_HERESY1_BODY_COUNT 3
+extern const char *const dat_events_heresy1_body[3];
+#define DAT_EVENTS_HERESY1_TAIL_COUNT 0
+#define dat_events_heresy1_tail NULL
+extern const int32_t dat_events_heresy1_width;
+extern const char *const dat_events_heresy1_default;
+extern const uint8_t dat_events_heresy1_small;
+#define DAT_EVENTS_INDIANWELCOME_BODY_COUNT 6
+extern const char *const dat_events_indianwelcome_body[6];
+#define DAT_EVENTS_INDIANWELCOME_TAIL_COUNT 2
+extern const char *const dat_events_indianwelcome_tail[2];
+extern const int32_t dat_events_indianwelcome_width;
+extern const char *const dat_events_indianwelcome_default;
+extern const uint8_t dat_events_indianwelcome_small;
+#define DAT_EVENTS_BURNED_BODY_COUNT 3
+extern const char *const dat_events_burned_body[3];
+#define DAT_EVENTS_BURNED_TAIL_COUNT 0
+#define dat_events_burned_tail NULL
+extern const int32_t dat_events_burned_width;
+extern const char *const dat_events_burned_default;
+extern const uint8_t dat_events_burned_small;
+#define DAT_EVENTS_CAPTURED_BODY_COUNT 2
+extern const char *const dat_events_captured_body[2];
+#define DAT_EVENTS_CAPTURED_TAIL_COUNT 0
+#define dat_events_captured_tail NULL
+extern const int32_t dat_events_captured_width;
+extern const char *const dat_events_captured_default;
+extern const uint8_t dat_events_captured_small;
+#define DAT_EVENTS_CLEARCUT_BODY_COUNT 2
+extern const char *const dat_events_clearcut_body[2];
+#define DAT_EVENTS_CLEARCUT_TAIL_COUNT 0
+#define dat_events_clearcut_tail NULL
+extern const int32_t dat_events_clearcut_width;
+extern const char *const dat_events_clearcut_default;
+extern const uint8_t dat_events_clearcut_small;
+#define DAT_EVENTS_USEDUPTOOLS_BODY_COUNT 2
+extern const char *const dat_events_useduptools_body[2];
+#define DAT_EVENTS_USEDUPTOOLS_TAIL_COUNT 0
+#define dat_events_useduptools_tail NULL
+extern const int32_t dat_events_useduptools_width;
+extern const char *const dat_events_useduptools_default;
+extern const uint8_t dat_events_useduptools_small;
+#define DAT_EVENTS_NOTENOUGH_BODY_COUNT 2
+extern const char *const dat_events_notenough_body[2];
+#define DAT_EVENTS_NOTENOUGH_TAIL_COUNT 0
+#define dat_events_notenough_tail NULL
+extern const int32_t dat_events_notenough_width;
+extern const char *const dat_events_notenough_default;
+extern const uint8_t dat_events_notenough_small;
+#define DAT_EVENTS_CANCELPEACE_BODY_COUNT 1
+extern const char *const dat_events_cancelpeace_body[1];
+#define DAT_EVENTS_CANCELPEACE_TAIL_COUNT 0
+#define dat_events_cancelpeace_tail NULL
+extern const int32_t dat_events_cancelpeace_width;
+extern const char *const dat_events_cancelpeace_default;
+extern const uint8_t dat_events_cancelpeace_small;
+#define DAT_EVENTS_INDIANWARFARE_BODY_COUNT 3
+extern const char *const dat_events_indianwarfare_body[3];
+#define DAT_EVENTS_INDIANWARFARE_TAIL_COUNT 0
+#define dat_events_indianwarfare_tail NULL
+extern const int32_t dat_events_indianwarfare_width;
+extern const char *const dat_events_indianwarfare_default;
+extern const uint8_t dat_events_indianwarfare_small;
+#define DAT_EVENTS_MERCS_BODY_COUNT 1
+extern const char *const dat_events_mercs_body[1];
+#define DAT_EVENTS_MERCS_TAIL_COUNT 0
+#define dat_events_mercs_tail NULL
+extern const int32_t dat_events_mercs_width;
+extern const char *const dat_events_mercs_default;
+extern const uint8_t dat_events_mercs_small;
+#define DAT_EVENTS_UNREST_BODY_COUNT 2
+extern const char *const dat_events_unrest_body[2];
+#define DAT_EVENTS_UNREST_TAIL_COUNT 0
+#define dat_events_unrest_tail NULL
+extern const int32_t dat_events_unrest_width;
+extern const char dat_events_unrest_default[];
+extern const uint8_t dat_events_unrest_small;
+#define DAT_EVENTS_MERCENARIES_BODY_COUNT 3
+extern const char *const dat_events_mercenaries_body[3];
+#define DAT_EVENTS_MERCENARIES_TAIL_COUNT 2
+extern const char *const dat_events_mercenaries_tail[2];
+extern const int32_t dat_events_mercenaries_width;
+extern const char *const dat_events_mercenaries_default;
+extern const uint8_t dat_events_mercenaries_small;
+#define DAT_EVENTS_PRICEUP_BODY_COUNT 1
+extern const char *const dat_events_priceup_body[1];
+#define DAT_EVENTS_PRICEUP_TAIL_COUNT 0
+#define dat_events_priceup_tail NULL
+extern const int32_t dat_events_priceup_width;
+extern const char *const dat_events_priceup_default;
+extern const uint8_t dat_events_priceup_small;
+#define DAT_EVENTS_PRICEDOWN_BODY_COUNT 1
+extern const char *const dat_events_pricedown_body[1];
+#define DAT_EVENTS_PRICEDOWN_TAIL_COUNT 0
+#define dat_events_pricedown_tail NULL
+extern const int32_t dat_events_pricedown_width;
+extern const char *const dat_events_pricedown_default;
+extern const uint8_t dat_events_pricedown_small;
+#define DAT_EVENTS_SOMEBOYCOTT_BODY_COUNT 3
+extern const char *const dat_events_someboycott_body[3];
+#define DAT_EVENTS_SOMEBOYCOTT_TAIL_COUNT 0
+#define dat_events_someboycott_tail NULL
+extern const int32_t dat_events_someboycott_width;
+extern const char *const dat_events_someboycott_default;
+extern const uint8_t dat_events_someboycott_small;
+#define DAT_EVENTS_SCHOOL1_BODY_COUNT 2
+extern const char *const dat_events_school1_body[2];
+#define DAT_EVENTS_SCHOOL1_TAIL_COUNT 0
+#define dat_events_school1_tail NULL
+extern const int32_t dat_events_school1_width;
+extern const char *const dat_events_school1_default;
+extern const uint8_t dat_events_school1_small;
+#define DAT_EVENTS_COLLEGE2_BODY_COUNT 2
+extern const char *const dat_events_college2_body[2];
+#define DAT_EVENTS_COLLEGE2_TAIL_COUNT 0
+#define dat_events_college2_tail NULL
+extern const int32_t dat_events_college2_width;
+extern const char *const dat_events_college2_default;
+extern const uint8_t dat_events_college2_small;
+#define DAT_EVENTS_UNIV3_BODY_COUNT 2
+extern const char *const dat_events_univ3_body[2];
+#define DAT_EVENTS_UNIV3_TAIL_COUNT 0
+#define dat_events_univ3_tail NULL
+extern const int32_t dat_events_univ3_width;
+extern const char *const dat_events_univ3_default;
+extern const uint8_t dat_events_univ3_small;
+#define DAT_EVENTS_NEEDCOLLEGE_BODY_COUNT 2
+extern const char *const dat_events_needcollege_body[2];
+#define DAT_EVENTS_NEEDCOLLEGE_TAIL_COUNT 0
+#define dat_events_needcollege_tail NULL
+extern const int32_t dat_events_needcollege_width;
+extern const char *const dat_events_needcollege_default;
+extern const uint8_t dat_events_needcollege_small;
+#define DAT_EVENTS_NEEDUNIVERSITY_BODY_COUNT 2
+extern const char *const dat_events_needuniversity_body[2];
+#define DAT_EVENTS_NEEDUNIVERSITY_TAIL_COUNT 0
+#define dat_events_needuniversity_tail NULL
+extern const int32_t dat_events_needuniversity_width;
+extern const char *const dat_events_needuniversity_default;
+extern const uint8_t dat_events_needuniversity_small;
+#define DAT_EVENTS_NOTEACHER_BODY_COUNT 1
+extern const char *const dat_events_noteacher_body[1];
+#define DAT_EVENTS_NOTEACHER_TAIL_COUNT 0
+#define dat_events_noteacher_tail NULL
+extern const int32_t dat_events_noteacher_width;
+extern const char *const dat_events_noteacher_default;
+extern const uint8_t dat_events_noteacher_small;
+#define DAT_EVENTS_TEACHCONVERT_BODY_COUNT 1
+extern const char *const dat_events_teachconvert_body[1];
+#define DAT_EVENTS_TEACHCONVERT_TAIL_COUNT 0
+#define dat_events_teachconvert_tail NULL
+extern const int32_t dat_events_teachconvert_width;
+extern const char *const dat_events_teachconvert_default;
+extern const uint8_t dat_events_teachconvert_small;
+#define DAT_EVENTS_TRAINCRIMINAL_BODY_COUNT 2
+extern const char *const dat_events_traincriminal_body[2];
+#define DAT_EVENTS_TRAINCRIMINAL_TAIL_COUNT 0
+#define dat_events_traincriminal_tail NULL
+extern const int32_t dat_events_traincriminal_width;
+extern const char *const dat_events_traincriminal_default;
+extern const uint8_t dat_events_traincriminal_small;
+#define DAT_EVENTS_TRAININDENTURED_BODY_COUNT 2
+extern const char *const dat_events_trainindentured_body[2];
+#define DAT_EVENTS_TRAININDENTURED_TAIL_COUNT 0
+#define dat_events_trainindentured_tail NULL
+extern const int32_t dat_events_trainindentured_width;
+extern const char *const dat_events_trainindentured_default;
+extern const uint8_t dat_events_trainindentured_small;
+#define DAT_EVENTS_NOPLOW_BODY_COUNT 1
+extern const char *const dat_events_noplow_body[1];
+#define DAT_EVENTS_NOPLOW_TAIL_COUNT 0
+#define dat_events_noplow_tail NULL
+extern const int32_t dat_events_noplow_width;
+extern const char *const dat_events_noplow_default;
+extern const uint8_t dat_events_noplow_small;
+#define DAT_EVENTS_NOROAD_BODY_COUNT 2
+extern const char *const dat_events_noroad_body[2];
+#define DAT_EVENTS_NOROAD_TAIL_COUNT 0
+#define dat_events_noroad_tail NULL
+extern const int32_t dat_events_noroad_width;
+extern const char *const dat_events_noroad_default;
+extern const uint8_t dat_events_noroad_small;
+#define DAT_EVENTS_ONLYCOL_BODY_COUNT 2
+extern const char *const dat_events_onlycol_body[2];
+#define DAT_EVENTS_ONLYCOL_TAIL_COUNT 0
+#define dat_events_onlycol_tail NULL
+extern const int32_t dat_events_onlycol_width;
+extern const char *const dat_events_onlycol_default;
+extern const uint8_t dat_events_onlycol_small;
+#define DAT_EVENTS_ONLYPIO_BODY_COUNT 2
+extern const char *const dat_events_onlypio_body[2];
+#define DAT_EVENTS_ONLYPIO_TAIL_COUNT 0
+#define dat_events_onlypio_tail NULL
+extern const int32_t dat_events_onlypio_width;
+extern const char *const dat_events_onlypio_default;
+extern const uint8_t dat_events_onlypio_small;
+#define DAT_EVENTS_TOOMOUNTAIN_BODY_COUNT 2
+extern const char *const dat_events_toomountain_body[2];
+#define DAT_EVENTS_TOOMOUNTAIN_TAIL_COUNT 0
+#define dat_events_toomountain_tail NULL
+extern const int32_t dat_events_toomountain_width;
+extern const char *const dat_events_toomountain_default;
+extern const uint8_t dat_events_toomountain_small;
+#define DAT_EVENTS_TOONEAR_BODY_COUNT 2
+extern const char *const dat_events_toonear_body[2];
+#define DAT_EVENTS_TOONEAR_TAIL_COUNT 0
+#define dat_events_toonear_tail NULL
+extern const int32_t dat_events_toonear_width;
+extern const char *const dat_events_toonear_default;
+extern const uint8_t dat_events_toonear_small;
+#define DAT_EVENTS_SEACOLONY_BODY_COUNT 2
+extern const char *const dat_events_seacolony_body[2];
+#define DAT_EVENTS_SEACOLONY_TAIL_COUNT 0
+#define dat_events_seacolony_tail NULL
+extern const int32_t dat_events_seacolony_width;
+extern const char *const dat_events_seacolony_default;
+extern const uint8_t dat_events_seacolony_small;
+#define DAT_EVENTS_NOPORT_BODY_COUNT 5
+extern const char *const dat_events_noport_body[5];
+#define DAT_EVENTS_NOPORT_TAIL_COUNT 2
+extern const char *const dat_events_noport_tail[2];
+extern const int32_t dat_events_noport_width;
+extern const char *const dat_events_noport_default;
+extern const uint8_t dat_events_noport_small;
+#define DAT_EVENTS_KEEPSTOCKADE_BODY_COUNT 2
+extern const char *const dat_events_keepstockade_body[2];
+#define DAT_EVENTS_KEEPSTOCKADE_TAIL_COUNT 0
+#define dat_events_keepstockade_tail NULL
+extern const int32_t dat_events_keepstockade_width;
+extern const char *const dat_events_keepstockade_default;
+extern const uint8_t dat_events_keepstockade_small;
+#define DAT_EVENTS_LANDFIRST_BODY_COUNT 3
+extern const char *const dat_events_landfirst_body[3];
+#define DAT_EVENTS_LANDFIRST_TAIL_COUNT 0
+#define dat_events_landfirst_tail NULL
+extern const int32_t dat_events_landfirst_width;
+extern const char *const dat_events_landfirst_default;
+extern const uint8_t dat_events_landfirst_small;
+#define DAT_EVENTS_CANNOTATTACK_BODY_COUNT 1
+extern const char *const dat_events_cannotattack_body[1];
+#define DAT_EVENTS_CANNOTATTACK_TAIL_COUNT 0
+#define dat_events_cannotattack_tail NULL
+extern const int32_t dat_events_cannotattack_width;
+extern const char *const dat_events_cannotattack_default;
+extern const uint8_t dat_events_cannotattack_small;
+#define DAT_EVENTS_DISBANDSHIP_BODY_COUNT 2
+extern const char *const dat_events_disbandship_body[2];
+#define DAT_EVENTS_DISBANDSHIP_TAIL_COUNT 0
+#define dat_events_disbandship_tail NULL
+extern const int32_t dat_events_disbandship_width;
+extern const char *const dat_events_disbandship_default;
+extern const uint8_t dat_events_disbandship_small;
+#define DAT_EVENTS_TUTNOLUMBER_BODY_COUNT 3
+extern const char *const dat_events_tutnolumber_body[3];
+#define DAT_EVENTS_TUTNOLUMBER_TAIL_COUNT 2
+extern const char *const dat_events_tutnolumber_tail[2];
+extern const int32_t dat_events_tutnolumber_width;
+extern const char *const dat_events_tutnolumber_default;
+extern const uint8_t dat_events_tutnolumber_small;
+#define DAT_EVENTS_TUTNOSPACES_BODY_COUNT 4
+extern const char *const dat_events_tutnospaces_body[4];
+#define DAT_EVENTS_TUTNOSPACES_TAIL_COUNT 2
+extern const char *const dat_events_tutnospaces_tail[2];
+extern const int32_t dat_events_tutnospaces_width;
+extern const char *const dat_events_tutnospaces_default;
+extern const uint8_t dat_events_tutnospaces_small;
+#define DAT_EVENTS_SPOIL1_BODY_COUNT 3
+extern const char *const dat_events_spoil1_body[3];
+#define DAT_EVENTS_SPOIL1_TAIL_COUNT 0
+#define dat_events_spoil1_tail NULL
+extern const int32_t dat_events_spoil1_width;
+extern const char *const dat_events_spoil1_default;
+extern const uint8_t dat_events_spoil1_small;
+#define DAT_EVENTS_SPOIL2_BODY_COUNT 3
+extern const char *const dat_events_spoil2_body[3];
+#define DAT_EVENTS_SPOIL2_TAIL_COUNT 0
+#define dat_events_spoil2_tail NULL
+extern const int32_t dat_events_spoil2_width;
+extern const char *const dat_events_spoil2_default;
+extern const uint8_t dat_events_spoil2_small;
+#define DAT_EVENTS_SPOIL3_BODY_COUNT 2
+extern const char *const dat_events_spoil3_body[2];
+#define DAT_EVENTS_SPOIL3_TAIL_COUNT 0
+#define dat_events_spoil3_tail NULL
+extern const int32_t dat_events_spoil3_width;
+extern const char *const dat_events_spoil3_default;
+extern const uint8_t dat_events_spoil3_small;
+#define DAT_EVENTS_SPOIL4_BODY_COUNT 2
+extern const char *const dat_events_spoil4_body[2];
+#define DAT_EVENTS_SPOIL4_TAIL_COUNT 0
+#define dat_events_spoil4_tail NULL
+extern const int32_t dat_events_spoil4_width;
+extern const char *const dat_events_spoil4_default;
+extern const uint8_t dat_events_spoil4_small;
+#define DAT_EVENTS_WAREHOUSEFULL_BODY_COUNT 4
+extern const char *const dat_events_warehousefull_body[4];
+#define DAT_EVENTS_WAREHOUSEFULL_TAIL_COUNT 2
+extern const char *const dat_events_warehousefull_tail[2];
+extern const int32_t dat_events_warehousefull_width;
+extern const char *const dat_events_warehousefull_default;
+extern const uint8_t dat_events_warehousefull_small;
+#define DAT_EVENTS_CARGOREADY1_BODY_COUNT 3
+extern const char *const dat_events_cargoready1_body[3];
+#define DAT_EVENTS_CARGOREADY1_TAIL_COUNT 0
+#define dat_events_cargoready1_tail NULL
+extern const int32_t dat_events_cargoready1_width;
+extern const char *const dat_events_cargoready1_default;
+extern const uint8_t dat_events_cargoready1_small;
+#define DAT_EVENTS_CARGOREADY2_BODY_COUNT 2
+extern const char *const dat_events_cargoready2_body[2];
+#define DAT_EVENTS_CARGOREADY2_TAIL_COUNT 0
+#define dat_events_cargoready2_tail NULL
+extern const int32_t dat_events_cargoready2_width;
+extern const char *const dat_events_cargoready2_default;
+extern const uint8_t dat_events_cargoready2_small;
+#define DAT_EVENTS_FOOD1_BODY_COUNT 2
+extern const char *const dat_events_food1_body[2];
+#define DAT_EVENTS_FOOD1_TAIL_COUNT 0
+#define dat_events_food1_tail NULL
+extern const int32_t dat_events_food1_width;
+extern const char *const dat_events_food1_default;
+extern const uint8_t dat_events_food1_small;
+#define DAT_EVENTS_FOOD2_BODY_COUNT 3
+extern const char *const dat_events_food2_body[3];
+#define DAT_EVENTS_FOOD2_TAIL_COUNT 0
+#define dat_events_food2_tail NULL
+extern const int32_t dat_events_food2_width;
+extern const char *const dat_events_food2_default;
+extern const uint8_t dat_events_food2_small;
+#define DAT_EVENTS_STARVE2_BODY_COUNT 3
+extern const char *const dat_events_starve2_body[3];
+#define DAT_EVENTS_STARVE2_TAIL_COUNT 0
+#define dat_events_starve2_tail NULL
+extern const int32_t dat_events_starve2_width;
+extern const char *const dat_events_starve2_default;
+extern const uint8_t dat_events_starve2_small;
+#define DAT_EVENTS_EFFICIENT_BODY_COUNT 2
+extern const char *const dat_events_efficient_body[2];
+#define DAT_EVENTS_EFFICIENT_TAIL_COUNT 0
+#define dat_events_efficient_tail NULL
+extern const int32_t dat_events_efficient_width;
+extern const char *const dat_events_efficient_default;
+extern const uint8_t dat_events_efficient_small;
+#define DAT_EVENTS_INEFFICIENT_BODY_COUNT 9
+extern const char *const dat_events_inefficient_body[9];
+#define DAT_EVENTS_INEFFICIENT_TAIL_COUNT 0
+#define dat_events_inefficient_tail NULL
+extern const int32_t dat_events_inefficient_width;
+extern const char *const dat_events_inefficient_default;
+extern const uint8_t dat_events_inefficient_small;
+#define DAT_EVENTS_CONTINENTAL_BODY_COUNT 2
+extern const char *const dat_events_continental_body[2];
+#define DAT_EVENTS_CONTINENTAL_TAIL_COUNT 0
+#define dat_events_continental_tail NULL
+extern const int32_t dat_events_continental_width;
+extern const char *const dat_events_continental_default;
+extern const uint8_t dat_events_continental_small;
+#define DAT_EVENTS_TIMECHANGE_BODY_COUNT 5
+extern const char *const dat_events_timechange_body[5];
+#define DAT_EVENTS_TIMECHANGE_TAIL_COUNT 0
+#define dat_events_timechange_tail NULL
+extern const int32_t dat_events_timechange_width;
+extern const char *const dat_events_timechange_default;
+extern const uint8_t dat_events_timechange_small;
+#define DAT_EVENTS_TRADESELECT_BODY_COUNT 1
+extern const char *const dat_events_tradeselect_body[1];
+#define DAT_EVENTS_TRADESELECT_TAIL_COUNT 0
+#define dat_events_tradeselect_tail NULL
+extern const int32_t dat_events_tradeselect_width;
+extern const char *const dat_events_tradeselect_default;
+extern const uint8_t dat_events_tradeselect_small;
+#define DAT_EVENTS_TRADESTART_BODY_COUNT 1
+extern const char *const dat_events_tradestart_body[1];
+#define DAT_EVENTS_TRADESTART_TAIL_COUNT 0
+#define dat_events_tradestart_tail NULL
+extern const int32_t dat_events_tradestart_width;
+extern const char *const dat_events_tradestart_default;
+extern const uint8_t dat_events_tradestart_small;
+#define DAT_EVENTS_TRADETYPE_BODY_COUNT 1
+extern const char *const dat_events_tradetype_body[1];
+#define DAT_EVENTS_TRADETYPE_TAIL_COUNT 2
+extern const char *const dat_events_tradetype_tail[2];
+extern const int32_t dat_events_tradetype_width;
+extern const char *const dat_events_tradetype_default;
+extern const uint8_t dat_events_tradetype_small;
+#define DAT_EVENTS_TRADEDELETE_BODY_COUNT 1
+extern const char *const dat_events_tradedelete_body[1];
+#define DAT_EVENTS_TRADEDELETE_TAIL_COUNT 0
+#define dat_events_tradedelete_tail NULL
+extern const int32_t dat_events_tradedelete_width;
+extern const char *const dat_events_tradedelete_default;
+extern const uint8_t dat_events_tradedelete_small;
+#define DAT_EVENTS_BUYME0_BODY_COUNT 2
+extern const char *const dat_events_buyme0_body[2];
+#define DAT_EVENTS_BUYME0_TAIL_COUNT 0
+#define dat_events_buyme0_tail NULL
+extern const int32_t dat_events_buyme0_width;
+extern const char *const dat_events_buyme0_default;
+extern const uint8_t dat_events_buyme0_small;
+#define DAT_EVENTS_BUYME1_BODY_COUNT 2
+extern const char *const dat_events_buyme1_body[2];
+#define DAT_EVENTS_BUYME1_TAIL_COUNT 2
+extern const char *const dat_events_buyme1_tail[2];
+extern const int32_t dat_events_buyme1_width;
+extern const char dat_events_buyme1_default[];
+extern const uint8_t dat_events_buyme1_small;
+#define DAT_EVENTS_REFIT_BODY_COUNT 1
+extern const char *const dat_events_refit_body[1];
+#define DAT_EVENTS_REFIT_TAIL_COUNT 0
+#define dat_events_refit_tail NULL
+extern const int32_t dat_events_refit_width;
+extern const char *const dat_events_refit_default;
+extern const uint8_t dat_events_refit_small;
+#define DAT_EVENTS_NOMOREWAGONS_BODY_COUNT 3
+extern const char *const dat_events_nomorewagons_body[3];
+#define DAT_EVENTS_NOMOREWAGONS_TAIL_COUNT 0
+#define dat_events_nomorewagons_tail NULL
+extern const int32_t dat_events_nomorewagons_width;
+extern const char *const dat_events_nomorewagons_default;
+extern const uint8_t dat_events_nomorewagons_small;
+#define DAT_EVENTS_NOMOREWAREHOUSE_BODY_COUNT 3
+extern const char *const dat_events_nomorewarehouse_body[3];
+#define DAT_EVENTS_NOMOREWAREHOUSE_TAIL_COUNT 0
+#define dat_events_nomorewarehouse_tail NULL
+extern const int32_t dat_events_nomorewarehouse_width;
+extern const char *const dat_events_nomorewarehouse_default;
+extern const uint8_t dat_events_nomorewarehouse_small;
+#define DAT_EVENTS_ALREADYHAVE_BODY_COUNT 2
+extern const char *const dat_events_alreadyhave_body[2];
+#define DAT_EVENTS_ALREADYHAVE_TAIL_COUNT 0
+#define dat_events_alreadyhave_tail NULL
+extern const int32_t dat_events_alreadyhave_width;
+extern const char *const dat_events_alreadyhave_default;
+extern const uint8_t dat_events_alreadyhave_small;
+#define DAT_EVENTS_KISSUP_BODY_COUNT 3
+extern const char *const dat_events_kissup_body[3];
+#define DAT_EVENTS_KISSUP_TAIL_COUNT 2
+extern const char *const dat_events_kissup_tail[2];
+extern const int32_t dat_events_kissup_width;
+extern const char *const dat_events_kissup_default;
+extern const uint8_t dat_events_kissup_small;
+#define DAT_EVENTS_KISSSORRY_BODY_COUNT 1
+extern const char *const dat_events_kisssorry_body[1];
+#define DAT_EVENTS_KISSSORRY_TAIL_COUNT 0
+#define dat_events_kisssorry_tail NULL
+extern const int32_t dat_events_kisssorry_width;
+extern const char *const dat_events_kisssorry_default;
+extern const uint8_t dat_events_kisssorry_small;
+#define DAT_EVENTS_VANISH_BODY_COUNT 3
+extern const char *const dat_events_vanish_body[3];
+#define DAT_EVENTS_VANISH_TAIL_COUNT 0
+#define dat_events_vanish_tail NULL
+extern const int32_t dat_events_vanish_width;
+extern const char *const dat_events_vanish_default;
+extern const uint8_t dat_events_vanish_small;
+#define DAT_EVENTS_CUSTOM_BODY_COUNT 1
+extern const char *const dat_events_custom_body[1];
+#define DAT_EVENTS_CUSTOM_TAIL_COUNT 0
+#define dat_events_custom_tail NULL
+extern const int32_t dat_events_custom_width;
+extern const char *const dat_events_custom_default;
+extern const uint8_t dat_events_custom_small;
+#define DAT_EVENTS_PISS0_BODY_COUNT 1
+extern const char *const dat_events_piss0_body[1];
+#define DAT_EVENTS_PISS0_TAIL_COUNT 0
+#define dat_events_piss0_tail NULL
+extern const int32_t dat_events_piss0_width;
+extern const char *const dat_events_piss0_default;
+extern const uint8_t dat_events_piss0_small;
+#define DAT_EVENTS_PISS1_BODY_COUNT 2
+extern const char *const dat_events_piss1_body[2];
+#define DAT_EVENTS_PISS1_TAIL_COUNT 0
+#define dat_events_piss1_tail NULL
+extern const int32_t dat_events_piss1_width;
+extern const char *const dat_events_piss1_default;
+extern const uint8_t dat_events_piss1_small;
+#define DAT_EVENTS_PISS2_BODY_COUNT 2
+extern const char *const dat_events_piss2_body[2];
+#define DAT_EVENTS_PISS2_TAIL_COUNT 0
+#define dat_events_piss2_tail NULL
+extern const int32_t dat_events_piss2_width;
+extern const char *const dat_events_piss2_default;
+extern const uint8_t dat_events_piss2_small;
+#define DAT_EVENTS_PISS3_BODY_COUNT 2
+extern const char *const dat_events_piss3_body[2];
+#define DAT_EVENTS_PISS3_TAIL_COUNT 0
+#define dat_events_piss3_tail NULL
+extern const int32_t dat_events_piss3_width;
+extern const char *const dat_events_piss3_default;
+extern const uint8_t dat_events_piss3_small;
+#define DAT_EVENTS_PISS4_BODY_COUNT 2
+extern const char *const dat_events_piss4_body[2];
+#define DAT_EVENTS_PISS4_TAIL_COUNT 0
+#define dat_events_piss4_tail NULL
+extern const int32_t dat_events_piss4_width;
+extern const char *const dat_events_piss4_default;
+extern const uint8_t dat_events_piss4_small;
+#define DAT_EVENTS_PISS5_BODY_COUNT 3
+extern const char *const dat_events_piss5_body[3];
+#define DAT_EVENTS_PISS5_TAIL_COUNT 0
+#define dat_events_piss5_tail NULL
+extern const int32_t dat_events_piss5_width;
+extern const char *const dat_events_piss5_default;
+extern const uint8_t dat_events_piss5_small;
+#define DAT_EVENTS_INDIANBEGFOOD_BODY_COUNT 4
+extern const char *const dat_events_indianbegfood_body[4];
+#define DAT_EVENTS_INDIANBEGFOOD_TAIL_COUNT 2
+extern const char *const dat_events_indianbegfood_tail[2];
+extern const int32_t dat_events_indianbegfood_width;
+extern const char *const dat_events_indianbegfood_default;
+extern const uint8_t dat_events_indianbegfood_small;
+#define DAT_EVENTS_INDIANGIVEFOOD_BODY_COUNT 6
+extern const char *const dat_events_indiangivefood_body[6];
+#define DAT_EVENTS_INDIANGIVEFOOD_TAIL_COUNT 0
+#define dat_events_indiangivefood_tail NULL
+extern const int32_t dat_events_indiangivefood_width;
+extern const char *const dat_events_indiangivefood_default;
+extern const uint8_t dat_events_indiangivefood_small;
+#define DAT_EVENTS_INDIANGIVESTUFF_BODY_COUNT 4
+extern const char *const dat_events_indiangivestuff_body[4];
+#define DAT_EVENTS_INDIANGIVESTUFF_TAIL_COUNT 0
+#define dat_events_indiangivestuff_tail NULL
+extern const int32_t dat_events_indiangivestuff_width;
+extern const char *const dat_events_indiangivestuff_default;
+extern const uint8_t dat_events_indiangivestuff_small;
+#define DAT_EVENTS_INDIANCOMMENT_BODY_COUNT 4
+extern const char *const dat_events_indiancomment_body[4];
+#define DAT_EVENTS_INDIANCOMMENT_TAIL_COUNT 0
+#define dat_events_indiancomment_tail NULL
+extern const int32_t dat_events_indiancomment_width;
+extern const char *const dat_events_indiancomment_default;
+extern const uint8_t dat_events_indiancomment_small;
+#define DAT_EVENTS_INDIANCOME_BODY_COUNT 3
+extern const char *const dat_events_indiancome_body[3];
+#define DAT_EVENTS_INDIANCOME_TAIL_COUNT 0
+#define dat_events_indiancome_tail NULL
+extern const int32_t dat_events_indiancome_width;
+extern const char *const dat_events_indiancome_default;
+extern const uint8_t dat_events_indiancome_small;
+#define DAT_EVENTS_INDIANFOREST_BODY_COUNT 3
+extern const char *const dat_events_indianforest_body[3];
+#define DAT_EVENTS_INDIANFOREST_TAIL_COUNT 3
+extern const char *const dat_events_indianforest_tail[3];
+extern const int32_t dat_events_indianforest_width;
+extern const char *const dat_events_indianforest_default;
+extern const uint8_t dat_events_indianforest_small;
+#define DAT_EVENTS_INDIANFOREST2_BODY_COUNT 4
+extern const char *const dat_events_indianforest2_body[4];
+#define DAT_EVENTS_INDIANFOREST2_TAIL_COUNT 0
+#define dat_events_indianforest2_tail NULL
+extern const int32_t dat_events_indianforest2_width;
+extern const char *const dat_events_indianforest2_default;
+extern const uint8_t dat_events_indianforest2_small;
+#define DAT_EVENTS_INDIANWINCOLONY2_BODY_COUNT 2
+extern const char *const dat_events_indianwincolony2_body[2];
+#define DAT_EVENTS_INDIANWINCOLONY2_TAIL_COUNT 0
+#define dat_events_indianwincolony2_tail NULL
+extern const int32_t dat_events_indianwincolony2_width;
+extern const char *const dat_events_indianwincolony2_default;
+extern const uint8_t dat_events_indianwincolony2_small;
+#define DAT_EVENTS_INDIANBURNCOLONY2_BODY_COUNT 2
+extern const char *const dat_events_indianburncolony2_body[2];
+#define DAT_EVENTS_INDIANBURNCOLONY2_TAIL_COUNT 0
+#define dat_events_indianburncolony2_tail NULL
+extern const int32_t dat_events_indianburncolony2_width;
+extern const char *const dat_events_indianburncolony2_default;
+extern const uint8_t dat_events_indianburncolony2_small;
+#define DAT_EVENTS_INDIANLOSE_BODY_COUNT 1
+extern const char *const dat_events_indianlose_body[1];
+#define DAT_EVENTS_INDIANLOSE_TAIL_COUNT 0
+#define dat_events_indianlose_tail NULL
+extern const int32_t dat_events_indianlose_width;
+extern const char *const dat_events_indianlose_default;
+extern const uint8_t dat_events_indianlose_small;
+#define DAT_EVENTS_VIOLATE_BODY_COUNT 2
+extern const char *const dat_events_violate_body[2];
+#define DAT_EVENTS_VIOLATE_TAIL_COUNT 0
+#define dat_events_violate_tail NULL
+extern const int32_t dat_events_violate_width;
+extern const char *const dat_events_violate_default;
+extern const uint8_t dat_events_violate_small;
+#define DAT_EVENTS_BURNED2_BODY_COUNT 2
+extern const char *const dat_events_burned2_body[2];
+#define DAT_EVENTS_BURNED2_TAIL_COUNT 0
+#define dat_events_burned2_tail NULL
+extern const int32_t dat_events_burned2_width;
+extern const char *const dat_events_burned2_default;
+extern const uint8_t dat_events_burned2_small;
+#define DAT_EVENTS_BURNED3_BODY_COUNT 2
+extern const char *const dat_events_burned3_body[2];
+#define DAT_EVENTS_BURNED3_TAIL_COUNT 0
+#define dat_events_burned3_tail NULL
+extern const int32_t dat_events_burned3_width;
+extern const char *const dat_events_burned3_default;
+extern const uint8_t dat_events_burned3_small;
+#define DAT_EVENTS_CAPTURED2_BODY_COUNT 1
+extern const char *const dat_events_captured2_body[1];
+#define DAT_EVENTS_CAPTURED2_TAIL_COUNT 0
+#define dat_events_captured2_tail NULL
+extern const int32_t dat_events_captured2_width;
+extern const char *const dat_events_captured2_default;
+extern const uint8_t dat_events_captured2_small;
+#define DAT_EVENTS_CAPTURED3_BODY_COUNT 1
+extern const char *const dat_events_captured3_body[1];
+#define DAT_EVENTS_CAPTURED3_TAIL_COUNT 0
+#define dat_events_captured3_tail NULL
+extern const int32_t dat_events_captured3_width;
+extern const char *const dat_events_captured3_default;
+extern const uint8_t dat_events_captured3_small;
+#define DAT_EVENTS_EUROPEWIN_BODY_COUNT 1
+extern const char *const dat_events_europewin_body[1];
+#define DAT_EVENTS_EUROPEWIN_TAIL_COUNT 0
+#define dat_events_europewin_tail NULL
+extern const int32_t dat_events_europewin_width;
+extern const char *const dat_events_europewin_default;
+extern const uint8_t dat_events_europewin_small;
+#define DAT_EVENTS_EUROPELOSE_BODY_COUNT 1
+extern const char *const dat_events_europelose_body[1];
+#define DAT_EVENTS_EUROPELOSE_TAIL_COUNT 0
+#define dat_events_europelose_tail NULL
+extern const int32_t dat_events_europelose_width;
+extern const char *const dat_events_europelose_default;
+extern const uint8_t dat_events_europelose_small;
+#define DAT_EVENTS_INDIANWINCOLONY_BODY_COUNT 2
+extern const char *const dat_events_indianwincolony_body[2];
+#define DAT_EVENTS_INDIANWINCOLONY_TAIL_COUNT 0
+#define dat_events_indianwincolony_tail NULL
+extern const int32_t dat_events_indianwincolony_width;
+extern const char *const dat_events_indianwincolony_default;
+extern const uint8_t dat_events_indianwincolony_small;
+#define DAT_EVENTS_SHIPRUN_BODY_COUNT 1
+extern const char *const dat_events_shiprun_body[1];
+#define DAT_EVENTS_SHIPRUN_TAIL_COUNT 0
+#define dat_events_shiprun_tail NULL
+extern const int32_t dat_events_shiprun_width;
+extern const char *const dat_events_shiprun_default;
+extern const uint8_t dat_events_shiprun_small;
+#define DAT_EVENTS_SHIPSLOW_BODY_COUNT 1
+extern const char *const dat_events_shipslow_body[1];
+#define DAT_EVENTS_SHIPSLOW_TAIL_COUNT 0
+#define dat_events_shipslow_tail NULL
+extern const int32_t dat_events_shipslow_width;
+extern const char *const dat_events_shipslow_default;
+extern const uint8_t dat_events_shipslow_small;
+#define DAT_EVENTS_SHIPLAKE_BODY_COUNT 1
+extern const char *const dat_events_shiplake_body[1];
+#define DAT_EVENTS_SHIPLAKE_TAIL_COUNT 0
+#define dat_events_shiplake_tail NULL
+extern const int32_t dat_events_shiplake_width;
+extern const char *const dat_events_shiplake_default;
+extern const uint8_t dat_events_shiplake_small;
+#define DAT_EVENTS_LOOTFOREIGN_BODY_COUNT 2
+extern const char *const dat_events_lootforeign_body[2];
+#define DAT_EVENTS_LOOTFOREIGN_TAIL_COUNT 0
+#define dat_events_lootforeign_tail NULL
+extern const int32_t dat_events_lootforeign_width;
+extern const char *const dat_events_lootforeign_default;
+extern const uint8_t dat_events_lootforeign_small;
+#define DAT_EVENTS_KINGLOWER_BODY_COUNT 3
+extern const char *const dat_events_kinglower_body[3];
+#define DAT_EVENTS_KINGLOWER_TAIL_COUNT 0
+#define dat_events_kinglower_tail NULL
+extern const int32_t dat_events_kinglower_width;
+extern const char *const dat_events_kinglower_default;
+extern const uint8_t dat_events_kinglower_small;
+#define DAT_EVENTS_KINGRAISE_BODY_COUNT 3
+extern const char *const dat_events_kingraise_body[3];
+#define DAT_EVENTS_KINGRAISE_TAIL_COUNT 0
+#define dat_events_kingraise_tail NULL
+extern const int32_t dat_events_kingraise_width;
+extern const char *const dat_events_kingraise_default;
+extern const uint8_t dat_events_kingraise_small;
+#define DAT_EVENTS_KINGNOTHING_BODY_COUNT 3
+extern const char *const dat_events_kingnothing_body[3];
+#define DAT_EVENTS_KINGNOTHING_TAIL_COUNT 0
+#define dat_events_kingnothing_tail NULL
+extern const int32_t dat_events_kingnothing_width;
+extern const char *const dat_events_kingnothing_default;
+extern const uint8_t dat_events_kingnothing_small;
+#define DAT_EVENTS_KINGMOBILIZE_BODY_COUNT 2
+extern const char *const dat_events_kingmobilize_body[2];
+#define DAT_EVENTS_KINGMOBILIZE_TAIL_COUNT 0
+#define dat_events_kingmobilize_tail NULL
+extern const int32_t dat_events_kingmobilize_width;
+extern const char *const dat_events_kingmobilize_default;
+extern const uint8_t dat_events_kingmobilize_small;
+#define DAT_EVENTS_CANTMOBILIZE_BODY_COUNT 4
+extern const char *const dat_events_cantmobilize_body[4];
+#define DAT_EVENTS_CANTMOBILIZE_TAIL_COUNT 0
+#define dat_events_cantmobilize_tail NULL
+extern const int32_t dat_events_cantmobilize_width;
+extern const char *const dat_events_cantmobilize_default;
+extern const uint8_t dat_events_cantmobilize_small;
+#define DAT_EVENTS_CARGOREADY0_BODY_COUNT 1
+extern const char *const dat_events_cargoready0_body[1];
+#define DAT_EVENTS_CARGOREADY0_TAIL_COUNT 0
+#define dat_events_cargoready0_tail NULL
+extern const int32_t dat_events_cargoready0_width;
+extern const char *const dat_events_cargoready0_default;
+extern const uint8_t dat_events_cargoready0_small;
+#define DAT_EVENTS_NOCITY_BODY_COUNT 1
+extern const char *const dat_events_nocity_body[1];
+#define DAT_EVENTS_NOCITY_TAIL_COUNT 1
+extern const char *const dat_events_nocity_tail[1];
+extern const int32_t dat_events_nocity_width;
+extern const char *const dat_events_nocity_default;
+extern const uint8_t dat_events_nocity_small;
+#define DAT_EVENTS_INDIANLAND_BODY_COUNT 2
+extern const char *const dat_events_indianland_body[2];
+#define DAT_EVENTS_INDIANLAND_TAIL_COUNT 3
+extern const char *const dat_events_indianland_tail[3];
+extern const int32_t dat_events_indianland_width;
+extern const char *const dat_events_indianland_default;
+extern const uint8_t dat_events_indianland_small;
+#define DAT_EVENTS_INDIANBOW_BODY_COUNT 3
+extern const char *const dat_events_indianbow_body[3];
+#define DAT_EVENTS_INDIANBOW_TAIL_COUNT 0
+#define dat_events_indianbow_tail NULL
+extern const int32_t dat_events_indianbow_width;
+extern const char *const dat_events_indianbow_default;
+extern const uint8_t dat_events_indianbow_small;
+#define DAT_EVENTS_INDIANTREATY_BODY_COUNT 5
+extern const char *const dat_events_indiantreaty_body[5];
+#define DAT_EVENTS_INDIANTREATY_TAIL_COUNT 2
+extern const char *const dat_events_indiantreaty_tail[2];
+extern const int32_t dat_events_indiantreaty_width;
+extern const char *const dat_events_indiantreaty_default;
+extern const uint8_t dat_events_indiantreaty_small;
+#define DAT_EVENTS_INDIANBRIBE_BODY_COUNT 1
+extern const char *const dat_events_indianbribe_body[1];
+#define DAT_EVENTS_INDIANBRIBE_TAIL_COUNT 0
+#define dat_events_indianbribe_tail NULL
+extern const int32_t dat_events_indianbribe_width;
+extern const char *const dat_events_indianbribe_default;
+extern const uint8_t dat_events_indianbribe_small;
+#define DAT_EVENTS_REBELUP_BODY_COUNT 5
+extern const char *const dat_events_rebelup_body[5];
+#define DAT_EVENTS_REBELUP_TAIL_COUNT 0
+#define dat_events_rebelup_tail NULL
+extern const int32_t dat_events_rebelup_width;
+extern const char *const dat_events_rebelup_default;
+extern const uint8_t dat_events_rebelup_small;
+#define DAT_EVENTS_REBELUP50_BODY_COUNT 4
+extern const char *const dat_events_rebelup50_body[4];
+#define DAT_EVENTS_REBELUP50_TAIL_COUNT 0
+#define dat_events_rebelup50_tail NULL
+extern const int32_t dat_events_rebelup50_width;
+extern const char *const dat_events_rebelup50_default;
+extern const uint8_t dat_events_rebelup50_small;
+#define DAT_EVENTS_REBELDOWN_BODY_COUNT 3
+extern const char *const dat_events_rebeldown_body[3];
+#define DAT_EVENTS_REBELDOWN_TAIL_COUNT 0
+#define dat_events_rebeldown_tail NULL
+extern const int32_t dat_events_rebeldown_width;
+extern const char *const dat_events_rebeldown_default;
+extern const uint8_t dat_events_rebeldown_small;
+#define DAT_EVENTS_LOSING1_BODY_COUNT 4
+extern const char *const dat_events_losing1_body[4];
+#define DAT_EVENTS_LOSING1_TAIL_COUNT 0
+#define dat_events_losing1_tail NULL
+extern const int32_t dat_events_losing1_width;
+extern const char *const dat_events_losing1_default;
+extern const uint8_t dat_events_losing1_small;
+#define DAT_EVENTS_LOSING2_BODY_COUNT 4
+extern const char *const dat_events_losing2_body[4];
+#define DAT_EVENTS_LOSING2_TAIL_COUNT 0
+#define dat_events_losing2_tail NULL
+extern const int32_t dat_events_losing2_width;
+extern const char *const dat_events_losing2_default;
+extern const uint8_t dat_events_losing2_small;
+#define DAT_EVENTS_LOSING3_BODY_COUNT 4
+extern const char *const dat_events_losing3_body[4];
+#define DAT_EVENTS_LOSING3_TAIL_COUNT 0
+#define dat_events_losing3_tail NULL
+extern const int32_t dat_events_losing3_width;
+extern const char *const dat_events_losing3_default;
+extern const uint8_t dat_events_losing3_small;
+#define DAT_EVENTS_WARN1_BODY_COUNT 3
+extern const char *const dat_events_warn1_body[3];
+#define DAT_EVENTS_WARN1_TAIL_COUNT 0
+#define dat_events_warn1_tail NULL
+extern const int32_t dat_events_warn1_width;
+extern const char *const dat_events_warn1_default;
+extern const uint8_t dat_events_warn1_small;
+#define DAT_EVENTS_WARN3_BODY_COUNT 3
+extern const char *const dat_events_warn3_body[3];
+#define DAT_EVENTS_WARN3_TAIL_COUNT 0
+#define dat_events_warn3_tail NULL
+extern const int32_t dat_events_warn3_width;
+extern const char *const dat_events_warn3_default;
+extern const uint8_t dat_events_warn3_small;
+#define DAT_EVENTS_SIEGE_BODY_COUNT 3
+extern const char *const dat_events_siege_body[3];
+#define DAT_EVENTS_SIEGE_TAIL_COUNT 0
+#define dat_events_siege_tail NULL
+extern const int32_t dat_events_siege_width;
+extern const char *const dat_events_siege_default;
+extern const uint8_t dat_events_siege_small;
+#define DAT_EVENTS_INVASION_BODY_COUNT 1
+extern const char *const dat_events_invasion_body[1];
+#define DAT_EVENTS_INVASION_TAIL_COUNT 0
+#define dat_events_invasion_tail NULL
+extern const int32_t dat_events_invasion_width;
+extern const char *const dat_events_invasion_default;
+extern const uint8_t dat_events_invasion_small;
+#define DAT_EVENTS_INTERVENE_BODY_COUNT 2
+extern const char *const dat_events_intervene_body[2];
+#define DAT_EVENTS_INTERVENE_TAIL_COUNT 0
+#define dat_events_intervene_tail NULL
+extern const int32_t dat_events_intervene_width;
+extern const char *const dat_events_intervene_default;
+extern const uint8_t dat_events_intervene_small;
+#define DAT_EVENTS_WINNING_BODY_COUNT 6
+extern const char *const dat_events_winning_body[6];
+#define DAT_EVENTS_WINNING_TAIL_COUNT 0
+#define dat_events_winning_tail NULL
+extern const int32_t dat_events_winning_width;
+extern const char *const dat_events_winning_default;
+extern const uint8_t dat_events_winning_small;
+#define DAT_EVENTS_EUROPENOTAVAIL_BODY_COUNT 5
+extern const char *const dat_events_europenotavail_body[5];
+#define DAT_EVENTS_EUROPENOTAVAIL_TAIL_COUNT 0
+#define dat_events_europenotavail_tail NULL
+extern const int32_t dat_events_europenotavail_width;
+extern const char *const dat_events_europenotavail_default;
+extern const uint8_t dat_events_europenotavail_small;
+#define DAT_EVENTS_EUROPENOTLEAVE_BODY_COUNT 3
+extern const char *const dat_events_europenotleave_body[3];
+#define DAT_EVENTS_EUROPENOTLEAVE_TAIL_COUNT 0
+#define dat_events_europenotleave_tail NULL
+extern const int32_t dat_events_europenotleave_width;
+extern const char *const dat_events_europenotleave_default;
+extern const uint8_t dat_events_europenotleave_small;
+#define DAT_EVENTS_FOREIGNNOTAVAIL_BODY_COUNT 2
+extern const char *const dat_events_foreignnotavail_body[2];
+#define DAT_EVENTS_FOREIGNNOTAVAIL_TAIL_COUNT 0
+#define dat_events_foreignnotavail_tail NULL
+extern const int32_t dat_events_foreignnotavail_width;
+extern const char *const dat_events_foreignnotavail_default;
+extern const uint8_t dat_events_foreignnotavail_small;
+#define DAT_EVENTS_KINGBUY_BODY_COUNT 2
+extern const char *const dat_events_kingbuy_body[2];
+#define DAT_EVENTS_KINGBUY_TAIL_COUNT 0
+#define dat_events_kingbuy_tail NULL
+extern const int32_t dat_events_kingbuy_width;
+extern const char *const dat_events_kingbuy_default;
+extern const uint8_t dat_events_kingbuy_small;
+#define DAT_EVENTS_PURCHASETAX_BODY_COUNT 3
+extern const char *const dat_events_purchasetax_body[3];
+#define DAT_EVENTS_PURCHASETAX_TAIL_COUNT 0
+#define dat_events_purchasetax_tail NULL
+extern const int32_t dat_events_purchasetax_width;
+extern const char *const dat_events_purchasetax_default;
+extern const uint8_t dat_events_purchasetax_small;
+#define DAT_EVENTS_MERCANTILISM_BODY_COUNT 5
+extern const char *const dat_events_mercantilism_body[5];
+#define DAT_EVENTS_MERCANTILISM_TAIL_COUNT 0
+#define dat_events_mercantilism_tail NULL
+extern const int32_t dat_events_mercantilism_width;
+extern const char *const dat_events_mercantilism_default;
+extern const uint8_t dat_events_mercantilism_small;
+#define DAT_EVENTS_KINGNEWWAR_BODY_COUNT 7
+extern const char *const dat_events_kingnewwar_body[7];
+#define DAT_EVENTS_KINGNEWWAR_TAIL_COUNT 0
+#define dat_events_kingnewwar_tail NULL
+extern const int32_t dat_events_kingnewwar_width;
+extern const char *const dat_events_kingnewwar_default;
+extern const uint8_t dat_events_kingnewwar_small;
+#define DAT_EVENTS_KINGVICTORY_BODY_COUNT 4
+extern const char *const dat_events_kingvictory_body[4];
+#define DAT_EVENTS_KINGVICTORY_TAIL_COUNT 0
+#define dat_events_kingvictory_tail NULL
+extern const int32_t dat_events_kingvictory_width;
+extern const char *const dat_events_kingvictory_default;
+extern const uint8_t dat_events_kingvictory_small;
+#define DAT_EVENTS_KINGMERCY_BODY_COUNT 4
+extern const char *const dat_events_kingmercy_body[4];
+#define DAT_EVENTS_KINGMERCY_TAIL_COUNT 0
+#define dat_events_kingmercy_tail NULL
+extern const int32_t dat_events_kingmercy_width;
+extern const char *const dat_events_kingmercy_default;
+extern const uint8_t dat_events_kingmercy_small;
+#define DAT_EVENTS_KINGFRIGATE_BODY_COUNT 4
+extern const char *const dat_events_kingfrigate_body[4];
+#define DAT_EVENTS_KINGFRIGATE_TAIL_COUNT 2
+extern const char *const dat_events_kingfrigate_tail[2];
+extern const int32_t dat_events_kingfrigate_width;
+extern const char *const dat_events_kingfrigate_default;
+extern const uint8_t dat_events_kingfrigate_small;
+#define DAT_EVENTS_WHICHFREEDOM_BODY_COUNT 2
+extern const char *const dat_events_whichfreedom_body[2];
+#define DAT_EVENTS_WHICHFREEDOM_TAIL_COUNT 0
+#define dat_events_whichfreedom_tail NULL
+extern const int32_t dat_events_whichfreedom_width;
+extern const char *const dat_events_whichfreedom_default;
+extern const uint8_t dat_events_whichfreedom_small;
+#define DAT_EVENTS_TRADEWITH_BODY_COUNT 3
+extern const char *const dat_events_tradewith_body[3];
+#define DAT_EVENTS_TRADEWITH_TAIL_COUNT 3
+extern const char *const dat_events_tradewith_tail[3];
+extern const int32_t dat_events_tradewith_width;
+extern const char *const dat_events_tradewith_default;
+extern const uint8_t dat_events_tradewith_small;
+#define DAT_EVENTS_DEFICIT_BODY_COUNT 2
+extern const char *const dat_events_deficit_body[2];
+#define DAT_EVENTS_DEFICIT_TAIL_COUNT 0
+#define dat_events_deficit_tail NULL
+extern const int32_t dat_events_deficit_width;
+extern const char *const dat_events_deficit_default;
+extern const uint8_t dat_events_deficit_small;
+#define DAT_EVENTS_SUREDELETE_BODY_COUNT 1
+extern const char *const dat_events_suredelete_body[1];
+#define DAT_EVENTS_SUREDELETE_TAIL_COUNT 2
+extern const char *const dat_events_suredelete_tail[2];
+extern const int32_t dat_events_suredelete_width;
+extern const char *const dat_events_suredelete_default;
+extern const uint8_t dat_events_suredelete_small;
+#define DAT_EVENTS_SUREDISBAND_BODY_COUNT 1
+extern const char *const dat_events_suredisband_body[1];
+#define DAT_EVENTS_SUREDISBAND_TAIL_COUNT 2
+extern const char *const dat_events_suredisband_tail[2];
+extern const int32_t dat_events_suredisband_width;
+extern const char *const dat_events_suredisband_default;
+extern const uint8_t dat_events_suredisband_small;
+#define DAT_EVENTS_REALLYBUY_BODY_COUNT 1
+extern const char *const dat_events_reallybuy_body[1];
+#define DAT_EVENTS_REALLYBUY_TAIL_COUNT 2
+extern const char *const dat_events_reallybuy_tail[2];
+extern const int32_t dat_events_reallybuy_width;
+extern const char *const dat_events_reallybuy_default;
+extern const uint8_t dat_events_reallybuy_small;
+#define DAT_EVENTS_LOBOTOMIZE_BODY_COUNT 2
+extern const char *const dat_events_lobotomize_body[2];
+#define DAT_EVENTS_LOBOTOMIZE_TAIL_COUNT 2
+extern const char *const dat_events_lobotomize_tail[2];
+extern const int32_t dat_events_lobotomize_width;
+extern const char *const dat_events_lobotomize_default;
+extern const uint8_t dat_events_lobotomize_small;
+#define DAT_EVENTS_ABANDON2_BODY_COUNT 4
+extern const char *const dat_events_abandon2_body[4];
+#define DAT_EVENTS_ABANDON2_TAIL_COUNT 2
+extern const char *const dat_events_abandon2_tail[2];
+extern const int32_t dat_events_abandon2_width;
+extern const char dat_events_abandon2_default[];
+extern const uint8_t dat_events_abandon2_small;
+#define DAT_EVENTS_RECRUITCHOOSE_BODY_COUNT 5
+extern const char *const dat_events_recruitchoose_body[5];
+#define DAT_EVENTS_RECRUITCHOOSE_TAIL_COUNT 0
+#define dat_events_recruitchoose_tail NULL
+extern const int32_t dat_events_recruitchoose_width;
+extern const char *const dat_events_recruitchoose_default;
+extern const uint8_t dat_events_recruitchoose_small;
+#define DAT_EVENTS_OVERBOARD_BODY_COUNT 1
+extern const char *const dat_events_overboard_body[1];
+#define DAT_EVENTS_OVERBOARD_TAIL_COUNT 0
+#define dat_events_overboard_tail NULL
+extern const int32_t dat_events_overboard_width;
+extern const char *const dat_events_overboard_default;
+extern const uint8_t dat_events_overboard_small;
+#define DAT_EVENTS_CARGOLOAD_BODY_COUNT 1
+extern const char *const dat_events_cargoload_body[1];
+#define DAT_EVENTS_CARGOLOAD_TAIL_COUNT 0
+#define dat_events_cargoload_tail NULL
+extern const int32_t dat_events_cargoload_width;
+extern const char *const dat_events_cargoload_default;
+extern const uint8_t dat_events_cargoload_small;
+#define DAT_EVENTS_CARGOUNLOAD_BODY_COUNT 1
+extern const char *const dat_events_cargounload_body[1];
+#define DAT_EVENTS_CARGOUNLOAD_TAIL_COUNT 0
+#define dat_events_cargounload_tail NULL
+extern const int32_t dat_events_cargounload_width;
+extern const char *const dat_events_cargounload_default;
+extern const uint8_t dat_events_cargounload_small;
+#define DAT_EVENTS_PICKACARGO_BODY_COUNT 1
+extern const char *const dat_events_pickacargo_body[1];
+#define DAT_EVENTS_PICKACARGO_TAIL_COUNT 0
+#define dat_events_pickacargo_tail NULL
+extern const int32_t dat_events_pickacargo_width;
+extern const char *const dat_events_pickacargo_default;
+extern const uint8_t dat_events_pickacargo_small;
+#define DAT_EVENTS_SCREWED_BODY_COUNT 4
+extern const char *const dat_events_screwed_body[4];
+#define DAT_EVENTS_SCREWED_TAIL_COUNT 0
+#define dat_events_screwed_tail NULL
+extern const int32_t dat_events_screwed_width;
+extern const char *const dat_events_screwed_default;
+extern const uint8_t dat_events_screwed_small;
+#define DAT_EVENTS_NOCOLONIESEITHER_BODY_COUNT 1
+extern const char *const dat_events_nocolonieseither_body[1];
+#define DAT_EVENTS_NOCOLONIESEITHER_TAIL_COUNT 0
+#define dat_events_nocolonieseither_tail NULL
+extern const int32_t dat_events_nocolonieseither_width;
+extern const char *const dat_events_nocolonieseither_default;
+extern const uint8_t dat_events_nocolonieseither_small;
+#define DAT_EVENTS_LOSENOCOLONIES_BODY_COUNT 3
+extern const char *const dat_events_losenocolonies_body[3];
+#define DAT_EVENTS_LOSENOCOLONIES_TAIL_COUNT 0
+#define dat_events_losenocolonies_tail NULL
+extern const int32_t dat_events_losenocolonies_width;
+extern const char *const dat_events_losenocolonies_default;
+extern const uint8_t dat_events_losenocolonies_small;
+#define DAT_EVENTS_INDIANWIN0_BODY_COUNT 1
+extern const char *const dat_events_indianwin0_body[1];
+#define DAT_EVENTS_INDIANWIN0_TAIL_COUNT 0
+#define dat_events_indianwin0_tail NULL
+extern const int32_t dat_events_indianwin0_width;
+extern const char *const dat_events_indianwin0_default;
+extern const uint8_t dat_events_indianwin0_small;
+#define DAT_EVENTS_INDIANWIN1_BODY_COUNT 2
+extern const char *const dat_events_indianwin1_body[2];
+#define DAT_EVENTS_INDIANWIN1_TAIL_COUNT 0
+#define dat_events_indianwin1_tail NULL
+extern const int32_t dat_events_indianwin1_width;
+extern const char *const dat_events_indianwin1_default;
+extern const uint8_t dat_events_indianwin1_small;
+#define DAT_EVENTS_INDIANWIN2_BODY_COUNT 2
+extern const char *const dat_events_indianwin2_body[2];
+#define DAT_EVENTS_INDIANWIN2_TAIL_COUNT 0
+#define dat_events_indianwin2_tail NULL
+extern const int32_t dat_events_indianwin2_width;
+extern const char *const dat_events_indianwin2_default;
+extern const uint8_t dat_events_indianwin2_small;
+#define DAT_EVENTS_INDIANGRUDGE_BODY_COUNT 3
+extern const char *const dat_events_indiangrudge_body[3];
+#define DAT_EVENTS_INDIANGRUDGE_TAIL_COUNT 0
+#define dat_events_indiangrudge_tail NULL
+extern const int32_t dat_events_indiangrudge_width;
+extern const char *const dat_events_indiangrudge_default;
+extern const uint8_t dat_events_indiangrudge_small;
+#define DAT_EVENTS_DEPLETION_BODY_COUNT 1
+extern const char *const dat_events_depletion_body[1];
+#define DAT_EVENTS_DEPLETION_TAIL_COUNT 0
+#define dat_events_depletion_tail NULL
+extern const int32_t dat_events_depletion_width;
+extern const char *const dat_events_depletion_default;
+extern const uint8_t dat_events_depletion_small;
+#define DAT_EVENTS_DEFOREST_BODY_COUNT 1
+extern const char *const dat_events_deforest_body[1];
+#define DAT_EVENTS_DEFOREST_TAIL_COUNT 0
+#define dat_events_deforest_tail NULL
+extern const int32_t dat_events_deforest_width;
+extern const char *const dat_events_deforest_default;
+extern const uint8_t dat_events_deforest_small;
+#define DAT_EVENTS_FREEDOM_BODY_COUNT 2
+extern const char *const dat_events_freedom_body[2];
+#define DAT_EVENTS_FREEDOM_TAIL_COUNT 0
+#define dat_events_freedom_tail NULL
+extern const int32_t dat_events_freedom_width;
+extern const char *const dat_events_freedom_default;
+extern const uint8_t dat_events_freedom_small;
+#define DAT_EVENTS_LOOT_BODY_COUNT 3
+extern const char *const dat_events_loot_body[3];
+#define DAT_EVENTS_LOOT_TAIL_COUNT 0
+#define dat_events_loot_tail NULL
+extern const int32_t dat_events_loot_width;
+extern const char *const dat_events_loot_default;
+extern const uint8_t dat_events_loot_small;
+#define DAT_EVENTS_LOOT2_BODY_COUNT 1
+extern const char *const dat_events_loot2_body[1];
+#define DAT_EVENTS_LOOT2_TAIL_COUNT 0
+#define dat_events_loot2_tail NULL
+extern const int32_t dat_events_loot2_width;
+extern const char *const dat_events_loot2_default;
+extern const uint8_t dat_events_loot2_small;
+#define DAT_EVENTS_NOLOOT_BODY_COUNT 2
+extern const char *const dat_events_noloot_body[2];
+#define DAT_EVENTS_NOLOOT_TAIL_COUNT 0
+#define dat_events_noloot_tail NULL
+extern const int32_t dat_events_noloot_width;
+extern const char *const dat_events_noloot_default;
+extern const uint8_t dat_events_noloot_small;
+#define DAT_EVENTS_INDIANWAR_BODY_COUNT 3
+extern const char *const dat_events_indianwar_body[3];
+#define DAT_EVENTS_INDIANWAR_TAIL_COUNT 0
+#define dat_events_indianwar_tail NULL
+extern const int32_t dat_events_indianwar_width;
+extern const char *const dat_events_indianwar_default;
+extern const uint8_t dat_events_indianwar_small;
+#define DAT_EVENTS_INDIANPEACE_BODY_COUNT 3
+extern const char *const dat_events_indianpeace_body[3];
+#define DAT_EVENTS_INDIANPEACE_TAIL_COUNT 0
+#define dat_events_indianpeace_tail NULL
+extern const int32_t dat_events_indianpeace_width;
+extern const char *const dat_events_indianpeace_default;
+extern const uint8_t dat_events_indianpeace_small;
+#define DAT_EVENTS_INDIANSLAVES_BODY_COUNT 1
+extern const char *const dat_events_indianslaves_body[1];
+#define DAT_EVENTS_INDIANSLAVES_TAIL_COUNT 0
+#define dat_events_indianslaves_tail NULL
+extern const int32_t dat_events_indianslaves_width;
+extern const char *const dat_events_indianslaves_default;
+extern const uint8_t dat_events_indianslaves_small;
+#define DAT_EVENTS_SEIZURE_BODY_COUNT 1
+extern const char *const dat_events_seizure_body[1];
+#define DAT_EVENTS_SEIZURE_TAIL_COUNT 0
+#define dat_events_seizure_tail NULL
+extern const int32_t dat_events_seizure_width;
+extern const char *const dat_events_seizure_default;
+extern const uint8_t dat_events_seizure_small;
+#define DAT_EVENTS_SEIZURELAND_BODY_COUNT 1
+extern const char *const dat_events_seizureland_body[1];
+#define DAT_EVENTS_SEIZURELAND_TAIL_COUNT 0
+#define dat_events_seizureland_tail NULL
+extern const int32_t dat_events_seizureland_width;
+extern const char *const dat_events_seizureland_default;
+extern const uint8_t dat_events_seizureland_small;
+#define DAT_EVENTS_SEIZURESEA_BODY_COUNT 1
+extern const char *const dat_events_seizuresea_body[1];
+#define DAT_EVENTS_SEIZURESEA_TAIL_COUNT 0
+#define dat_events_seizuresea_tail NULL
+extern const int32_t dat_events_seizuresea_width;
+extern const char *const dat_events_seizuresea_default;
+extern const uint8_t dat_events_seizuresea_small;
+#define DAT_EVENTS_AMBUSHHINT_BODY_COUNT 6
+extern const char *const dat_events_ambushhint_body[6];
+#define DAT_EVENTS_AMBUSHHINT_TAIL_COUNT 0
+#define dat_events_ambushhint_tail NULL
+extern const int32_t dat_events_ambushhint_width;
+extern const char *const dat_events_ambushhint_default;
+extern const uint8_t dat_events_ambushhint_small;
+#define DAT_EVENTS_HOWTOWIN_BODY_COUNT 5
+extern const char *const dat_events_howtowin_body[5];
+#define DAT_EVENTS_HOWTOWIN_TAIL_COUNT 0
+#define dat_events_howtowin_tail NULL
+extern const int32_t dat_events_howtowin_width;
+extern const char *const dat_events_howtowin_default;
+extern const uint8_t dat_events_howtowin_small;
+#define DAT_EVENTS_LOSTOURSCOUTS_BODY_COUNT 2
+extern const char *const dat_events_lostourscouts_body[2];
+#define DAT_EVENTS_LOSTOURSCOUTS_TAIL_COUNT 0
+#define dat_events_lostourscouts_tail NULL
+extern const int32_t dat_events_lostourscouts_width;
+extern const char *const dat_events_lostourscouts_default;
+extern const uint8_t dat_events_lostourscouts_small;
+#define DAT_EVENTS_LOSTTHEIRSCOUTS_BODY_COUNT 3
+extern const char *const dat_events_losttheirscouts_body[3];
+#define DAT_EVENTS_LOSTTHEIRSCOUTS_TAIL_COUNT 0
+#define dat_events_losttheirscouts_tail NULL
+extern const int32_t dat_events_losttheirscouts_width;
+extern const char *const dat_events_losttheirscouts_default;
+extern const uint8_t dat_events_losttheirscouts_small;
+#define DAT_EVENTS_INDIANHELLO1_BODY_COUNT 2
+extern const char *const dat_events_indianhello1_body[2];
+#define DAT_EVENTS_INDIANHELLO1_TAIL_COUNT 0
+#define dat_events_indianhello1_tail NULL
+extern const int32_t dat_events_indianhello1_width;
+extern const char *const dat_events_indianhello1_default;
+extern const uint8_t dat_events_indianhello1_small;
+#define DAT_EVENTS_INDIANHELLO2_BODY_COUNT 2
+extern const char *const dat_events_indianhello2_body[2];
+#define DAT_EVENTS_INDIANHELLO2_TAIL_COUNT 0
+#define dat_events_indianhello2_tail NULL
+extern const int32_t dat_events_indianhello2_width;
+extern const char *const dat_events_indianhello2_default;
+extern const uint8_t dat_events_indianhello2_small;
+#define DAT_EVENTS_DONTKNOWSHIPS_BODY_COUNT 1
+extern const char *const dat_events_dontknowships_body[1];
+#define DAT_EVENTS_DONTKNOWSHIPS_TAIL_COUNT 0
+#define dat_events_dontknowships_tail NULL
+extern const int32_t dat_events_dontknowships_width;
+extern const char *const dat_events_dontknowships_default;
+extern const uint8_t dat_events_dontknowships_small;
+#define DAT_EVENTS_GRUDGEWAGONS_BODY_COUNT 2
+extern const char *const dat_events_grudgewagons_body[2];
+#define DAT_EVENTS_GRUDGEWAGONS_TAIL_COUNT 0
+#define dat_events_grudgewagons_tail NULL
+extern const int32_t dat_events_grudgewagons_width;
+extern const char *const dat_events_grudgewagons_default;
+extern const uint8_t dat_events_grudgewagons_small;
+#define DAT_EVENTS_BRING_BODY_COUNT 3
+extern const char *const dat_events_bring_body[3];
+#define DAT_EVENTS_BRING_TAIL_COUNT 0
+#define dat_events_bring_tail NULL
+extern const int32_t dat_events_bring_width;
+extern const char *const dat_events_bring_default;
+extern const uint8_t dat_events_bring_small;
+#define DAT_EVENTS_INDIANWARPATH_BODY_COUNT 2
+extern const char *const dat_events_indianwarpath_body[2];
+#define DAT_EVENTS_INDIANWARPATH_TAIL_COUNT 0
+#define dat_events_indianwarpath_tail NULL
+extern const int32_t dat_events_indianwarpath_width;
+extern const char *const dat_events_indianwarpath_default;
+extern const uint8_t dat_events_indianwarpath_small;
+#define DAT_EVENTS_KILLWAGONS_BODY_COUNT 2
+extern const char *const dat_events_killwagons_body[2];
+#define DAT_EVENTS_KILLWAGONS_TAIL_COUNT 0
+#define dat_events_killwagons_tail NULL
+extern const int32_t dat_events_killwagons_width;
+extern const char *const dat_events_killwagons_default;
+extern const uint8_t dat_events_killwagons_small;
+#define DAT_EVENTS_LOOTWAGONS_BODY_COUNT 1
+extern const char *const dat_events_lootwagons_body[1];
+#define DAT_EVENTS_LOOTWAGONS_TAIL_COUNT 0
+#define dat_events_lootwagons_tail NULL
+extern const int32_t dat_events_lootwagons_width;
+extern const char *const dat_events_lootwagons_default;
+extern const uint8_t dat_events_lootwagons_small;
+#define DAT_EVENTS_ROUTELOOP_BODY_COUNT 2
+extern const char *const dat_events_routeloop_body[2];
+#define DAT_EVENTS_ROUTELOOP_TAIL_COUNT 0
+#define dat_events_routeloop_tail NULL
+extern const int32_t dat_events_routeloop_width;
+extern const char *const dat_events_routeloop_default;
+extern const uint8_t dat_events_routeloop_small;
+#define DAT_EVENTS_TRAVELPLACE_BODY_COUNT 1
+extern const char *const dat_events_travelplace_body[1];
+#define DAT_EVENTS_TRAVELPLACE_TAIL_COUNT 0
+#define dat_events_travelplace_tail NULL
+extern const int32_t dat_events_travelplace_width;
+extern const char dat_events_travelplace_default[];
+extern const uint8_t dat_events_travelplace_small;
+#define DAT_EVENTS_SAILPORT_BODY_COUNT 1
+extern const char *const dat_events_sailport_body[1];
+#define DAT_EVENTS_SAILPORT_TAIL_COUNT 0
+#define dat_events_sailport_tail NULL
+extern const int32_t dat_events_sailport_width;
+extern const char dat_events_sailport_default[];
+extern const uint8_t dat_events_sailport_small;
+#define DAT_EVENTS_TRADENONE2_BODY_COUNT 1
+extern const char *const dat_events_tradenone2_body[1];
+#define DAT_EVENTS_TRADENONE2_TAIL_COUNT 0
+#define dat_events_tradenone2_tail NULL
+extern const int32_t dat_events_tradenone2_width;
+extern const char *const dat_events_tradenone2_default;
+extern const uint8_t dat_events_tradenone2_small;
+#define DAT_EVENTS_INDIANBURN_BODY_COUNT 2
+extern const char *const dat_events_indianburn_body[2];
+#define DAT_EVENTS_INDIANBURN_TAIL_COUNT 0
+#define dat_events_indianburn_tail NULL
+extern const int32_t dat_events_indianburn_width;
+extern const char *const dat_events_indianburn_default;
+extern const uint8_t dat_events_indianburn_small;
+#define DAT_EVENTS_INDIANSURPRISE_BODY_COUNT 2
+extern const char *const dat_events_indiansurprise_body[2];
+#define DAT_EVENTS_INDIANSURPRISE_TAIL_COUNT 0
+#define dat_events_indiansurprise_tail NULL
+extern const int32_t dat_events_indiansurprise_width;
+extern const char *const dat_events_indiansurprise_default;
+extern const uint8_t dat_events_indiansurprise_small;
+#define DAT_EVENTS_INDIANBURNCOLONY_BODY_COUNT 3
+extern const char *const dat_events_indianburncolony_body[3];
+#define DAT_EVENTS_INDIANBURNCOLONY_TAIL_COUNT 0
+#define dat_events_indianburncolony_tail NULL
+extern const int32_t dat_events_indianburncolony_width;
+extern const char *const dat_events_indianburncolony_default;
+extern const uint8_t dat_events_indianburncolony_small;
+#define DAT_EVENTS_CONFISCATE_BODY_COUNT 3
+extern const char *const dat_events_confiscate_body[3];
+#define DAT_EVENTS_CONFISCATE_TAIL_COUNT 0
+#define dat_events_confiscate_tail NULL
+extern const int32_t dat_events_confiscate_width;
+extern const char *const dat_events_confiscate_default;
+extern const uint8_t dat_events_confiscate_small;
+#define DAT_EVENTS_OTHERMIGHT_BODY_COUNT 5
+extern const char *const dat_events_othermight_body[5];
+#define DAT_EVENTS_OTHERMIGHT_TAIL_COUNT 0
+#define dat_events_othermight_tail NULL
+extern const int32_t dat_events_othermight_width;
+extern const char *const dat_events_othermight_default;
+extern const uint8_t dat_events_othermight_small;
+#define DAT_EVENTS_OTHERLESS_BODY_COUNT 3
+extern const char *const dat_events_otherless_body[3];
+#define DAT_EVENTS_OTHERLESS_TAIL_COUNT 0
+#define dat_events_otherless_tail NULL
+extern const int32_t dat_events_otherless_width;
+extern const char *const dat_events_otherless_default;
+extern const uint8_t dat_events_otherless_small;
+#define DAT_EVENTS_OTHERGRANTED_BODY_COUNT 3
+extern const char *const dat_events_othergranted_body[3];
+#define DAT_EVENTS_OTHERGRANTED_TAIL_COUNT 0
+#define dat_events_othergranted_tail NULL
+extern const int32_t dat_events_othergranted_width;
+extern const char *const dat_events_othergranted_default;
+extern const uint8_t dat_events_othergranted_small;
+#define DAT_EVENTS_INDIANSHUN_BODY_COUNT 2
+extern const char *const dat_events_indianshun_body[2];
+#define DAT_EVENTS_INDIANSHUN_TAIL_COUNT 0
+#define dat_events_indianshun_tail NULL
+extern const int32_t dat_events_indianshun_width;
+extern const char *const dat_events_indianshun_default;
+extern const uint8_t dat_events_indianshun_small;
+#define DAT_EVENTS_SOONRETIRING0_BODY_COUNT 3
+extern const char *const dat_events_soonretiring0_body[3];
+#define DAT_EVENTS_SOONRETIRING0_TAIL_COUNT 0
+#define dat_events_soonretiring0_tail NULL
+extern const int32_t dat_events_soonretiring0_width;
+extern const char *const dat_events_soonretiring0_default;
+extern const uint8_t dat_events_soonretiring0_small;
+#define DAT_EVENTS_SOONRETIRING1_BODY_COUNT 3
+extern const char *const dat_events_soonretiring1_body[3];
+#define DAT_EVENTS_SOONRETIRING1_TAIL_COUNT 0
+#define dat_events_soonretiring1_tail NULL
+extern const int32_t dat_events_soonretiring1_width;
+extern const char *const dat_events_soonretiring1_default;
+extern const uint8_t dat_events_soonretiring1_small;
+#define DAT_EVENTS_RETIRING_BODY_COUNT 3
+extern const char *const dat_events_retiring_body[3];
+#define DAT_EVENTS_RETIRING_TAIL_COUNT 0
+#define dat_events_retiring_tail NULL
+extern const int32_t dat_events_retiring_width;
+extern const char *const dat_events_retiring_default;
+extern const uint8_t dat_events_retiring_small;
+#define DAT_EVENTS_RETIRING2_BODY_COUNT 3
+extern const char *const dat_events_retiring2_body[3];
+#define DAT_EVENTS_RETIRING2_TAIL_COUNT 0
+#define dat_events_retiring2_tail NULL
+extern const int32_t dat_events_retiring2_width;
+extern const char *const dat_events_retiring2_default;
+extern const uint8_t dat_events_retiring2_small;
+#define DAT_EVENTS_EXPLOITS_BODY_COUNT 3
+extern const char *const dat_events_exploits_body[3];
+#define DAT_EVENTS_EXPLOITS_TAIL_COUNT 0
+#define dat_events_exploits_tail NULL
+extern const int32_t dat_events_exploits_width;
+extern const char *const dat_events_exploits_default;
+extern const uint8_t dat_events_exploits_small;
+#define DAT_EVENTS_SCORED_BODY_COUNT 1
+extern const char *const dat_events_scored_body[1];
+#define DAT_EVENTS_SCORED_TAIL_COUNT 2
+extern const char *const dat_events_scored_tail[2];
+extern const int32_t dat_events_scored_width;
+extern const char *const dat_events_scored_default;
+extern const uint8_t dat_events_scored_small;
+#define DAT_EVENTS_TUTORIAL1_BODY_COUNT 4
+extern const char *const dat_events_tutorial1_body[4];
+#define DAT_EVENTS_TUTORIAL1_TAIL_COUNT 0
+#define dat_events_tutorial1_tail NULL
+extern const int32_t dat_events_tutorial1_width;
+extern const char *const dat_events_tutorial1_default;
+extern const uint8_t dat_events_tutorial1_small;
+#define DAT_EVENTS_TUTORIAL2_BODY_COUNT 2
+extern const char *const dat_events_tutorial2_body[2];
+#define DAT_EVENTS_TUTORIAL2_TAIL_COUNT 0
+#define dat_events_tutorial2_tail NULL
+extern const int32_t dat_events_tutorial2_width;
+extern const char *const dat_events_tutorial2_default;
+extern const uint8_t dat_events_tutorial2_small;
+#define DAT_EVENTS_TUTORIAL3_BODY_COUNT 2
+extern const char *const dat_events_tutorial3_body[2];
+#define DAT_EVENTS_TUTORIAL3_TAIL_COUNT 0
+#define dat_events_tutorial3_tail NULL
+extern const int32_t dat_events_tutorial3_width;
+extern const char *const dat_events_tutorial3_default;
+extern const uint8_t dat_events_tutorial3_small;
+#define DAT_EVENTS_TUTORIAL4_BODY_COUNT 7
+extern const char *const dat_events_tutorial4_body[7];
+#define DAT_EVENTS_TUTORIAL4_TAIL_COUNT 0
+#define dat_events_tutorial4_tail NULL
+extern const int32_t dat_events_tutorial4_width;
+extern const char *const dat_events_tutorial4_default;
+extern const uint8_t dat_events_tutorial4_small;
+#define DAT_EVENTS_TUTORIAL5_BODY_COUNT 3
+extern const char *const dat_events_tutorial5_body[3];
+#define DAT_EVENTS_TUTORIAL5_TAIL_COUNT 0
+#define dat_events_tutorial5_tail NULL
+extern const int32_t dat_events_tutorial5_width;
+extern const char *const dat_events_tutorial5_default;
+extern const uint8_t dat_events_tutorial5_small;
+#define DAT_EVENTS_TUTORIAL6_BODY_COUNT 3
+extern const char *const dat_events_tutorial6_body[3];
+#define DAT_EVENTS_TUTORIAL6_TAIL_COUNT 0
+#define dat_events_tutorial6_tail NULL
+extern const int32_t dat_events_tutorial6_width;
+extern const char *const dat_events_tutorial6_default;
+extern const uint8_t dat_events_tutorial6_small;
+#define DAT_EVENTS_TUTORIAL7_BODY_COUNT 9
+extern const char *const dat_events_tutorial7_body[9];
+#define DAT_EVENTS_TUTORIAL7_TAIL_COUNT 0
+#define dat_events_tutorial7_tail NULL
+extern const int32_t dat_events_tutorial7_width;
+extern const char *const dat_events_tutorial7_default;
+extern const uint8_t dat_events_tutorial7_small;
+#define DAT_EVENTS_TUTORIAL8_BODY_COUNT 3
+extern const char *const dat_events_tutorial8_body[3];
+#define DAT_EVENTS_TUTORIAL8_TAIL_COUNT 0
+#define dat_events_tutorial8_tail NULL
+extern const int32_t dat_events_tutorial8_width;
+extern const char *const dat_events_tutorial8_default;
+extern const uint8_t dat_events_tutorial8_small;
+#define DAT_EVENTS_TUTORIAL9_BODY_COUNT 5
+extern const char *const dat_events_tutorial9_body[5];
+#define DAT_EVENTS_TUTORIAL9_TAIL_COUNT 0
+#define dat_events_tutorial9_tail NULL
+extern const int32_t dat_events_tutorial9_width;
+extern const char *const dat_events_tutorial9_default;
+extern const uint8_t dat_events_tutorial9_small;
+#define DAT_EVENTS_TUTORIAL10_BODY_COUNT 5
+extern const char *const dat_events_tutorial10_body[5];
+#define DAT_EVENTS_TUTORIAL10_TAIL_COUNT 0
+#define dat_events_tutorial10_tail NULL
+extern const int32_t dat_events_tutorial10_width;
+extern const char *const dat_events_tutorial10_default;
+extern const uint8_t dat_events_tutorial10_small;
+#define DAT_EVENTS_TUTORIAL11_BODY_COUNT 5
+extern const char *const dat_events_tutorial11_body[5];
+#define DAT_EVENTS_TUTORIAL11_TAIL_COUNT 0
+#define dat_events_tutorial11_tail NULL
+extern const int32_t dat_events_tutorial11_width;
+extern const char *const dat_events_tutorial11_default;
+extern const uint8_t dat_events_tutorial11_small;
+#define DAT_EVENTS_TUTORIAL12_BODY_COUNT 7
+extern const char *const dat_events_tutorial12_body[7];
+#define DAT_EVENTS_TUTORIAL12_TAIL_COUNT 0
+#define dat_events_tutorial12_tail NULL
+extern const int32_t dat_events_tutorial12_width;
+extern const char *const dat_events_tutorial12_default;
+extern const uint8_t dat_events_tutorial12_small;
+#define DAT_EVENTS_TUTORIAL13_BODY_COUNT 9
+extern const char *const dat_events_tutorial13_body[9];
+#define DAT_EVENTS_TUTORIAL13_TAIL_COUNT 0
+#define dat_events_tutorial13_tail NULL
+extern const int32_t dat_events_tutorial13_width;
+extern const char *const dat_events_tutorial13_default;
+extern const uint8_t dat_events_tutorial13_small;
+#define DAT_EVENTS_TUTORIAL14_BODY_COUNT 7
+extern const char *const dat_events_tutorial14_body[7];
+#define DAT_EVENTS_TUTORIAL14_TAIL_COUNT 0
+#define dat_events_tutorial14_tail NULL
+extern const int32_t dat_events_tutorial14_width;
+extern const char *const dat_events_tutorial14_default;
+extern const uint8_t dat_events_tutorial14_small;
+#define DAT_EVENTS_TUTORIAL15_BODY_COUNT 3
+extern const char *const dat_events_tutorial15_body[3];
+#define DAT_EVENTS_TUTORIAL15_TAIL_COUNT 0
+#define dat_events_tutorial15_tail NULL
+extern const int32_t dat_events_tutorial15_width;
+extern const char *const dat_events_tutorial15_default;
+extern const uint8_t dat_events_tutorial15_small;
+#define DAT_EVENTS_TUTORIAL16_BODY_COUNT 8
+extern const char *const dat_events_tutorial16_body[8];
+#define DAT_EVENTS_TUTORIAL16_TAIL_COUNT 0
+#define dat_events_tutorial16_tail NULL
+extern const int32_t dat_events_tutorial16_width;
+extern const char *const dat_events_tutorial16_default;
+extern const uint8_t dat_events_tutorial16_small;
+#define DAT_EVENTS_TUTORIAL17_BODY_COUNT 11
+extern const char *const dat_events_tutorial17_body[11];
+#define DAT_EVENTS_TUTORIAL17_TAIL_COUNT 0
+#define dat_events_tutorial17_tail NULL
+extern const int32_t dat_events_tutorial17_width;
+extern const char *const dat_events_tutorial17_default;
+extern const uint8_t dat_events_tutorial17_small;
+#define DAT_EVENTS_TUTORIAL18_BODY_COUNT 7
+extern const char *const dat_events_tutorial18_body[7];
+#define DAT_EVENTS_TUTORIAL18_TAIL_COUNT 0
+#define dat_events_tutorial18_tail NULL
+extern const int32_t dat_events_tutorial18_width;
+extern const char *const dat_events_tutorial18_default;
+extern const uint8_t dat_events_tutorial18_small;
+#define DAT_EVENTS_TUTORIAL19_BODY_COUNT 5
+extern const char *const dat_events_tutorial19_body[5];
+#define DAT_EVENTS_TUTORIAL19_TAIL_COUNT 0
+#define dat_events_tutorial19_tail NULL
+extern const int32_t dat_events_tutorial19_width;
+extern const char *const dat_events_tutorial19_default;
+extern const uint8_t dat_events_tutorial19_small;
+#define DAT_EVENTS_BUY0_BODY_COUNT 2
+extern const char *const dat_events_buy0_body[2];
+#define DAT_EVENTS_BUY0_TAIL_COUNT 3
+extern const char *const dat_events_buy0_tail[3];
+extern const int32_t dat_events_buy0_width;
+extern const char *const dat_events_buy0_default;
+extern const uint8_t dat_events_buy0_small;
+#define DAT_EVENTS_BUY1_BODY_COUNT 3
+extern const char *const dat_events_buy1_body[3];
+#define DAT_EVENTS_BUY1_TAIL_COUNT 3
+extern const char *const dat_events_buy1_tail[3];
+extern const int32_t dat_events_buy1_width;
+extern const char *const dat_events_buy1_default;
+extern const uint8_t dat_events_buy1_small;
+#define DAT_EVENTS_TRADE0_BODY_COUNT 3
+extern const char *const dat_events_trade0_body[3];
+#define DAT_EVENTS_TRADE0_TAIL_COUNT 4
+extern const char *const dat_events_trade0_tail[4];
+extern const int32_t dat_events_trade0_width;
+extern const char *const dat_events_trade0_default;
+extern const uint8_t dat_events_trade0_small;
+#define DAT_EVENTS_TRADE1_BODY_COUNT 3
+extern const char *const dat_events_trade1_body[3];
+#define DAT_EVENTS_TRADE1_TAIL_COUNT 3
+extern const char *const dat_events_trade1_tail[3];
+extern const int32_t dat_events_trade1_width;
+extern const char *const dat_events_trade1_default;
+extern const uint8_t dat_events_trade1_small;
+#define DAT_EVENTS_BADHAGGLE0_BODY_COUNT 3
+extern const char *const dat_events_badhaggle0_body[3];
+#define DAT_EVENTS_BADHAGGLE0_TAIL_COUNT 0
+#define dat_events_badhaggle0_tail NULL
+extern const int32_t dat_events_badhaggle0_width;
+extern const char *const dat_events_badhaggle0_default;
+extern const uint8_t dat_events_badhaggle0_small;
+#define DAT_EVENTS_BADHAGGLE1_BODY_COUNT 3
+extern const char *const dat_events_badhaggle1_body[3];
+#define DAT_EVENTS_BADHAGGLE1_TAIL_COUNT 0
+#define dat_events_badhaggle1_tail NULL
+extern const int32_t dat_events_badhaggle1_width;
+extern const char *const dat_events_badhaggle1_default;
+extern const uint8_t dat_events_badhaggle1_small;
+#define DAT_EVENTS_BADHAGGLE2_BODY_COUNT 3
+extern const char *const dat_events_badhaggle2_body[3];
+#define DAT_EVENTS_BADHAGGLE2_TAIL_COUNT 0
+#define dat_events_badhaggle2_tail NULL
+extern const int32_t dat_events_badhaggle2_width;
+extern const char *const dat_events_badhaggle2_default;
+extern const uint8_t dat_events_badhaggle2_small;
+#define DAT_EVENTS_BADHAGGLE3_BODY_COUNT 2
+extern const char *const dat_events_badhaggle3_body[2];
+#define DAT_EVENTS_BADHAGGLE3_TAIL_COUNT 0
+#define dat_events_badhaggle3_tail NULL
+extern const int32_t dat_events_badhaggle3_width;
+extern const char *const dat_events_badhaggle3_default;
+extern const uint8_t dat_events_badhaggle3_small;
+#define DAT_EVENTS_BADCARGO_BODY_COUNT 5
+extern const char *const dat_events_badcargo_body[5];
+#define DAT_EVENTS_BADCARGO_TAIL_COUNT 0
+#define dat_events_badcargo_tail NULL
+extern const int32_t dat_events_badcargo_width;
+extern const char *const dat_events_badcargo_default;
+extern const uint8_t dat_events_badcargo_small;
+#define DAT_EVENTS_BUYWHICH_BODY_COUNT 2
+extern const char *const dat_events_buywhich_body[2];
+#define DAT_EVENTS_BUYWHICH_TAIL_COUNT 4
+extern const char *const dat_events_buywhich_tail[4];
+extern const int32_t dat_events_buywhich_width;
+extern const char *const dat_events_buywhich_default;
+extern const uint8_t dat_events_buywhich_small;
+#define DAT_EVENTS_TRADEWHICH_BODY_COUNT 1
+extern const char *const dat_events_tradewhich_body[1];
+#define DAT_EVENTS_TRADEWHICH_TAIL_COUNT 0
+#define dat_events_tradewhich_tail NULL
+extern const int32_t dat_events_tradewhich_width;
+extern const char *const dat_events_tradewhich_default;
+extern const uint8_t dat_events_tradewhich_small;
+#define DAT_EVENTS_TRADENOCARGO_BODY_COUNT 2
+extern const char *const dat_events_tradenocargo_body[2];
+#define DAT_EVENTS_TRADENOCARGO_TAIL_COUNT 0
+#define dat_events_tradenocargo_tail NULL
+extern const int32_t dat_events_tradenocargo_width;
+extern const char *const dat_events_tradenocargo_default;
+extern const uint8_t dat_events_tradenocargo_small;
+#define DAT_EVENTS_TRADENOWANT_BODY_COUNT 2
+extern const char *const dat_events_tradenowant_body[2];
+#define DAT_EVENTS_TRADENOWANT_TAIL_COUNT 0
+#define dat_events_tradenowant_tail NULL
+extern const int32_t dat_events_tradenowant_width;
+extern const char *const dat_events_tradenowant_default;
+extern const uint8_t dat_events_tradenowant_small;
+#define DAT_EVENTS_HELLOFIRST_BODY_COUNT 4
+extern const char *const dat_events_hellofirst_body[4];
+#define DAT_EVENTS_HELLOFIRST_TAIL_COUNT 0
+#define dat_events_hellofirst_tail NULL
+extern const int32_t dat_events_hellofirst_width;
+extern const char *const dat_events_hellofirst_default;
+extern const uint8_t dat_events_hellofirst_small;
+#define DAT_EVENTS_HELLOAHOY_BODY_COUNT 4
+extern const char *const dat_events_helloahoy_body[4];
+#define DAT_EVENTS_HELLOAHOY_TAIL_COUNT 0
+#define dat_events_helloahoy_tail NULL
+extern const int32_t dat_events_helloahoy_width;
+extern const char *const dat_events_helloahoy_default;
+extern const uint8_t dat_events_helloahoy_small;
+#define DAT_EVENTS_HELLOMEEK_BODY_COUNT 4
+extern const char *const dat_events_hellomeek_body[4];
+#define DAT_EVENTS_HELLOMEEK_TAIL_COUNT 0
+#define dat_events_hellomeek_tail NULL
+extern const int32_t dat_events_hellomeek_width;
+extern const char *const dat_events_hellomeek_default;
+extern const uint8_t dat_events_hellomeek_small;
+#define DAT_EVENTS_HELLOMANLY_BODY_COUNT 4
+extern const char *const dat_events_hellomanly_body[4];
+#define DAT_EVENTS_HELLOMANLY_TAIL_COUNT 0
+#define dat_events_hellomanly_tail NULL
+extern const int32_t dat_events_hellomanly_width;
+extern const char *const dat_events_hellomanly_default;
+extern const uint8_t dat_events_hellomanly_small;
+#define DAT_EVENTS_HELLOUSA_BODY_COUNT 2
+extern const char *const dat_events_hellousa_body[2];
+#define DAT_EVENTS_HELLOUSA_TAIL_COUNT 0
+#define dat_events_hellousa_tail NULL
+extern const int32_t dat_events_hellousa_width;
+extern const char *const dat_events_hellousa_default;
+extern const uint8_t dat_events_hellousa_small;
+#define DAT_EVENTS_PEACEMEEK_BODY_COUNT 4
+extern const char *const dat_events_peacemeek_body[4];
+#define DAT_EVENTS_PEACEMEEK_TAIL_COUNT 4
+extern const char *const dat_events_peacemeek_tail[4];
+extern const int32_t dat_events_peacemeek_width;
+extern const char *const dat_events_peacemeek_default;
+extern const uint8_t dat_events_peacemeek_small;
+#define DAT_EVENTS_PEACEMANLY_BODY_COUNT 4
+extern const char *const dat_events_peacemanly_body[4];
+#define DAT_EVENTS_PEACEMANLY_TAIL_COUNT 4
+extern const char *const dat_events_peacemanly_tail[4];
+extern const int32_t dat_events_peacemanly_width;
+extern const char *const dat_events_peacemanly_default;
+extern const uint8_t dat_events_peacemanly_small;
+#define DAT_EVENTS_OLDPEACEMEEK_BODY_COUNT 3
+extern const char *const dat_events_oldpeacemeek_body[3];
+#define DAT_EVENTS_OLDPEACEMEEK_TAIL_COUNT 4
+extern const char *const dat_events_oldpeacemeek_tail[4];
+extern const int32_t dat_events_oldpeacemeek_width;
+extern const char *const dat_events_oldpeacemeek_default;
+extern const uint8_t dat_events_oldpeacemeek_small;
+#define DAT_EVENTS_OLDPEACEMANLY_BODY_COUNT 2
+extern const char *const dat_events_oldpeacemanly_body[2];
+#define DAT_EVENTS_OLDPEACEMANLY_TAIL_COUNT 4
+extern const char *const dat_events_oldpeacemanly_tail[4];
+extern const int32_t dat_events_oldpeacemanly_width;
+extern const char *const dat_events_oldpeacemanly_default;
+extern const uint8_t dat_events_oldpeacemanly_small;
+#define DAT_EVENTS_PEACEUSA_BODY_COUNT 2
+extern const char *const dat_events_peaceusa_body[2];
+#define DAT_EVENTS_PEACEUSA_TAIL_COUNT 4
+extern const char *const dat_events_peaceusa_tail[4];
+extern const int32_t dat_events_peaceusa_width;
+extern const char *const dat_events_peaceusa_default;
+extern const uint8_t dat_events_peaceusa_small;
+#define DAT_EVENTS_NOTWITHDRAW_BODY_COUNT 2
+extern const char *const dat_events_notwithdraw_body[2];
+#define DAT_EVENTS_NOTWITHDRAW_TAIL_COUNT 0
+#define dat_events_notwithdraw_tail NULL
+extern const int32_t dat_events_notwithdraw_width;
+extern const char *const dat_events_notwithdraw_default;
+extern const uint8_t dat_events_notwithdraw_small;
+#define DAT_EVENTS_NOTHINGWITHDRAW_BODY_COUNT 1
+extern const char *const dat_events_nothingwithdraw_body[1];
+#define DAT_EVENTS_NOTHINGWITHDRAW_TAIL_COUNT 0
+#define dat_events_nothingwithdraw_tail NULL
+extern const int32_t dat_events_nothingwithdraw_width;
+extern const char *const dat_events_nothingwithdraw_default;
+extern const uint8_t dat_events_nothingwithdraw_small;
+#define DAT_EVENTS_MAYBEWITHDRAW_BODY_COUNT 3
+extern const char *const dat_events_maybewithdraw_body[3];
+#define DAT_EVENTS_MAYBEWITHDRAW_TAIL_COUNT 3
+extern const char *const dat_events_maybewithdraw_tail[3];
+extern const int32_t dat_events_maybewithdraw_width;
+extern const char *const dat_events_maybewithdraw_default;
+extern const uint8_t dat_events_maybewithdraw_small;
+#define DAT_EVENTS_GIFTS_BODY_COUNT 2
+extern const char *const dat_events_gifts_body[2];
+#define DAT_EVENTS_GIFTS_TAIL_COUNT 0
+#define dat_events_gifts_tail NULL
+extern const int32_t dat_events_gifts_width;
+extern const char *const dat_events_gifts_default;
+extern const uint8_t dat_events_gifts_small;
+#define DAT_EVENTS_PROVOKE_BODY_COUNT 1
+extern const char *const dat_events_provoke_body[1];
+#define DAT_EVENTS_PROVOKE_TAIL_COUNT 0
+#define dat_events_provoke_tail NULL
+extern const int32_t dat_events_provoke_width;
+extern const char *const dat_events_provoke_default;
+extern const uint8_t dat_events_provoke_small;
+#define DAT_EVENTS_MILITARY_BODY_COUNT 1
+extern const char *const dat_events_military_body[1];
+#define DAT_EVENTS_MILITARY_TAIL_COUNT 0
+#define dat_events_military_tail NULL
+extern const int32_t dat_events_military_width;
+extern const char *const dat_events_military_default;
+extern const uint8_t dat_events_military_small;
+#define DAT_EVENTS_NOCONTACT_BODY_COUNT 1
+extern const char *const dat_events_nocontact_body[1];
+#define DAT_EVENTS_NOCONTACT_TAIL_COUNT 0
+#define dat_events_nocontact_tail NULL
+extern const int32_t dat_events_nocontact_width;
+extern const char *const dat_events_nocontact_default;
+extern const uint8_t dat_events_nocontact_small;
+#define DAT_EVENTS_ALREADYSMITE_BODY_COUNT 1
+extern const char *const dat_events_alreadysmite_body[1];
+#define DAT_EVENTS_ALREADYSMITE_TAIL_COUNT 0
+#define dat_events_alreadysmite_tail NULL
+extern const int32_t dat_events_alreadysmite_width;
+extern const char *const dat_events_alreadysmite_default;
+extern const uint8_t dat_events_alreadysmite_small;
+#define DAT_EVENTS_SMITEINDIANS_BODY_COUNT 2
+extern const char *const dat_events_smiteindians_body[2];
+#define DAT_EVENTS_SMITEINDIANS_TAIL_COUNT 2
+extern const char *const dat_events_smiteindians_tail[2];
+extern const int32_t dat_events_smiteindians_width;
+extern const char *const dat_events_smiteindians_default;
+extern const uint8_t dat_events_smiteindians_small;
+#define DAT_EVENTS_SMITEEUROPE_BODY_COUNT 3
+extern const char *const dat_events_smiteeurope_body[3];
+#define DAT_EVENTS_SMITEEUROPE_TAIL_COUNT 2
+extern const char *const dat_events_smiteeurope_tail[2];
+extern const int32_t dat_events_smiteeurope_width;
+extern const char *const dat_events_smiteeurope_default;
+extern const uint8_t dat_events_smiteeurope_small;
+#define DAT_EVENTS_UNFORTUNATE_BODY_COUNT 2
+extern const char *const dat_events_unfortunate_body[2];
+#define DAT_EVENTS_UNFORTUNATE_TAIL_COUNT 0
+#define dat_events_unfortunate_tail NULL
+extern const int32_t dat_events_unfortunate_width;
+extern const char *const dat_events_unfortunate_default;
+extern const uint8_t dat_events_unfortunate_small;
+#define DAT_EVENTS_MERCENARY_BODY_COUNT 1
+extern const char *const dat_events_mercenary_body[1];
+#define DAT_EVENTS_MERCENARY_TAIL_COUNT 0
+#define dat_events_mercenary_tail NULL
+extern const int32_t dat_events_mercenary_width;
+extern const char *const dat_events_mercenary_default;
+extern const uint8_t dat_events_mercenary_small;
+#define DAT_EVENTS_TRIBUTEUSA_BODY_COUNT 4
+extern const char *const dat_events_tributeusa_body[4];
+#define DAT_EVENTS_TRIBUTEUSA_TAIL_COUNT 2
+extern const char *const dat_events_tributeusa_tail[2];
+extern const int32_t dat_events_tributeusa_width;
+extern const char *const dat_events_tributeusa_default;
+extern const uint8_t dat_events_tributeusa_small;
+#define DAT_EVENTS_WANTSTUFF_BODY_COUNT 3
+extern const char *const dat_events_wantstuff_body[3];
+#define DAT_EVENTS_WANTSTUFF_TAIL_COUNT 2
+extern const char *const dat_events_wantstuff_tail[2];
+extern const int32_t dat_events_wantstuff_width;
+extern const char *const dat_events_wantstuff_default;
+extern const uint8_t dat_events_wantstuff_small;
+#define DAT_EVENTS_WANTSTUFFUSA_BODY_COUNT 3
+extern const char *const dat_events_wantstuffusa_body[3];
+#define DAT_EVENTS_WANTSTUFFUSA_TAIL_COUNT 2
+extern const char *const dat_events_wantstuffusa_tail[2];
+extern const int32_t dat_events_wantstuffusa_width;
+extern const char *const dat_events_wantstuffusa_default;
+extern const uint8_t dat_events_wantstuffusa_small;
+#define DAT_EVENTS_RID_BODY_COUNT 2
+extern const char *const dat_events_rid_body[2];
+#define DAT_EVENTS_RID_TAIL_COUNT 0
+#define dat_events_rid_tail NULL
+extern const int32_t dat_events_rid_width;
+extern const char *const dat_events_rid_default;
+extern const uint8_t dat_events_rid_small;
+#define DAT_EVENTS_RIDUSA_BODY_COUNT 2
+extern const char *const dat_events_ridusa_body[2];
+#define DAT_EVENTS_RIDUSA_TAIL_COUNT 0
+#define dat_events_ridusa_tail NULL
+extern const int32_t dat_events_ridusa_width;
+extern const char *const dat_events_ridusa_default;
+extern const uint8_t dat_events_ridusa_small;
+#define DAT_EVENTS_WARMEEK_BODY_COUNT 2
+extern const char *const dat_events_warmeek_body[2];
+#define DAT_EVENTS_WARMEEK_TAIL_COUNT 0
+#define dat_events_warmeek_tail NULL
+extern const int32_t dat_events_warmeek_width;
+extern const char *const dat_events_warmeek_default;
+extern const uint8_t dat_events_warmeek_small;
+#define DAT_EVENTS_WARMANLY_BODY_COUNT 3
+extern const char *const dat_events_warmanly_body[3];
+#define DAT_EVENTS_WARMANLY_TAIL_COUNT 0
+#define dat_events_warmanly_tail NULL
+extern const int32_t dat_events_warmanly_width;
+extern const char *const dat_events_warmanly_default;
+extern const uint8_t dat_events_warmanly_small;
+#define DAT_EVENTS_APOSTATES_BODY_COUNT 3
+extern const char *const dat_events_apostates_body[3];
+#define DAT_EVENTS_APOSTATES_TAIL_COUNT 2
+extern const char *const dat_events_apostates_tail[2];
+extern const int32_t dat_events_apostates_width;
+extern const char *const dat_events_apostates_default;
+extern const uint8_t dat_events_apostates_small;
+#define DAT_EVENTS_APOSTATESUSA_BODY_COUNT 3
+extern const char *const dat_events_apostatesusa_body[3];
+#define DAT_EVENTS_APOSTATESUSA_TAIL_COUNT 2
+extern const char *const dat_events_apostatesusa_tail[2];
+extern const int32_t dat_events_apostatesusa_width;
+extern const char *const dat_events_apostatesusa_default;
+extern const uint8_t dat_events_apostatesusa_small;
+#define DAT_EVENTS_HEATHEN_BODY_COUNT 2
+extern const char *const dat_events_heathen_body[2];
+#define DAT_EVENTS_HEATHEN_TAIL_COUNT 2
+extern const char *const dat_events_heathen_tail[2];
+extern const int32_t dat_events_heathen_width;
+extern const char *const dat_events_heathen_default;
+extern const uint8_t dat_events_heathen_small;
+#define DAT_EVENTS_HEATHENUSA_BODY_COUNT 4
+extern const char *const dat_events_heathenusa_body[4];
+#define DAT_EVENTS_HEATHENUSA_TAIL_COUNT 2
+extern const char *const dat_events_heathenusa_tail[2];
+extern const int32_t dat_events_heathenusa_width;
+extern const char *const dat_events_heathenusa_default;
+extern const uint8_t dat_events_heathenusa_small;
+#define DAT_EVENTS_PIRACY_BODY_COUNT 3
+extern const char *const dat_events_piracy_body[3];
+#define DAT_EVENTS_PIRACY_TAIL_COUNT 2
+extern const char *const dat_events_piracy_tail[2];
+extern const int32_t dat_events_piracy_width;
+extern const char *const dat_events_piracy_default;
+extern const uint8_t dat_events_piracy_small;
+#define DAT_EVENTS_PIRACYUSA_BODY_COUNT 3
+extern const char *const dat_events_piracyusa_body[3];
+#define DAT_EVENTS_PIRACYUSA_TAIL_COUNT 2
+extern const char *const dat_events_piracyusa_tail[2];
+extern const int32_t dat_events_piracyusa_width;
+extern const char *const dat_events_piracyusa_default;
+extern const uint8_t dat_events_piracyusa_small;
+#define DAT_EVENTS_SIEGES_BODY_COUNT 3
+extern const char *const dat_events_sieges_body[3];
+#define DAT_EVENTS_SIEGES_TAIL_COUNT 2
+extern const char *const dat_events_sieges_tail[2];
+extern const int32_t dat_events_sieges_width;
+extern const char *const dat_events_sieges_default;
+extern const uint8_t dat_events_sieges_small;
+#define DAT_EVENTS_SIEGESUSA_BODY_COUNT 5
+extern const char *const dat_events_siegesusa_body[5];
+#define DAT_EVENTS_SIEGESUSA_TAIL_COUNT 2
+extern const char *const dat_events_siegesusa_tail[2];
+extern const int32_t dat_events_siegesusa_width;
+extern const char *const dat_events_siegesusa_default;
+extern const uint8_t dat_events_siegesusa_small;
+#define DAT_EVENTS_HAVETREATY_BODY_COUNT 2
+extern const char *const dat_events_havetreaty_body[2];
+#define DAT_EVENTS_HAVETREATY_TAIL_COUNT 2
+extern const char *const dat_events_havetreaty_tail[2];
+extern const int32_t dat_events_havetreaty_width;
+extern const char *const dat_events_havetreaty_default;
+extern const uint8_t dat_events_havetreaty_small;
+#define DAT_EVENTS_SNEAK_BODY_COUNT 1
+extern const char *const dat_events_sneak_body[1];
+#define DAT_EVENTS_SNEAK_TAIL_COUNT 0
+#define dat_events_sneak_tail NULL
+extern const int32_t dat_events_sneak_width;
+extern const char *const dat_events_sneak_default;
+extern const uint8_t dat_events_sneak_small;
+#define DAT_EVENTS_TRADEATWAR_BODY_COUNT 3
+extern const char *const dat_events_tradeatwar_body[3];
+#define DAT_EVENTS_TRADEATWAR_TAIL_COUNT 0
+#define dat_events_tradeatwar_tail NULL
+extern const int32_t dat_events_tradeatwar_width;
+extern const char *const dat_events_tradeatwar_default;
+extern const uint8_t dat_events_tradeatwar_small;
+#define DAT_EVENTS_TRADEMERCANTILISM_BODY_COUNT 3
+extern const char *const dat_events_trademercantilism_body[3];
+#define DAT_EVENTS_TRADEMERCANTILISM_TAIL_COUNT 0
+#define dat_events_trademercantilism_tail NULL
+extern const int32_t dat_events_trademercantilism_width;
+extern const char *const dat_events_trademercantilism_default;
+extern const uint8_t dat_events_trademercantilism_small;
+#define DAT_EVENTS_RAIDSTORES_BODY_COUNT 2
+extern const char *const dat_events_raidstores_body[2];
+#define DAT_EVENTS_RAIDSTORES_TAIL_COUNT 0
+#define dat_events_raidstores_tail NULL
+extern const int32_t dat_events_raidstores_width;
+extern const char *const dat_events_raidstores_default;
+extern const uint8_t dat_events_raidstores_small;
+#define DAT_EVENTS_RAIDWREAK_BODY_COUNT 2
+extern const char *const dat_events_raidwreak_body[2];
+#define DAT_EVENTS_RAIDWREAK_TAIL_COUNT 0
+#define dat_events_raidwreak_tail NULL
+extern const int32_t dat_events_raidwreak_width;
+extern const char *const dat_events_raidwreak_default;
+extern const uint8_t dat_events_raidwreak_small;
+#define DAT_EVENTS_RAIDGOLD_BODY_COUNT 2
+extern const char *const dat_events_raidgold_body[2];
+#define DAT_EVENTS_RAIDGOLD_TAIL_COUNT 0
+#define dat_events_raidgold_tail NULL
+extern const int32_t dat_events_raidgold_width;
+extern const char *const dat_events_raidgold_default;
+extern const uint8_t dat_events_raidgold_small;
+#define DAT_EVENTS_RAIDBURN_BODY_COUNT 2
+extern const char *const dat_events_raidburn_body[2];
+#define DAT_EVENTS_RAIDBURN_TAIL_COUNT 0
+#define dat_events_raidburn_tail NULL
+extern const int32_t dat_events_raidburn_width;
+extern const char *const dat_events_raidburn_default;
+extern const uint8_t dat_events_raidburn_small;
+#define DAT_EVENTS_RAIDSHIP_BODY_COUNT 2
+extern const char *const dat_events_raidship_body[2];
+#define DAT_EVENTS_RAIDSHIP_TAIL_COUNT 0
+#define dat_events_raidship_tail NULL
+extern const int32_t dat_events_raidship_width;
+extern const char *const dat_events_raidship_default;
+extern const uint8_t dat_events_raidship_small;
+#define DAT_EVENTS_RAIDNOTHING_BODY_COUNT 2
+extern const char *const dat_events_raidnothing_body[2];
+#define DAT_EVENTS_RAIDNOTHING_TAIL_COUNT 0
+#define dat_events_raidnothing_tail NULL
+extern const int32_t dat_events_raidnothing_width;
+extern const char *const dat_events_raidnothing_default;
+extern const uint8_t dat_events_raidnothing_small;
+#define DAT_EVENTS_INDIANSCONVERT_BODY_COUNT 3
+extern const char *const dat_events_indiansconvert_body[3];
+#define DAT_EVENTS_INDIANSCONVERT_TAIL_COUNT 0
+#define dat_events_indiansconvert_tail NULL
+extern const int32_t dat_events_indiansconvert_width;
+extern const char *const dat_events_indiansconvert_default;
+extern const uint8_t dat_events_indiansconvert_small;
+#define DAT_EVENTS_DEADCONVERTS_BODY_COUNT 3
+extern const char *const dat_events_deadconverts_body[3];
+#define DAT_EVENTS_DEADCONVERTS_TAIL_COUNT 0
+#define dat_events_deadconverts_tail NULL
+extern const int32_t dat_events_deadconverts_width;
+extern const char *const dat_events_deadconverts_default;
+extern const uint8_t dat_events_deadconverts_small;
+#define DAT_EVENTS_VILLAGEHAPPY_BODY_COUNT 3
+extern const char *const dat_events_villagehappy_body[3];
+#define DAT_EVENTS_VILLAGEHAPPY_TAIL_COUNT 0
+#define dat_events_villagehappy_tail NULL
+extern const int32_t dat_events_villagehappy_width;
+extern const char *const dat_events_villagehappy_default;
+extern const uint8_t dat_events_villagehappy_small;
+#define DAT_EVENTS_VILLAGEMEDIUM_BODY_COUNT 4
+extern const char *const dat_events_villagemedium_body[4];
+#define DAT_EVENTS_VILLAGEMEDIUM_TAIL_COUNT 0
+#define dat_events_villagemedium_tail NULL
+extern const int32_t dat_events_villagemedium_width;
+extern const char *const dat_events_villagemedium_default;
+extern const uint8_t dat_events_villagemedium_small;
+#define DAT_EVENTS_VILLAGESAVAGE_BODY_COUNT 5
+extern const char *const dat_events_villagesavage_body[5];
+#define DAT_EVENTS_VILLAGESAVAGE_TAIL_COUNT 0
+#define dat_events_villagesavage_tail NULL
+extern const int32_t dat_events_villagesavage_width;
+extern const char *const dat_events_villagesavage_default;
+extern const uint8_t dat_events_villagesavage_small;
+#define DAT_EVENTS_VILLAGEBAD_BODY_COUNT 3
+extern const char *const dat_events_villagebad_body[3];
+#define DAT_EVENTS_VILLAGEBAD_TAIL_COUNT 0
+#define dat_events_villagebad_tail NULL
+extern const int32_t dat_events_villagebad_width;
+extern const char *const dat_events_villagebad_default;
+extern const uint8_t dat_events_villagebad_small;
+#define DAT_EVENTS_VILLAGEWAR_BODY_COUNT 4
+extern const char *const dat_events_villagewar_body[4];
+#define DAT_EVENTS_VILLAGEWAR_TAIL_COUNT 0
+#define dat_events_villagewar_tail NULL
+extern const int32_t dat_events_villagewar_width;
+extern const char *const dat_events_villagewar_default;
+extern const uint8_t dat_events_villagewar_small;
+#define DAT_EVENTS_LEARNSTAY_BODY_COUNT 3
+extern const char *const dat_events_learnstay_body[3];
+#define DAT_EVENTS_LEARNSTAY_TAIL_COUNT 2
+extern const char *const dat_events_learnstay_tail[2];
+extern const int32_t dat_events_learnstay_width;
+extern const char *const dat_events_learnstay_default;
+extern const uint8_t dat_events_learnstay_small;
+#define DAT_EVENTS_LEARNDONE_BODY_COUNT 4
+extern const char *const dat_events_learndone_body[4];
+#define DAT_EVENTS_LEARNDONE_TAIL_COUNT 0
+#define dat_events_learndone_tail NULL
+extern const int32_t dat_events_learndone_width;
+extern const char *const dat_events_learndone_default;
+extern const uint8_t dat_events_learndone_small;
+#define DAT_EVENTS_LEARNSLOW_BODY_COUNT 5
+extern const char *const dat_events_learnslow_body[5];
+#define DAT_EVENTS_LEARNSLOW_TAIL_COUNT 0
+#define dat_events_learnslow_tail NULL
+extern const int32_t dat_events_learnslow_width;
+extern const char *const dat_events_learnslow_default;
+extern const uint8_t dat_events_learnslow_small;
+#define DAT_EVENTS_LEARNMASTER_BODY_COUNT 5
+extern const char *const dat_events_learnmaster_body[5];
+#define DAT_EVENTS_LEARNMASTER_TAIL_COUNT 0
+#define dat_events_learnmaster_tail NULL
+extern const int32_t dat_events_learnmaster_width;
+extern const char *const dat_events_learnmaster_default;
+extern const uint8_t dat_events_learnmaster_small;
+#define DAT_EVENTS_LEARNCRIMINAL_BODY_COUNT 3
+extern const char *const dat_events_learncriminal_body[3];
+#define DAT_EVENTS_LEARNCRIMINAL_TAIL_COUNT 0
+#define dat_events_learncriminal_tail NULL
+extern const int32_t dat_events_learncriminal_width;
+extern const char *const dat_events_learncriminal_default;
+extern const uint8_t dat_events_learncriminal_small;
+#define DAT_EVENTS_LEARNALREADY_BODY_COUNT 4
+extern const char *const dat_events_learnalready_body[4];
+#define DAT_EVENTS_LEARNALREADY_TAIL_COUNT 0
+#define dat_events_learnalready_tail NULL
+extern const int32_t dat_events_learnalready_width;
+extern const char *const dat_events_learnalready_default;
+extern const uint8_t dat_events_learnalready_small;
+#define DAT_EVENTS_LEARNLATER_BODY_COUNT 1
+extern const char *const dat_events_learnlater_body[1];
+#define DAT_EVENTS_LEARNLATER_TAIL_COUNT 0
+#define dat_events_learnlater_tail NULL
+extern const int32_t dat_events_learnlater_width;
+extern const char *const dat_events_learnlater_default;
+extern const uint8_t dat_events_learnlater_small;
+#define DAT_EVENTS_LEARNMAD_BODY_COUNT 4
+extern const char *const dat_events_learnmad_body[4];
+#define DAT_EVENTS_LEARNMAD_TAIL_COUNT 0
+#define dat_events_learnmad_tail NULL
+extern const int32_t dat_events_learnmad_width;
+extern const char *const dat_events_learnmad_default;
+extern const uint8_t dat_events_learnmad_small;
+#define DAT_EVENTS_CHIEFHOWDY_BODY_COUNT 5
+extern const char *const dat_events_chiefhowdy_body[5];
+#define DAT_EVENTS_CHIEFHOWDY_TAIL_COUNT 0
+#define dat_events_chiefhowdy_tail NULL
+extern const int32_t dat_events_chiefhowdy_width;
+extern const char *const dat_events_chiefhowdy_default;
+extern const uint8_t dat_events_chiefhowdy_small;
+#define DAT_EVENTS_CHIEFGUIDES_BODY_COUNT 4
+extern const char *const dat_events_chiefguides_body[4];
+#define DAT_EVENTS_CHIEFGUIDES_TAIL_COUNT 0
+#define dat_events_chiefguides_tail NULL
+extern const int32_t dat_events_chiefguides_width;
+extern const char *const dat_events_chiefguides_default;
+extern const uint8_t dat_events_chiefguides_small;
+#define DAT_EVENTS_CHIEFAREA_BODY_COUNT 3
+extern const char *const dat_events_chiefarea_body[3];
+#define DAT_EVENTS_CHIEFAREA_TAIL_COUNT 0
+#define dat_events_chiefarea_tail NULL
+extern const int32_t dat_events_chiefarea_width;
+extern const char *const dat_events_chiefarea_default;
+extern const uint8_t dat_events_chiefarea_small;
+#define DAT_EVENTS_CHIEFGIFT_BODY_COUNT 3
+extern const char *const dat_events_chiefgift_body[3];
+#define DAT_EVENTS_CHIEFGIFT_TAIL_COUNT 0
+#define dat_events_chiefgift_tail NULL
+extern const int32_t dat_events_chiefgift_width;
+extern const char *const dat_events_chiefgift_default;
+extern const uint8_t dat_events_chiefgift_small;
+#define DAT_EVENTS_CHIEFBORED_BODY_COUNT 2
+extern const char *const dat_events_chiefbored_body[2];
+#define DAT_EVENTS_CHIEFBORED_TAIL_COUNT 0
+#define dat_events_chiefbored_tail NULL
+extern const int32_t dat_events_chiefbored_width;
+extern const char *const dat_events_chiefbored_default;
+extern const uint8_t dat_events_chiefbored_small;
+#define DAT_EVENTS_CHIEFKILL_BODY_COUNT 2
+extern const char *const dat_events_chiefkill_body[2];
+#define DAT_EVENTS_CHIEFKILL_TAIL_COUNT 0
+#define dat_events_chiefkill_tail NULL
+extern const int32_t dat_events_chiefkill_width;
+extern const char *const dat_events_chiefkill_default;
+extern const uint8_t dat_events_chiefkill_small;
+#define DAT_EVENTS_EXTORTSTUFF_BODY_COUNT 4
+extern const char *const dat_events_extortstuff_body[4];
+#define DAT_EVENTS_EXTORTSTUFF_TAIL_COUNT 0
+#define dat_events_extortstuff_tail NULL
+extern const int32_t dat_events_extortstuff_width;
+extern const char *const dat_events_extortstuff_default;
+extern const uint8_t dat_events_extortstuff_small;
+#define DAT_EVENTS_EXTORTPOOR_BODY_COUNT 3
+extern const char *const dat_events_extortpoor_body[3];
+#define DAT_EVENTS_EXTORTPOOR_TAIL_COUNT 0
+#define dat_events_extortpoor_tail NULL
+extern const int32_t dat_events_extortpoor_width;
+extern const char *const dat_events_extortpoor_default;
+extern const uint8_t dat_events_extortpoor_small;
+#define DAT_EVENTS_EXTORTLAUGH_BODY_COUNT 2
+extern const char *const dat_events_extortlaugh_body[2];
+#define DAT_EVENTS_EXTORTLAUGH_TAIL_COUNT 0
+#define dat_events_extortlaugh_tail NULL
+extern const int32_t dat_events_extortlaugh_width;
+extern const char *const dat_events_extortlaugh_default;
+extern const uint8_t dat_events_extortlaugh_small;
+#define DAT_EVENTS_EXTORTNO_BODY_COUNT 2
+extern const char *const dat_events_extortno_body[2];
+#define DAT_EVENTS_EXTORTNO_TAIL_COUNT 0
+#define dat_events_extortno_tail NULL
+extern const int32_t dat_events_extortno_width;
+extern const char *const dat_events_extortno_default;
+extern const uint8_t dat_events_extortno_small;
+#define DAT_EVENTS_INDIANWARPATH2_BODY_COUNT 2
+extern const char *const dat_events_indianwarpath2_body[2];
+#define DAT_EVENTS_INDIANWARPATH2_TAIL_COUNT 2
+extern const char *const dat_events_indianwarpath2_tail[2];
+extern const int32_t dat_events_indianwarpath2_width;
+extern const char *const dat_events_indianwarpath2_default;
+extern const uint8_t dat_events_indianwarpath2_small;
+#define DAT_EVENTS_WHACKINDIANS_BODY_COUNT 1
+extern const char *const dat_events_whackindians_body[1];
+#define DAT_EVENTS_WHACKINDIANS_TAIL_COUNT 2
+extern const char *const dat_events_whackindians_tail[2];
+extern const int32_t dat_events_whackindians_width;
+extern const char *const dat_events_whackindians_default;
+extern const uint8_t dat_events_whackindians_small;
+#define DAT_EVENTS_EXTINCT_BODY_COUNT 1
+extern const char *const dat_events_extinct_body[1];
+#define DAT_EVENTS_EXTINCT_TAIL_COUNT 0
+#define dat_events_extinct_tail NULL
+extern const int32_t dat_events_extinct_width;
+extern const char *const dat_events_extinct_default;
+extern const uint8_t dat_events_extinct_small;
+#define DAT_EVENTS_MADATSHIPS_BODY_COUNT 4
+extern const char *const dat_events_madatships_body[4];
+#define DAT_EVENTS_MADATSHIPS_TAIL_COUNT 0
+#define dat_events_madatships_tail NULL
+extern const int32_t dat_events_madatships_width;
+extern const char *const dat_events_madatships_default;
+extern const uint8_t dat_events_madatships_small;
+#define DAT_EVENTS_MADATWAGONS_BODY_COUNT 2
+extern const char *const dat_events_madatwagons_body[2];
+#define DAT_EVENTS_MADATWAGONS_TAIL_COUNT 0
+#define dat_events_madatwagons_tail NULL
+extern const int32_t dat_events_madatwagons_width;
+extern const char *const dat_events_madatwagons_default;
+extern const uint8_t dat_events_madatwagons_small;
+#define DAT_EVENTS_DECLARE_BODY_COUNT 2
+extern const char *const dat_events_declare_body[2];
+#define DAT_EVENTS_DECLARE_TAIL_COUNT 2
+extern const char *const dat_events_declare_tail[2];
+extern const int32_t dat_events_declare_width;
+extern const char *const dat_events_declare_default;
+extern const uint8_t dat_events_declare_small;
+#define DAT_EVENTS_TOOTORY_BODY_COUNT 3
+extern const char *const dat_events_tootory_body[3];
+#define DAT_EVENTS_TOOTORY_TAIL_COUNT 0
+#define dat_events_tootory_tail NULL
+extern const int32_t dat_events_tootory_width;
+extern const char *const dat_events_tootory_default;
+extern const uint8_t dat_events_tootory_small;
+#define DAT_EVENTS_ALREADYREVOLUTION_BODY_COUNT 1
+extern const char *const dat_events_alreadyrevolution_body[1];
+#define DAT_EVENTS_ALREADYREVOLUTION_TAIL_COUNT 0
+#define dat_events_alreadyrevolution_tail NULL
+extern const int32_t dat_events_alreadyrevolution_width;
+extern const char *const dat_events_alreadyrevolution_default;
+extern const uint8_t dat_events_alreadyrevolution_small;
+#define DAT_EVENTS_INDEPENDENCE_BODY_COUNT 4
+extern const char *const dat_events_independence_body[4];
+#define DAT_EVENTS_INDEPENDENCE_TAIL_COUNT 0
+#define dat_events_independence_tail NULL
+extern const int32_t dat_events_independence_width;
+extern const char *const dat_events_independence_default;
+extern const uint8_t dat_events_independence_small;
+#define DAT_EVENTS_MOBILIZE_BODY_COUNT 2
+extern const char *const dat_events_mobilize_body[2];
+#define DAT_EVENTS_MOBILIZE_TAIL_COUNT 0
+#define dat_events_mobilize_tail NULL
+extern const int32_t dat_events_mobilize_width;
+extern const char *const dat_events_mobilize_default;
+extern const uint8_t dat_events_mobilize_small;
+#define DAT_EVENTS_MOBILIZE2_BODY_COUNT 2
+extern const char *const dat_events_mobilize2_body[2];
+#define DAT_EVENTS_MOBILIZE2_TAIL_COUNT 0
+#define dat_events_mobilize2_tail NULL
+extern const int32_t dat_events_mobilize2_width;
+extern const char *const dat_events_mobilize2_default;
+extern const uint8_t dat_events_mobilize2_small;
+#define DAT_EVENTS_WARN2_BODY_COUNT 3
+extern const char *const dat_events_warn2_body[3];
+#define DAT_EVENTS_WARN2_TAIL_COUNT 0
+#define dat_events_warn2_tail NULL
+extern const int32_t dat_events_warn2_width;
+extern const char *const dat_events_warn2_default;
+extern const uint8_t dat_events_warn2_small;
+#define DAT_EVENTS_CONSIDER_BODY_COUNT 3
+extern const char *const dat_events_consider_body[3];
+#define DAT_EVENTS_CONSIDER_TAIL_COUNT 0
+#define dat_events_consider_tail NULL
+extern const int32_t dat_events_consider_width;
+extern const char *const dat_events_consider_default;
+extern const uint8_t dat_events_consider_small;
+#define DAT_EVENTS_INTERVENTION_BODY_COUNT 4
+extern const char *const dat_events_intervention_body[4];
+#define DAT_EVENTS_INTERVENTION_TAIL_COUNT 0
+#define dat_events_intervention_tail NULL
+extern const int32_t dat_events_intervention_width;
+extern const char *const dat_events_intervention_default;
+extern const uint8_t dat_events_intervention_small;
+#define DAT_EVENTS_KINGLOSE_BODY_COUNT 5
+extern const char *const dat_events_kinglose_body[5];
+#define DAT_EVENTS_KINGLOSE_TAIL_COUNT 0
+#define dat_events_kinglose_tail NULL
+extern const int32_t dat_events_kinglose_width;
+extern const char *const dat_events_kinglose_default;
+extern const uint8_t dat_events_kinglose_small;
+#define DAT_EVENTS_KINGWIN_BODY_COUNT 4
+extern const char *const dat_events_kingwin_body[4];
+#define DAT_EVENTS_KINGWIN_TAIL_COUNT 0
+#define dat_events_kingwin_tail NULL
+extern const int32_t dat_events_kingwin_width;
+extern const char *const dat_events_kingwin_default;
+extern const uint8_t dat_events_kingwin_small;
+#define DAT_EVENTS_KINGTAX_BODY_COUNT 5
+extern const char *const dat_events_kingtax_body[5];
+#define DAT_EVENTS_KINGTAX_TAIL_COUNT 0
+#define dat_events_kingtax_tail NULL
+extern const int32_t dat_events_kingtax_width;
+extern const char *const dat_events_kingtax_default;
+extern const uint8_t dat_events_kingtax_small;
+#define DAT_EVENTS_KINGWIFE_BODY_COUNT 4
+extern const char *const dat_events_kingwife_body[4];
+#define DAT_EVENTS_KINGWIFE_TAIL_COUNT 0
+#define dat_events_kingwife_tail NULL
+extern const int32_t dat_events_kingwife_width;
+extern const char *const dat_events_kingwife_default;
+extern const uint8_t dat_events_kingwife_small;
+#define DAT_EVENTS_KINGWAR_BODY_COUNT 4
+extern const char *const dat_events_kingwar_body[4];
+#define DAT_EVENTS_KINGWAR_TAIL_COUNT 0
+#define dat_events_kingwar_tail NULL
+extern const int32_t dat_events_kingwar_width;
+extern const char *const dat_events_kingwar_default;
+extern const uint8_t dat_events_kingwar_small;
+#define DAT_EVENTS_KINGNAVACT_BODY_COUNT 5
+extern const char *const dat_events_kingnavact_body[5];
+#define DAT_EVENTS_KINGNAVACT_TAIL_COUNT 0
+#define dat_events_kingnavact_tail NULL
+extern const int32_t dat_events_kingnavact_width;
+extern const char *const dat_events_kingnavact_default;
+extern const uint8_t dat_events_kingnavact_small;
+#define DAT_EVENTS_KINGSTAMPACT_BODY_COUNT 5
+extern const char *const dat_events_kingstampact_body[5];
+#define DAT_EVENTS_KINGSTAMPACT_TAIL_COUNT 0
+#define dat_events_kingstampact_tail NULL
+extern const int32_t dat_events_kingstampact_width;
+extern const char *const dat_events_kingstampact_default;
+extern const uint8_t dat_events_kingstampact_small;
+#define DAT_EVENTS_TAXOPTIONS_BODY_COUNT 2
+extern const char *const dat_events_taxoptions_body[2];
+#define DAT_EVENTS_TAXOPTIONS_TAIL_COUNT 0
+#define dat_events_taxoptions_tail NULL
+extern const int32_t dat_events_taxoptions_width;
+extern const char *const dat_events_taxoptions_default;
+extern const uint8_t dat_events_taxoptions_small;
+#define DAT_EVENTS_TEAPARTY_BODY_COUNT 4
+extern const char *const dat_events_teaparty_body[4];
+#define DAT_EVENTS_TEAPARTY_TAIL_COUNT 0
+#define dat_events_teaparty_tail NULL
+extern const int32_t dat_events_teaparty_width;
+extern const char *const dat_events_teaparty_default;
+extern const uint8_t dat_events_teaparty_small;
+#define DAT_EVENTS_LOSTCITY0_BODY_COUNT 1
+extern const char *const dat_events_lostcity0_body[1];
+#define DAT_EVENTS_LOSTCITY0_TAIL_COUNT 0
+#define dat_events_lostcity0_tail NULL
+extern const int32_t dat_events_lostcity0_width;
+extern const char *const dat_events_lostcity0_default;
+extern const uint8_t dat_events_lostcity0_small;
+#define DAT_EVENTS_LOSTCITY1_BODY_COUNT 3
+extern const char *const dat_events_lostcity1_body[3];
+#define DAT_EVENTS_LOSTCITY1_TAIL_COUNT 0
+#define dat_events_lostcity1_tail NULL
+extern const int32_t dat_events_lostcity1_width;
+extern const char *const dat_events_lostcity1_default;
+extern const uint8_t dat_events_lostcity1_small;
+#define DAT_EVENTS_LOSTCITY2_BODY_COUNT 4
+extern const char *const dat_events_lostcity2_body[4];
+#define DAT_EVENTS_LOSTCITY2_TAIL_COUNT 0
+#define dat_events_lostcity2_tail NULL
+extern const int32_t dat_events_lostcity2_width;
+extern const char *const dat_events_lostcity2_default;
+extern const uint8_t dat_events_lostcity2_small;
+#define DAT_EVENTS_LOSTCITY3_BODY_COUNT 2
+extern const char *const dat_events_lostcity3_body[2];
+#define DAT_EVENTS_LOSTCITY3_TAIL_COUNT 0
+#define dat_events_lostcity3_tail NULL
+extern const int32_t dat_events_lostcity3_width;
+extern const char *const dat_events_lostcity3_default;
+extern const uint8_t dat_events_lostcity3_small;
+#define DAT_EVENTS_LOSTCITY4_BODY_COUNT 2
+extern const char *const dat_events_lostcity4_body[2];
+#define DAT_EVENTS_LOSTCITY4_TAIL_COUNT 2
+extern const char *const dat_events_lostcity4_tail[2];
+extern const int32_t dat_events_lostcity4_width;
+extern const char *const dat_events_lostcity4_default;
+extern const uint8_t dat_events_lostcity4_small;
+#define DAT_EVENTS_LOSTCITY5_BODY_COUNT 2
+extern const char *const dat_events_lostcity5_body[2];
+#define DAT_EVENTS_LOSTCITY5_TAIL_COUNT 0
+#define dat_events_lostcity5_tail NULL
+extern const int32_t dat_events_lostcity5_width;
+extern const char *const dat_events_lostcity5_default;
+extern const uint8_t dat_events_lostcity5_small;
+#define DAT_EVENTS_LOSTCITY6_BODY_COUNT 1
+extern const char *const dat_events_lostcity6_body[1];
+#define DAT_EVENTS_LOSTCITY6_TAIL_COUNT 0
+#define dat_events_lostcity6_tail NULL
+extern const int32_t dat_events_lostcity6_width;
+extern const char *const dat_events_lostcity6_default;
+extern const uint8_t dat_events_lostcity6_small;
+#define DAT_EVENTS_LOSTCITY7_BODY_COUNT 3
+extern const char *const dat_events_lostcity7_body[3];
+#define DAT_EVENTS_LOSTCITY7_TAIL_COUNT 0
+#define dat_events_lostcity7_tail NULL
+extern const int32_t dat_events_lostcity7_width;
+extern const char *const dat_events_lostcity7_default;
+extern const uint8_t dat_events_lostcity7_small;
+#define DAT_EVENTS_LOSTCITY8_BODY_COUNT 2
+extern const char *const dat_events_lostcity8_body[2];
+#define DAT_EVENTS_LOSTCITY8_TAIL_COUNT 0
+#define dat_events_lostcity8_tail NULL
+extern const int32_t dat_events_lostcity8_width;
+extern const char *const dat_events_lostcity8_default;
+extern const uint8_t dat_events_lostcity8_small;
+#define DAT_EVENTS_LOSTCITY9_BODY_COUNT 3
+extern const char *const dat_events_lostcity9_body[3];
+#define DAT_EVENTS_LOSTCITY9_TAIL_COUNT 0
+#define dat_events_lostcity9_tail NULL
+extern const int32_t dat_events_lostcity9_width;
+extern const char *const dat_events_lostcity9_default;
+extern const uint8_t dat_events_lostcity9_small;
+#define DAT_EVENTS_BURIAL1_BODY_COUNT 1
+extern const char *const dat_events_burial1_body[1];
+#define DAT_EVENTS_BURIAL1_TAIL_COUNT 0
+#define dat_events_burial1_tail NULL
+extern const int32_t dat_events_burial1_width;
+extern const char *const dat_events_burial1_default;
+extern const uint8_t dat_events_burial1_small;
+#define DAT_EVENTS_BURIAL2_BODY_COUNT 1
+extern const char *const dat_events_burial2_body[1];
+#define DAT_EVENTS_BURIAL2_TAIL_COUNT 0
+#define dat_events_burial2_tail NULL
+extern const int32_t dat_events_burial2_width;
+extern const char *const dat_events_burial2_default;
+extern const uint8_t dat_events_burial2_small;
+#define DAT_EVENTS_BURIAL3_BODY_COUNT 3
+extern const char *const dat_events_burial3_body[3];
+#define DAT_EVENTS_BURIAL3_TAIL_COUNT 0
+#define dat_events_burial3_tail NULL
+extern const int32_t dat_events_burial3_width;
+extern const char *const dat_events_burial3_default;
+extern const uint8_t dat_events_burial3_small;
+#define DAT_EVENTS_DEMOTE_BODY_COUNT 1
+extern const char *const dat_events_demote_body[1];
+#define DAT_EVENTS_DEMOTE_TAIL_COUNT 0
+#define dat_events_demote_tail NULL
+extern const int32_t dat_events_demote_width;
+extern const char *const dat_events_demote_default;
+extern const uint8_t dat_events_demote_small;
+#define DAT_EVENTS_COLONISTCAPTURE_BODY_COUNT 1
+extern const char *const dat_events_colonistcapture_body[1];
+#define DAT_EVENTS_COLONISTCAPTURE_TAIL_COUNT 0
+#define dat_events_colonistcapture_tail NULL
+extern const int32_t dat_events_colonistcapture_width;
+extern const char *const dat_events_colonistcapture_default;
+extern const uint8_t dat_events_colonistcapture_small;
+#define DAT_EVENTS_COLONISTCAPTURE2_BODY_COUNT 2
+extern const char *const dat_events_colonistcapture2_body[2];
+#define DAT_EVENTS_COLONISTCAPTURE2_TAIL_COUNT 0
+#define dat_events_colonistcapture2_tail NULL
+extern const int32_t dat_events_colonistcapture2_width;
+extern const char *const dat_events_colonistcapture2_default;
+extern const uint8_t dat_events_colonistcapture2_small;
+#define DAT_EVENTS_WAGONCAPTURE_BODY_COUNT 1
+extern const char *const dat_events_wagoncapture_body[1];
+#define DAT_EVENTS_WAGONCAPTURE_TAIL_COUNT 0
+#define dat_events_wagoncapture_tail NULL
+extern const int32_t dat_events_wagoncapture_width;
+extern const char *const dat_events_wagoncapture_default;
+extern const uint8_t dat_events_wagoncapture_small;
+#define DAT_EVENTS_LOOTCAPTURE_BODY_COUNT 1
+extern const char *const dat_events_lootcapture_body[1];
+#define DAT_EVENTS_LOOTCAPTURE_TAIL_COUNT 0
+#define dat_events_lootcapture_tail NULL
+extern const int32_t dat_events_lootcapture_width;
+extern const char *const dat_events_lootcapture_default;
+extern const uint8_t dat_events_lootcapture_small;
+#define DAT_EVENTS_ARTILLERY_BODY_COUNT 1
+extern const char *const dat_events_artillery_body[1];
+#define DAT_EVENTS_ARTILLERY_TAIL_COUNT 0
+#define dat_events_artillery_tail NULL
+extern const int32_t dat_events_artillery_width;
+extern const char *const dat_events_artillery_default;
+extern const uint8_t dat_events_artillery_small;
+#define DAT_EVENTS_ARTILLERY2_BODY_COUNT 1
+extern const char *const dat_events_artillery2_body[1];
+#define DAT_EVENTS_ARTILLERY2_TAIL_COUNT 0
+#define dat_events_artillery2_tail NULL
+extern const int32_t dat_events_artillery2_width;
+extern const char *const dat_events_artillery2_default;
+extern const uint8_t dat_events_artillery2_small;
+#define DAT_EVENTS_SHIPDAMAGE_BODY_COUNT 1
+extern const char *const dat_events_shipdamage_body[1];
+#define DAT_EVENTS_SHIPDAMAGE_TAIL_COUNT 0
+#define dat_events_shipdamage_tail NULL
+extern const int32_t dat_events_shipdamage_width;
+extern const char *const dat_events_shipdamage_default;
+extern const uint8_t dat_events_shipdamage_small;
+#define DAT_EVENTS_SHIPSUNK_BODY_COUNT 1
+extern const char *const dat_events_shipsunk_body[1];
+#define DAT_EVENTS_SHIPSUNK_TAIL_COUNT 0
+#define dat_events_shipsunk_tail NULL
+extern const int32_t dat_events_shipsunk_width;
+extern const char *const dat_events_shipsunk_default;
+extern const uint8_t dat_events_shipsunk_small;
+#define DAT_EVENTS_VETERAN_BODY_COUNT 2
+extern const char *const dat_events_veteran_body[2];
+#define DAT_EVENTS_VETERAN_TAIL_COUNT 0
+#define dat_events_veteran_tail NULL
+extern const int32_t dat_events_veteran_width;
+extern const char *const dat_events_veteran_default;
+extern const uint8_t dat_events_veteran_small;
+#define DAT_EVENTS_VALOR_BODY_COUNT 3
+extern const char *const dat_events_valor_body[3];
+#define DAT_EVENTS_VALOR_TAIL_COUNT 0
+#define dat_events_valor_tail NULL
+extern const int32_t dat_events_valor_width;
+extern const char *const dat_events_valor_default;
+extern const uint8_t dat_events_valor_small;
+#define DAT_EVENTS_WELLSEASONED_BODY_COUNT 1
+extern const char *const dat_events_wellseasoned_body[1];
+#define DAT_EVENTS_WELLSEASONED_TAIL_COUNT 0
+#define dat_events_wellseasoned_tail NULL
+extern const int32_t dat_events_wellseasoned_width;
+extern const char *const dat_events_wellseasoned_default;
+extern const uint8_t dat_events_wellseasoned_small;
+#define DAT_EVENTS_HALF_BODY_COUNT 3
+extern const char *const dat_events_half_body[3];
+#define DAT_EVENTS_HALF_TAIL_COUNT 2
+extern const char *const dat_events_half_tail[2];
+extern const int32_t dat_events_half_width;
+extern const char *const dat_events_half_default;
+extern const uint8_t dat_events_half_small;
+#define DAT_EVENTS_KINGGALLEON2_BODY_COUNT 7
+extern const char *const dat_events_kinggalleon2_body[7];
+#define DAT_EVENTS_KINGGALLEON2_TAIL_COUNT 2
+extern const char *const dat_events_kinggalleon2_tail[2];
+extern const int32_t dat_events_kinggalleon2_width;
+extern const char *const dat_events_kinggalleon2_default;
+extern const uint8_t dat_events_kinggalleon2_small;
+#define DAT_EVENTS_KINGGALLEON3_BODY_COUNT 7
+extern const char *const dat_events_kinggalleon3_body[7];
+#define DAT_EVENTS_KINGGALLEON3_TAIL_COUNT 2
+extern const char *const dat_events_kinggalleon3_tail[2];
+extern const int32_t dat_events_kinggalleon3_width;
+extern const char *const dat_events_kinggalleon3_default;
+extern const uint8_t dat_events_kinggalleon3_small;
+#define DAT_EVENTS_LOOTCASH_BODY_COUNT 2
+extern const char *const dat_events_lootcash_body[2];
+#define DAT_EVENTS_LOOTCASH_TAIL_COUNT 0
+#define dat_events_lootcash_tail NULL
+extern const int32_t dat_events_lootcash_width;
+extern const char *const dat_events_lootcash_default;
+extern const uint8_t dat_events_lootcash_small;
+#define DAT_EVENTS_CASHTREASURE_BODY_COUNT 1
+extern const char *const dat_events_cashtreasure_body[1];
+#define DAT_EVENTS_CASHTREASURE_TAIL_COUNT 0
+#define dat_events_cashtreasure_tail NULL
+extern const int32_t dat_events_cashtreasure_width;
+extern const char *const dat_events_cashtreasure_default;
+extern const uint8_t dat_events_cashtreasure_small;
+#define DAT_EVENTS_SIGNTREATY_BODY_COUNT 1
+extern const char *const dat_events_signtreaty_body[1];
+#define DAT_EVENTS_SIGNTREATY_TAIL_COUNT 0
+#define dat_events_signtreaty_tail NULL
+extern const int32_t dat_events_signtreaty_width;
+extern const char *const dat_events_signtreaty_default;
+extern const uint8_t dat_events_signtreaty_small;
+#define DAT_EVENTS_DECLAREWAR_BODY_COUNT 1
+extern const char *const dat_events_declarewar_body[1];
+#define DAT_EVENTS_DECLAREWAR_TAIL_COUNT 0
+#define dat_events_declarewar_tail NULL
+extern const int32_t dat_events_declarewar_width;
+extern const char *const dat_events_declarewar_default;
+extern const uint8_t dat_events_declarewar_small;
+#define DAT_EVENTS_WORTHY_BODY_COUNT 4
+extern const char *const dat_events_worthy_body[4];
+#define DAT_EVENTS_WORTHY_TAIL_COUNT 2
+extern const char *const dat_events_worthy_tail[2];
+extern const int32_t dat_events_worthy_width;
+extern const char *const dat_events_worthy_default;
+extern const uint8_t dat_events_worthy_small;
+#define DAT_EVENTS_THREATS_BODY_COUNT 1
+extern const char *const dat_events_threats_body[1];
+#define DAT_EVENTS_THREATS_TAIL_COUNT 0
+#define dat_events_threats_tail NULL
+extern const int32_t dat_events_threats_width;
+extern const char *const dat_events_threats_default;
+extern const uint8_t dat_events_threats_small;
+#define DAT_EVENTS_WITHDRAW_BODY_COUNT 1
+extern const char *const dat_events_withdraw_body[1];
+#define DAT_EVENTS_WITHDRAW_TAIL_COUNT 0
+#define dat_events_withdraw_tail NULL
+extern const int32_t dat_events_withdraw_width;
+extern const char *const dat_events_withdraw_default;
+extern const uint8_t dat_events_withdraw_small;
+#define DAT_EVENTS_GIVECASH_BODY_COUNT 2
+extern const char *const dat_events_givecash_body[2];
+#define DAT_EVENTS_GIVECASH_TAIL_COUNT 2
+extern const char *const dat_events_givecash_tail[2];
+extern const int32_t dat_events_givecash_width;
+extern const char *const dat_events_givecash_default;
+extern const uint8_t dat_events_givecash_small;
+#define DAT_EVENTS_TRIBUTE_BODY_COUNT 4
+extern const char *const dat_events_tribute_body[4];
+#define DAT_EVENTS_TRIBUTE_TAIL_COUNT 2
+extern const char *const dat_events_tribute_tail[2];
+extern const int32_t dat_events_tribute_width;
+extern const char *const dat_events_tribute_default;
+extern const uint8_t dat_events_tribute_small;
+#define DAT_EVENTS_NOWARSDURINGREV_BODY_COUNT 1
+extern const char *const dat_events_nowarsduringrev_body[1];
+#define DAT_EVENTS_NOWARSDURINGREV_TAIL_COUNT 0
+#define dat_events_nowarsduringrev_tail NULL
+extern const int32_t dat_events_nowarsduringrev_width;
+extern const char *const dat_events_nowarsduringrev_default;
+extern const uint8_t dat_events_nowarsduringrev_small;
+#define DAT_EVENTS_FOODLOW_BODY_COUNT 3
+extern const char *const dat_events_foodlow_body[3];
+#define DAT_EVENTS_FOODLOW_TAIL_COUNT 0
+#define dat_events_foodlow_tail NULL
+extern const int32_t dat_events_foodlow_width;
+extern const char *const dat_events_foodlow_default;
+extern const uint8_t dat_events_foodlow_small;
+#define DAT_EVENTS_STARVE1_BODY_COUNT 3
+extern const char *const dat_events_starve1_body[3];
+#define DAT_EVENTS_STARVE1_TAIL_COUNT 0
+#define dat_events_starve1_tail NULL
+extern const int32_t dat_events_starve1_width;
+extern const char *const dat_events_starve1_default;
+extern const uint8_t dat_events_starve1_small;
+#define DAT_EVENTS_BUILT_BODY_COUNT 1
+extern const char *const dat_events_built_body[1];
+#define DAT_EVENTS_BUILT_TAIL_COUNT 0
+#define dat_events_built_tail NULL
+extern const int32_t dat_events_built_width;
+extern const char *const dat_events_built_default;
+extern const uint8_t dat_events_built_small;
+#define DAT_EVENTS_NEEDTOOLS_BODY_COUNT 3
+extern const char *const dat_events_needtools_body[3];
+#define DAT_EVENTS_NEEDTOOLS_TAIL_COUNT 0
+#define dat_events_needtools_tail NULL
+extern const int32_t dat_events_needtools_width;
+extern const char *const dat_events_needtools_default;
+extern const uint8_t dat_events_needtools_small;
+#define DAT_EVENTS_NEEDTOOLS0_BODY_COUNT 3
+extern const char *const dat_events_needtools0_body[3];
+#define DAT_EVENTS_NEEDTOOLS0_TAIL_COUNT 0
+#define dat_events_needtools0_tail NULL
+extern const int32_t dat_events_needtools0_width;
+extern const char *const dat_events_needtools0_default;
+extern const uint8_t dat_events_needtools0_small;
+#define DAT_EVENTS_NEWCOLONIST_BODY_COUNT 1
+extern const char *const dat_events_newcolonist_body[1];
+#define DAT_EVENTS_NEWCOLONIST_TAIL_COUNT 0
+#define dat_events_newcolonist_tail NULL
+extern const int32_t dat_events_newcolonist_width;
+extern const char *const dat_events_newcolonist_default;
+extern const uint8_t dat_events_newcolonist_small;
+#define DAT_EVENTS_SONSUP_BODY_COUNT 3
+extern const char *const dat_events_sonsup_body[3];
+#define DAT_EVENTS_SONSUP_TAIL_COUNT 0
+#define dat_events_sonsup_tail NULL
+extern const int32_t dat_events_sonsup_width;
+extern const char *const dat_events_sonsup_default;
+extern const uint8_t dat_events_sonsup_small;
+#define DAT_EVENTS_SONSDOWN_BODY_COUNT 5
+extern const char *const dat_events_sonsdown_body[5];
+#define DAT_EVENTS_SONSDOWN_TAIL_COUNT 0
+#define dat_events_sonsdown_tail NULL
+extern const int32_t dat_events_sonsdown_width;
+extern const char *const dat_events_sonsdown_default;
+extern const uint8_t dat_events_sonsdown_small;
+#define DAT_EVENTS_NODOCKS_BODY_COUNT 2
+extern const char *const dat_events_nodocks_body[2];
+#define DAT_EVENTS_NODOCKS_TAIL_COUNT 0
+#define dat_events_nodocks_tail NULL
+extern const int32_t dat_events_nodocks_width;
+extern const char *const dat_events_nodocks_default;
+extern const uint8_t dat_events_nodocks_small;
+#define DAT_EVENTS_LUMBER_BODY_COUNT 2
+extern const char *const dat_events_lumber_body[2];
+#define DAT_EVENTS_LUMBER_TAIL_COUNT 0
+#define dat_events_lumber_tail NULL
+extern const int32_t dat_events_lumber_width;
+extern const char *const dat_events_lumber_default;
+extern const uint8_t dat_events_lumber_small;
+#define DAT_EVENTS_COTTON_BODY_COUNT 2
+extern const char *const dat_events_cotton_body[2];
+#define DAT_EVENTS_COTTON_TAIL_COUNT 0
+#define dat_events_cotton_tail NULL
+extern const int32_t dat_events_cotton_width;
+extern const char *const dat_events_cotton_default;
+extern const uint8_t dat_events_cotton_small;
+#define DAT_EVENTS_TOBACCO_BODY_COUNT 2
+extern const char *const dat_events_tobacco_body[2];
+#define DAT_EVENTS_TOBACCO_TAIL_COUNT 0
+#define dat_events_tobacco_tail NULL
+extern const int32_t dat_events_tobacco_width;
+extern const char *const dat_events_tobacco_default;
+extern const uint8_t dat_events_tobacco_small;
+#define DAT_EVENTS_CANESUGAR_BODY_COUNT 2
+extern const char *const dat_events_canesugar_body[2];
+#define DAT_EVENTS_CANESUGAR_TAIL_COUNT 0
+#define dat_events_canesugar_tail NULL
+extern const int32_t dat_events_canesugar_width;
+extern const char *const dat_events_canesugar_default;
+extern const uint8_t dat_events_canesugar_small;
+#define DAT_EVENTS_FURS_BODY_COUNT 2
+extern const char *const dat_events_furs_body[2];
+#define DAT_EVENTS_FURS_TAIL_COUNT 0
+#define dat_events_furs_tail NULL
+extern const int32_t dat_events_furs_width;
+extern const char *const dat_events_furs_default;
+extern const uint8_t dat_events_furs_small;
+#define DAT_EVENTS_ORE_BODY_COUNT 2
+extern const char *const dat_events_ore_body[2];
+#define DAT_EVENTS_ORE_TAIL_COUNT 0
+#define dat_events_ore_tail NULL
+extern const int32_t dat_events_ore_width;
+extern const char *const dat_events_ore_default;
+extern const uint8_t dat_events_ore_small;
+#define DAT_EVENTS_TOOLS_BODY_COUNT 2
+extern const char *const dat_events_tools_body[2];
+#define DAT_EVENTS_TOOLS_TAIL_COUNT 0
+#define dat_events_tools_tail NULL
+extern const int32_t dat_events_tools_width;
+extern const char *const dat_events_tools_default;
+extern const uint8_t dat_events_tools_small;
+#define DAT_EVENTS_TRAINPROFESSION_BODY_COUNT 1
+extern const char *const dat_events_trainprofession_body[1];
+#define DAT_EVENTS_TRAINPROFESSION_TAIL_COUNT 0
+#define dat_events_trainprofession_tail NULL
+extern const int32_t dat_events_trainprofession_width;
+extern const char *const dat_events_trainprofession_default;
+extern const uint8_t dat_events_trainprofession_small;
+#define DAT_EVENTS_TRAINFAIL_BODY_COUNT 5
+extern const char *const dat_events_trainfail_body[5];
+#define DAT_EVENTS_TRAINFAIL_TAIL_COUNT 0
+#define dat_events_trainfail_tail NULL
+extern const int32_t dat_events_trainfail_width;
+extern const char *const dat_events_trainfail_default;
+extern const uint8_t dat_events_trainfail_small;
+#define DAT_EVENTS_TRADEMANY_BODY_COUNT 2
+extern const char *const dat_events_trademany_body[2];
+#define DAT_EVENTS_TRADEMANY_TAIL_COUNT 0
+#define dat_events_trademany_tail NULL
+extern const int32_t dat_events_trademany_width;
+extern const char *const dat_events_trademany_default;
+extern const uint8_t dat_events_trademany_small;
+#define DAT_EVENTS_TRADENONE_BODY_COUNT 1
+extern const char *const dat_events_tradenone_body[1];
+#define DAT_EVENTS_TRADENONE_TAIL_COUNT 0
+#define dat_events_tradenone_tail NULL
+extern const int32_t dat_events_tradenone_width;
+extern const char *const dat_events_tradenone_default;
+extern const uint8_t dat_events_tradenone_small;
+#define DAT_EVENTS_TRADENAME_BODY_COUNT 1
+extern const char *const dat_events_tradename_body[1];
+#define DAT_EVENTS_TRADENAME_TAIL_COUNT 1
+extern const char *const dat_events_tradename_tail[1];
+extern const int32_t dat_events_tradename_width;
+extern const char *const dat_events_tradename_default;
+extern const uint8_t dat_events_tradename_small;
+#define DAT_EVENTS_INDIANGOLD_BODY_COUNT 2
+extern const char *const dat_events_indiangold_body[2];
+#define DAT_EVENTS_INDIANGOLD_TAIL_COUNT 2
+extern const char *const dat_events_indiangold_tail[2];
+extern const int32_t dat_events_indiangold_width;
+extern const char *const dat_events_indiangold_default;
+extern const uint8_t dat_events_indiangold_small;
+#define DAT_EVENTS_INDIANWAGONS_BODY_COUNT 4
+extern const char *const dat_events_indianwagons_body[4];
+#define DAT_EVENTS_INDIANWAGONS_TAIL_COUNT 2
+extern const char *const dat_events_indianwagons_tail[2];
+extern const int32_t dat_events_indianwagons_width;
+extern const char *const dat_events_indianwagons_default;
+extern const uint8_t dat_events_indianwagons_small;
+#define DAT_EVENTS_INDIANCITY_BODY_COUNT 4
+extern const char *const dat_events_indiancity_body[4];
+#define DAT_EVENTS_INDIANCITY_TAIL_COUNT 2
+extern const char *const dat_events_indiancity_tail[2];
+extern const int32_t dat_events_indiancity_width;
+extern const char *const dat_events_indiancity_default;
+extern const uint8_t dat_events_indiancity_small;
+#define DAT_EVENTS_INDIANROAD_BODY_COUNT 3
+extern const char *const dat_events_indianroad_body[3];
+#define DAT_EVENTS_INDIANROAD_TAIL_COUNT 3
+extern const char *const dat_events_indianroad_tail[3];
+extern const int32_t dat_events_indianroad_width;
+extern const char *const dat_events_indianroad_default;
+extern const uint8_t dat_events_indianroad_small;
+#define DAT_EVENTS_REBELMAJORITY_BODY_COUNT 4
+extern const char *const dat_events_rebelmajority_body[4];
+#define DAT_EVENTS_REBELMAJORITY_TAIL_COUNT 0
+#define dat_events_rebelmajority_tail NULL
+extern const int32_t dat_events_rebelmajority_width;
+extern const char *const dat_events_rebelmajority_default;
+extern const uint8_t dat_events_rebelmajority_small;
+#define DAT_EVENTS_REBELUNANIMOUS_BODY_COUNT 4
+extern const char *const dat_events_rebelunanimous_body[4];
+#define DAT_EVENTS_REBELUNANIMOUS_TAIL_COUNT 0
+#define dat_events_rebelunanimous_tail NULL
+extern const int32_t dat_events_rebelunanimous_width;
+extern const char *const dat_events_rebelunanimous_default;
+extern const uint8_t dat_events_rebelunanimous_small;
+#define DAT_EVENTS_TORYMINORITY_BODY_COUNT 4
+extern const char *const dat_events_toryminority_body[4];
+#define DAT_EVENTS_TORYMINORITY_TAIL_COUNT 0
+#define dat_events_toryminority_tail NULL
+extern const int32_t dat_events_toryminority_width;
+extern const char *const dat_events_toryminority_default;
+extern const uint8_t dat_events_toryminority_small;
+#define DAT_EVENTS_TORYMAJORITY_BODY_COUNT 4
+extern const char *const dat_events_torymajority_body[4];
+#define DAT_EVENTS_TORYMAJORITY_TAIL_COUNT 0
+#define dat_events_torymajority_tail NULL
+extern const int32_t dat_events_torymajority_width;
+extern const char *const dat_events_torymajority_default;
+extern const uint8_t dat_events_torymajority_small;
+#define DAT_EVENTS_TORYUPRISING_BODY_COUNT 1
+extern const char *const dat_events_toryuprising_body[1];
+#define DAT_EVENTS_TORYUPRISING_TAIL_COUNT 0
+#define dat_events_toryuprising_tail NULL
+extern const int32_t dat_events_toryuprising_width;
+extern const char *const dat_events_toryuprising_default;
+extern const uint8_t dat_events_toryuprising_small;
+#define DAT_EVENTS_KINGRECRUIT_BODY_COUNT 3
+extern const char *const dat_events_kingrecruit_body[3];
+#define DAT_EVENTS_KINGRECRUIT_TAIL_COUNT 0
+#define dat_events_kingrecruit_tail NULL
+extern const int32_t dat_events_kingrecruit_width;
+extern const char *const dat_events_kingrecruit_default;
+extern const uint8_t dat_events_kingrecruit_small;
+#define DAT_EVENTS_UPKEEP_BODY_COUNT 3
+extern const char *const dat_events_upkeep_body[3];
+#define DAT_EVENTS_UPKEEP_TAIL_COUNT 0
+#define dat_events_upkeep_tail NULL
+extern const int32_t dat_events_upkeep_width;
+extern const char *const dat_events_upkeep_default;
+extern const uint8_t dat_events_upkeep_small;
+#define DAT_EVENTS_ABANDON_BODY_COUNT 3
+extern const char *const dat_events_abandon_body[3];
+#define DAT_EVENTS_ABANDON_TAIL_COUNT 2
+extern const char *const dat_events_abandon_tail[2];
+extern const int32_t dat_events_abandon_width;
+extern const char dat_events_abandon_default[];
+extern const uint8_t dat_events_abandon_small;
+#define DAT_EVENTS_RENAMECOLONY_BODY_COUNT 1
+extern const char *const dat_events_renamecolony_body[1];
+#define DAT_EVENTS_RENAMECOLONY_TAIL_COUNT 1
+extern const char *const dat_events_renamecolony_tail[1];
+extern const int32_t dat_events_renamecolony_width;
+extern const char *const dat_events_renamecolony_default;
+extern const uint8_t dat_events_renamecolony_small;
+#define DAT_EVENTS_MORETHANTHREE_BODY_COUNT 2
+extern const char *const dat_events_morethanthree_body[2];
+#define DAT_EVENTS_MORETHANTHREE_TAIL_COUNT 0
+#define dat_events_morethanthree_tail NULL
+extern const int32_t dat_events_morethanthree_width;
+extern const char *const dat_events_morethanthree_default;
+extern const uint8_t dat_events_morethanthree_small;
+#define DAT_EVENTS_SAILAWAY_BODY_COUNT 2
+extern const char *const dat_events_sailaway_body[2];
+#define DAT_EVENTS_SAILAWAY_TAIL_COUNT 2
+extern const char *const dat_events_sailaway_tail[2];
+extern const int32_t dat_events_sailaway_width;
+extern const char dat_events_sailaway_default[];
+extern const uint8_t dat_events_sailaway_small;
+#define DAT_EVENTS_EUROPEARM_BODY_COUNT 1
+extern const char *const dat_events_europearm_body[1];
+#define DAT_EVENTS_EUROPEARM_TAIL_COUNT 0
+#define dat_events_europearm_tail NULL
+extern const int32_t dat_events_europearm_width;
+extern const char *const dat_events_europearm_default;
+extern const uint8_t dat_events_europearm_small;
+#define DAT_EVENTS_EUROPESHIPCLICK_BODY_COUNT 1
+extern const char *const dat_events_europeshipclick_body[1];
+#define DAT_EVENTS_EUROPESHIPCLICK_TAIL_COUNT 0
+#define dat_events_europeshipclick_tail NULL
+extern const int32_t dat_events_europeshipclick_width;
+extern const char *const dat_events_europeshipclick_default;
+extern const uint8_t dat_events_europeshipclick_small;
+#define DAT_EVENTS_ARMOPTIONS_BODY_COUNT 12
+extern const char *const dat_events_armoptions_body[12];
+#define DAT_EVENTS_ARMOPTIONS_TAIL_COUNT 0
+#define dat_events_armoptions_tail NULL
+extern const int32_t dat_events_armoptions_width;
+extern const char *const dat_events_armoptions_default;
+extern const uint8_t dat_events_armoptions_small;
+#define DAT_EVENTS_EUROPESHIPOPTIONS_BODY_COUNT 4
+extern const char *const dat_events_europeshipoptions_body[4];
+#define DAT_EVENTS_EUROPESHIPOPTIONS_TAIL_COUNT 0
+#define dat_events_europeshipoptions_tail NULL
+extern const int32_t dat_events_europeshipoptions_width;
+extern const char *const dat_events_europeshipoptions_default;
+extern const uint8_t dat_events_europeshipoptions_small;
+#define DAT_EVENTS_SHIPCOMBAT_BODY_COUNT 1
+extern const char *const dat_events_shipcombat_body[1];
+#define DAT_EVENTS_SHIPCOMBAT_TAIL_COUNT 0
+#define dat_events_shipcombat_tail NULL
+extern const int32_t dat_events_shipcombat_width;
+extern const char *const dat_events_shipcombat_default;
+extern const uint8_t dat_events_shipcombat_small;
+#define DAT_EVENTS_FORTFIRE_BODY_COUNT 1
+extern const char *const dat_events_fortfire_body[1];
+#define DAT_EVENTS_FORTFIRE_TAIL_COUNT 0
+#define dat_events_fortfire_tail NULL
+extern const int32_t dat_events_fortfire_width;
+extern const char *const dat_events_fortfire_default;
+extern const uint8_t dat_events_fortfire_small;
+#define DAT_EVENTS_CARGOCAPTURE_BODY_COUNT 1
+extern const char *const dat_events_cargocapture_body[1];
+#define DAT_EVENTS_CARGOCAPTURE_TAIL_COUNT 0
+#define dat_events_cargocapture_tail NULL
+extern const int32_t dat_events_cargocapture_width;
+extern const char *const dat_events_cargocapture_default;
+extern const uint8_t dat_events_cargocapture_small;
+#define DAT_EVENTS_EVASIVE_BODY_COUNT 1
+extern const char *const dat_events_evasive_body[1];
+#define DAT_EVENTS_EVASIVE_TAIL_COUNT 0
+#define dat_events_evasive_tail NULL
+extern const int32_t dat_events_evasive_width;
+extern const char *const dat_events_evasive_default;
+extern const uint8_t dat_events_evasive_small;
+#define DAT_EVENTS_SCOUTCOLONY_BODY_COUNT 2
+extern const char *const dat_events_scoutcolony_body[2];
+#define DAT_EVENTS_SCOUTCOLONY_TAIL_COUNT 4
+extern const char *const dat_events_scoutcolony_tail[4];
+extern const int32_t dat_events_scoutcolony_width;
+extern const char *const dat_events_scoutcolony_default;
+extern const uint8_t dat_events_scoutcolony_small;
+#define DAT_EVENTS_NOMAYORSDURINGREV_BODY_COUNT 1
+extern const char *const dat_events_nomayorsduringrev_body[1];
+#define DAT_EVENTS_NOMAYORSDURINGREV_TAIL_COUNT 0
+#define dat_events_nomayorsduringrev_tail NULL
+extern const int32_t dat_events_nomayorsduringrev_width;
+extern const char *const dat_events_nomayorsduringrev_default;
+extern const uint8_t dat_events_nomayorsduringrev_small;
+#define DAT_EVENTS_SUCCESSION_BODY_COUNT 4
+extern const char *const dat_events_succession_body[4];
+#define DAT_EVENTS_SUCCESSION_TAIL_COUNT 0
+#define dat_events_succession_tail NULL
+extern const int32_t dat_events_succession_width;
+extern const char *const dat_events_succession_default;
+extern const uint8_t dat_events_succession_small;
+#define DAT_EVENTS_GAMEOPTIONS_BODY_COUNT 9
+extern const char *const dat_events_gameoptions_body[9];
+#define DAT_EVENTS_GAMEOPTIONS_TAIL_COUNT 0
+#define dat_events_gameoptions_tail NULL
+extern const int32_t dat_events_gameoptions_width;
+extern const char *const dat_events_gameoptions_default;
+extern const uint8_t dat_events_gameoptions_small;
+#define DAT_EVENTS_COLONYOPTIONS_BODY_COUNT 11
+extern const char *const dat_events_colonyoptions_body[11];
+#define DAT_EVENTS_COLONYOPTIONS_TAIL_COUNT 0
+#define dat_events_colonyoptions_tail NULL
+extern const int32_t dat_events_colonyoptions_width;
+extern const char *const dat_events_colonyoptions_default;
+extern const uint8_t dat_events_colonyoptions_small;
+#define DAT_EVENTS_SOUNDOPTIONS_BODY_COUNT 4
+extern const char *const dat_events_soundoptions_body[4];
+#define DAT_EVENTS_SOUNDOPTIONS_TAIL_COUNT 0
+#define dat_events_soundoptions_tail NULL
+extern const int32_t dat_events_soundoptions_width;
+extern const char *const dat_events_soundoptions_default;
+extern const uint8_t dat_events_soundoptions_small;
+#define DAT_EVENTS_RETIRE_BODY_COUNT 1
+extern const char *const dat_events_retire_body[1];
+#define DAT_EVENTS_RETIRE_TAIL_COUNT 2
+extern const char *const dat_events_retire_tail[2];
+extern const int32_t dat_events_retire_width;
+extern const char dat_events_retire_default[];
+extern const uint8_t dat_events_retire_small;
+#define DAT_EVENTS_PICKMUSIC_BODY_COUNT 1
+extern const char *const dat_events_pickmusic_body[1];
+#define DAT_EVENTS_PICKMUSIC_TAIL_COUNT 15
+extern const char *const dat_events_pickmusic_tail[15];
+extern const int32_t dat_events_pickmusic_width;
+extern const char *const dat_events_pickmusic_default;
+extern const uint8_t dat_events_pickmusic_small;
+#define DAT_EVENTS_PICKINDEPENDENCE_BODY_COUNT 1
+extern const char *const dat_events_pickindependence_body[1];
+#define DAT_EVENTS_PICKINDEPENDENCE_TAIL_COUNT 5
+extern const char *const dat_events_pickindependence_tail[5];
+extern const int32_t dat_events_pickindependence_width;
+extern const char *const dat_events_pickindependence_default;
+extern const uint8_t dat_events_pickindependence_small;
+#define DAT_EVENTS_PICKMILITARY_BODY_COUNT 1
+extern const char *const dat_events_pickmilitary_body[1];
+#define DAT_EVENTS_PICKMILITARY_TAIL_COUNT 4
+extern const char *const dat_events_pickmilitary_tail[4];
+extern const int32_t dat_events_pickmilitary_width;
+extern const char *const dat_events_pickmilitary_default;
+extern const uint8_t dat_events_pickmilitary_small;
+#define DAT_EVENTS_PICKINDIAN_BODY_COUNT 1
+extern const char *const dat_events_pickindian_body[1];
+#define DAT_EVENTS_PICKINDIAN_TAIL_COUNT 4
+extern const char *const dat_events_pickindian_tail[4];
+extern const int32_t dat_events_pickindian_width;
+extern const char *const dat_events_pickindian_default;
+extern const uint8_t dat_events_pickindian_small;
+#define DAT_EVENTS_DOS_BODY_COUNT 1
+extern const char *const dat_events_dos_body[1];
+#define DAT_EVENTS_DOS_TAIL_COUNT 2
+extern const char *const dat_events_dos_tail[2];
+extern const int32_t dat_events_dos_width;
+extern const char dat_events_dos_default[];
+extern const uint8_t dat_events_dos_small;
+#define DAT_TEXT_BEGINMENU_COUNT 6
+extern const char *const dat_text_beginmenu[6];
+extern const char dat_text_leadername[];
+#define DAT_TEXT_MISC_COUNT 221
+extern const char *const dat_text_misc[221];
+#define DAT_TEXT_CTITLE_COUNT 10
+extern const char *const dat_text_ctitle[10];
+#define DAT_TEXT_CMISC_COUNT 3
+extern const char *const dat_text_cmisc[3];
+#define DAT_TEXT_CMESSAGE_COUNT 19
+extern const char *const dat_text_cmessage[19];
+#define DAT_DIPLOTEXT_MEEKNESS_COUNT 2
+extern const char *const dat_diplotext_meekness[2];
+#define DAT_DIPLOTEXT_GREATKINGS_COUNT 4
+extern const char *const dat_diplotext_greatkings[4];
+#define DAT_DIPLOTEXT_GREATDEEDS_COUNT 4
+extern const char *const dat_diplotext_greatdeeds[4];
+#define DAT_DIPLOTEXT_GREATLEADER_COUNT 4
+extern const char *const dat_diplotext_greatleader[4];
+#define DAT_DIPLOTEXT_GREATLEADER2_COUNT 4
+extern const char *const dat_diplotext_greatleader2[4];
+#define DAT_DIPLOTEXT_FRIEND_COUNT 4
+extern const char *const dat_diplotext_friend[4];
+
+#endif

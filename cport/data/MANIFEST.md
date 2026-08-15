@@ -12,8 +12,8 @@ with it. Nothing is dropped silently.
 | `nations` | emitted |
 | `orders` | emitted |
 | `units` | emitted |
-| `dialogs` | emitted |
-| `woodcuts` | emitted |
+| `dialogs` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
+| `woodcuts` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `colonynames` | emitted |
 | `cargo` | emitted |
 | `classes` | emitted |
@@ -31,21 +31,21 @@ with it. Nothing is dropped silently.
 | `attitude` | emitted |
 | `attitudinal` | emitted |
 | `values` | emitted |
-| `scorenames` | emitted |
+| `scorenames` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `levelname` | emitted |
 | `regionname` | emitted |
 | `eurolabel` | emitted |
 | `tradenames` | emitted |
-| `pedia` | emitted |
+| `pedia` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `fathers` | emitted |
 | `founding` | emitted |
 | `independent` | emitted |
 | `tribes` | emitted |
 | `tribesites` | emitted |
 | `menus` | EXCLUDED: interface: pulldown layout/accelerators (menu ACTIONS are core commands, defined in colopy_core.h) |
-| `events` | emitted |
-| `text` | emitted |
-| `diplotext` | emitted |
+| `events` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
+| `text` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
+| `diplotext` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `sav1653` | fixture -> cport/host/fixtures.h |
 | `savRaleigh` | fixture -> cport/host/fixtures.h |
 | `savStart` | fixture -> cport/host/fixtures.h |
