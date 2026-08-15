@@ -50,3 +50,15 @@ save must agree byte-for-byte with the shell's.
 | display text (excluded)       | ~180 KB   | flash or SD, later     |
 
 Everything is static — no heap use anywhere in the core.
+
+## SD container ruling (2026-08-15, user decision)
+
+The microSD carries **COLOPY.PAK** (built by `tools/gen_sd_pack.py`), not
+the original DOS files. Reading the originals as-is was assessed and
+declined: it would need the MADSPACK/FAB/RLE codecs ported on-board
+(~300 lines, references exist in `tools/ssdec.py`) for no RAM saving —
+decoded pixels are ~3 MB in PSRAM either way — while the pak keeps the
+board free of decode code, boots faster, and is cross-checked against
+the JS DATA census at generation time (`sim_compare.py pak`). Display
+text stays in flash as `colopy_text.o`; the pak's TEXT section remains
+the fallback container if flash pressure ever demands it.
