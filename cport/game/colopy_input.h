@@ -42,6 +42,7 @@ typedef struct {
                                       * reads, acts, and clears this. */
     int8_t  colony_numbers;          /* G.colonyNumbers ([0x336]) */
     int8_t  village_row;             /* G.villageRow */
+    int8_t  woodcut;                 /* G.woodcut — the open plate */
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
                                       *                2 build */
     int8_t  colonist_sel;            /* G.colonistSel (game.js:566) */

@@ -303,6 +303,158 @@ void rm_draw_dialog_event(const char *key, const rm_subs *subs,
     }
 }
 
+/* ---- the village screen (drawVillage game.js:6746) ------------------
+ * The map stays underneath; a dialog-chrome plaque carries the band
+ * greeting body + the @ACTIONS rows; the chief figure stands at the
+ * bottom-right.  Band: alarm >= 0x80 is War (4), else the tension
+ * bands 75/40/20 (villageBand 6710 / missionBand 5308 — the engine's
+ * own presence-score banding is FLAGGED unread). */
+static const char *const VILLAGE_GREETING[5] = {
+    "VILLAGEHAPPY", "VILLAGEMEDIUM", "VILLAGESAVAGE",
+    "VILLAGEBAD", "VILLAGEWAR"
+};
+
+static int village_band(int vi) {
+    int tr = (CS.villages[vi].owner_tribe - 4) & 7;
+    if (CR.alarm[vi] >= 0x80) return 4;
+    int n = CR.tension[tr];
+    return n >= 75 ? 3 : n >= 40 ? 2 : n >= 20 ? 1 : 0;
+}
+
+/* body + rows + box geometry, shared by the painter and the tap test */
+static int village_geom(char body[16][256], int *nb_out,
+                        char rows[12][96], int *nr_out,
+                        int *x, int *y, int *w, int *h, int *seed) {
+    int vi = CR.cur_village;
+    if (vi < 0 || vi >= CS.n_villages) return 0;
+    int tr = (CS.villages[vi].owner_tribe - 4) & 7;
+    const rd_font *f = dfont(0);
+    int tp = dtext(0), rp = drow(0);
+    /* villageBody (game.js:6714) */
+    const dat_events_entry_t *e = event_by_key(VILLAGE_GREETING[village_band(vi)]);
+    rm_subs subs;
+    memset(&subs, 0, sizeof(subs));
+    int lvl = dat_tribes[tr].level;
+    subs.str[0] = dat_levelname[lvl < 5 ? lvl : 4];
+    subs.str[1] = dat_tribes[tr].name;
+    int nb = 0;
+    if (e && e->body)
+        for (int i = 0; i < e->n_body && nb < 15; i++)
+            fill_template(e->body[i], &subs, body[nb++], sizeof(body[0]));
+    if (CS.villages[vi].mission != 0xFF) {
+        int mp = CS.villages[vi].mission & 0x0F;
+        snprintf(body[nb], sizeof(body[0]),
+                 "A {%s} mission stands here%s.",
+                 mp < 4 ? dat_nations[mp].adjective : "foreign",
+                 (CS.villages[vi].mission & 0x10) ? " (expert)" : "");
+        nb++;
+    }
+    /* villageActions rows (6466) + actionLabel (6485) */
+    uint8_t ids[12];
+    int nr = village_action_rows(ids);
+    for (int k = 0; k < nr; k++) {
+        if (ids[k] == 3 && CS.villages[vi].mission != 0xFF) {
+            int mp = CS.villages[vi].mission & 0x0F;
+            const char *adj = mp < 4 ? dat_nations[mp].adjective : "foreign";
+            snprintf(rows[k], sizeof(rows[0]), "%s", dat_actions[3]);
+            char *at = strstr(rows[k], "%Fs");
+            if (at) {
+                /* splice the adjective over the %Fs token, bounded */
+                char tail[96];
+                snprintf(tail, sizeof(tail), "%.90s", at + 3);
+                size_t cap = sizeof(rows[0]) - (size_t)(at - rows[k]);
+                snprintf(at, cap, "%.20s%.60s", adj, tail);
+            }
+        } else
+            snprintf(rows[k], sizeof(rows[0]), "%s", dat_actions[ids[k]]);
+    }
+    /* villageBox (6727): @width=190 floor, centred, y clamped to 10 */
+    int cw = 190;
+    for (int i = 0; i < nb; i++) {
+        int lw = stripped_width(f, body[i]);
+        if (lw > cw) cw = lw;
+    }
+    for (int k = 0; k < nr; k++) {
+        int lw = stripped_width(f, rows[k]) + 20;
+        if (lw > cw) cw = lw;
+    }
+    *w = cw + 6;
+    int text_h = nb * tp;
+    *h = 6 + text_h + 3 + nr * rp + 3;
+    *x = round_half(320 - *w);
+    int y0 = round_half(200 - *h);
+    *y = y0 < 10 ? 10 : y0;
+    *seed = *y + 6 + text_h + 3;
+    *nb_out = nb;
+    *nr_out = nr;
+    return 1;
+}
+
+void rm_draw_village(int village_row) {
+    dresolve();
+    char body[16][256], rows[12][96];
+    int nb, nr, x, y, w, h, seed;
+    if (!village_geom(body, &nb, rows, &nr, &x, &y, &w, &h, &seed)) return;
+    const rd_font *f = dfont(0);
+    int tp = dtext(0), rp = drow(0);
+    int vi = CR.cur_village;
+    int tr = (CS.villages[vi].owner_tribe - 4) & 7;
+    /* the chief (villageSpeaker 6742): IND<tribe%8>A<min(3,band)> at the
+     * bottom-right corner, art palette streamed like every speaker */
+    {
+        char nm[20];
+        int band = village_band(vi);
+        snprintf(nm, sizeof(nm), "IND%dA%d.SS", tr % 8,
+                 band < 3 ? band : 3);
+        rd_entry e2;
+        rd_frame fr;
+        if (rd_pak_find(&RD.pak, nm, &e2) && rd_sheet_frame(&e2, 0, &fr) &&
+            fr.w) {
+            const uint8_t *sp = rd_sheet_pal(&e2);
+            if (sp) {
+                uint8_t used[256] = { 0 };
+                for (uint32_t i = 0; i < (uint32_t)fr.w * fr.h; i++)
+                    if (fr.pix[i] != RD_TRANSPARENT) used[fr.pix[i]] = 1;
+                for (int i = 128; i < 256; i++)
+                    if (used[i]) memcpy(RD.pal + i * 3, sp + i * 3, 3);
+            }
+            rd_blit(&e2, 0, RD_W - fr.w, RD_GAME_H - fr.h);
+        }
+    }
+    rm_plaque(x, y, w, h);
+    for (int i = 0; i < nb; i++)
+        span_text(f, body[i], x + 5, y + 6 + i * tp, 0xFE, 0xFC);
+    for (int k = 0; k < nr; k++) {
+        int oy = seed + k * rp;
+        if (k == village_row)
+            rd_fill(x + 3, oy, w - 6, rp - 2, SELECT_GAME);
+        const uint8_t ink[4] = { 0xFF,
+                                 (uint8_t)(k == village_row ? 0xFC : 0xFE),
+                                 (uint8_t)((k == village_row ? 0xFC : 0xFE)
+                                           - 1),
+                                 0 };
+        rd_text(f, rows[k], x + 9, oy + 1, ink);
+    }
+}
+
+/* the action row under (mx,my): row index, -2 on the box off-rows,
+ * -1 outside (the touch front's leave gesture) */
+int rm_village_row_hit(int cur, int mx, int my) {
+    (void)cur;
+    dresolve();
+    char body[16][256], rows[12][96];
+    int nb, nr, x, y, w, h, seed;
+    if (!village_geom(body, &nb, rows, &nr, &x, &y, &w, &h, &seed))
+        return -2;
+    if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
+    int rp = drow(0);
+    if (my >= seed) {
+        int k = (my - seed) / rp;
+        if (k >= 0 && k < nr) return k;
+    }
+    return -2;
+}
+
 /* touch front ends: the option row under (mx,my) for the dialog
  * rm_draw_dialog_event draws with the same key/subs/speaker — the row
  * band is the selection-fill band (x+4..x+w-4, rp tall from its seed).

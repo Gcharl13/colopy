@@ -245,6 +245,9 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
     cr_reset_from_load();
     memset(CR.tribe_met, 0, sizeof(CR.tribe_met));
     for (int n = 0; n < 4; n++) CR.rivals[n].met = 0;
+    CR.land_ho = 0;                  /* beginGame 695: landfall + first
+                                      * colony still ahead */
+    CR.built_colony = 0;
     CR.map_seed = mseed;
     CR.plot_seed = plot;
     units_session_seed();

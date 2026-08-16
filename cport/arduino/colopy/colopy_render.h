@@ -157,6 +157,10 @@ int  rm_event_hit(const char *key, const rm_subs *subs,
                   const char *speaker, int mx, int my);
 int  rm_dialog_row_hit(const char *key, const rm_subs *subs,
                        const char *speaker, int mx, int my);
+/* the village screen (drawVillage game.js:6746) over the OPEN village
+ * (CR.cur_village); the row hit-test shares its geometry */
+void rm_draw_village(int village_row);
+int  rm_village_row_hit(int cur, int mx, int my);
 
 #ifdef __cplusplus
 }

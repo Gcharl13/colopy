@@ -321,6 +321,13 @@ static void draw_screen(void) {
         rm_draw_europe(UI.euro_ship, UI.euro_dock_sel, UI.euro_row,
                        UI.market_sel);
         break;
+    case SCR_WOODCUT:
+        rm_draw_woodcut(UI.woodcut);
+        break;
+    case SCR_VILLAGE:
+        rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
+        rm_draw_village(UI.village_row);
+        break;
     default:                                 /* map + everything else */
         /* 4th arg = the BLINK flag (unit drawn while truthy), NOT
          * show_hidden — passing 0 there kept the active unit invisible

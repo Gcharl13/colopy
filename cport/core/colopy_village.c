@@ -18,6 +18,7 @@
  * every entry ends back on the map, and the @INDIANWELCOME first-contact
  * ask NEVER fires headless — its woodcut after-callback is only run by a
  * live dismissal, which the trace does not model.  t.met still latches. */
+#include <stdio.h>
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -113,12 +114,51 @@ void village_enter(int vi, int ui) {
     if (!CR.tribe_met[tr]) {
         CR.tribe_met[tr] = 1;
         int wc = tr == 0 ? 5 : tr == 1 ? 4 : 3;
+        int fresh = !(CR.wc_seen & (1u << wc));
         CR.wc_seen |= (uint16_t)(1u << wc);
+        /* LIVE front: the plate shows, and its dismissal runs the
+         * @INDIANWELCOME chain (firstTribeContact, game.js:1222) —
+         * a SEEN plate skips both, exactly the woodcutOnce(false)
+         * early-out (1207: the callback never runs) */
+        if (colopy_front_live && fresh) {
+            CR.wc_show = (int8_t)wc;
+            CR.wc_after = 1;
+        }
     } else {
+        int fresh = !(CR.wc_seen & (1u << 7));
         CR.wc_seen |= 1u << 7;
+        if (colopy_front_live && fresh) {
+            CR.wc_show = 7;
+            CR.wc_after = 2;
+        }
     }
-    CR.village_screen = 0;
-    CR.screen_map = 1;
+    /* the harness stub forces the map (sim_trace conventions); the LIVE
+     * front keeps the village open like the real enterVillage (6455) */
+    CR.village_screen = (uint8_t)(colopy_front_live ? 1 : 0);
+    CR.screen_map = (uint8_t)(colopy_front_live ? 0 : 1);
+}
+
+/* firstTribeContact's plate-dismissal callback (game.js:1222-1241): the
+ * @INDIANWELCOME treaty ask — row 0 takes the treaty, anything else is
+ * the shun: tension +100 (straight to the war band) + @INDIANSHUN. */
+void village_first_welcome(void) {
+    int vi = CR.cur_village;
+    if (vi < 0) return;
+    int tr = vtribe(vi);
+    if (tr < 0 || tr >= 8) return;
+    int count = 0;
+    for (int w = 0; w < CS.n_villages; w++)
+        if (vtribe(w) == tr) count++;
+    static char lvl[24];
+    snprintf(lvl, sizeof(lvl), "%ss",
+             dat_levelname[dat_tribes[tr].level]);
+    ev_emit("INDIANWELCOME", count, 0, dat_tribes[tr].name, lvl);
+    if (ask_choice() == 0) {
+        CR.tribe_treaty[tr] = 1;
+        return;
+    }
+    adjust_tension(tr, 100, 0);
+    ev_emit("INDIANSHUN", 0, 0, dat_nations[cs_nation()].country, 0);
 }
 
 /* villageActions (game.js:6466) over the OPEN village. */

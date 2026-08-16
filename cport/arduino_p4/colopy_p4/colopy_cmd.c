@@ -434,6 +434,18 @@ int cmd_found_colony(int ui, const char *name) {
     colonist_add(c);
     if (c->population > 0) c->profession[c->population - 1] = prof;
     unit_remove(ui);
+    /* the FIRST colony fires woodcut 2, BUILDING A COLONY
+     * (buildColony game.js:2150; dismissal opens the colony, 12093) */
+    if (!CR.built_colony) {
+        CR.built_colony = 1;
+        if (!(CR.wc_seen & (1u << 2))) {
+            CR.wc_seen |= 1u << 2;   /* the JS stub latches too */
+            if (colopy_front_live) {
+                CR.wc_show = 2;
+                CR.wc_after = 0;     /* plate 2 routes by number */
+            }
+        }
+    }
     return nplayer;
 }
 
@@ -506,6 +518,46 @@ void cmd_move(int ui, int dx, int dy) {
                         CR.rivals[rn].col[k].y == ny) hostile = 1;
             }
             if (hostile) { ev_emit("LANDFIRST", 0, 0, 0, 0); return; }
+            /* the landfall offer (openDialog @LANDFALL/@LANDFALL2 —
+             * river-mouth variant — game.js:10899): inert under the
+             * headless trace; on a LIVE front the ask goes to the
+             * player and row 1 puts the party ashore (10901-10912) */
+            if (colopy_front_live) {
+                ev_emit(tile_river(v) ? "LANDFALL2" : "LANDFALL",
+                        0, 0, 0, 0);
+                if (ask_choice() == 1) {
+                    int first = -1;
+                    for (int p = 0; p < CR.unit_n_pass[ui]; p++) {
+                        const immigrant *e = &CR.unit_pass[ui][p];
+                        int t = e->kind == 4 ? e->type_ov - 1 : e->idx;
+                        if (t < 0 || t >= DAT_UNITS_COUNT) continue;
+                        int ni = unit_append(t, me, nx, ny);
+                        if (ni < 0) continue;
+                        if (e->kind == 4)
+                            CS.units[ni].profession = e->idx;
+                        if (strcmp(dat_units[t].name, "Pioneers") == 0)
+                            CS.units[ni].tools = 100;  /* mkUnit 664 */
+                        if (first < 0) first = ni;
+                    }
+                    CR.unit_n_pass[ui] = 0;
+                    u->moves_remaining = 0;
+                    /* the party ashore takes over from the ship (10905) */
+                    if (first >= 0)
+                        for (int k = 0; k < CR.n_units_order; k++)
+                            if (CR.units_order[k] == first)
+                                CR.ui_select = (int16_t)k;
+                    /* first landfall: woodcut 1, DISCOVERY OF THE NEW
+                     * WORLD (10909; once per game) */
+                    if (!CR.land_ho) {
+                        CR.land_ho = 1;
+                        if (!(CR.wc_seen & (1u << 1))) {
+                            CR.wc_seen |= 1u << 1;
+                            CR.wc_show = 1;
+                            CR.wc_after = 0;
+                        }
+                    }
+                }
+            }
         }
         return;
     }

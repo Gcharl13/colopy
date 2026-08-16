@@ -141,6 +141,14 @@ int  unit_pos_y(int ui);
 void colony_remove(int ci);      /* immediate splice (rival capture path) */
 void colony_vanish_filter(void);  /* the deferred @VANISH compaction */
 void adjust_tension(int tribe, int delta, int cause);  /* game.js:5103 */
+void village_first_welcome(void);  /* firstTribeContact's woodcut callback
+                                    * (game.js:1222-1241): the
+                                    * @INDIANWELCOME treaty ask — run by
+                                    * the LIVE front on plate dismissal */
+/* 1 = a LIVE front end drives the core (dialog-gated flows complete;
+ * woodcut/select channels fill); 0 = the deterministic harness.
+ * Defined in the game layer (colopy_input.c). */
+extern int colopy_front_live;
 int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
 void colonist_remove_last(int ci);
 void colonist_add(ColonyRecord *c);   /* the record-slot push */
@@ -429,6 +437,19 @@ typedef struct {
     uint8_t village_screen;          /* enterVillage outcome: 1 = the
                                       * village screen stays open (no
                                       * fresh woodcut fired) */
+    int8_t  wc_show;                 /* LIVE FRONT: a woodcut plate to
+                                      * display (-1 none) — the harness
+                                      * stub never sets it */
+    int8_t  wc_after;                /* its dismissal: 0 map / 1 village
+                                      * + the @INDIANWELCOME chain /
+                                      * 2 village (plates 1/2 route by
+                                      * number, onClick game.js:12086) */
+    int16_t ui_select;               /* LIVE FRONT: select this
+                                      * units_order index (-1 none) —
+                                      * the landfall party (10905) */
+    uint8_t land_ho;                 /* woodcut-1 latch (G.landHo;
+                                      * loads import it true, 10240) */
+    uint8_t built_colony;            /* woodcut-2 latch (G.builtColony) */
     uint16_t wc_seen;                /* G.wcSeen runtime mask (init 0 —
                                       * the importer does NOT restore
                                       * [0x540A], game.js:710) */

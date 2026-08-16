@@ -35,6 +35,9 @@ void ui_init(void) {
     UI.open_menu = -1;
     UI.market_sel = -1;
     UI.sel = 0;
+    CR.wc_show = -1;                 /* the live-front channels idle
+                                      * (a zeroed CR would read plate 0) */
+    CR.ui_select = -1;
 }
 
 /* centerOn (game.js:758) */
@@ -767,7 +770,52 @@ static void commit_menu(void) {
                                                     * SD .SAV picker */
 }
 
+/* the LIVE-front pickup after any dispatch: a woodcut the core wants
+ * shown, or a unit the core wants selected (both -1/none under the
+ * harness, so the oracles never see this path) */
+static void front_pickup(void) {
+    if (!colopy_front_live) return;  /* harness: channels never fill,
+                                      * and a zeroed CR reads plate 0 */
+    if (CR.ui_select >= 0) {
+        UI.sel = (int)CR.ui_select;
+        CR.ui_select = -1;
+    }
+    if (CR.wc_show >= 0 && UI.screen != SCR_WOODCUT) {
+        UI.woodcut = CR.wc_show;
+        UI.screen = SCR_WOODCUT;
+    }
+}
+
+/* the plate dismissal (onClick woodcut case, game.js:12086): plates 1
+ * and 2 route by NUMBER (map / the new colony), the rest by wc_after */
+static void wc_dismiss(void) {
+    int plate = UI.woodcut;
+    int after = CR.wc_after;
+    CR.wc_show = -1;
+    CR.wc_after = 0;
+    if (plate == 2) {
+        UI.screen = SCR_COLONY;      /* BUILDING A COLONY -> the colony */
+    } else if (plate != 1 && after == 1) {
+        UI.village_row = 0;
+        UI.screen = SCR_VILLAGE;
+        village_first_welcome();     /* the @INDIANWELCOME chain */
+    } else if (plate != 1 && after == 2) {
+        UI.village_row = 0;
+        UI.screen = SCR_VILLAGE;
+    } else {
+        UI.screen = SCR_MAP;         /* plate 1: map (the land-naming
+                                      * entry dialog is a FLAGGED
+                                      * follow-up, askLandName) */
+    }
+}
+
+static void in_key_inner(const char *k, int alt, int shift);
 void in_key(const char *k, int alt, int shift) {
+    in_key_inner(k, alt, shift);
+    front_pickup();
+}
+
+static void in_key_inner(const char *k, int alt, int shift) {
     /* an open @HOWMUCH dialog owns the keyboard (onKey, game.js:12403:
      * the G.dialog check runs before every screen case) */
     if (UI.dlg) { dialog_key(k); return; }
@@ -1150,6 +1198,10 @@ void in_key(const char *k, int alt, int shift) {
         }
         if (key_is(k, "Escape") || key_is(k, "x")) UI.screen = SCR_MAP;
         break;
+    case SCR_WOODCUT:
+        if (key_is(k, "Enter") || key_is(k, " ") || key_is(k, "Escape"))
+            wc_dismiss();
+        break;
     case SCR_VILLAGE: {
         /* the @ACTIONS menu keys (onKey village case, game.js:12460):
          * arrows walk the rows, Enter/space commits, ESC/x leaves and
@@ -1282,7 +1334,13 @@ static int hit(int mx, int my, int x, int y, int w, int h) {
     return mx >= x && mx < x + w && my >= y && my < y + h;
 }
 
+static void in_click_inner(int mx, int my, int right);
 void in_click(int mx, int my, int right) {
+    in_click_inner(mx, my, right);
+    front_pickup();
+}
+
+static void in_click_inner(int mx, int my, int right) {
     (void)right;
     /* a click on an open numeric dialog commits its entry
      * (dialogClick's non-opts arm, game.js:12410) */
@@ -1329,6 +1387,21 @@ void in_click(int mx, int my, int right) {
     case SCR_REPORT:
         UI.screen = SCR_MAP;
         break;
+    case SCR_WOODCUT:
+        wc_dismiss();
+        break;
+    case SCR_VILLAGE: {
+        /* tap an action row (the box geometry re-derived by the
+         * painter's own helper) */
+        int r = rm_village_row_hit(UI.village_row, mx, my);
+        if (r >= 0) {
+            UI.village_row = (int8_t)r;
+            in_key_inner("Enter", 0, 0);
+        } else if (r == -1) {
+            in_key_inner("Escape", 0, 0);    /* off the box = leave */
+        }
+        break;
+    }
     case SCR_COLONY: {
         /* order per the JS: dock ships, view buttons, build buttons
          * (unbound), the production numbers toggle, the exit box */
