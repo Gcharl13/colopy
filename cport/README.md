@@ -38,9 +38,21 @@ unload-all), and colony FOUNDING (cmd_found_colony — the harness stops
 at the inert name dialog; a live front end, colopy_front_live, founds
 with the suggested name).  Questions now go to the PLAYER on a live
 front end: colopy_ask_hook (default = the harness seq policy, so every
-oracle is byte-identical) — the Teensy game loop blocks on the prompt
-event drawn through the dialog framework, arrows pick a GAME.TXT tail
-row, Enter answers, Escape dismisses.  Open follow-ups, all
-presentation-side: the drag layer, the pedia/options browse screens,
-the Custom House ask-loop, the Save/Load/Go To dialog rows, and the
-USB-keyboard bring-up check per teensy/README.md).
+oracle is byte-identical) — the board game loop blocks on the prompt
+event drawn through the dialog framework; touch taps a row, Enter
+answers, Escape dismisses.  PHASE 9 (the CrowPanel ESP32-P4 board,
+p4/): the full boot — title menu, difficulty/nation/name (touch
+keyboard), briefing pages, the King's audience, the ten LEVN cards —
+into colopy_new_game (beginGame ported JS-exact, its own oracle:
+sim_compare newgame, 0 diffs x 4 nations x 2 difficulties x 30 turns);
+landfall + the woodcut plates + the staying village screen + the
+@INDIANWELCOME chain live on colopy_front_live channels; every menu
+row bound (ORDERS delegating to the key handlers, the @SAILPORT/
+@TRAVELPLACE Go To picker, DECLARE INDEPENDENCE, Retire, Exit to DOS,
+Save/Load through the shell SD pickers); the Hall of Fame written at
+retirement and persisted as HOF.DAT.  Open follow-ups, all
+presentation-side: the pedia/options browse screens, map zoom levels,
+trade-route dialogs (advanceTradeRoutes is a documented no-op), the
+drag layer, the Custom House ask-loop, and free-text naming for
+LANDS/colonies (founding uses the suggested names; the leader name
+has the touch keyboard).

@@ -320,6 +320,42 @@ static int ui_colony_cs_index(void) {
 
 /* the open amount modal's subs — shared by the painter and the tap
  * hit-test so the two agree */
+/* ---- the shell's touch keyboard (SHELL CHROME) --------------------
+ * Overlaid on the name-entry screen so a custom leader name needs no
+ * serial console: three rows of keys at the screen's foot, tap types,
+ * < deletes, OK commits (the empty entry keeps the suggested name —
+ * the same Enter rule the key layer implements). */
+static const char *const KBD_ROWS[3] = {
+    "ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ .<#"
+};
+#define KBD_Y 146
+#define KBD_KW 30
+#define KBD_KH 15
+
+static void draw_kbd(void) {
+    static rd_font kf;
+    if (!kf.payload && !rd_font_open(&RD.pak, "FONTTINY.FF", &kf)) return;
+    const uint8_t ink[4] = { 0xFF, 68, 67, 0 };
+    for (int r = 0; r < 3; r++)
+        for (int c = 0; c < 10; c++) {
+            char ch = KBD_ROWS[r][c];
+            int x = 10 + c * KBD_KW, y = KBD_Y + r * (KBD_KH + 2);
+            rm_plaque(x, y, KBD_KW - 2, KBD_KH);
+            char lab[3] = { ch, 0, 0 };
+            if (ch == '<') { lab[0] = '<'; lab[1] = '-'; }
+            if (ch == '#') { lab[0] = 'O'; lab[1] = 'K'; }
+            rd_text(&kf, lab, x + (KBD_KW - 2) / 2 - 4, y + 4, ink);
+        }
+}
+
+static char kbd_hit(int gx, int gy) {
+    if (gy < KBD_Y || gx < 10 || gx >= 10 + 10 * KBD_KW) return 0;
+    int r = (gy - KBD_Y) / (KBD_KH + 2);
+    int c = (gx - 10) / KBD_KW;
+    if (r < 0 || r > 2 || c < 0 || c > 9) return 0;
+    return KBD_ROWS[r][c];
+}
+
 static void dlg_subs(rm_subs *subs) {
     memset(subs, 0, sizeof(*subs));
     subs->str[0] = dat_cargo[UI.dlg_good].name;
@@ -333,7 +369,10 @@ static void draw_screen(void) {
     case SCR_TITLE: rm_draw_title(UI.menu_row); break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
     case SCR_NATION: rm_draw_nation(UI.nation); break;
-    case SCR_NAME: rm_draw_name(UI.leader); break;
+    case SCR_NAME:
+        rm_draw_name(UI.leader);
+        draw_kbd();                  /* the shell's touch keyboard */
+        break;
     case SCR_REPORT: rm_draw_report(UI.report); break;
     case SCR_HOF:
         rm_draw_hof();
@@ -426,6 +465,17 @@ static void game_tap(int gx, int gy) {
         dlg_subs(&subs);
         in_key(rm_event_hit("HOWMUCH5", &subs, 0, gx, gy) ? "Enter"
                                                           : "Escape", 0, 0);
+        draw_screen();
+        return;
+    }
+    if (UI.screen == SCR_NAME) {     /* the touch keyboard owns taps */
+        char ch = kbd_hit(gx, gy);
+        if (ch == '<') in_key("Backspace", 0, 0);
+        else if (ch == '#') in_key("Enter", 0, 0);
+        else if (ch) {
+            char one[2] = { ch, 0 };
+            in_key(one, 0, 0);
+        }
         draw_screen();
         return;
     }
