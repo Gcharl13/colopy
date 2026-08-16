@@ -20,6 +20,7 @@
  * +0x34) and no ported path writes REL.WAR, so rivalTurn's WAR branch
  * (attack march + resolveAttack + the capture path) is unreachable for
  * now; it lands with the combat-resolution slice and is marked below. */
+#include <stdio.h>
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -1036,8 +1037,76 @@ static void ai_diplomacy_tick(void) {
  * screen leaving the map — which closes the parley gate.  scoreParts is
  * draw-free.  DAT_SCORENAMES_COUNT is a scalar macro from the text
  * header; the strings themselves stay in the droppable text unit. */
+/* scoreParts (game.js:8100 family) — moved from the F10 report painter
+ * so the endgame can write the Hall of Fame record (hofWrite). */
+void score_parts(score_parts_t *s) {
+    /* SCORE_PLAIN = Indentured Servants / Petty Criminals / Indian
+     * Converts (@JOBEXPERT rows 25/26/27); Free Colonists = row 19 */
+    int population = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        if ((c->owner_power & 3) != cs_nation()) continue;
+        for (int k = 0; k < c->population && k < 32; k++) {
+            int prof = c->profession[k];
+            /* SAV_PROFESSION: a byte outside 1..27 is null -> the +2
+             * plain-colonist score (game.js:10207/10096) */
+            if (prof >= 25 && prof <= 27) population += 1;
+            else if (prof == 0 || prof >= 28 || prof == 19) population += 2;
+            else population += 4;
+        }
+    }
+    int owned = 0;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (father_owned(i)) owned++;
+    s->population = population;
+    s->fathers = owned * 5;
+    s->sentiment = national_sol();
+    s->razed = -(int)CR.razed * (1 + cs_difficulty());
+    int g = CS.powers[cs_nation()].gold / 100;
+    s->gold = g < 100 ? g : 100;
+    s->liberty = (int)(CR.bells_total / 1000);
+    s->revolution = ((CR.woi_flags & WOI_WON) && CR.declared_year)
+                        ? (1780 - CR.declared_year) * 2 : 0;
+    s->base = s->population + s->fathers + s->sentiment + s->razed +
+              s->gold + s->liberty + s->revolution;
+    s->mult = cs_difficulty() + 4 + (cs_difficulty() >= 3 ? 1 : 0) +
+              (cs_difficulty() >= 4 ? 1 : 0);
+    /* Math.floor(mult*base/100) >> 1 — floor semantics for negatives */
+    int mb = s->mult * s->base;
+    int fl = mb >= 0 ? mb / 100 : -((-mb + 99) / 100);
+    s->total = fl >> 1;
+}
+
+/* hofWrite (game.js:12333): descending insertion on the RATING word
+ * (func_03ADA6 @0x3AECD), list capped at 6. */
+static void hof_write(void) {
+    score_parts_t s;
+    score_parts(&s);
+    colopy_hof_rec r;
+    memset(&r, 0, sizeof(r));
+    snprintf(r.name, sizeof(r.name), "%s",
+             CR.leader[0] ? CR.leader : dat_nations[cs_nation()].leader);
+    r.nation = cs_nation();
+    r.difficulty = cs_difficulty();
+    r.year = cs_year();
+    r.score = s.base;
+    r.rating = s.total;
+    r.declared = (CR.woi_flags & WOI_DECLARED) ? 1 : 0;
+    r.independent = (CR.woi_flags & WOI_WON) ? 1 : 0;
+    int k = 0;
+    while (k < CR.n_hof && CR.hof[k].rating >= r.rating) k++;
+    for (int j = (CR.n_hof < 6 ? CR.n_hof : 5); j > k; j--)
+        CR.hof[j] = CR.hof[j - 1];
+    if (k < 6) {
+        CR.hof[k] = r;
+        if (CR.n_hof < 6) CR.n_hof++;
+        CR.hof_dirty = 1;            /* the shell persists the list */
+    }
+}
+
 void end_game_sequence(void) {
     CR.retired = 1;
+    hof_write();                     /* endGameSequence (game.js:8122) */
     ev_emit("EXPLOITS", 0, 0, 0, 0);
     (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
     CR.screen_map = 0;                   /* G.screen = 'report' */

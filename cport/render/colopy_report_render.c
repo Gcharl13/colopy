@@ -469,46 +469,6 @@ static void draw_f9(void) {
 #define F10_ROW0 24
 #define F10_PITCH 28
 #define F10_GREEN 68
-typedef struct {
-    int population, fathers, sentiment, razed, gold, liberty, revolution;
-    int base, mult, total;
-} score_parts_t;
-static void score_parts(score_parts_t *s) {
-    /* SCORE_PLAIN = Indentured Servants / Petty Criminals / Indian
-     * Converts (@JOBEXPERT rows 25/26/27); Free Colonists = row 19 */
-    int population = 0;
-    for (int ci = next_player_col(-1); ci >= 0; ci = next_player_col(ci)) {
-        const ColonyRecord *c = &CS.colonies[ci];
-        for (int k = 0; k < c->population && k < 32; k++) {
-            int prof = c->profession[k];
-            /* SAV_PROFESSION: a byte outside 1..27 is null -> the +2
-             * plain-colonist score (game.js:10207/10096) */
-            if (prof >= 25 && prof <= 27) population += 1;
-            else if (prof == 0 || prof >= 28 || prof == 19) population += 2;
-            else population += 4;
-        }
-    }
-    int owned = 0;
-    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
-        if (father_owned(i)) owned++;
-    s->population = population;
-    s->fathers = owned * 5;
-    s->sentiment = national_sol();
-    s->razed = -(int)CR.razed * (1 + cs_difficulty());
-    int g = CS.powers[cs_nation()].gold / 100;
-    s->gold = g < 100 ? g : 100;
-    s->liberty = (int)(CR.bells_total / 1000);
-    s->revolution = ((CR.woi_flags & WOI_WON) && CR.declared_year)
-                        ? (1780 - CR.declared_year) * 2 : 0;
-    s->base = s->population + s->fathers + s->sentiment + s->razed +
-              s->gold + s->liberty + s->revolution;
-    s->mult = cs_difficulty() + 4 + (cs_difficulty() >= 3 ? 1 : 0) +
-              (cs_difficulty() >= 4 ? 1 : 0);
-    /* Math.floor(mult*base/100) >> 1 — floor semantics for negatives */
-    int mb = s->mult * s->base;
-    int fl = mb >= 0 ? mb / 100 : -((-mb + 99) / 100);
-    s->total = fl >> 1;
-}
 static void draw_f10(void) {
     score_parts_t s;
     score_parts(&s);

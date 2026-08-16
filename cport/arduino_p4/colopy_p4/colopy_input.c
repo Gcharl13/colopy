@@ -195,6 +195,7 @@ static void begin_goto_page(int ui, int page) {
 static void brief_begin(void) {
     colopy_init(colopy_front_seed);
     colopy_new_game((uint8_t)UI.nation, (uint8_t)UI.difficulty, UI.leader);
+    snprintf(CR.leader, sizeof(CR.leader), "%s", UI.leader);
     UI.sel = 0;
     center_on((int)dat_starts[UI.nation][0], (int)dat_starts[UI.nation][1]);
     UI.screen = SCR_MAP;
@@ -1388,6 +1389,9 @@ static void in_click_inner(int mx, int my, int right) {
                      dat_nations[UI.nation].leader);
             UI.screen = SCR_NAME;
         }
+        break;
+    case SCR_HOF:
+        UI.screen = SCR_TITLE;
         break;
     case SCR_NAME:
         UI.brief_page = 0;

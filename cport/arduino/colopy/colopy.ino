@@ -252,6 +252,9 @@ static void draw_screen(void) {
         rm_draw_europe(UI.euro_ship, UI.euro_dock_sel, UI.euro_row,
                        UI.market_sel);
         break;
+    case SCR_HOF:
+        rm_draw_hof();
+        break;
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);
         break;

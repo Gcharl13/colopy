@@ -306,9 +306,7 @@ static void draw_screen(void) {
     case SCR_NAME: rm_draw_name(UI.leader); break;
     case SCR_REPORT: rm_draw_report(UI.report); break;
     case SCR_HOF:
-        /* the Hall of Fame table has no C painter yet (FLAGGED,
-         * follow-up) — a black hold; any tap/key returns to the title */
-        rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+        rm_draw_hof();
         break;
     case SCR_COLONY: {
         int ci = ui_colony_cs_index();
@@ -381,6 +379,7 @@ static void game_key(const char *name, int alt, int shift) {
         return;
     }
     in_key(name, alt, shift);
+    hof_save_sd();
     if (UI.request) { service_request(); return; }
     draw_screen();
 }
@@ -435,6 +434,7 @@ static void game_tap(int gx, int gy) {
         }
     }
     in_click(gx, gy, 0);
+    hof_save_sd();
     if (UI.request) { service_request(); return; }
     draw_screen();
 }
@@ -744,6 +744,24 @@ static void land_view(void) {
 /* enter the game UI at the TITLE screen — the real boot: New Game runs
  * the full flow (difficulty/nation/name/briefing -> colopy_new_game),
  * LOAD GAME opens the shell's SD picker.  Needs only the pak. */
+static void hof_load_sd(void) {
+    if (!sd_ready) return;
+    FILE *f = fopen("/sdcard/HOF.DAT", "rb");
+    if (!f) return;
+    size_t n = fread(CR.hof, sizeof(colopy_hof_rec), 6, f);
+    fclose(f);
+    CR.n_hof = (uint8_t)n;
+}
+
+static void hof_save_sd(void) {
+    if (!sd_ready || !CR.hof_dirty) return;
+    CR.hof_dirty = 0;
+    FILE *f = fopen("/sdcard/HOF.DAT", "wb");
+    if (!f) return;
+    fwrite(CR.hof, sizeof(colopy_hof_rec), CR.n_hof, f);
+    fclose(f);
+}
+
 static void boot_title(void) {
     pak_load();
     if (!pak_ready) return;
@@ -754,6 +772,7 @@ static void boot_title(void) {
     colopy_front_seed = esp_random();  /* the DOS engine seeds from the
                                         * BIOS clock; the P4 has a TRNG */
     ui_init();                   /* SCR_TITLE */
+    hof_load_sd();               /* the Hall of Fame table (HOF.DAT) */
     draw_screen();
     Serial.println("title up (touch; or l <sav> + g for a direct load)");
 }

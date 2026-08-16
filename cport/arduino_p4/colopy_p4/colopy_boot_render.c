@@ -453,3 +453,53 @@ void rm_draw_king(int nation) {
     }
     center_shadow(&B_TINY, "(click to begin)", CX, 186, blut(0xFC), 1);
 }
+
+/* the Hall of Fame table (drawHof game.js:12358) — REBUILT from the
+ * Phase-4 live capture (hof_01_table.png): three text lines per
+ * record, title glyph-top y=3, record k at y=20+36k (+0/+11/+22),
+ * rank at x=10, text at x=25, line 3 centred, single green ink 68.
+ * Records come from CR.hof (HALLFAME.DAT semantics; the shell
+ * persists the list). */
+void rm_draw_hof(void) {
+    bresolve();
+    rd_use_palette("WOODPANL.PIK");
+    rd_pik("WOODPANL.PIK");
+    const uint8_t *ink = blut(68);
+    center_shadow(&B_INTR, dat_text_misc[192], 160, 3, ink, 0);
+    int n = CR.n_hof < 5 ? CR.n_hof : 5;
+    for (int k = 0; k < n; k++) {
+        const colopy_hof_rec *r = &CR.hof[k];
+        int y = 20 + 36 * k;
+        const char *adj = dat_nations[r->nation & 3].adjective;
+        char buf[160];
+        snprintf(buf, sizeof(buf), "%d.", k + 1);
+        rd_text(&B_INTR, buf, 10, y, ink);
+        snprintf(buf, sizeof(buf), "%s %s of the %s%s%s",
+                 dat_difficulty[r->difficulty < 5 ? r->difficulty : 0],
+                 r->name, r->declared ? dat_text_misc[191] : "",
+                 r->declared ? " " : "", adj);
+        rd_text(&B_INTR, buf, 25, y, ink);
+        char career[96];
+        if (r->independent)
+            snprintf(career, sizeof(career), "%s, %s", dat_text_misc[195],
+                     dat_independent[r->nation & 3]);
+        else if (r->declared)
+            snprintf(career, sizeof(career), "%s", dat_text_misc[196]);
+        else
+            snprintf(career, sizeof(career), "%s, %s Colonies",
+                     dat_text_misc[197], adj);
+        snprintf(buf, sizeof(buf), "%s %s %s %u.  %s: %ld", career,
+                 dat_text_misc[193], dat_text_misc[194], r->year,
+                 dat_text_misc[198], (long)r->score);
+        rd_text(&B_INTR, buf, 25, y + 11, ink);
+        char rating[64];
+        size_t o = 0;
+        for (const char *c = dat_text_misc[199];
+             *c && o + 1 < sizeof(rating); c++)
+            rating[o++] = *c == '_' ? ' ' : *c;
+        rating[o] = 0;
+        snprintf(buf, sizeof(buf), "--- %s: %ld%% ---", rating,
+                 (long)r->rating);
+        center_shadow(&B_INTR, buf, 160, y + 22, ink, 0);
+    }
+}

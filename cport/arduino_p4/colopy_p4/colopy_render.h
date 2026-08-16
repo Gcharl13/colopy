@@ -130,6 +130,7 @@ void rm_draw_briefing(int nation, int page);
 void rm_draw_king(int nation);
 void rm_draw_cards(int card, int nation, int difficulty,
                    const char *leader);
+void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */
 /* pulldown row model (colopy_map_render.c) — shared with the input layer */
 typedef struct { const char *label; const char *accel; uint8_t dim, sep; } rm_mrow;
 int  rm_menu_rows(int mi, int sel, rm_mrow *out);

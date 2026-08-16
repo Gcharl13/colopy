@@ -141,7 +141,15 @@ int  unit_pos_y(int ui);
 void colony_remove(int ci);      /* immediate splice (rival capture path) */
 void colony_vanish_filter(void);  /* the deferred @VANISH compaction */
 void adjust_tension(int tribe, int delta, int cause);  /* game.js:5103 */
-void village_first_welcome(void);  /* firstTribeContact's woodcut callback
+void village_first_welcome(void);
+/* scoreParts — the F10 numbers (population/fathers/sentiment/razed/
+ * gold/liberty/revolution, base points, the difficulty multiplier and
+ * the Colonization Rating total). */
+typedef struct {
+    int population, fathers, sentiment, razed, gold, liberty, revolution;
+    int base, mult, total;
+} score_parts_t;
+void score_parts(score_parts_t *s);  /* firstTribeContact's woodcut callback
                                     * (game.js:1222-1241): the
                                     * @INDIANWELCOME treaty ask — run by
                                     * the LIVE front on plate dismissal */
@@ -270,6 +278,16 @@ typedef struct {
  * override ({ name, type }, type_ov = @UNIT row + 1).  no_board is the
  * @ARMOPTIONS "Don't get on next ship" flag. */
 typedef struct { uint8_t kind, idx, type_ov, no_board; } immigrant;
+
+/* one Hall of Fame record (HALLFAME.DAT fields: +0x18 nation, +0x1a
+ * declared, +0x1c independence-won, +0x1e year, +0x22 difficulty,
+ * +0x24 score points, +0x26 rating % — the ranking key) */
+typedef struct {
+    char name[24];
+    uint8_t nation, difficulty, declared, independent;
+    uint16_t year;
+    int32_t score, rating;
+} colopy_hof_rec;
 
 /* A hold slot (JS { good, qty }); holds are LISTS with holdAdd merge
  * semantics (game.js:3300), not per-good arrays. */
@@ -449,6 +467,9 @@ typedef struct {
                                       * the landfall party (10905) */
     uint8_t land_ho;                 /* woodcut-1 latch (G.landHo;
                                       * loads import it true, 10240) */
+    char leader[24];                 /* G.leader — the front sets it at
+                                      * New Game; empty = the nation's
+                                      * default leader */
     uint8_t built_colony;            /* woodcut-2 latch (G.builtColony) */
     uint16_t wc_seen;                /* G.wcSeen runtime mask (init 0 —
                                       * the importer does NOT restore
@@ -467,6 +488,11 @@ typedef struct {
      * sentinel + unit_is_ref (JS G.refUnits, mkUnit-born, veteran). */
     uint8_t woi_flags;               /* 1 declared / 2 intervention / 8 won */
     uint16_t declared_year;
+    colopy_hof_rec hof[6];           /* the Hall of Fame table
+                                      * (HALLFAME.DAT semantics,
+                                      * capture-pinned 2026-08-07);
+                                      * the SHELL loads/persists it */
+    uint8_t n_hof, hof_dirty;
     int16_t ref_pool[4];             /* Regulars/Cavalry/Man-O-War/Artillery */
     int32_t royal_fund;
     uint8_t razed;
