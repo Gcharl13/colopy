@@ -298,6 +298,13 @@ static void game_key(const char *name, int alt, int shift) {
         return;
     }
     in_key(name, alt, shift);
+    if (UI.request) {                        /* Save/Load menu rows: on
+                                              * this shell the serial
+                                              * commands own the disk */
+        Serial.println(UI.request == 'S' ? "save: use `s <file>` over serial"
+                                         : "load: use `l <file>` over serial");
+        UI.request = 0;
+    }
     draw_screen();
 }
 

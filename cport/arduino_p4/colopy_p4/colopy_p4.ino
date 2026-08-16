@@ -83,6 +83,8 @@
 #include <esp_ldo_regulator.h>      // ESP32-P4 LDO management
 #include <esp_heap_caps.h>          // PSRAM allocation
 #include <esp_vfs_fat.h>            // SD card FAT mount (Lesson08 path)
+#include <dirent.h>                 // SD .SAV listing (Load Game picker)
+#include <strings.h>
 #include <sdmmc_cmd.h>
 #include <driver/sdmmc_host.h>
 
@@ -387,6 +389,7 @@ static void game_key(const char *name, int alt, int shift) {
         return;
     }
     in_key(name, alt, shift);
+    if (UI.request) { service_request(); return; }
     draw_screen();
 }
 
@@ -411,6 +414,7 @@ static void game_tap(int gx, int gy) {
      * top edge, never a distinct target) */
     if (UI.screen == SCR_MAP && UI.open_menu < 0 && gy < 10) {
         in_click(gx, gy < 8 ? gy : 7, 0);
+        if (UI.request) { service_request(); return; }
         draw_screen();
         return;
     }
@@ -439,6 +443,7 @@ static void game_tap(int gx, int gy) {
         }
     }
     in_click(gx, gy, 0);
+    if (UI.request) { service_request(); return; }
     draw_screen();
 }
 
@@ -485,6 +490,88 @@ static int ask_wait(int *gx, int *gy) {
         }
         delay(5);
     }
+}
+
+/* ---- the shell's disk UI (Save Game / Load Game menu rows) --------
+ * The core never does I/O: a GAME-menu row sets UI.request ('S'/'L')
+ * and the shell services it here with a list modal.  This box is
+ * SHELL CHROME (the DOS save dialog is a different, undocumented
+ * screen — not reproduced): plaque + tiny-font rows, tap a row or
+ * arrows+Enter, tap outside / Escape cancels. */
+static const char *pick_rows[12];
+
+static int shell_pick(const char *title, int n) {
+    if (n < 1 || !pak_ready) return -1;
+    static rd_font f;
+    if (!f.payload && !rd_font_open(&RD.pak, "FONTTINY.FF", &f)) return -1;
+    int w = 150, h = 14 + n * 10 + 4;
+    int x = (320 - w) / 2, y = (200 - h) / 2;
+    int sel = 0;
+    const uint8_t ink[4] = { 0xFF, 68, 67, 0 };
+    for (;;) {
+        rm_plaque(x, y, w, h);
+        rd_text(&f, title, x + 6, y + 4, ink);
+        for (int i = 0; i < n; i++) {
+            int oy = y + 14 + i * 10;
+            if (i == sel) rd_fill(x + 3, oy - 1, w - 6, 9, 138);
+            rd_text(&f, pick_rows[i], x + 8, oy, ink);
+        }
+        flush_fb();
+        int gx, gy;
+        int ev = ask_wait(&gx, &gy);
+        if (ev == TT_TAP) {
+            if (gx < x || gx >= x + w || gy < y || gy >= y + h) return -1;
+            int i = (gy - (y + 14)) / 10;
+            if (gy >= y + 14 && i >= 0 && i < n) return i;
+            continue;
+        }
+        const char *k = ask_key;
+        if (strcmp(k, "ArrowUp") == 0) sel = (sel + n - 1) % n;
+        else if (strcmp(k, "ArrowDown") == 0) sel = (sel + 1) % n;
+        else if (strcmp(k, "Enter") == 0 || strcmp(k, " ") == 0) return sel;
+        else if (strcmp(k, "Escape") == 0) return -1;
+    }
+}
+
+static void land_view(void);             /* fwd: the post-load view */
+
+static void service_request(void) {
+    if (!UI.request) return;
+    char r = (char)UI.request;
+    UI.request = 0;
+    if (sd_ready && r == 'S') {
+        static char names[10][16];
+        for (int i = 0; i < 10; i++) {
+            snprintf(names[i], sizeof(names[i]), "COLONY0%d.SAV", i);
+            pick_rows[i] = names[i];
+        }
+        int k = shell_pick("SAVE GAME - pick a slot", 10);
+        if (k >= 0) cmd_save(pick_rows[k]);
+    } else if (sd_ready && r == 'L') {
+        static char names[10][32];
+        int n = 0;
+        DIR *d = opendir("/sdcard");
+        if (d) {
+            struct dirent *e;
+            while ((e = readdir(d)) != NULL && n < 10) {
+                const char *nm = e->d_name;
+                size_t L = strlen(nm);
+                if (L > 4 && strcasecmp(nm + L - 4, ".SAV") == 0) {
+                    snprintf(names[n], sizeof(names[n]), "%s", nm);
+                    pick_rows[n] = names[n];
+                    n++;
+                }
+            }
+            closedir(d);
+        }
+        int k = shell_pick("LOAD GAME - pick a save", n);
+        if (k >= 0) {
+            cmd_load(pick_rows[k]);
+            UI.screen = SCR_MAP;
+            land_view();
+        }
+    }
+    draw_screen();
 }
 
 /* colopy_ask_hook: the core emits the question's prompt event, then
@@ -624,6 +711,40 @@ static void cmd_view(void) {                 /* 'v': render the map view */
                   vx, vy, t1 - t0, micros() - t1);
 }
 
+/* the importer's landing view/sel (game.js:10490) — shared by 'g' and
+ * the in-game Load Game picker */
+static void land_view(void) {
+    UI.sel = 0;
+    for (int q = 0; q < CR.n_units_order; q++) {
+        int u2 = CR.units_order[q];
+        if (dat_units[CS.units[u2].type].hull <= 0) {
+            UI.sel = q;
+            break;
+        }
+    }
+    int cx = -1, cy = -1;
+    if (CR.n_units_order) {
+        int u2 = CR.units_order[UI.sel];
+        cx = CS.units[u2].map_x;
+        cy = CS.units[u2].map_y;
+    } else
+        for (int q = 0; q < CS.n_colonies; q++)
+            if ((CS.colonies[q].owner_power & 3) == cs_nation()) {
+                cx = CS.colonies[q].map_x;
+                cy = CS.colonies[q].map_y;
+                break;
+            }
+    if (cx >= 0) {
+        int tx = cx - 7, ty = cy - 6;
+        if (tx > COLOPY_MAP_W - 15) tx = COLOPY_MAP_W - 15;
+        if (ty > COLOPY_MAP_H - 12) ty = COLOPY_MAP_H - 12;
+        if (tx < 0) tx = 0;
+        if (ty < 0) ty = 0;
+        UI.view_x = tx;
+        UI.view_y = ty;
+    }
+}
+
 static void start_game(void) {               /* 'g': enter the game loop */
     if (!sav_loaded) { Serial.println("load a save first (l <file>)"); return; }
     if (!pak_ready) { cmd_view(); }          /* loads the pak + first draw */
@@ -636,37 +757,7 @@ static void start_game(void) {               /* 'g': enter the game loop */
     UI.screen = SCR_MAP;
     UI.nation = (int8_t)cs_nation();
     UI.difficulty = (int8_t)cs_difficulty();
-    {   /* the importer's landing view/sel (game.js:10490) */
-        UI.sel = 0;
-        for (int q = 0; q < CR.n_units_order; q++) {
-            int u2 = CR.units_order[q];
-            if (dat_units[CS.units[u2].type].hull <= 0) {
-                UI.sel = q;
-                break;
-            }
-        }
-        int cx = -1, cy = -1;
-        if (CR.n_units_order) {
-            int u2 = CR.units_order[UI.sel];
-            cx = CS.units[u2].map_x;
-            cy = CS.units[u2].map_y;
-        } else
-            for (int q = 0; q < CS.n_colonies; q++)
-                if ((CS.colonies[q].owner_power & 3) == cs_nation()) {
-                    cx = CS.colonies[q].map_x;
-                    cy = CS.colonies[q].map_y;
-                    break;
-                }
-        if (cx >= 0) {
-            int tx = cx - 7, ty = cy - 6;
-            if (tx > COLOPY_MAP_W - 15) tx = COLOPY_MAP_W - 15;
-            if (ty > COLOPY_MAP_H - 12) ty = COLOPY_MAP_H - 12;
-            if (tx < 0) tx = 0;
-            if (ty < 0) ty = 0;
-            UI.view_x = tx;
-            UI.view_y = ty;
-        }
-    }
+    land_view();
     draw_screen();
     Serial.println("game loop on (tap the screen, or k <name> over serial)");
 }

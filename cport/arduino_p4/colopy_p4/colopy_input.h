@@ -34,6 +34,12 @@ typedef struct {
                                       * context-menu slice) */
     int8_t  euro_menu_row;           /* G.euroMenuRow */
     int8_t  show_hidden;             /* G.showHidden */
+    int8_t  goto_arm;                /* Go to Place armed: next map click
+                                      * is the destination (G.goTo) */
+    int8_t  request;                 /* board-shell service request from a
+                                      * menu row: 'S' save / 'L' load / 0.
+                                      * The core never does I/O — the shell
+                                      * reads, acts, and clears this. */
     int8_t  colony_numbers;          /* G.colonyNumbers ([0x336]) */
     int8_t  village_row;             /* G.villageRow */
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,

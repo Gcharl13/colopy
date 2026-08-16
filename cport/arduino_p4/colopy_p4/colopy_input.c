@@ -101,6 +101,84 @@ static void open_menu(int mi) {
  * command runs; dim rows and separators are inert.  Slice 2 binds the
  * rows whose commands exist in the C — the rest are explicit no-ops
  * (the shared script only exercises bound rows). */
+/* pillage (game.js:2206): a foot unit standing on an improvement tears
+ * it up and spends its turn.  The JS guards report through G.msg, a
+ * legacy status-line channel that no longer renders (task #65 moved
+ * messages to popups) — so the guarded cases are silent no-ops here
+ * exactly as they present in the JS. */
+static void pillage_row(void) {
+    int ui = sel_unit();
+    if (ui < 0 || dat_units[CS.units[ui].type].hull > 0) return;
+    int x = CS.units[ui].map_x, y = CS.units[ui].map_y;
+    for (int k = 0; k < CS.n_colonies; k++)
+        if ((CS.colonies[k].owner_power & 3) == cs_nation() &&
+            CS.colonies[k].map_x == x && CS.colonies[k].map_y == y)
+            return;                      /* "our own colony" */
+    int i = y * COLOPY_MAP_W + x;
+    if (!CS.improve[i]) return;          /* "nothing here to destroy" */
+    CS.improve[i] = 0;
+    CS.units[ui].moves_remaining = 0;
+    advance();
+}
+
+/* beginGoToPage (game.js:2237): the @SAILPORT/@TRAVELPLACE destination
+ * picker — a ship's list opens with the EUROPE ROW FIRST then the
+ * coastal colonies (water on the 4-halo); a land unit lists only the
+ * colonies on ITS OWN LAND MASS (the region plane partitions by
+ * landmass on both sides, so the filter agrees).  Pages of ten with a
+ * "(More)" tail row; Escape / an out-of-range answer leaves
+ * click-to-target (UI.goto_arm).  Picking Europe sets sail. */
+static void begin_goto_page(int ui, int page) {
+    static const int HALO[4][2] = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } };
+    int ship = dat_units[CS.units[ui].type].hull > 0;
+    int ecs[COLOPY_MAX_COLONIES + 1];    /* entry -> colony rec, -1 Europe */
+    int n = 0;
+    if (ship) {
+        ecs[n++] = -1;
+        for (int k = 0; k < CS.n_colonies; k++) {
+            if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+            for (int d = 0; d < 4; d++)
+                if (tile_water(map_at(CS.colonies[k].map_x + HALO[d][0],
+                                      CS.colonies[k].map_y + HALO[d][1]))) {
+                    ecs[n++] = k;
+                    break;
+                }
+        }
+    } else {
+        int home = CS.region[CS.units[ui].map_y * COLOPY_MAP_W +
+                             CS.units[ui].map_x] & 0x0F;
+        for (int k = 0; k < CS.n_colonies; k++) {
+            if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+            if ((CS.region[CS.colonies[k].map_y * COLOPY_MAP_W +
+                           CS.colonies[k].map_x] & 0x0F) == home)
+                ecs[n++] = k;
+        }
+    }
+    if (!n) { UI.goto_arm = 1; return; } /* "Click the tile to travel to." */
+    int from = page * 10;
+    int cnt = n - from > 10 ? 10 : n - from;
+    int more = n > from + 10;
+    int rows = cnt + (more ? 1 : 0);
+    ev_emit(ship ? "SAILPORT" : "TRAVELPLACE", 0, 0, 0, 0);
+    int k = ask_choice();
+    if (k < 0 || k >= rows) { UI.goto_arm = 1; return; }
+    if (more && k == rows - 1) { begin_goto_page(ui, page + 1); return; }
+    int e = ecs[from + k];
+    if (e < 0) {                         /* the Europe row (func_022CDC) */
+        if ((CR.woi_flags & WOI_DECLARED) && !(CR.woi_flags & WOI_WON)) {
+            ev_emit("EUROPENOTAVAIL", 0, 0, 0, 0);
+            return;
+        }
+        cmd_sail_for_europe(ui);
+        if (UI.sel >= CR.n_units_order)
+            UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
+        UI.screen = SCR_EUROPE;
+        return;
+    }
+    cmd_goto(ui, CS.colonies[e].map_x, CS.colonies[e].map_y);
+    advance();                           /* setGoTo (game.js:2268) */
+}
+
 static void run_menu_row(void) {
     if (UI.open_menu < 0) return;
     rm_mrow rows[64];
@@ -138,6 +216,50 @@ static void run_menu_row(void) {
         if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
     } else if (strcmp(l, "Show Hidden Terrain") == 0) {
         UI.show_hidden = (int8_t)!UI.show_hidden;
+    /* ORDERS rows — the JS dispatch table (game.js:11350) binds these
+     * to the SAME functions the map keys run, so each row re-enters
+     * in_key with its key (the menu is already closed at this point) */
+    } else if (strcmp(l, "Build Colony") == 0 ||
+               strcmp(l, "Join Colony (B)") == 0) {
+        in_key("b", 0, 0);
+    } else if (strcmp(l, "Clear Forest (P)") == 0 ||
+               strcmp(l, "Plow Fields  (P)") == 0) {
+        in_key("p", 0, 0);
+    } else if (strcmp(l, "Build Road") == 0) {
+        in_key("r", 0, 0);
+    } else if (strcmp(l, "Load Cargo") == 0) {
+        in_key("l", 0, 0);
+    } else if (strcmp(l, "Unload Cargo") == 0) {
+        in_key("u", 0, 0);
+    } else if (strcmp(l, "Go to Port") == 0 ||
+               strcmp(l, "Return to Europe") == 0) {
+        in_key("e", 0, 0);               /* both = returnToEurope (11360) */
+    } else if (strcmp(l, "Dump Cargo Overboard") == 0) {
+        in_key("o", 0, 0);
+    } else if (strcmp(l, "Disband Unit (shift-D)") == 0) {
+        in_key("D", 0, 1);
+    } else if (strcmp(l, "Pillage") == 0) {
+        pillage_row();
+    } else if (strcmp(l, "Go to Place") == 0) {
+        if (ui >= 0) begin_goto_page(ui, 0);   /* beginGoTo (game.js:2244) */
+    /* GAME rows */
+    } else if (strcmp(l, "DECLARE INDEPENDENCE") == 0) {
+        declare_independence();
+    } else if (strcmp(l, "Retire") == 0) {
+        /* retire (game.js:8153): @RETIRE row 0 confirms */
+        ev_emit("RETIRE", 0, 0, 0, 0);
+        if (ask_choice() == 0) end_game_sequence();
+    } else if (strcmp(l, "Exit to DOS") == 0) {
+        /* exitToDos (game.js:8059): @DOS row 0 confirms -> title */
+        ev_emit("DOS", 0, 0, 0, 0);
+        if (ask_choice() == 0) {
+            UI.screen = SCR_TITLE;
+            UI.menu_row = 0;
+        }
+    } else if (strcmp(l, "Save Game") == 0) {
+        UI.request = 'S';                /* the board shell owns the disk */
+    } else if (strcmp(l, "Load Game") == 0) {
+        UI.request = 'L';
     } else if (l[0] == 'F' && l[1] >= '1' && l[1] <= '9') {
         /* the REPORTS ladder rows: "F<N> <Adviser>" */
         int fn = l[1] - '0';
@@ -1291,7 +1413,15 @@ void in_click(int mx, int my, int right) {
         if (hit(mx, my, 0, 8, 240, 192)) {
             int tx = UI.view_x + (mx - 0) / 16;
             int ty = UI.view_y + (my - 8) / 16;
-            /* a pending Go To takes this click — a later slice */
+            /* a pending Go To takes this click (goToClick: the armed
+             * unit walks toward the tile over as many turns as needed —
+             * cmd_goto sets orders 3 + the goal the turn step walks) */
+            if (UI.goto_arm) {
+                UI.goto_arm = 0;
+                int gu = sel_unit();
+                if (gu >= 0) cmd_goto(gu, tx, ty);
+                return;
+            }
             int ci = -1, ord = -1;
             for (int k = 0; k < CS.n_colonies; k++) {
                 if ((CS.colonies[k].owner_power & 3) != cs_nation())
