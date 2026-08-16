@@ -3080,5 +3080,13 @@ extern const char *const dat_diplotext_greatleader[4];
 extern const char *const dat_diplotext_greatleader2[4];
 #define DAT_DIPLOTEXT_FRIEND_COUNT 4
 extern const char *const dat_diplotext_friend[4];
+#define DAT_BRIEFINGS_COUNT 4
+extern const char *const dat_briefings[4][2];
+#define DAT_CARDS_COUNT 10
+extern const char *const dat_cards[10];
+#define DAT_VICEROY_COUNT 2
+extern const char *const dat_viceroy[2];
+#define DAT_MYLEADER_COUNT 4
+extern const char *const dat_myleader[4];
 
 #endif

@@ -124,6 +124,12 @@ void rm_draw_title(int menu_row);             /* colopy_boot_render.c */
 void rm_draw_difficulty(int diff);
 void rm_draw_nation(int nation);
 void rm_draw_name(const char *leader);
+/* the New Game cinematics (drawBriefing 1106 / drawKing 1248 /
+ * drawCards 1147) */
+void rm_draw_briefing(int nation, int page);
+void rm_draw_king(int nation);
+void rm_draw_cards(int card, int nation, int difficulty,
+                   const char *leader);
 /* pulldown row model (colopy_map_render.c) — shared with the input layer */
 typedef struct { const char *label; const char *accel; uint8_t dim, sep; } rm_mrow;
 int  rm_menu_rows(int mi, int sel, rm_mrow *out);

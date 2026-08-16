@@ -50,10 +50,10 @@ with it. Nothing is dropped silently.
 | `savRaleigh` | fixture -> cport/host/fixtures.h |
 | `savStart` | fixture -> cport/host/fixtures.h |
 | `savNewColony` | fixture -> cport/host/fixtures.h |
-| `briefings` | EXCLUDED: interface: intro briefing text |
-| `cards` | EXCLUDED: interface: score-card art captions |
-| `viceroy` | EXCLUDED: interface: title strings |
-| `myleader` | EXCLUDED: interface: name-entry prompts |
+| `briefings` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
+| `cards` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
+| `viceroy` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
+| `myleader` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `starts` | emitted |
 | `map` | emitted (uint8 tiles + W/H) |
 | `sheets` | EXCLUDED: render: sprite-sheet geometry |

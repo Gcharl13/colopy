@@ -2280,6 +2280,28 @@ static const char tx_s2265[] COLOPY_TXMEM = "British General Cornwallis";
 static const char tx_s2266[] COLOPY_TXMEM = "French General Lafayette";
 static const char tx_s2267[] COLOPY_TXMEM = "Spanish Generals";
 static const char tx_s2268[] COLOPY_TXMEM = "Dutch Admiral de Ruyter";
+static const char tx_s2269[] COLOPY_TXMEM = "^^ENGLAND\n^^_\n__The Age of Expansion coincided with a period of {religious\nstrife} in England.  The Church of England--theoretically a\nProtestant denomination but maintaining many Catholic traditions--faced\na series of challenges during the colonial period from would-be\nreformers, or {Puritans}.  The English monarchy shifted its support\nbetween pro-Catholic and various Protestant factions from generation to\ngeneration, and the English Civil War (1640-49) resulted in the execution\nof Charles I and a period of Puritan rule (1649-60) under Oliver Cromwell.\nWith so much religious conflict at home, the English government had\nneither the desire nor the ability to enforce religious conformity in\nits colonial possessions.  The colonies became havens of\n{religious freedom} for groups (e.g. Puritans, Anabaptists, Quakers) who\nfaced persecution in the Old World.";
+static const char tx_s2270[] COLOPY_TXMEM = "^^ENGLAND\n^^_\nTo reflect the great flow of religious immigrants into English\ncolonies, the English player requires only {2/3} the normal number of\n\"{Crosses}\" to generate immigrants.";
+static const char tx_s2271[] COLOPY_TXMEM = "^^FRANCE\n^^_\n__Latecomers to the New World, France established her first\nsecure American colonies in {Canada} along the St. Lawrence river, where the\nharsh northern climate proved more suitable for the {fur trade} than for\nlarge-scale agricultural endeavors.\nThe French found the\n{Great Lakes Indians} to be ideal partners in the fur trade and formed\nlong-term trading relationships with the Hurons, Algonquins and other\ntribes.  Though French forts, missions, and trading posts soon dotted\nthe Great Lakes region, French settlements were generally small enough\nto operate in relative {harmony} with the local native population.  Although\nthis relationship was not entirely without incident, the French were often\nable to cooperate profitably with the natives.  This cooperation occasionally\nextended into the military realm.";
+static const char tx_s2272[] COLOPY_TXMEM = "^^FRANCE\n^^_\nTo reflect the superior ability of the French to cooperate with the\nnative population, the French player's colonies and units cause {alarm} among\nthe Indians at only {half} the rate of other European powers.";
+static const char tx_s2273[] COLOPY_TXMEM = "^^SPAIN\n^^_\n__In 1492, the same year that Columbus discovered America, the Spanish\ncompleted their centuries-long \"reconquista\" of the\nIberian peninsula from the Muslim Moors.  This victory left Spain with\na generation of {military men} spoiling for a new avenue of expansion and\nmore eager than ever to bring Christianity to the {heathen} at the point\nof a sword.  The New World and its unsuspecting natives provided exactly\nsuch an opportunity, and the history of the first century of Spanish\nexpansion in America is the history of the conquest, plunder, and destruction\nof countless Native American civilizations.  The Spanish were the first\nEuropeans to encounter the 'Indians,' and the otherwise mighty {Aztec}\nand {Inca} empires proved psychologically unprepared for the arrival of an\nalien power armed with muskets and thirsty for conquest.  Conquistador\n{Hernan Cortes} arrived at Veracruz in 1519 with a few hundred men and,\nwithin two years, brought the Aztec Empire to its knees.";
+static const char tx_s2274[] COLOPY_TXMEM = "^^SPAIN\n^^_\nTo reflect the strategic surprise which Spain achieved over pre-Columbian\nAmerican civilizations, the Spanish player receives a {50%% combat bonus}\nwhen {attacking Indian villages}.";
+static const char tx_s2275[] COLOPY_TXMEM = "^^NETHERLANDS\n^^_\n__The Protestant Dutch provinces gained their independence from Catholic\nSpain during the Age of Expansion.  A maritime country of {fishermen}\nand {merchants}, the Dutch Netherlands operated large merchant and fishing\nfleets in the North Sea and the Baltic.  Upon achieving political\nindependence in the early seventeenth century, this tiny nation found itself\nideally poised to expand its {overseas trade} into lucrative new markets\nin the Far East and New World.  Unlike their rivals and sometime enemies\nthe Spanish, French, and English, the Dutch were ruled by their merchant\nclass.  This unique arrangement led them to focus all aspects of state\ndiplomatic, military, and economic policy around the {interests of trade}.\nTheir strategy proved quite successful, and the Dutch economy\nand merchant fleet expanded so rapidly that the other European powers felt\ncompelled to take drastic measures against the Dutch in order to prop up\ntheir own less successful enterprises.";
+static const char tx_s2276[] COLOPY_TXMEM = "^^NETHERLANDS\n^^_\n__To represent the strength of the Dutch economy, as well as Dutch\nachievements in shipping, commerce, and banking, the Dutch player\nreceives a bonus when trading with Amsterdam.  {Commodity prices} in\nAmsterdam {do not collapse} as quickly as in other European ports and\nthey {recover} more quickly.";
+static const char tx_s2277[] COLOPY_TXMEM = "^^In the Year of Our Lord One Thousand Four Hundred Ninety-Two,";
+static const char tx_s2278[] COLOPY_TXMEM = "^^an Expedition led by the Great %STRING0,\n^^%STRING1,";
+static const char tx_s2279[] COLOPY_TXMEM = "^^left %STRING0 on a Voyage of Discovery.";
+static const char tx_s2280[] COLOPY_TXMEM = "^^Commissioned and Blessed by the %STRING1 of %STRING0,";
+static const char tx_s2281[] COLOPY_TXMEM = "^^to Explore the Ocean Sea,";
+static const char tx_s2282[] COLOPY_TXMEM = "^^to find Uncharted Lands,";
+static const char tx_s2283[] COLOPY_TXMEM = "^^and to Establish Colonies for the Greater Glory of %STRING0.";
+static const char tx_s2284[] COLOPY_TXMEM = "^^A Ship loaded with Pioneers and Soldiers";
+static const char tx_s2285[] COLOPY_TXMEM = "^^Set Sail to find a New Life, a New Beginning, . . .";
+static const char tx_s2286[] COLOPY_TXMEM = "^^A New World!";
+static const char tx_s2287[] COLOPY_TXMEM = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The King of %COUNTRY\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\"";
+static const char tx_s2288[] COLOPY_TXMEM = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The Stadtholder\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\"\n\n\n@@VICEROY\n@@width=200\n@^^Year of Our Lord %YEAR\n@^^Audience With The King of %COUNTRY\n@^^_\n@\"For the greater glory of %COUNTRY, we\n@^_dub thee {Viceroy of the New World}. Go\n@^_and explore this new land. Settle it\n@^_and bring wealth and glory to yourself\n@^_and our nation.\"";
+static const char tx_s2289[] COLOPY_TXMEM = "King";
+static const char tx_s2290[] COLOPY_TXMEM = "Stadtholder";
 
 const char *const dat_dialogs_landho_body[2] COLOPY_TXMEM = {
   tx_s0,
@@ -7085,4 +7107,32 @@ const char *const dat_diplotext_friend[4] COLOPY_TXMEM = {
   tx_s2266,
   tx_s2267,
   tx_s2268
+};
+const char *const dat_briefings[4][2] COLOPY_TXMEM = {
+  {tx_s2269,tx_s2270},
+  {tx_s2271,tx_s2272},
+  {tx_s2273,tx_s2274},
+  {tx_s2275,tx_s2276}
+};
+const char *const dat_cards[10] COLOPY_TXMEM = {
+  tx_s2277,
+  tx_s2278,
+  tx_s2279,
+  tx_s2280,
+  tx_s2281,
+  tx_s2282,
+  tx_s2283,
+  tx_s2284,
+  tx_s2285,
+  tx_s2286
+};
+const char *const dat_viceroy[2] COLOPY_TXMEM = {
+  tx_s2287,
+  tx_s2288
+};
+const char *const dat_myleader[4] COLOPY_TXMEM = {
+  tx_s2289,
+  tx_s2289,
+  tx_s2289,
+  tx_s2290
 };

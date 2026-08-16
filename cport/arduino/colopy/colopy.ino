@@ -255,6 +255,15 @@ static void draw_screen(void) {
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);
         break;
+    case SCR_BRIEFING:
+        rm_draw_briefing(UI.nation, UI.brief_page);
+        break;
+    case SCR_KING:
+        rm_draw_king(UI.nation);
+        break;
+    case SCR_CARDS:
+        rm_draw_cards(UI.card, UI.nation, UI.difficulty, UI.leader);
+        break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);

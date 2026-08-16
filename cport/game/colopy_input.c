@@ -871,8 +871,21 @@ static void in_key_inner(const char *k, int alt, int shift) {
          * never presses past page 0 */
         if (key_is(k, "Enter") || key_is(k, " ")) {
             if (UI.brief_page == 0) UI.brief_page = 1;
-            else brief_begin();
+            else UI.screen = SCR_KING;       /* onClick 12078 */
         }
+        break;
+    case SCR_KING:
+        if (key_is(k, "Enter") || key_is(k, " ")) {
+            UI.card = 0;
+            UI.screen = SCR_CARDS;           /* onClick 12080 */
+        }
+        break;
+    case SCR_CARDS:
+        if (key_is(k, "Enter") || key_is(k, " ")) {
+            if (UI.card < 9) UI.card++;      /* onClick 12082 */
+            else brief_begin();              /* beginGame -> map (12083) */
+        }
+        if (key_is(k, "Escape")) UI.screen = SCR_BRIEFING;   /* 12439 */
         break;
     case SCR_REPORT:
         {
@@ -1382,7 +1395,15 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     case SCR_BRIEFING:
         if (UI.brief_page == 0) UI.brief_page = 1;
-        else brief_begin();
+        else UI.screen = SCR_KING;           /* onClick 12078 */
+        break;
+    case SCR_KING:
+        UI.card = 0;
+        UI.screen = SCR_CARDS;
+        break;
+    case SCR_CARDS:
+        if (UI.card < 9) UI.card++;
+        else brief_begin();                  /* beginGame -> map */
         break;
     case SCR_REPORT:
         UI.screen = SCR_MAP;

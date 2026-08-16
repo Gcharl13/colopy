@@ -48,10 +48,8 @@ EXCLUDE = {
     "fonts": "render: glyph atlases",
     "cycle": "render: palette-cycling animation",
     # "menus" moved to the UI unit (Phase 7 cluster C) — see UI_MEMBERS
-    "briefings": "interface: intro briefing text",
-    "cards": "interface: score-card art captions",
-    "viceroy": "interface: title strings",
-    "myleader": "interface: name-entry prompts",
+    # briefings/cards/viceroy/myleader moved to TEXT_MEMBERS (Phase 9:
+    # the briefing/king/cards boot screens render them on-board)
 }
 FIXTURES = {"sav1653", "savRaleigh", "savStart", "savNewColony"}
 
@@ -62,6 +60,7 @@ FIXTURES = {"sav1653", "savRaleigh", "savStart", "savNewColony"}
 # host build always links it.  The sim sources must not reference these
 # (enforced below).
 TEXT_MEMBERS = {"events", "pedia", "dialogs", "text", "diplotext",
+                "briefings", "cards", "viceroy", "myleader",
                 "woodcuts", "scorenames"}
 
 # Interface-layout members: consumed by the render layer (cport/render),

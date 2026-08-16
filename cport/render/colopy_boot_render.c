@@ -208,3 +208,248 @@ void rm_draw_name(const char *leader) {
     rm_hollow_rect(79, 98, 167, 14, 0xFE);
     rd_text(&B_INTR, leader ? leader : "", 84, 101, blut(0xFE));
 }
+
+/* ---- the New Game cinematic screens (Phase 9) -----------------------
+ * drawBriefing (game.js:1106), drawKing (1248), drawCards (1147) —
+ * the briefing pages, the King's audience with the @VICEROY scroll,
+ * and the ten LEVN cards that play into beginGame. */
+
+/* the caret markup shared by briefings/cards: '^^' deleted, '^'/'_'
+ * become spaces, ends trimmed (briefLines 1102 / cardText 1134) */
+static void caret_clean(const char *src, size_t n, char *out, size_t cap) {
+    size_t o = 0;
+    for (size_t i = 0; i < n && o + 1 < cap; i++) {
+        char c = src[i];
+        if (c == '^') {
+            if (i + 1 < n && src[i + 1] == '^') { i++; continue; }
+            c = ' ';
+        } else if (c == '_')
+            c = ' ';
+        out[o++] = c;
+    }
+    out[o] = 0;
+    /* trim */
+    while (o && (out[o - 1] == ' ' || out[o - 1] == '\r')) out[--o] = 0;
+    size_t s0 = 0;
+    while (out[s0] == ' ') s0++;
+    if (s0) memmove(out, out + s0, o - s0 + 1);
+}
+
+/* a centred FONTTINY line with {..} gold spans (drawBriefing 1113) */
+static void center_spans(const char *l, int cx, int y) {
+    char plain[192];
+    size_t o = 0;
+    for (const char *p = l; *p && o + 1 < sizeof(plain); p++)
+        if (*p != '{' && *p != '}') plain[o++] = *p;
+    plain[o] = 0;
+    int w = rd_text_width(&B_TINY, plain);
+    int x = bround(2 * cx - w);
+    const char *p = l;
+    while (*p) {
+        /* one part: a {..} span, or the run up to the next '{' */
+        const char *q;
+        int gold = 0;
+        if (*p == '{') {
+            q = strchr(p + 1, '}');
+            q = q ? q + 1 : p + strlen(p);
+            gold = 1;
+        } else {
+            q = strchr(p, '{');
+            if (!q) q = p + strlen(p);
+        }
+        char seg[192];
+        size_t so = 0;
+        for (const char *r = p; r < q && so + 1 < sizeof(seg); r++)
+            if (*r != '{' && *r != '}') seg[so++] = *r;
+        seg[so] = 0;
+        x = rd_text(&B_TINY, seg, x, y, blut(gold ? 0xFC : 0xFE));
+        p = q;
+    }
+}
+
+void rm_draw_briefing(int nation, int page) {
+    bresolve();
+    rd_use_palette("WOODPANL.PIK");
+    rd_pik("WOODPANL.PIK");
+    char up[32];
+    size_t n = 0;
+    for (const char *c = dat_nations[nation & 3].country;
+         *c && n + 1 < sizeof(up); c++)
+        up[n++] = (char)toupper((unsigned char)*c);
+    up[n] = 0;
+    center_shadow(&B_INTR, up, 160, 18, blut(0xFC), 1);
+    /* briefLines (1100): split lines, caret-clean, DROP element 0 */
+    const char *raw = dat_briefings[nation & 3][page ? 1 : 0];
+    int y = page == 0 ? 38 : 66;
+    int li = 0;
+    const char *p = raw;
+    while (*p) {
+        const char *e = strchr(p, '\n');
+        size_t len = e ? (size_t)(e - p) : strlen(p);
+        char line[192];
+        caret_clean(p, len, line, sizeof(line));
+        if (li++ > 0) {
+            if (!line[0]) y += 5;
+            else { center_spans(line, 160, y); y += 9; }
+        }
+        if (!e) break;
+        p = e + 1;
+    }
+    center_shadow(&B_TINY, page == 0 ? "(more)" : "(click to continue)",
+                  160, 188, blut(0xFC), 1);
+}
+
+/* cardText (game.js:1132): caret-clean, drop empties, per-card subs */
+void rm_draw_cards(int card, int nation, int difficulty,
+                   const char *leader) {
+    bresolve();
+    char key[16];
+    int cn = card < 0 ? 1 : card % 10 + 1;
+    snprintf(key, sizeof(key), "LEVN%04d.PIK", cn % 10000);
+    rd_entry e;
+    if (rd_pak_find(&RD.pak, key, &e)) {
+        rd_use_palette(key);
+        rd_pik(key);
+    } else
+        rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    const dat_nations_t *nn = &dat_nations[nation & 3];
+    const char *raw = dat_cards[card < 0 ? 0 : card % 10];
+    int y = 54;
+    const char *p = raw;
+    while (*p) {
+        const char *le = strchr(p, '\n');
+        size_t len = le ? (size_t)(le - p) : strlen(p);
+        char line[192];
+        caret_clean(p, len, line, sizeof(line));
+        if (line[0]) {
+            /* the per-card %STRING subs (1138-1143) */
+            char out[224];
+            const char *s0 = 0, *s1 = 0;
+            if (card == 1) {
+                s0 = dat_text_misc[165 + (difficulty < 5 ? difficulty : 0)];
+                s1 = leader;
+            } else if (card == 2) s0 = nn->homeport;
+            else if (card == 3) { s0 = nn->country; s1 = dat_myleader[nation & 3]; }
+            else if (card == 6) s0 = nn->country;
+            size_t o = 0;
+            for (const char *r = line; *r && o + 1 < sizeof(out);) {
+                if (s0 && strncmp(r, "%STRING0", 8) == 0) {
+                    for (const char *c = s0; *c && o + 1 < sizeof(out);)
+                        out[o++] = *c++;
+                    r += 8;
+                } else if (s1 && strncmp(r, "%STRING1", 8) == 0) {
+                    for (const char *c = s1; *c && o + 1 < sizeof(out);)
+                        out[o++] = *c++;
+                    r += 8;
+                } else
+                    out[o++] = *r++;
+            }
+            out[o] = 0;
+            /* renderer func_004B72: pen ink 0x0E, centred (1153) */
+            center_shadow(&B_TINY, out, 160, y, blut(0x0E), 1);
+            y += 9;
+        }
+        if (!le) break;
+        p = le + 1;
+    }
+    center_shadow(&B_TINY, "(click to continue)", 160, 190, blut(0x0E), 1);
+}
+
+/* sheetAnchored (game.js:1165): the frame's own (hx, hy) descriptor is
+ * an (anchor-x = centre-x, anchor-y = bottom-y) pair (ruling
+ * 2026-07-31) — KING1 resolves to (0,12), ENGLND1 to (32,0) */
+static void sheet_anchored(const char *name) {
+    char nm[20];
+    snprintf(nm, sizeof(nm), "%s.SS", name);
+    rd_entry e;
+    rd_frame f;
+    if (!rd_pak_find(&RD.pak, nm, &e) || !rd_sheet_frame(&e, 0, &f) || !f.w)
+        return;
+    rd_blit(&e, 0, f.x - (f.w >> 1), f.y - f.h + 1);
+}
+
+static int wrap_next(const rd_font *f, const char *p, int width,
+                     char *out, size_t cap) {
+    /* wrapText (game.js:1274): greedy space wrap; returns chars taken */
+    size_t best = 0, o = 0, i = 0;
+    while (p[i] && o + 1 < cap) {
+        out[o++] = p[i++];
+        out[o] = 0;
+        if (p[i] == ' ' || !p[i]) {
+            if (rd_text_width(f, out) > width && best) {
+                out[best] = 0;
+                return (int)best + 1;      /* skip the space */
+            }
+            best = o;
+        }
+    }
+    out[o] = 0;
+    return (int)i;
+}
+
+/* the King's audience (drawKing 1248): KINGLSS1 throne room, the
+ * nation canopy banner, the KING1 figure, and the GAME.TXT @VICEROY
+ * scroll laid out by its own directives @width=78 @x=232 @y=21 in
+ * FONTKING ink 36 — '^^' lines centred in the column, body wrapped. */
+void rm_draw_king(int nation) {
+    static const char *const STEM[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
+                                         "DUTCH1" };
+    static rd_font KINGF;
+    bresolve();
+    if (!KINGF.payload) rd_font_open(&RD.pak, "FONTKING.FF", &KINGF);
+    rd_use_palette("KINGLSS1.PIK");
+    rd_pik("KINGLSS1.PIK");
+    sheet_anchored(STEM[nation & 3]);
+    sheet_anchored("KING1");
+    const char *src = dat_viceroy[(nation & 3) == 3 ? 1 : 0];
+    const int X = 232, WIDTH = 78, CX = X + WIDTH / 2;
+    int y = 21;
+    const char *p = src;
+    while (*p) {
+        const char *le = strchr(p, '\n');
+        size_t len = le ? (size_t)(le - p) : strlen(p);
+        char raw[192];
+        size_t o = 0;
+        /* %COUNTRY substitution (1255) */
+        for (size_t i = 0; i < len && o + 1 < sizeof(raw); i++) {
+            if (p[i] == '%' && i + 8 <= len &&
+                strncmp(p + i, "%COUNTRY", 8) == 0) {
+                for (const char *c = dat_nations[nation & 3].country;
+                     *c && o + 1 < sizeof(raw);)
+                    raw[o++] = *c++;
+                i += 7;
+            } else
+                raw[o++] = p[i];
+        }
+        raw[o] = 0;
+        int m = 0;
+        while (raw[m] == '^') m++;
+        char text[192];
+        snprintf(text, sizeof(text), "%s", raw + m);
+        size_t tl = strlen(text);
+        while (tl && (text[tl - 1] == ' ' || text[tl - 1] == '\r'))
+            text[--tl] = 0;
+        size_t t0 = 0;
+        while (text[t0] == ' ') t0++;
+        if (text[t0]) {
+            if (m >= 2) {
+                center_shadow(&KINGF, text + t0, CX, y, blut(36), 0);
+                y += 8;
+            } else {
+                const char *w = text + t0;
+                while (*w) {
+                    char seg[192];
+                    int took = wrap_next(&KINGF, w, WIDTH, seg,
+                                         sizeof(seg));
+                    rd_text(&KINGF, seg, X, y, blut(36));
+                    y += 8;
+                    w += took;
+                }
+            }
+        } else
+            y += 8;
+        if (!le) break;
+        p = le + 1;
+    }
+    center_shadow(&B_TINY, "(click to begin)", CX, 186, blut(0xFC), 1);
+}
