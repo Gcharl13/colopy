@@ -203,7 +203,18 @@ static void draw_screen(void) {
     flush_fb();
 }
 
+/* ---- the player-answer layer (colopy_ask_hook) -------------------
+ * While board_ask blocks inside the core, keys must reach ITS loop,
+ * not the dispatcher: game_key captures into ask_key instead. */
+static volatile int ask_active = 0;
+static char ask_key[16];
+
 static void game_key(const char *name, int alt, int shift) {
+    if (ask_active) {                        /* the ask's own pump */
+        snprintf(ask_key, sizeof(ask_key), "%s", name);
+        (void)alt; (void)shift;
+        return;
+    }
     if (have_pending) {                      /* the modal swallow */
         have_pending = 0;
         draw_screen();
@@ -261,6 +272,85 @@ static void usb_key_press(int unicode) {
     if (name) game_key(name, alt, shift);
 }
 #endif /* COLOPY_USBHOST */
+
+/* the blocking answer pump: USB keys arrive via usb_key_press ->
+ * game_key (captured while ask_active); serial accepts the same
+ * "k <name>" bench lines */
+static const char *ask_wait_key(void) {
+    static char line[96];
+    int len = 0;
+    ask_key[0] = 0;
+    for (;;) {
+#ifdef COLOPY_USBHOST
+        usbh.Task();
+#endif
+        if (ask_key[0]) return ask_key;
+        while (Serial.available()) {
+            char ch = (char)Serial.read();
+            if (ch == '\n' || ch == '\r') {
+                line[len] = 0;
+                len = 0;
+                if (line[0] == 'k' && line[1] == ' ') {
+                    const char *a = line + 2;
+                    if (a[0] == '!' && a[1]) a++;
+                    snprintf(ask_key, sizeof(ask_key), "%s",
+                             strcmp(a, "Space") == 0 ? " " : a);
+                    return ask_key;
+                }
+            } else if (len < 94) {
+                line[len++] = ch;
+            }
+        }
+    }
+}
+
+/* colopy_ask_hook: the core emits the question's prompt event, then
+ * calls this.  Earlier queued notices show as plain popups (any key
+ * dismisses); the prompt draws through the dialog framework with its
+ * GAME.TXT tail rows as options — arrows pick, Enter/space answers,
+ * Escape dismisses (-1, the JS closeDialog(-1) reading). */
+static int board_ask(void) {
+    colopy_event q[8];
+    int n = 0;
+    colopy_event e2;
+    while (colopy_next_event(&e2))
+        if (n < 8) q[n++] = e2;
+    ask_active = 1;
+    for (int i = 0; i + 1 < n; i++) {
+        if (!rm_event_exists(q[i].key)) continue;
+        rm_subs subs = { { q[i].s[0], q[i].s[1], 0, 0 },
+                         { q[i].p[0], q[i].p[1], 0, 0 },
+                         { 1, 1, 0, 0 } };
+        rm_draw_event(q[i].key, &subs, 0);
+        flush_fb();
+        ask_wait_key();
+    }
+    int ret = 0;
+    if (n > 0 && rm_event_exists(q[n - 1].key)) {
+        int rows = rm_event_rows(q[n - 1].key);
+        if (rows < 1) rows = 1;
+        int sel = 0;
+        for (;;) {
+            rm_subs subs = { { q[n - 1].s[0], q[n - 1].s[1], 0, 0 },
+                             { q[n - 1].p[0], q[n - 1].p[1], 0, 0 },
+                             { 1, 1, 0, 0 } };
+            rm_draw_dialog_event(q[n - 1].key, &subs, 0, sel);
+            flush_fb();
+            const char *k = ask_wait_key();
+            if (strcmp(k, "ArrowUp") == 0) sel = (sel + rows - 1) % rows;
+            else if (strcmp(k, "ArrowDown") == 0) sel = (sel + 1) % rows;
+            else if (strcmp(k, "Enter") == 0 || strcmp(k, " ") == 0) {
+                ret = sel;
+                break;
+            } else if (strcmp(k, "Escape") == 0) {
+                ret = -1;
+                break;
+            }
+        }
+    }
+    ask_active = 0;
+    return ret;
+}
 
 #endif /* COLOPY_ILI9341 */
 
@@ -366,6 +456,7 @@ void loop() {
             game_mode = 1;
             colopy_front_live = 1;   /* complete the dialog-gated flows
                                       * (founding, set-sail) on-board */
+            colopy_ask_hook = board_ask;  /* questions go to the PLAYER */
             ui_init();
             UI.screen = SCR_MAP;
             UI.nation = (int8_t)cs_nation();

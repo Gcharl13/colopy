@@ -807,10 +807,16 @@ void unit_remove(int ui) {
         if (CR.refs_order[k] > ui) CR.refs_order[k]--;
     }
 }
-/* The scripted-answer policy (see colopy_sim.h): choice = seq++ % 2,
- * with an A<choice> marker in the event stream so the parity diff pins
- * every decision. */
+/* The answer path.  Default (no hook): the scripted policy — choice =
+ * seq++ % 2 with an A<choice> marker in the event stream, so the parity
+ * diff pins every decision (both harnesses share it).  A LIVE front end
+ * installs colopy_ask_hook to put the question to the PLAYER instead:
+ * the prompt is the event emitted immediately before this call (the
+ * core's invariant pattern), its GAME.TXT tail rows are the options,
+ * and the hook blocks until a row is chosen (-1 = dismissed). */
+int (*colopy_ask_hook)(void) = 0;
 int ask_choice(void) {
+    if (colopy_ask_hook) return colopy_ask_hook();
     int c = (int)(CR.ask_seq++ % 2u);
     ev_emit(c ? "A1" : "A0", 0, 0, 0, 0);
     return c;

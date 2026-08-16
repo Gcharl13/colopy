@@ -145,6 +145,7 @@ typedef struct {
     uint8_t num_set[4];
 } rm_subs;
 int  rm_event_exists(const char *key);
+int  rm_event_rows(const char *key);   /* option rows = the tail lines */
 void rm_draw_event(const char *key, const rm_subs *subs,
                    const char *speaker);
 void rm_draw_dialog_event(const char *key, const rm_subs *subs,

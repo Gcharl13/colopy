@@ -160,6 +160,7 @@ void runits_drop(int rn, int ui);      /* JS r.units.splice (record kept) */
  * counter on every ask, answered or not), emits an "A<choice>" marker
  * event, and applies the ported callback body under the same choice. */
 int ask_choice(void);
+extern int (*colopy_ask_hook)(void);  /* live front end's answer path */
 
 /* ---- player commands (colopy_cmd.c) — Phase 5 slice 2 ------------------ */
 /* Each mirrors the game.js UI command over the selected unit; ui indexes

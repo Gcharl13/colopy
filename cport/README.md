@@ -35,7 +35,11 @@ and Scout dialogs at rival colonies, colony rush-buy, the Europe
 ship/dockunit context menus (board/hold/front/arm/bless + front/sail/
 unload-all), and colony FOUNDING (cmd_found_colony — the harness stops
 at the inert name dialog; a live front end, colopy_front_live, founds
-with the suggested name).  Open follow-ups, all presentation-side: the
-drag layer, the pedia/options browse screens, the Custom House ask-loop
-(unscriptable headless), the Save/Load/Go To dialog rows, and the
+with the suggested name).  Questions now go to the PLAYER on a live
+front end: colopy_ask_hook (default = the harness seq policy, so every
+oracle is byte-identical) — the Teensy game loop blocks on the prompt
+event drawn through the dialog framework, arrows pick a GAME.TXT tail
+row, Enter answers, Escape dismisses.  Open follow-ups, all
+presentation-side: the drag layer, the pedia/options browse screens,
+the Custom House ask-loop, the Save/Load/Go To dialog rows, and the
 USB-keyboard bring-up check per teensy/README.md).

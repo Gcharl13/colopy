@@ -48,6 +48,15 @@ static const dat_events_entry_t *event_by_key(const char *key) {
     return 0;
 }
 
+/* the option-row count of an event key (its GAME.TXT tail lines) —
+ * exported for the live front end's ask picker */
+int rm_event_rows(const char *key) {
+    for (int i = 0; i < DAT_EVENTS_INDEX_COUNT; i++)
+        if (strcmp(dat_events_index[i].key, key) == 0)
+            return (int)dat_events_index[i].n_tail;
+    return 0;
+}
+
 /* fillTemplate (game.js:6257) */
 static void fill_template(const char *line, const rm_subs *subs,
                           char *out, size_t cap) {
