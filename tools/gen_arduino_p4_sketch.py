@@ -104,14 +104,16 @@ tests and typing free-text names.
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
    then Boards Manager -> install **esp32 by Espressif** (3.1.0 or
    newer — the ESP32-P4 needs the 3.x core).
-2. Libraries: download Elecrow's repo
-   <https://github.com/Elecrow-RD/CrowPanel-Advanced-7inch-ESP32-P4-HMI-AI-Display-1024x600-IPS-Touch-Screen>
-   (Code -> Download ZIP) and copy the folders inside
-   `example/V1.2/Arduino_Code/libraries/` (`ESP32_Display_Panel`,
-   `ESP32_IO_Expander`, `esp-lib-utils`) into your Arduino `libraries/`
-   folder (Documents/Arduino/libraries).  These bundled copies are
-   PRE-CONFIGURED for this exact panel — the Library Manager versions
-   are not.  (`lvgl` and `RadioLib` are not needed by Colopy.)
+2. Libraries: copy the three folders from this repo's
+   `cport/p4/arduino_libraries/` (`ESP32_Display_Panel`,
+   `ESP32_IO_Expander`, `esp-lib-utils`) into your Arduino
+   `libraries/` folder, REPLACING any existing copies with those
+   names.  They are Elecrow's own pre-configured bundle, vendored
+   here (see the README beside them) — the Library Manager versions
+   ship unconfigured and will NOT build.  Prefer a sketchbook
+   location OUTSIDE OneDrive (File -> Preferences): OneDrive
+   placeholder files break the compiler with "Invalid argument"
+   errors.
 3. Open `colopy_p4.ino`.  Tools menu: Board **ESP32P4 Dev Module**,
    PSRAM **Enabled**, Flash Size **16MB**, Partition Scheme a
    large-app layout (e.g. "Huge APP"), USB CDC On Boot **Enabled**

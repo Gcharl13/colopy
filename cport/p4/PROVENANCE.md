@@ -29,5 +29,11 @@ depends ESP32_IO_Expander >=1.0 <2.0, esp-lib-utils >=0.2 <0.3), lvgl
 **>= 3.1.0** (boards URL
 `https://espressif.github.io/arduino-esp32/package_esp32_index.json`).
 
+The three needed libraries are VENDORED in this repo at
+`cport/p4/arduino_libraries/` (fetched 2026-08-16 via sparse checkout
+of Elecrow's `master`; ESP32_Display_Panel trimmed to build files —
+see the README there) because GitHub's ZIP of Elecrow's full repo has
+failed to extract for users.
+
 Do not edit these files; refresh them from Elecrow's repo if their
 examples update, and re-run `tools/gen_arduino_p4_sketch.py`.
