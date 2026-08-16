@@ -125,7 +125,7 @@ static void flush_fb(void) {
  * tap: TAP / LONG (>= 600 ms) / ESC (a second finger seen during the
  * press).  TAP and LONG carry the descaled 320x200 game coordinate of
  * the press point. */
-enum { TT_NONE = 0, TT_TAP, TT_LONG, TT_ESC };
+enum { TT_NONE = 0, TT_TAP, TT_LONG, TT_ESC, TT_KEY };
 #define TT_LONG_MS 600
 
 static int touch_poll(int *gx, int *gy) {
@@ -341,28 +341,22 @@ static void cmd_key(const char *arg) {
     else game_key(arg, alt, 0);
 }
 
-/* the blocking answer pump: serial "k <name>" lines or a touch tap */
-typedef struct { const char *key; int tap, gx, gy; } ask_input;
-
-static ask_input ask_wait(void) {
+/* the blocking answer pump: serial "k <name>" lines or a touch tap.
+ * Returns TT_TAP with the game coordinate in (*gx,*gy), or TT_KEY
+ * with the key name in ask_key[].  (No sketch-defined types in
+ * signatures — the IDE's auto-prototypes land above any typedef.) */
+static int ask_wait(int *gx, int *gy) {
     static char line[96];
     int len = 0;
-    ask_input in = { 0, 0, 0, 0 };
     ask_key[0] = 0;
     for (;;) {
-        int gx, gy;
-        int ev = touch_poll(&gx, &gy);
+        int ev = touch_poll(gx, gy);
         if (ev == TT_ESC) {                  /* two-finger = Escape */
             snprintf(ask_key, sizeof(ask_key), "Escape");
-            in.key = ask_key;
-            return in;
+            return TT_KEY;
         }
-        if (ev == TT_TAP || ev == TT_LONG) { /* long-press = a tap here */
-            in.tap = 1;
-            in.gx = gx;
-            in.gy = gy;
-            return in;
-        }
+        if (ev == TT_TAP || ev == TT_LONG)   /* long-press = a tap here */
+            return TT_TAP;
         while (Serial.available()) {
             char ch = (char)Serial.read();
             if (ch == '\n' || ch == '\r') {
@@ -373,8 +367,7 @@ static ask_input ask_wait(void) {
                     if (a[0] == '!' && a[1]) a++;
                     snprintf(ask_key, sizeof(ask_key), "%s",
                              strcmp(a, "Space") == 0 ? " " : a);
-                    in.key = ask_key;
-                    return in;
+                    return TT_KEY;
                 }
             } else if (len < 94) {
                 line[len++] = ch;
@@ -404,7 +397,8 @@ static int board_ask(void) {
                          { 1, 1, 0, 0 } };
         rm_draw_event(q[i].key, &subs, 0);
         flush_fb();
-        ask_wait();
+        int gx, gy;
+        ask_wait(&gx, &gy);                  /* any input dismisses */
     }
     int ret = 0;
     if (n > 0 && rm_event_exists(q[n - 1].key)) {
@@ -417,15 +411,15 @@ static int board_ask(void) {
                              { 1, 1, 0, 0 } };
             rm_draw_dialog_event(q[n - 1].key, &subs, 0, sel);
             flush_fb();
-            ask_input in = ask_wait();
-            if (in.tap) {
-                int r = rm_dialog_row_hit(q[n - 1].key, &subs, 0,
-                                          in.gx, in.gy);
+            int gx, gy;
+            int ev = ask_wait(&gx, &gy);
+            if (ev == TT_TAP) {
+                int r = rm_dialog_row_hit(q[n - 1].key, &subs, 0, gx, gy);
                 if (r >= 0) { ret = r; break; }      /* tap a row */
                 if (r == -1) { ret = -1; break; }    /* outside = dismiss */
                 continue;                            /* body: ignore */
             }
-            const char *k = in.key;
+            const char *k = ask_key;
             if (strcmp(k, "ArrowUp") == 0) sel = (sel + rows - 1) % rows;
             else if (strcmp(k, "ArrowDown") == 0) sel = (sel + 1) % rows;
             else if (strcmp(k, "Enter") == 0 || strcmp(k, " ") == 0) {
