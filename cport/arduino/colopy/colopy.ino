@@ -119,11 +119,51 @@ EXTMEM static uint8_t pakbuf[3500000];      /* COLOPY.PAK, from SD */
 static uint16_t lut565[256];
 static int pak_ready = 0;
 
+/* VGA colour cycling (the water animation): the pak's CYCLE entry
+ * (u16 start/len/delay) — each step moves every colour one index UP
+ * with wrap, so palette index start+k shows the colour authored at
+ * start+(k-phase) (game.js:149-165); the step clock is the engine's
+ * 60.8766 Hz timer (game.js:11484).  Pure LUT work — a re-flush alone
+ * animates the sea. */
+static int cyc_start = 0, cyc_len = 0;
+static uint32_t cyc_step_ms = 0;
+
+static void cyc_load(void) {
+    static int tried = 0;
+    if (tried || !pak_ready) return;
+    tried = 1;
+    rd_entry e;
+    if (rd_pak_find(&RD.pak, "CYCLE", &e) && e.len >= 6) {
+        cyc_start = e.payload[0] | (e.payload[1] << 8);
+        cyc_len = e.payload[2] | (e.payload[3] << 8);
+        int delay = e.payload[4] | (e.payload[5] << 8);
+        cyc_step_ms = (uint32_t)((double)delay * 1000.0 / 60.8766);
+        if (!cyc_step_ms) cyc_step_ms = 1;
+    }
+}
+
+static int cyc_phase(void) {
+    if (cyc_len <= 0 || !cyc_step_ms) return 0;
+    return (int)((millis() / cyc_step_ms) % (uint32_t)cyc_len);
+}
+
 static void build_lut(void) {
     for (int i = 0; i < 256; i++) {
         const uint8_t *c = RD.pal + i * 3;
         lut565[i] = (uint16_t)(((c[0] & 0xF8) << 8) |
                                ((c[1] & 0xFC) << 3) | (c[2] >> 3));
+    }
+    cyc_load();
+    int phase = cyc_phase();
+    if (phase > 0) {
+        for (int k = 0; k < cyc_len; k++) {
+            int src = cyc_start +
+                      (((k - phase) % cyc_len) + cyc_len) % cyc_len;
+            const uint8_t *c = RD.pal + src * 3;
+            lut565[cyc_start + k] =
+                (uint16_t)(((c[0] & 0xF8) << 8) |
+                           ((c[1] & 0xFC) << 3) | (c[2] >> 3));
+        }
     }
 }
 static void flush_fb(void) {
@@ -179,6 +219,11 @@ static void cmd_view(void) {                 /* 'v': render the map view */
 static int game_mode = 0;
 static colopy_event pending_ev;
 static int have_pending = 0;
+/* the active unit's blink: DRAWN while truthy, hidden on the off half
+ * — the JS ticks G.blink = (tick % 32) < 20 at 60 fps (game.js:12690),
+ * i.e. on ~333 ms / off ~200 ms */
+static int map_blink = 1;
+static int blink_now(void) { return (int)((millis() % 533u) < 333u); }
 
 static int ui_colony_cs_index(void) {
     int ord = -1;
@@ -208,7 +253,9 @@ static void draw_screen(void) {
                        UI.market_sel);
         break;
     default:                                 /* map + everything else */
-        rm_draw_map(UI.view_x, UI.view_y, UI.sel, UI.show_hidden);
+        /* 4th arg = the BLINK flag (unit drawn while truthy), NOT
+         * show_hidden — passing 0 there kept the active unit hidden */
+        rm_draw_map(UI.view_x, UI.view_y, UI.sel, map_blink);
         if (UI.open_menu >= 0)
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
@@ -456,6 +503,24 @@ void setup() {
 void loop() {
 #if defined(COLOPY_ILI9341) && defined(COLOPY_USBHOST)
     usbh.Task();
+#endif
+#ifdef COLOPY_ILI9341
+    /* animation: redraw the map when the unit blink flips; re-flush
+     * (LUT only) when the water cycle steps a phase */
+    if (game_mode && !ask_active) {
+        int bl = blink_now();
+        if (UI.screen == SCR_MAP && bl != map_blink) {
+            map_blink = bl;
+            draw_screen();
+        } else {
+            static int last_phase = 0;
+            int ph = cyc_phase();
+            if (ph != last_phase) {
+                last_phase = ph;
+                flush_fb();
+            }
+        }
+    }
 #endif
     static char line[64];
     static size_t len = 0;
