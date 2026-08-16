@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../core/colopy_core.h"
 #include "../core/colopy_sim.h"
 #include "../data/colopy_data.h"
 #include "../data/colopy_ui.h"
@@ -21,6 +22,9 @@
 
 colopy_ui UI;
 int colopy_front_live = 0;
+uint32_t colopy_front_seed = 1653;   /* the front end's game seed (the DOS
+                                      * engine reads the BIOS clock; the
+                                      * harness stays deterministic) */
 
 #define VIEW_COLS 15
 #define VIEW_ROWS 12
@@ -177,6 +181,20 @@ static void begin_goto_page(int ui, int page) {
     }
     cmd_goto(ui, CS.colonies[e].map_x, CS.colonies[e].map_y);
     advance();                           /* setGoTo (game.js:2268) */
+}
+
+/* the briefing's page-1 dismissal: the JS continues briefing -> king
+ * audience -> the ten LEVN tutorial cards -> beginGame (onClick
+ * game.js:12076-12084).  The king/cards cinematics need pak assets not
+ * yet carried (KINGLSS1/LEVN*.PIK + the @VICEROY scroll) — FLAGGED
+ * follow-up; until then the C boot starts the game here.  beginGame
+ * ends on centerOn(start) with sel 0 (game.js:749). */
+static void brief_begin(void) {
+    colopy_init(colopy_front_seed);
+    colopy_new_game((uint8_t)UI.nation, (uint8_t)UI.difficulty, UI.leader);
+    UI.sel = 0;
+    center_on((int)dat_starts[UI.nation][0], (int)dat_starts[UI.nation][1]);
+    UI.screen = SCR_MAP;
 }
 
 static void run_menu_row(void) {
@@ -745,7 +763,8 @@ static int is_fkey(const char *k, int *out) {
 static void commit_menu(void) {
     if (UI.menu_row <= 2) UI.screen = SCR_DIFFICULTY;
     else if (UI.menu_row == 4) UI.screen = SCR_HOF;
-    /* row 3 (LOAD) opens a picker dialog — slice 2 */
+    else if (UI.menu_row == 3) UI.request = 'L';   /* the board shell's
+                                                    * SD .SAV picker */
 }
 
 void in_key(const char *k, int alt, int shift) {
@@ -800,11 +819,11 @@ void in_key(const char *k, int alt, int shift) {
         if (key_is(k, "Escape")) UI.screen = SCR_DIFFICULTY;
         break;
     case SCR_BRIEFING:
-        /* Enter/space advances the page pair, then the game would
-         * start (newGame — out of the slice; the script stops here) */
+        /* Enter/space = the click (game.js:12434); the shared script
+         * never presses past page 0 */
         if (key_is(k, "Enter") || key_is(k, " ")) {
             if (UI.brief_page == 0) UI.brief_page = 1;
-            /* page 1 -> newGame: unported, the script never sends it */
+            else brief_begin();
         }
         break;
     case SCR_REPORT:
@@ -1305,7 +1324,7 @@ void in_click(int mx, int my, int right) {
         break;
     case SCR_BRIEFING:
         if (UI.brief_page == 0) UI.brief_page = 1;
-        /* page 1 -> the king audience (newGame chain): a later slice */
+        else brief_begin();
         break;
     case SCR_REPORT:
         UI.screen = SCR_MAP;

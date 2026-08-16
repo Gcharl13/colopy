@@ -231,6 +231,41 @@ def compare_pak():
 def main():
     if sys.argv[1:2] == ["pak"]:
         compare_pak()
+    if sys.argv[1:2] == ["newgame"]:
+        # colopy_new_game vs beginGame: entry 0 = the fresh state, then N
+        # full endTurn()s — across all four nations at two difficulties
+        n = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 10
+        subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+        tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
+        bad = 0
+        for nation in range(4):
+            for diff in (0, 2):
+                js = json.loads(subprocess.run(
+                    [sys.executable, ROOT / "tools/sim_trace.py", "newgame",
+                     str(nation), str(diff), str(n)],
+                    capture_output=True, text=True, check=True).stdout)
+                cc = [json.loads(l) for l in subprocess.run(
+                    ["./smoke", "--newgame", str(nation), str(diff), str(n)],
+                    cwd=ROOT / "cport/host",
+                    capture_output=True, text=True, check=True).stdout.splitlines()]
+                nbad = 0
+                for i, (j, c) in enumerate(zip(js, cc)):
+                    j["events"] = tut(j["events"])
+                    c["events"] = tut(c["events"])
+                    if j == c:
+                        continue
+                    for f in j:
+                        if j[f] != c.get(f):
+                            print("n%d d%d entry %d .%s:\n  JS %s\n  C  %s"
+                                  % (nation, diff, i, f, j[f], c.get(f)))
+                            nbad += 1
+                    if nbad > 8:
+                        print("...")
+                        break
+                print("newgame n%d d%d: %d entries compared, %d disagreement(s)"
+                      % (nation, diff, len(cc), nbad))
+                bad += nbad
+        sys.exit(1 if bad else 0)
     if sys.argv[1:2] == ["turns"]:
         extra = [f for f in ("agitate", "script") if f in sys.argv[2:]]
         bad = 0

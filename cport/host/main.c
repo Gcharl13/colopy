@@ -279,6 +279,8 @@ static void script_commands(int t) {
  * The projection is the parity diff unit (plan section B); the JS trace
  * emits the identical shape. Events drain per turn; TUTORIAL*-keyed
  * differences are the compare script's to filter. */
+static void print_projection(int job_convert);
+
 static void dump_turns(const char *save, int n, int agitate, int script) {
     if (strcmp(save, "savstart") == 0) colopy_load_sav(savstart, sizeof(savstart));
     else if (strcmp(save, "sav1653") == 0) colopy_load_sav(sav1653, sizeof(sav1653));
@@ -314,6 +316,14 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
         turn_step2();
         turn_step3();
         turn_step5();
+        print_projection(job_convert);
+    }
+}
+
+/* one JSON projection line of the CURRENT state — shared by the TURNS
+ * and NEWGAME oracles (the JS mirror is sim_trace.py's proj()) */
+static void print_projection(int job_convert) {
+    {
         const PowerRecord *p = colopy_power(cs_nation());
         printf("{\"turn\":%u,\"year\":%u,\"season\":%u,\"rng\":%u,"
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
@@ -492,6 +502,22 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
     }
 }
 
+static void dump_newgame(int nation, int diff, int n) {
+    colopy_init(1653);                       /* the shared trace seed */
+    colopy_new_game((uint8_t)nation, (uint8_t)diff, 0);
+    int job_convert = -1;
+    for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
+        if (strcmp(dat_jobexpert[i], "Indian Converts") == 0) job_convert = i;
+    print_projection(job_convert);           /* the fresh state, turn 0 */
+    for (int t = 0; t < n; t++) {
+        turn_step_prefix();
+        turn_step2();
+        turn_step3();
+        turn_step5();
+        print_projection(job_convert);
+    }
+}
+
 int main(int argc, char **argv) {
     /* --pak FILE: validate COLOPY.PAK and dump its census (Phase 6) */
     if (argc > 2 && strcmp(argv[1], "--pak") == 0) {
@@ -577,6 +603,11 @@ int main(int argc, char **argv) {
         return render_event_main(argv[2], argv[3], argv[4], argv[5],
                                  atoi(argv[6]), atoi(argv[7]),
                                  argc > 8 ? argv[8] : 0);
+    }
+    if (argc > 3 && strcmp(argv[1], "--newgame") == 0) {
+        dump_newgame(atoi(argv[2]), atoi(argv[3]),
+                     argc > 4 ? atoi(argv[4]) : 0);
+        return 0;
     }
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
         int agitate = 0, script = 0;

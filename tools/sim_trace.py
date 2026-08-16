@@ -297,6 +297,105 @@ RENDEREVENT = """([save, key, mode, sel, speaker]) => {
 }"""
 
 
+PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
+      rng: G.rngState >>> 0,
+      ...(STEPRNG ? { steps: G._steps.slice() } : {}),
+      gold: G.gold, fund: G.kingsFund, tax: G.tax,
+      unpaid: G.upkeepUnpaid ? 1 : 0,
+      colonies: G.colonies.map(c => ({ name: c.name,
+        pop: c.colonists.length, sol: c.sol, hammers: c.hammers,
+        bip: c.building ? bldIndex(c.building) : -1,
+        stock: c.stock.slice(),
+        bld: [...new Set(c.buildings.map(bldIndex))].sort((a, b) => a - b) })),
+      crosses: G.crosses, bellsTotal: G.bellsTotal, bells: G.bells,
+      fip: G.fatherInProgress ? fatherIdx(G.fatherInProgress) : -1,
+      fathers: G.fathersOwned.map(fatherIdx).sort((a, b) => a - b),
+      dock: G.dock.map(d => d.name),
+      dockUnits: G.dockUnits.map(d => d.name || d),
+      tension: G.tribes.map(t => t.tension),
+      frac: G.tribes.map(t => t.frac || 0),
+      villages: G.villages.map(v => [v.pop, v.growth || 0, v.alarm || 0,
+        v.mission ? (v.mission.power | (v.mission.expert ? 16 : 0)) : -1,
+        v.braveOwed ? 1 : 0]),
+      natives: G.natives.map(q => [q.x, q.y,
+        q.heading === undefined ? -1 : q.heading]),
+      punits: G.units.map(u => [u.x, u.y, u.orders | 0, u.work | 0,
+        u.movesLeft, u.tools | 0,
+        u.profession ? DATA.jobexpert.indexOf(u.profession) : -1]),
+      woi: [G.flags | 0, G.razed | 0, G.royalFund | 0,
+        G.ref['Regulars'] | 0, G.ref['Cavalry'] | 0,
+        G.ref['Man-O-War'] | 0, G.ref['Artillery'] | 0],
+      refs: G.refUnits.map(u => [u.x, u.y,
+        DATA.units.findIndex(x => x.name === u.type)]),
+      holds: G.units.map(u => (u.hold || []).map(h => [h.good, h.qty])),
+      europe: G.europe.map(e => [
+        DATA.units.findIndex(x => x.name === e.type),
+        e.state === 'port' ? 0 : e.state === 'toEurope' ? 1 : 2,
+        e.state === 'port' ? 0 : (e.turns | 0),
+        (e.hold || []).map(h => [h.good, h.qty]),
+        (e.passengers || []).length]),
+      units: G.units.length,
+      converts: G.units.filter(u => u.profession === 'Indian Converts')
+        .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),
+      rivals: G.rivals.map(r => ({ n: r.nation,
+        cols: r.colonies.map(c => [c.x, c.y]),
+        units: r.units.map(u => [u.x, u.y,
+          DATA.units.findIndex(t => t.name === u.type)]),
+        greeted: r.greeted ? 1 : 0,
+        lock: G.parleyLock[r.nation] || 0 })),
+      maphash: fnv(),
+      events: evs.splice(0) }"""
+
+# A FRESH game: the LCG replaces Math.random BEFORE beginGame, so every
+# boot draw (plotSeedBase, the eight tensions, mapSeed, the sixteen
+# market starts, the three dock rolls) comes from the shared stream —
+# colopy_new_game mirrors the exact order.  Projection = PROJ_OBJ, the
+# same shape the TURNS oracle diffs; entry 0 is the fresh state.
+NEWGAME = """([nation, diff, n]) => {
+  G.nation = nation; G.difficulty = diff;
+  let _s = 1653 >>> 0;
+  Math.random = () => {
+    const lo = (_s & 0xFFFF) * 214013;
+    const hi = ((_s >>> 16) * 214013) & 0xFFFF;
+    _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+    G.rngState = _s;
+    return ((_s >>> 16) & 0x7FFF) / 32768;
+  };
+  G.rngState = _s;
+  const STEPRNG = false;
+  const evs = [];
+  const _show = showEvent, _ask = askEvent;
+  showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
+  let _askSeq = 0;
+  askEvent = (k, subs, cb, opts) => {
+    evs.push(k);
+    const choice = _askSeq++ % 2;
+    evs.push('A' + choice);
+    if (cb) cb(choice);
+    G.dialog = null;
+  };
+  const _wc = woodcutOnce;
+  woodcutOnce = (n2, after) => { const r = _wc(n2, after); G.screen = 'map'; return r; };
+  openDialog = () => {};
+  advance = () => {};
+  beginGame();
+  const bldIndex = (n2) => DATA.buildings.findIndex(b => b.name === n2);
+  const fatherIdx = (n2) => DATA.fathers.findIndex(f => f.name === n2);
+  const fnv = () => {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < MAP.w * MAP.h; i++) {
+      h = ((h ^ MAP.tiles[i]) >>> 0); h = Math.imul(h, 16777619) >>> 0;
+      h = ((h ^ (IMPROVE[i] & 0xC8)) >>> 0); h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h;
+  };
+  const out = [];
+  const proj = () => out.push(""" + PROJ_OBJ + """);
+  proj();
+  for (let t = 0; t < n; t++) { endTurn(); proj(); }
+  return out;
+}"""
+
 # The prefix-turn trace: EXACTLY the pipeline colopy_turn.c implements —
 # header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
@@ -519,54 +618,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
     // PHASE-3 CLOSE: the REAL engine step, not a hand-built prefix.
     endTurn();
     // --- projection ---
-    out.push({ turn: G.turn, year: G.year, season: G.season,
-      rng: G.rngState >>> 0,
-      ...(STEPRNG ? { steps: G._steps.slice() } : {}),
-      gold: G.gold, fund: G.kingsFund, tax: G.tax,
-      unpaid: G.upkeepUnpaid ? 1 : 0,
-      colonies: G.colonies.map(c => ({ name: c.name,
-        pop: c.colonists.length, sol: c.sol, hammers: c.hammers,
-        bip: c.building ? bldIndex(c.building) : -1,
-        stock: c.stock.slice(),
-        bld: [...new Set(c.buildings.map(bldIndex))].sort((a, b) => a - b) })),
-      crosses: G.crosses, bellsTotal: G.bellsTotal, bells: G.bells,
-      fip: G.fatherInProgress ? fatherIdx(G.fatherInProgress) : -1,
-      fathers: G.fathersOwned.map(fatherIdx).sort((a, b) => a - b),
-      dock: G.dock.map(d => d.name),
-      dockUnits: G.dockUnits.map(d => d.name || d),
-      tension: G.tribes.map(t => t.tension),
-      frac: G.tribes.map(t => t.frac || 0),
-      villages: G.villages.map(v => [v.pop, v.growth || 0, v.alarm || 0,
-        v.mission ? (v.mission.power | (v.mission.expert ? 16 : 0)) : -1,
-        v.braveOwed ? 1 : 0]),
-      natives: G.natives.map(q => [q.x, q.y,
-        q.heading === undefined ? -1 : q.heading]),
-      punits: G.units.map(u => [u.x, u.y, u.orders | 0, u.work | 0,
-        u.movesLeft, u.tools | 0,
-        u.profession ? DATA.jobexpert.indexOf(u.profession) : -1]),
-      woi: [G.flags | 0, G.razed | 0, G.royalFund | 0,
-        G.ref['Regulars'] | 0, G.ref['Cavalry'] | 0,
-        G.ref['Man-O-War'] | 0, G.ref['Artillery'] | 0],
-      refs: G.refUnits.map(u => [u.x, u.y,
-        DATA.units.findIndex(x => x.name === u.type)]),
-      holds: G.units.map(u => (u.hold || []).map(h => [h.good, h.qty])),
-      europe: G.europe.map(e => [
-        DATA.units.findIndex(x => x.name === e.type),
-        e.state === 'port' ? 0 : e.state === 'toEurope' ? 1 : 2,
-        e.state === 'port' ? 0 : (e.turns | 0),
-        (e.hold || []).map(h => [h.good, h.qty]),
-        (e.passengers || []).length]),
-      units: G.units.length,
-      converts: G.units.filter(u => u.profession === 'Indian Converts')
-        .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),
-      rivals: G.rivals.map(r => ({ n: r.nation,
-        cols: r.colonies.map(c => [c.x, c.y]),
-        units: r.units.map(u => [u.x, u.y,
-          DATA.units.findIndex(t => t.name === u.type)]),
-        greeted: r.greeted ? 1 : 0,
-        lock: G.parleyLock[r.nation] || 0 })),
-      maphash: fnv(),
-      events: evs.splice(0) });
+    out.push(""" + PROJ_OBJ + """);
   }
   return out;
 }"""
@@ -575,6 +627,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
     if mode not in ("produce", "market", "movecost", "combat", "turns",
+                    "newgame",
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
                     "renderboot", "input"):
@@ -652,6 +705,10 @@ def main():
             browser.close()
             print(out)
             return
+        elif mode == "newgame":
+            data = page.evaluate(NEWGAME, [int(sys.argv[2]), int(sys.argv[3]),
+                                           int(sys.argv[4])
+                                           if len(sys.argv) > 4 else 0])
         elif mode == "turns":
             data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3]),
                                          "agitate" in sys.argv[4:],

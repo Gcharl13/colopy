@@ -468,6 +468,9 @@ typedef struct {
      * import on both sides — the sim never reads it except through
      * rumour_at.  0 disables rumours (@0x6191). */
     uint16_t map_seed;
+    uint32_t plot_seed;              /* G.plotSeedBase — the colony-layout
+                                      * seed (beginGame game.js:677; loads
+                                      * pin 1653 per the trace convention) */
     colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;

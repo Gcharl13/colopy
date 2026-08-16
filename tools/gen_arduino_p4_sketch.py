@@ -68,16 +68,17 @@ CONFIG = """\
  * The Library Manager copy of ESP32_Display_Panel is NOT pre-configured
  * for this panel.
  *
- * COLOPY_AUTOBOOT: at power-on, load this .SAV from the SD card root
- * and enter the game loop -- no PC needed (touch answers dialogs).
- * Comment it out for the bare serial shell.
+ * The board boots into the game's TITLE SCREEN (New Game runs the
+ * full difficulty/nation/name flow into a fresh game; LOAD GAME opens
+ * an SD save picker).  Define COLOPY_AUTOBOOT "<file>.SAV" to skip
+ * the title and load that save directly at power-on.
  *
  * Touch feel: raise TT_DEBOUNCE_MS if taps double-fire (after an
  * accepted tap, presses are ignored for this many ms); raise
  * TT_RELEASE_MS if one press still lands twice (how long the finger
  * must stay off before a release counts -- filters GT911 dropouts);
  * TT_LONG_MS is the long-press hold time (= Space, skip unit). */
-#define COLOPY_AUTOBOOT "COLONY00.SAV"
+/* #define COLOPY_AUTOBOOT "COLONY00.SAV" */
 #define TT_DEBOUNCE_MS 300
 #define TT_RELEASE_MS 80
 #define TT_LONG_MS 600

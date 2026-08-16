@@ -64,6 +64,10 @@ extern colopy_ui UI;
  * to complete the flows the harness leaves at an inert dialog — today:
  * colony FOUNDING with the suggested name, and the ship menu's sail. */
 extern int colopy_front_live;
+extern uint32_t colopy_front_seed;   /* New Game seed (default 1653; a live
+                                      * front end sets it from its clock —
+                                      * the DOS engine reads the BIOS
+                                      * clock at start) */
 
 void ui_init(void);
 void in_key(const char *key, int alt, int shift);

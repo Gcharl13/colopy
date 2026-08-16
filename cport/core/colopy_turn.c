@@ -182,6 +182,7 @@ void cr_reset_from_load(void) {
         CR.unit_no_moves[i] = CR.unit_rival_born[i];
     }
     CR.map_seed = 1653;
+    CR.plot_seed = 1653;             /* loads pin the layout seed too */
     CR.rumour_floor = 1;             /* G defaults (game.js:588) */
     /* REF strength is READ from the save's global block (importer
      * game.js:10265: [0x53DA/DC/DE/E0] = globals +0x5A..0x60, Regulars /

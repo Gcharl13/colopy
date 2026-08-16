@@ -305,6 +305,11 @@ static void draw_screen(void) {
     case SCR_NATION: rm_draw_nation(UI.nation); break;
     case SCR_NAME: rm_draw_name(UI.leader); break;
     case SCR_REPORT: rm_draw_report(UI.report); break;
+    case SCR_HOF:
+        /* the Hall of Fame table has no C painter yet (FLAGGED,
+         * follow-up) — a black hold; any tap/key returns to the title */
+        rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+        break;
     case SCR_COLONY: {
         int ci = ui_colony_cs_index();
         if (ci >= 0)
@@ -652,17 +657,21 @@ static void cmd_info(void) {
                   ov.n_colonies, ov.n_settlements, ov.tax_rate);
 }
 
-static void cmd_view(void) {                 /* 'v': render the map view */
-    if (!pak_ready) {
-        if (!sd_ready) { Serial.println("no SD card"); return; }
-        size_t n = sd_read_file("COLOPY.PAK", pakbuf, PAKBUF_CAP);
-        if (!n) { Serial.println("no COLOPY.PAK on SD"); return; }
-        if (!rd_init(pakbuf, (uint32_t)n)) {
-            Serial.println("bad pak");
-            return;
-        }
-        pak_ready = 1;
+static void pak_load(void) {
+    if (pak_ready) return;
+    if (!sd_ready) { Serial.println("no SD card"); return; }
+    size_t n = sd_read_file("COLOPY.PAK", pakbuf, PAKBUF_CAP);
+    if (!n) { Serial.println("no COLOPY.PAK on SD"); return; }
+    if (!rd_init(pakbuf, (uint32_t)n)) {
+        Serial.println("bad pak");
+        return;
     }
+    pak_ready = 1;
+}
+
+static void cmd_view(void) {                 /* 'v': render the map view */
+    pak_load();
+    if (!pak_ready) return;
     /* centre on the first player unit (centerView semantics) */
     int vx = 0, vy = 0;
     if (CR.n_units_order) {
@@ -716,14 +725,30 @@ static void land_view(void) {
     }
 }
 
-static void start_game(void) {               /* 'g': enter the game loop */
-    if (!sav_loaded) { Serial.println("load a save first (l <file>)"); return; }
-    if (!pak_ready) { cmd_view(); }          /* loads the pak + first draw */
+/* enter the game UI at the TITLE screen — the real boot: New Game runs
+ * the full flow (difficulty/nation/name/briefing -> colopy_new_game),
+ * LOAD GAME opens the shell's SD picker.  Needs only the pak. */
+static void boot_title(void) {
+    pak_load();
     if (!pak_ready) return;
     game_mode = 1;
     colopy_front_live = 1;       /* complete the dialog-gated flows
                                   * (founding, set-sail) on-board */
     colopy_ask_hook = board_ask; /* questions go to the PLAYER */
+    colopy_front_seed = esp_random();  /* the DOS engine seeds from the
+                                        * BIOS clock; the P4 has a TRNG */
+    ui_init();                   /* SCR_TITLE */
+    draw_screen();
+    Serial.println("title up (touch; or l <sav> + g for a direct load)");
+}
+
+static void start_game(void) {               /* 'g': enter on a loaded save */
+    if (!sav_loaded) { Serial.println("load a save first (l <file>)"); return; }
+    pak_load();
+    if (!pak_ready) return;
+    game_mode = 1;
+    colopy_front_live = 1;
+    colopy_ask_hook = board_ask;
     ui_init();
     UI.screen = SCR_MAP;
     UI.nation = (int8_t)cs_nation();
@@ -787,13 +812,14 @@ void setup() {
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 
-#ifdef COLOPY_AUTOBOOT
-    /* boot straight into the game on the named save (banner config) */
     if (sd_ready && fbuf && g_lcd) {
+#ifdef COLOPY_AUTOBOOT
+        /* skip the title: straight into the named save (banner config) */
         cmd_load(COLOPY_AUTOBOOT);
-        if (sav_loaded) start_game();
-    }
+        if (sav_loaded) { start_game(); return; }
 #endif
+        boot_title();                /* the real boot: the main menu */
+    }
 }
 
 void loop() {
@@ -846,7 +872,7 @@ void loop() {
         case 'g': start_game(); break;
         case 'k': cmd_key(arg); break;
         case 't': {
-            if (!sav_loaded) { Serial.println("load a save first (l <file>)"); break; }
+            if (!sav_loaded && !CS.n_units) { Serial.println("no game state (l <file> or New Game)"); break; }
             int n = atoi(arg);
             if (n < 1) n = 1;
             unsigned long t0 = micros();
