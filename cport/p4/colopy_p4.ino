@@ -126,28 +126,52 @@ static void flush_fb(void) {
  * press).  TAP and LONG carry the descaled 320x200 game coordinate of
  * the press point. */
 enum { TT_NONE = 0, TT_TAP, TT_LONG, TT_ESC, TT_KEY };
+/* Touch feel — override these in the config banner at the top of the
+ * sketch.  TT_DEBOUNCE_MS: after an accepted tap, new presses are
+ * ignored for this long (stops double-fires).  TT_RELEASE_MS: the
+ * finger must stay off this long before a release counts (the GT911
+ * micro-drops mid-press, which would otherwise read as extra taps).
+ * TT_LONG_MS: hold time for the long-press (= Space). */
+#ifndef TT_DEBOUNCE_MS
+#define TT_DEBOUNCE_MS 300
+#endif
+#ifndef TT_RELEASE_MS
+#define TT_RELEASE_MS 80
+#endif
+#ifndef TT_LONG_MS
 #define TT_LONG_MS 600
+#endif
 
 static int touch_poll(int *gx, int *gy) {
-    static bool was_down = false;
+    static bool armed = false;            /* a debounced press in flight */
     static bool multi = false;
-    static unsigned long t_down = 0;
+    static unsigned long t_down = 0;      /* press start */
+    static unsigned long t_seen = 0;      /* last moment a finger was seen */
+    static unsigned long t_fired = 0;     /* last accepted event */
     static int px = 0, py = 0;
     if (!board) return TT_NONE;
     Touch *touch = board->getTouch();
     if (!touch) return TT_NONE;
     TouchPoint pt[2];
     int n = touch->readPoints(pt, 2, 0);
-    bool down = n > 0;
+    unsigned long now = millis();
     int ev = TT_NONE;
-    if (down && !was_down) {              /* press edge: arm */
-        t_down = millis();
-        multi = false;
-        px = pt[0].x;
-        py = pt[0].y;
-    }
-    if (down && n >= 2) multi = true;
-    if (!down && was_down) {              /* release edge: classify */
+    if (n > 0) {
+        t_seen = now;
+        if (!armed) {                     /* press start (debounced) */
+            if (t_fired && now - t_fired < TT_DEBOUNCE_MS)
+                return TT_NONE;           /* too soon after the last tap */
+            armed = true;
+            multi = false;
+            t_down = now;
+            px = pt[0].x;
+            py = pt[0].y;
+        }
+        if (n >= 2) multi = true;
+    } else if (armed && now - t_seen >= TT_RELEASE_MS) {
+        /* a STABLE release (not a GT911 dropout): classify */
+        armed = false;
+        t_fired = now;
         if (multi) {
             ev = TT_ESC;
         } else {
@@ -156,11 +180,10 @@ static int touch_poll(int *gx, int *gy) {
                 y < RD_GAME_H * P4_SCALE) {
                 *gx = x / P4_SCALE;
                 *gy = y / P4_SCALE;
-                ev = (millis() - t_down >= TT_LONG_MS) ? TT_LONG : TT_TAP;
+                ev = (t_seen - t_down >= TT_LONG_MS) ? TT_LONG : TT_TAP;
             }
         }
     }
-    was_down = down;
     return ev;
 }
 

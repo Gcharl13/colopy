@@ -54,7 +54,9 @@ choice — the DOS game is 200 rows) is not shown here.
   HID only (`elecrow_ref/lesson06_usb.ino`) — the P4 Arduino core has
   no host-keyboard path today, hence touch + serial.
 
-## Bring-up checklist (UNTESTED ON HARDWARE — flags until a live run)
+## Bring-up checklist (panel + touch VERIFIED ON HARDWARE — user
+## bring-up 2026-08-16 with the vendored libraries; the digest
+## acceptance run below is the remaining flag)
 
 1. IDE setup + libraries per `cport/arduino_p4/colopy_p4/README.md`
    (Elecrow's bundled, pre-configured libraries — NOT Library Manager).
