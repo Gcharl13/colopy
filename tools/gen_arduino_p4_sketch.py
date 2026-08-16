@@ -84,9 +84,19 @@ the tool.  Build config (autoboot save name) is the banner at the top
 of `colopy_p4.ino`.
 
 The 320x200 game screen shows at an exact 3x scale (960x600) with a
-32-px black pillarbox each side.  Input: the touch screen (tap = the
-game's pointer layer; tap a dialog row to answer it) and/or serial
-keys (`k <name>`).
+32-px black pillarbox each side.  Play is TOUCH-COMPLETE — no
+keyboard exists for this board (its USB port is device-mode only):
+
+  tap             click (menus / colony / Europe / dialog rows); on
+                  the map, tapping a tile next to the active unit
+                  MOVES it there (attack / enter colony included)
+  long-press      Space -- skip the active unit
+  two-finger tap  Escape -- close a menu or dismiss a dialog
+
+Unit orders (fortify, plow, road, build colony...) are rows in the
+tappable ORDERS pulldown; the reports are in the menu bar.  The
+serial shell (`k <name>` keys, digests) is optional -- for bench
+tests and typing free-text names.
 
 ## Steps
 

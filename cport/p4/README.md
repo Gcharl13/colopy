@@ -30,14 +30,24 @@ choice — the DOS game is 200 rows) is not shown here.
 
 ## Input model
 
-- **Touch**: a tap = the pointer layer's `in_click` at the descaled
-  coordinate (menus, colony, Europe, context menus all work by tap).
-  A queued notice popup: tap dismisses.  A question dialog
-  (`colopy_ask_hook` → `board_ask`): **tap an option row to answer
-  it** (`rm_dialog_row_hit` re-derives the exact box the painter
-  drew), tap outside the box = dismiss (Escape).  An amount modal:
-  tap the box = Enter (empty entry = the full amount), outside =
-  Escape; digits come over serial.
+- **Touch** (play is touch-complete — no keyboard needed):
+  - **tap** = the pointer layer's `in_click` at the descaled
+    coordinate (menus, colony, Europe, context menus all work by
+    tap); on the map, a tap on a tile **adjacent to the active unit
+    moves it there** (the shell synthesizes the 8-way movement key —
+    attacking and entering colonies included).  Tapping the active
+    unit's own tile cycles stacked units.
+  - **long-press** (>= 600 ms) = Space — skip the active unit.
+  - **two-finger tap** = Escape — close a menu/screen, dismiss.
+  - A queued notice popup: tap dismisses.  A question dialog
+    (`colopy_ask_hook` → `board_ask`): **tap an option row to answer
+    it** (`rm_dialog_row_hit` re-derives the exact box the painter
+    drew), tap outside the box = dismiss (Escape).  An amount modal:
+    tap the box = Enter (empty entry = the full amount), outside =
+    Escape; typed digits need serial.
+  - Every unit order (fortify, sentry, plow, road, build...) is also
+    a row in the tappable ORDERS pulldown, and the reports live in
+    the menu bar — so the key vocabulary is reachable by touch.
 - **Serial** (USB-C CDC, 115200): the whole Teensy shell vocabulary,
   including `k <name>` key injection.
 - **No USB keyboard**: Elecrow's Arduino USB example is device-mode

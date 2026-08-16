@@ -49,11 +49,19 @@
  *   k <name>    inject one key by its JS name ("k Space", "k ArrowUp",
  *               "k F5", a single character; "k !<c>" = Alt+<c>)
  *
- * Touch (in the game loop): a tap is the pointer layer's click at the
- * descaled game coordinate.  A queued notice: tap dismisses.  A
- * question dialog: tap an option row to answer it, tap outside the box
- * to dismiss (Escape).  An amount modal: tap the box = Enter, outside
- * = Escape (digits still come over serial).
+ * Touch (in the game loop) — the board has NO keyboard path (Elecrow's
+ * USB example is device-mode HID only), so play is touch-complete:
+ *   tap             the pointer layer's click at the descaled game
+ *                   coordinate (menus, colony, Europe, dialogs); on
+ *                   the map, a tap on a tile ADJACENT to the active
+ *                   unit MOVES it there (the 8-way movement keys)
+ *   long-press      Space — skip the active unit (>= 600 ms)
+ *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
+ * A queued notice: tap dismisses.  A question dialog: tap an option
+ * row to answer it, tap outside the box to dismiss.  An amount modal:
+ * tap the box = Enter (empty entry = the full amount), outside =
+ * Escape (typed digits come over serial).  Every order is also in the
+ * tappable ORDERS pulldown, and the reports in the menu bar.
  *
  * The core never does I/O (buffer-only API); this shell owns the SD
  * card, the serial port, the panel and the touch controller. */
@@ -133,28 +141,47 @@ static void flush_fb(void) {
 }
 
 /* ---- touch ----------------------------------------------------------
- * One new press edge -> the descaled 320x200 game coordinate. */
-static int touch_tap(int *gx, int *gy) {
+ * Classified on the RELEASE edge so a long-press can differ from a
+ * tap: TAP / LONG (>= 600 ms) / ESC (a second finger seen during the
+ * press).  TAP and LONG carry the descaled 320x200 game coordinate of
+ * the press point. */
+enum { TT_NONE = 0, TT_TAP, TT_LONG, TT_ESC };
+#define TT_LONG_MS 600
+
+static int touch_poll(int *gx, int *gy) {
     static bool was_down = false;
-    if (!board) return 0;
+    static bool multi = false;
+    static unsigned long t_down = 0;
+    static int px = 0, py = 0;
+    if (!board) return TT_NONE;
     Touch *touch = board->getTouch();
-    if (!touch) return 0;
-    TouchPoint pt[1];
-    int n = touch->readPoints(pt, 1, 0);
+    if (!touch) return TT_NONE;
+    TouchPoint pt[2];
+    int n = touch->readPoints(pt, 2, 0);
     bool down = n > 0;
-    int hit = 0;
-    if (down && !was_down) {
-        int x = pt[0].x - P4_XOFF;
-        int y = pt[0].y;
-        if (x >= 0 && x < RD_W * P4_SCALE && y >= 0 &&
-            y < RD_GAME_H * P4_SCALE) {
-            *gx = x / P4_SCALE;
-            *gy = y / P4_SCALE;
-            hit = 1;
+    int ev = TT_NONE;
+    if (down && !was_down) {              /* press edge: arm */
+        t_down = millis();
+        multi = false;
+        px = pt[0].x;
+        py = pt[0].y;
+    }
+    if (down && n >= 2) multi = true;
+    if (!down && was_down) {              /* release edge: classify */
+        if (multi) {
+            ev = TT_ESC;
+        } else {
+            int x = px - P4_XOFF, y = py;
+            if (x >= 0 && x < RD_W * P4_SCALE && y >= 0 &&
+                y < RD_GAME_H * P4_SCALE) {
+                *gx = x / P4_SCALE;
+                *gy = y / P4_SCALE;
+                ev = (millis() - t_down >= TT_LONG_MS) ? TT_LONG : TT_TAP;
+            }
         }
     }
     was_down = down;
-    return hit;
+    return ev;
 }
 
 /* ---- SD card (Elecrow Lesson08: SDMMC slot 0, 1-bit, 10 MHz) -------- */
@@ -297,6 +324,30 @@ static void game_tap(int gx, int gy) {
         draw_screen();
         return;
     }
+    /* map viewport, no menu open: a tap on a tile ADJACENT to the
+     * active unit is that direction's movement key (the click layer
+     * itself never moves — the DOS game moved by keys/drag).  The
+     * active unit's own tile falls through to the click layer's
+     * stacked-unit cycling; everything else clicks. */
+    if (UI.screen == SCR_MAP && UI.open_menu < 0 && !UI.view_mode &&
+        gx < 240 && gy >= 8 &&
+        UI.sel >= 0 && UI.sel < CR.n_units_order) {
+        int u = CR.units_order[UI.sel];
+        int tx = UI.view_x + gx / 16;
+        int ty = UI.view_y + (gy - 8) / 16;
+        int dx = tx - CS.units[u].map_x;
+        int dy = ty - CS.units[u].map_y;
+        if ((dx || dy) && dx >= -1 && dx <= 1 && dy >= -1 && dy <= 1) {
+            static const char *DK[3][3] = {
+                { "7", "ArrowUp", "9" },
+                { "ArrowLeft", "", "ArrowRight" },
+                { "1", "ArrowDown", "3" },
+            };
+            in_key(DK[dy + 1][dx + 1], 0, 0);
+            draw_screen();
+            return;
+        }
+    }
     in_click(gx, gy, 0);
     draw_screen();
 }
@@ -320,7 +371,13 @@ static ask_input ask_wait(void) {
     ask_key[0] = 0;
     for (;;) {
         int gx, gy;
-        if (touch_tap(&gx, &gy)) {
+        int ev = touch_poll(&gx, &gy);
+        if (ev == TT_ESC) {                  /* two-finger = Escape */
+            snprintf(ask_key, sizeof(ask_key), "Escape");
+            in.key = ask_key;
+            return in;
+        }
+        if (ev == TT_TAP || ev == TT_LONG) { /* long-press = a tap here */
             in.tap = 1;
             in.gx = gx;
             in.gy = gy;
@@ -595,10 +652,15 @@ void setup() {
 
 void loop() {
     /* touch drives the pointer layer whenever the game loop is on
-     * (asks pump their own touch inside board_ask) */
+     * (asks pump their own touch inside board_ask): tap = click /
+     * adjacent-tile move, long-press = Space (skip the active unit),
+     * two-finger tap = Escape */
     if (game_mode && !ask_active) {
         int gx, gy;
-        if (touch_tap(&gx, &gy)) game_tap(gx, gy);
+        int ev = touch_poll(&gx, &gy);
+        if (ev == TT_ESC) game_key("Escape", 0, 0);
+        else if (ev == TT_LONG) game_key(" ", 0, 0);
+        else if (ev == TT_TAP) game_tap(gx, gy);
     }
     static char line[64];
     static size_t len = 0;
