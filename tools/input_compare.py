@@ -217,6 +217,15 @@ def map_script():
     K("v", 1)
     K("E")                          # -> europe
     C(164, 150)                     # ship box 1 (selects if present)
+    C(164, 150)                     # same box: @EUROPESHIPOPTIONS (em 4)
+    K("ArrowDown")
+    K("ArrowDown")                  # row 2: Unload all cargo (= sell)
+    K("Enter")
+    C(240, 145)                     # dock unit 0: @ARMOPTIONS (em 5)
+    K("ArrowDown")                  # -> move to front
+    K("Enter")
+    C(240, 145)                     # reopen
+    K("Escape")                     # close
     C(100, 190)                     # market bar: select + sell mirror
     C(310, 185)                     # exit box -> map
     return ev

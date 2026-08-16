@@ -9,6 +9,7 @@
  * Movement budgets are THIRDS (MOVE_UNIT = 3): the @UNIT loader
  * multiplies the movement column by 3 (`SHL al,1 / ADD al,cl` @0x074F04,
  * unit.md §3); a road/river step costs 1. */
+#include <stdio.h>
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -355,9 +356,85 @@ int cmd_build_colony(int ui) {
         ev_emit(scans[i], 0, 0, 0, 0);
         if (ask_choice() != 1) return -1;        /* row 2 proceeds */
     }
-    /* nameAndFound: openDialog('COLONY') — inert headless, the founding
-     * itself is the Teensy/live front end's flow (FLAGGED open) */
-    return -1;
+    /* nameAndFound: openDialog('COLONY') — inert headless.  -2 tells a
+     * LIVE front end (colopy_front_live) the scans passed and a name
+     * would found; the harness treats it like -1 (the JS side's pending
+     * dialog is discarded). */
+    return -2;
+}
+
+/* the shared fresh-colony record shape (nameAndFound's nc object,
+ * game.js:11332): empty stores, no target, the upkeep-0 min_colony-1
+ * starting buildings — set on the RUNTIME list (the record's
+ * tier-packed field is left zeroed, FLAGGED like the raid removals). */
+static void colony_record_reset(int ci) {
+    ColonyRecord *c = &CS.colonies[ci];
+    c->population = 0;
+    memset(c->occupation, 0xFF, sizeof(c->occupation));
+    memset(c->profession, 0, sizeof(c->profession));
+    memset(c->tiles, 0xFF, sizeof(c->tiles));
+    memset(c->buildings, 0, sizeof(c->buildings));
+    memset(c->stock, 0, sizeof(c->stock));
+    c->hammers = 0;
+    c->building_in_production = 0xFF;
+    c->warehouse_level = 0;
+    c->rebel_dividend = 0;
+    c->rebel_divisor = 0;
+    c->colony_flags = 0;
+    CR.col[ci].n_bld = 0;
+    for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
+        if (dat_buildings[b].upkeep == 0 && dat_buildings[b].min_colony == 1)
+            colony_bld_append(ci, b);
+    CR.col[ci].sol = 0;
+    CR.col[ci].sol_band = 0xFF;
+    CR.col[ci].latch = 0;
+    CR.col[ci].tool_warned = 0;
+}
+
+/* the rival-capture re-found (game.js:11066): our flag, the fresh
+ * shape, pop colonists clamped 1..3 */
+void colony_capture_record(int ci, int pop) {
+    ColonyRecord *c = &CS.colonies[ci];
+    c->owner_power = (uint8_t)cs_nation();
+    colony_record_reset(ci);
+    int n = pop < 1 ? 1 : pop > 3 ? 3 : pop;
+    for (int k = 0; k < n; k++) colonist_add(c);
+}
+
+/* nameAndFound (game.js:11330), run by a LIVE front end after
+ * cmd_build_colony returns -2: NULL name = the suggested
+ * colonynames[nation][count % 66].  The founder stands down like a
+ * joiner.  Returns the new colony's player ordinal. */
+int cmd_found_colony(int ui, const char *name) {
+    if (CS.n_colonies >= COLOPY_MAX_COLONIES) return -1;
+    UnitRecord *u = &CS.units[ui];
+    int nplayer = 0;
+    for (int i = 0; i < CS.n_colonies; i++)
+        if ((CS.colonies[i].owner_power & 3) == (int)cs_nation()) nplayer++;
+    if (!name) name = dat_colonynames[cs_nation()][nplayer % 66];
+    if (!name) name = "Colony";              /* padded-table guard */
+    int ci = CS.n_colonies++;
+    ColonyRecord *c = &CS.colonies[ci];
+    memset(c, 0, sizeof(*c));
+    c->map_x = u->map_x;
+    c->map_y = u->map_y;
+    c->owner_power = (uint8_t)cs_nation();
+    snprintf(c->name, sizeof(c->name), "%s", name);
+    colony_record_reset(ci);
+    const char *tn = dat_units[u->type].name;
+    if (u->tools) c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] + u->tools);
+    if (strcmp(tn, "Soldiers") == 0)
+        c->stock[MUSKETS] = (uint16_t)(c->stock[MUSKETS] + 50);
+    else if (strcmp(tn, "Dragoons") == 0) {
+        c->stock[MUSKETS] = (uint16_t)(c->stock[MUSKETS] + 50);
+        c->stock[HORSES] = (uint16_t)(c->stock[HORSES] + 50);
+    } else if (strcmp(tn, "Scouts") == 0)
+        c->stock[HORSES] = (uint16_t)(c->stock[HORSES] + 50);
+    uint8_t prof = u->profession;
+    colonist_add(c);
+    if (c->population > 0) c->profession[c->population - 1] = prof;
+    unit_remove(ui);
+    return nplayer;
 }
 
 /* improveOrder (game.js:11191).  Orders 8 = Clear/Plow, 9 = Build Road
@@ -543,14 +620,71 @@ void cmd_move(int ui, int dx, int dy) {
             int ruP_ship = ruP >= 0 &&
                            dat_units[CS.units[ruP].type].hull > 0;
             if (!ship) {
-                /* the LAND arms (game.js:11040-11146): at peace the
-                 * treaty ask guards land-vs-land, then a Wagon Train's
-                 * colony trade / a Scout's colony dialog (slice 5 —
-                 * unreached by the scripts so far), then the parley
-                 * (any land unit, colony or unit square, spends the
-                 * move: game.js:11141).  The WAR arms (@CANNOTATTACK,
-                 * resolveAttack, colony capture) stay with slice 5. */
-                if (rel_at_war(me, rival)) return;   /* war arms: slice 5 */
+                /* the LAND arms (game.js:11040-11146), complete: the
+                 * war ladder, the treaty ask, the Wagon Train trade,
+                 * the Scout dialog, then the parley. */
+                if (rel_at_war(me, rival)) {
+                    if (is_col && (CR.woi_flags & WOI_DECLARED)) {
+                        ev_emit("NOWARSDURINGREV", 0, 0, 0, 0);
+                        return;
+                    }
+                    if (dat_units[u->type].attack <= 0) {
+                        ev_emit("CANNOTATTACK", 0, 0, 0, 0);
+                        return;
+                    }
+                    if (ruP >= 0) {          /* land battle */
+                        resolve_attack(ui, ruP);
+                        CR.ui_advance = 1;
+                        return;
+                    }
+                    if (is_col) {
+                        /* an undefended colony FALLS (@CAPTURED): the
+                         * rival mirror loses it, the RECORD at the site
+                         * re-founds as ours — fresh stores + the
+                         * starting buildings, pop clamped 1..3; the
+                         * plunder roll is the port's FLAGGED stand-in
+                         * (game.js:11065) */
+                        rival_rt *r = &CR.rivals[rival];
+                        int rc = -1;
+                        for (int k2 = 0; k2 < r->n_col; k2++)
+                            if (r->col[k2].x == nx && r->col[k2].y == ny) {
+                                rc = k2;
+                                break;
+                            }
+                        if (rc >= 0) {
+                            int pop = r->col[rc].pop ? r->col[rc].pop : 1;
+                            int32_t loot = 10 *
+                                (1 + (int)((rng_next() * 10u) >> 15)) *
+                                (1 + pop);
+                            CS.powers[me].gold += loot;
+                            memmove(&r->col[rc], &r->col[rc + 1],
+                                    (size_t)(r->n_col - rc - 1) *
+                                        sizeof(r->col[0]));
+                            r->n_col--;
+                            int ci2 = -1;
+                            for (int k2 = 0; k2 < CS.n_colonies; k2++)
+                                if (CS.colonies[k2].map_x == nx &&
+                                    CS.colonies[k2].map_y == ny) {
+                                    ci2 = k2;
+                                    break;
+                                }
+                            if (ci2 >= 0) colony_capture_record(ci2, pop);
+                            ev_emit((CR.woi_flags & WOI_DECLARED)
+                                        ? "CAPTURED3" : "CAPTURED",
+                                    loot, 0, dat_nations[me].adjective,
+                                    ci2 >= 0 ? CS.colonies[ci2].name : 0);
+                            u->moves_remaining = 0;
+                            CR.unit_moves_undef[ui] = 0;
+                            CR.ui_advance = 1;
+                            return;
+                        }
+                    }
+                    /* "the colony holds" — msg only, the move is spent */
+                    u->moves_remaining = 0;
+                    CR.unit_moves_undef[ui] = 0;
+                    CR.ui_advance = 1;
+                    return;
+                }
                 if (rel_have_treaty(me, rival) && ruP >= 0 && !ruP_ship) {
                     ev_emit("HAVETREATY", 0, 0,
                             dat_nations[rival].adjective, 0);
@@ -563,9 +697,72 @@ void cmd_move(int ui, int dx, int dy) {
                     return;
                 }
                 if (is_col &&
-                    (strcmp(dat_units[u->type].name, "Wagon Train") == 0 ||
-                     strcmp(dat_units[u->type].name, "Scouts") == 0))
-                    return;                  /* trade/scout arms: slice 5 */
+                    strcmp(dat_units[u->type].name, "Wagon Train") == 0) {
+                    /* foreign-colony TRADE (func_05A40E, game.js:11105):
+                     * Jan de Witt gates it, the first hold slot barters
+                     * for goods (2:1 by value) or gold (bid + 25%) —
+                     * the GREATKINGS display string is FLAGGED TBD */
+                    if (!father_owned(father_by_name("Jan de Witt"))) {
+                        ev_emit("TRADEMERCANTILISM", 0, 0, 0, 0);
+                        return;
+                    }
+                    int slot = -1;
+                    for (int s2 = 0; s2 < CR.unit_n_hold[ui]; s2++)
+                        if (CR.unit_hold[ui][s2].qty > 0) { slot = s2; break; }
+                    if (slot < 0) { ev_emit("DEFICIT", 0, 0, 0, 0); return; }
+                    hold_slot h = CR.unit_hold[ui][slot];
+                    int32_t my_val = market_bid(h.good) * h.qty;
+                    int32_t offer_gold = my_val * 5 / 4;
+                    int og = (h.good + 1) % 16;
+                    while (og == h.good || market_ask(og) <= 0)
+                        og = (og + 1) % 16;
+                    int32_t offer_qty = my_val * 2 / market_ask(og);
+                    if (offer_qty < 1) offer_qty = 1;
+                    ev_emit("TRADEWITH", offer_qty, h.qty,
+                            dat_cargo[og].name, dat_cargo[h.good].name);
+                    int c2 = ask_choice();
+                    if (c2 == 0) {
+                        hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui],
+                                 h.good, -h.qty);
+                        hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui],
+                                 og, offer_qty);
+                    } else if (c2 == 1) {
+                        hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui],
+                                 h.good, -h.qty);
+                        CS.powers[me].gold += offer_gold;
+                    }
+                    u->moves_remaining = 0;
+                    CR.unit_moves_undef[ui] = 0;
+                    return;
+                }
+                if (is_col &&
+                    strcmp(dat_units[u->type].name, "Scouts") == 0) {
+                    /* scoutColony (func_05A20E, game.js:11130): mayor's
+                     * reception / spy on defences / attack / leave.
+                     * The reveal outcomes are fog presentation (not
+                     * mirrored); the spy roll can LOSE the scout.  The
+                     * JS X = target.colonists?.length ?? 3 — rival
+                     * colonies carry no colonist list, so X is the
+                     * CONSTANT 3 (the JS reading, mirrored). */
+                    u->moves_remaining = 0;
+                    CR.unit_moves_undef[ui] = 0;
+                    ev_emit("SCOUTCOLONY", 0, 0, 0, 0);
+                    int c2 = ask_choice();
+                    if (c2 == 0) {
+                        if (CR.woi_flags & WOI_DECLARED)
+                            ev_emit("NOMAYORSDURINGREV", 0, 0, 0, 0);
+                    } else if (c2 == 1) {
+                        int need = (3 + 6) * 2 + (cs_difficulty() - 2);
+                        uint8_t pr = u->profession;
+                        if (pr >= 1 && pr < DAT_JOBEXPERT_COUNT &&
+                            strcmp(dat_jobexpert[pr], "Seasoned Scouts") == 0)
+                            need >>= 1;
+                        if (1 + (int)((rng_next() * 36u) >> 15) > need)
+                            unit_remove(ui);   /* caught and lost */
+                    }
+                    CR.ui_advance = 1;
+                    return;
+                }
                 if (!rel_parley_eligible(rival)) return;   /* msg only */
                 u->moves_remaining = 0;
                 CR.unit_moves_undef[ui] = 0;

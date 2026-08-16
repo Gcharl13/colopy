@@ -364,6 +364,8 @@ void loop() {
             if (!pak_ready) { cmd_view(); }  /* loads the pak + first draw */
             if (!pak_ready) break;
             game_mode = 1;
+            colopy_front_live = 1;   /* complete the dialog-gated flows
+                                      * (founding, set-sail) on-board */
             ui_init();
             UI.screen = SCR_MAP;
             UI.nation = (int8_t)cs_nation();

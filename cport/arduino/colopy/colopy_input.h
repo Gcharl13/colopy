@@ -54,6 +54,11 @@ typedef struct {
 
 extern colopy_ui UI;
 
+/* 0 under the parity harness; a LIVE front end (the Teensy loop) sets 1
+ * to complete the flows the harness leaves at an inert dialog — today:
+ * colony FOUNDING with the suggested name, and the ship menu's sail. */
+extern int colopy_front_live;
+
 void ui_init(void);
 void in_key(const char *key, int alt, int shift);
 void in_click(int mx, int my, int right);

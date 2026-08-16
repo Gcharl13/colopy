@@ -29,8 +29,13 @@ modals (Europe sell + ship load/unload), and the map mechanics keys
 (build/join colony with the land-claim + site-scan chains, improvement
 orders, cargo load/unload/dump, disband, sail for Europe) — all
 0-event-diff across five scenarios; the ILI9341 panel path is VERIFIED
-ON HARDWARE.  Open follow-ups: the Europe ship/dockunit context menus,
-the colony rush-buy/custom-house keys, the pedia/options vocabularies,
-the menu rows bound to dialog flows, the drag layer, the rival land WAR
-arms + Wagon/Scout colony arms, and the USB-keyboard bring-up check per
-teensy/README.md).
+ON HARDWARE.  The MECHANICS are complete: the rival land WAR arms
+(resolveAttack + the @CAPTURED colony re-found), the Wagon Train trade
+and Scout dialogs at rival colonies, colony rush-buy, the Europe
+ship/dockunit context menus (board/hold/front/arm/bless + front/sail/
+unload-all), and colony FOUNDING (cmd_found_colony — the harness stops
+at the inert name dialog; a live front end, colopy_front_live, founds
+with the suggested name).  Open follow-ups, all presentation-side: the
+drag layer, the pedia/options browse screens, the Custom House ask-loop
+(unscriptable headless), the Save/Load/Go To dialog rows, and the
+USB-keyboard bring-up check per teensy/README.md).

@@ -20,6 +20,7 @@
 #include "colopy_input.h"
 
 colopy_ui UI;
+int colopy_front_live = 0;
 
 #define VIEW_COLS 15
 #define VIEW_ROWS 12
@@ -244,6 +245,115 @@ static void euro_sell_interactive(void) {
     UI.dlg_max = have;
     UI.dlg_good = (int8_t)UI.market_sel;
     UI.dlg_port = (int16_t)port;
+}
+
+/* ---- the Europe harbour context menus (em 4 ship / 5 dockunit) ------
+ * euroShipRows (game.js:4682): front / sail / unload-all / close.
+ * dockUnitRows (game.js:4590): the board-or-hold pair head, move to
+ * front, the eligible @ARMOPTIONS verbs (euro_arm_rows), bless/unbless
+ * by entry type, close.  acts: 0 board/noboard, 1 front, 2 arm (verb),
+ * 3 bless, 4 unbless, 5 close. */
+static int euro_port_of(int ordinal) {
+    int ord = -1;
+    for (int q = 0; q < CR.n_europe; q++) {
+        if (CR.europe[q].state != 0) continue;
+        if (++ord == ordinal) return q;
+    }
+    return -1;
+}
+static int dock_menu_rows(int kd, int acts[16], int verbs[16]) {
+    if (kd < 0 || kd >= CR.n_dock_units) return 0;
+    int n = 0;
+    acts[n] = 0; verbs[n++] = 0;
+    acts[n] = 1; verbs[n++] = 0;
+    uint8_t vids[8];
+    int na = euro_arm_rows(kd, vids);
+    for (int i = 0; i < na && n < 14; i++) { acts[n] = 2; verbs[n] = vids[i]; n++; }
+    int tt = entry_unit_type(&CR.dock_units[kd]);
+    if (tt >= 0 && strcmp(dat_units[tt].name, "Colonists") == 0) {
+        acts[n] = 3; verbs[n++] = 0;
+    } else if (tt >= 0 && strcmp(dat_units[tt].name, "Missionaries") == 0) {
+        acts[n] = 4; verbs[n++] = 0;
+    }
+    acts[n] = 5; verbs[n++] = 0;
+    return n;
+}
+static int unit_row_by_name(const char *name) {
+    for (int i = 0; i < DAT_UNITS_COUNT; i++)
+        if (strcmp(dat_units[i].name, name) == 0) return i;
+    return -1;
+}
+/* euroContextCommit (game.js:4838) */
+static void euro_context_commit(void) {
+    int menu = UI.euro_menu, row = UI.euro_menu_row;
+    UI.euro_menu = 0;                    /* the menu closes FIRST */
+    int port = euro_port_of(UI.euro_ship);
+    if (menu == 4) {                     /* the ship menu */
+        if (port < 0) return;
+        if (row == 0) {                  /* Move to front. */
+            euro_crossing e = CR.europe[port];
+            memmove(&CR.europe[1], &CR.europe[0],
+                    (size_t)port * sizeof(euro_crossing));
+            CR.europe[0] = e;
+            UI.euro_ship = 0;
+        } else if (row == 1) {           /* Set sail: confirmSailAway is
+                                          * an openDialog — inert under
+                                          * the harness; a live front end
+                                          * sails on the spot */
+            if (colopy_front_live) euro_sail_new_world(port);
+        } else if (row == 2) {           /* Unload all cargo = sell */
+            hold_slot snap[EURO_HOLD_MAX];
+            int n = CR.europe[port].n_hold;
+            memcpy(snap, CR.europe[port].hold, sizeof(snap));
+            for (int i = 0; i < n; i++)
+                if (snap[i].qty > 0)
+                    euro_sell_from_ship(port, snap[i].good, snap[i].qty);
+        }
+        return;
+    }
+    /* the dock-unit menu */
+    int acts[16], verbs[16];
+    int kd = UI.euro_dock_sel;
+    int n = dock_menu_rows(kd, acts, verbs);
+    if (row < 0 || row >= n) return;
+    immigrant *e = &CR.dock_units[kd];
+    switch (acts[row]) {
+    case 0:
+        if (e->no_board) {               /* 'board': onto the active ship */
+            if (port < 0 || CR.europe[port].n_pass >= 6) return;
+            immigrant b = *e;
+            b.no_board = 0;
+            memmove(e, e + 1,
+                    (size_t)(CR.n_dock_units - kd - 1) * sizeof(immigrant));
+            CR.n_dock_units--;
+            CR.europe[port].pass[CR.europe[port].n_pass++] = b;
+        } else {                         /* 'noboard': hold on the dock */
+            e->no_board = 1;
+        }
+        break;
+    case 1: {                            /* move to the dock front */
+        immigrant b = *e;
+        memmove(&CR.dock_units[1], &CR.dock_units[0],
+                (size_t)kd * sizeof(immigrant));
+        CR.dock_units[0] = b;
+        break;
+    }
+    case 2:
+        euro_arm_dock(kd, verbs[row]);
+        break;
+    case 3: {                            /* bless as Missionaries */
+        int r2 = unit_row_by_name("Missionaries");
+        if (r2 >= 0) e->type_ov = (uint8_t)(r2 + 1);
+        break;
+    }
+    case 4: {                            /* unbless */
+        int r2 = unit_row_by_name("Colonists");
+        if (r2 >= 0) e->type_ov = (uint8_t)(r2 + 1);
+        break;
+    }
+    default:
+        break;                           /* close */
+    }
 }
 
 /* the CS record of the ordinal-TH player colony (JS G.colonies[ord]) */
@@ -732,6 +842,8 @@ void in_key(const char *k, int alt, int shift) {
              * dialog */
             if (ui >= 0) {
                 int ord = cmd_build_colony(ui);
+                if (ord == -2)           /* the name dialog: live only */
+                    ord = colopy_front_live ? cmd_found_colony(ui, 0) : -1;
                 if (UI.sel >= CR.n_units_order)
                     UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
                 if (ord >= 0) {
@@ -937,16 +1049,22 @@ void in_key(const char *k, int alt, int shift) {
          * (euroMenuCommit — the generic gold gate keeps the menu open
          * on failure), ESC closes */
         if (UI.euro_menu) {
+            int cacts[16], cverbs[16];
             int n = UI.euro_menu == 1 ? 4        /* (None) + 3 candidates */
                   : UI.euro_menu == 2 ? 6        /* PURCHASE_CATALOG */
-                  : 1 + DAT_JOBTRAIN_COUNT;      /* None + sorted experts */
+                  : UI.euro_menu == 3 ? 1 + DAT_JOBTRAIN_COUNT
+                  : UI.euro_menu == 4 ? 4        /* the ship menu */
+                  : dock_menu_rows(UI.euro_dock_sel, cacts, cverbs);
+            if (n < 1) n = 1;
             if (key_is(k, "ArrowUp"))
                 UI.euro_menu_row = (int8_t)((UI.euro_menu_row + n - 1) % n);
             if (key_is(k, "ArrowDown"))
                 UI.euro_menu_row = (int8_t)((UI.euro_menu_row + 1) % n);
             if (key_is(k, "Enter") || key_is(k, " ")) {
                 int row = UI.euro_menu_row;
-                if ((UI.euro_menu == 1 || UI.euro_menu == 3) && row == 0) {
+                if (UI.euro_menu >= 4) {
+                    euro_context_commit();
+                } else if ((UI.euro_menu == 1 || UI.euro_menu == 3) && row == 0) {
                     UI.euro_menu = 0;            /* the "(None)" head */
                 } else {
                     int32_t gold = CS.powers[cs_nation()].gold;
@@ -1118,9 +1236,22 @@ void in_click(int mx, int my, int right) {
             if (CR.europe[q].state == 0) nport++;
         for (int k = 0; k < (nport < 6 ? nport : 6); k++)
             if (hit(mx, my, 145 + 18 * k, 145, 18, 18)) {
-                /* a re-click on the selected ship opens its context
-                 * menu (later slice); a different ship just selects */
-                if (UI.euro_ship != k) UI.euro_ship = (int8_t)k;
+                /* a re-click on the selected ship opens its
+                 * @EUROPESHIPOPTIONS menu; a different ship selects */
+                if (UI.euro_ship == k) {
+                    UI.euro_menu = 4;
+                    UI.euro_menu_row = 0;
+                } else {
+                    UI.euro_ship = (int8_t)k;
+                }
+                return;
+            }
+        for (int k = 0; k < (CR.n_dock_units < 6 ? CR.n_dock_units : 6); k++)
+            if (hit(mx, my, 232 + 17 * k, 137, 18, 18)) {
+                /* a dock unit's @ARMOPTIONS menu (game.js:12280) */
+                UI.euro_dock_sel = (int8_t)k;
+                UI.euro_menu = 5;
+                UI.euro_menu_row = 0;
                 return;
             }
         if (my >= 179) {
