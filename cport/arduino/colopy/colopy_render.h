@@ -150,6 +150,13 @@ void rm_draw_event(const char *key, const rm_subs *subs,
                    const char *speaker);
 void rm_draw_dialog_event(const char *key, const rm_subs *subs,
                           const char *speaker, int sel);
+/* touch hit-tests over the SAME geometry the two painters compute:
+ * rm_event_hit = 1 iff inside the bulletin plaque; rm_dialog_row_hit =
+ * option-row index, -2 inside-the-plaque-off-rows, -1 outside. */
+int  rm_event_hit(const char *key, const rm_subs *subs,
+                  const char *speaker, int mx, int my);
+int  rm_dialog_row_hit(const char *key, const rm_subs *subs,
+                       const char *speaker, int mx, int my);
 
 #ifdef __cplusplus
 }

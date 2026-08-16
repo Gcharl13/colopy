@@ -14,6 +14,7 @@ census-verified JS port (`port/src/game.js`), not the low-trust old C recon.
 | `pak/` | `COLOPY.PAK` (tools/gen_sd_pack.py) — the SD asset container, census-checked against the JS DATA (`sim_compare.py pak`) |
 | `host/` | PC harness: `make test` + every parity oracle entry (`--turns/--produce/--render*/--input/...`) |
 | `teensy/` | the serial shell + the display/keyboard game loop (panel + USB keyboard paths hardware-flagged; README.md carries the bring-up checklist) |
+| `p4/` | (Phase 9) the CrowPanel Advance 7" ESP32-P4 shell (1024x600 MIPI-DSI at an exact 3x scale, GT911 touch drives the pointer layer + dialog row taps, SD pak/saves) — every pin/timing byte-exact from Elecrow's own examples (`p4/PROVENANCE.md`); `tools/gen_arduino_p4_sketch.py` builds the IDE sketch |
 
 Ledger of every game.js function and its porting status:
 `PORT_LEDGER.md` (regenerate the skeleton with `tools/gen_port_ledger.py`).

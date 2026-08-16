@@ -185,14 +185,14 @@ static int speaker_low(const char *s) {
 /* drawEvent (game.js:6403): the body-only bulletin popup */
 int rm_event_exists(const char *key) { return event_by_key(key) != 0; }
 
-void rm_draw_event(const char *key, const rm_subs *subs,
-                   const char *speaker) {
-    dresolve();
-    const dat_events_entry_t *e = event_by_key(key);
-    if (!e || !e->body) return;
+/* the bulletin box geometry, shared by the painter and the touch
+ * hit-test so the two can never drift */
+static int event_geom(const dat_events_entry_t *e, const rm_subs *subs,
+                      const char *speaker, char lines[16][256],
+                      int *nl_out, int *x, int *y, int *w, int *h) {
+    if (!e || !e->body) return 0;
     const rd_font *f = dfont(e->small);
     int tp = dtext(e->small);
-    char lines[16][256];
     int nl = e->n_body < 16 ? e->n_body : 16;
     int cw = e->width;
     for (int i = 0; i < nl; i++) {
@@ -200,12 +200,26 @@ void rm_draw_event(const char *key, const rm_subs *subs,
         int lw = stripped_width(f, lines[i]) + 10;
         if (lw > cw) cw = lw;
     }
-    int w = cw + 6, h = 6 + nl * tp + 3;
+    *w = cw + 6;
+    *h = 6 + nl * tp + 3;
     int low = speaker_low(speaker);
     /* Math.round(160 - w/2) — NO clamps on the bulletin path (drawEvent
      * has none; a wider-than-screen popup runs off both edges) */
-    int x = round_half(320 - w);
-    int y = round_half((low ? 260 : 200) - h);
+    *x = round_half(320 - *w);
+    *y = round_half((low ? 260 : 200) - *h);
+    *nl_out = nl;
+    return 1;
+}
+
+void rm_draw_event(const char *key, const rm_subs *subs,
+                   const char *speaker) {
+    dresolve();
+    const dat_events_entry_t *e = event_by_key(key);
+    char lines[16][256];
+    int nl, x, y, w, h;
+    if (!event_geom(e, subs, speaker, lines, &nl, &x, &y, &w, &h)) return;
+    const rd_font *f = dfont(e->small);
+    int tp = dtext(e->small);
     uint8_t base = 68, hi = 149;                    /* in-game inks */
     draw_speaker(speaker, x, y, w);
     rm_plaque(x, y, w, h);
@@ -213,16 +227,30 @@ void rm_draw_event(const char *key, const rm_subs *subs,
         span_text(f, lines[i], x + 5, y + 6 + i * tp, base, hi);
 }
 
-/* askEvent -> drawDialog (game.js:6383/909): body + option rows, the
- * rows from the event's own tail paragraph; sel = highlighted row. */
-void rm_draw_dialog_event(const char *key, const rm_subs *subs,
-                          const char *speaker, int sel) {
+/* touch front ends: 1 = (mx,my) inside the bulletin plaque drawn by
+ * rm_draw_event with the same key/subs/speaker */
+int rm_event_hit(const char *key, const rm_subs *subs,
+                 const char *speaker, int mx, int my) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    if (!e || !e->body) return;
+    char lines[16][256];
+    int nl, x, y, w, h;
+    if (!event_geom(e, subs, speaker, lines, &nl, &x, &y, &w, &h)) return 0;
+    return mx >= x && mx < x + w && my >= y && my < y + h;
+}
+
+/* askEvent -> drawDialog (game.js:6383/909): body + option rows, the
+ * rows from the event's own tail paragraph; sel = highlighted row. */
+
+/* the dialog box geometry, shared by the painter and the touch
+ * hit-test so the two can never drift */
+static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
+                       const char *speaker, char body[16][256],
+                       char rows[16][256], int *nb_out, int *nr_out,
+                       int *x, int *y, int *w, int *h, int *seed) {
+    if (!e || !e->body) return 0;
     const rd_font *f = dfont(e->small);
     int tp = dtext(e->small), rp = drow(e->small);
-    char body[16][256], rows[16][256];
     int nb = e->n_body < 16 ? e->n_body : 16;
     int nr = e->n_tail < 16 ? e->n_tail : 16;
     int cw = e->width;
@@ -236,24 +264,64 @@ void rm_draw_dialog_event(const char *key, const rm_subs *subs,
         int lw = stripped_width(f, rows[i]) + 10;
         if (lw > cw) cw = lw;
     }
-    int w = cw + 6;
+    *w = cw + 6;
     int text_h = nb * tp;
-    int h = 6 + text_h + 3 + nr * rp + 3;
+    *h = 6 + text_h + 3 + nr * rp + 3;
     int low = speaker_low(speaker);
-    int x = round_half(320 - w), y = round_half((low ? 260 : 200) - h);
-    if (x + w > 320) x = 320 - w;
-    if (y + h > 200) y = 200 - h;
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
+    *x = round_half(320 - *w);
+    *y = round_half((low ? 260 : 200) - *h);
+    if (*x + *w > 320) *x = 320 - *w;
+    if (*y + *h > 200) *y = 200 - *h;
+    if (*x < 0) *x = 0;
+    if (*y < 0) *y = 0;
+    *seed = *y + 6 + text_h + 3;
+    *nb_out = nb;
+    *nr_out = nr;
+    return 1;
+}
+
+void rm_draw_dialog_event(const char *key, const rm_subs *subs,
+                          const char *speaker, int sel) {
+    dresolve();
+    const dat_events_entry_t *e = event_by_key(key);
+    char body[16][256], rows[16][256];
+    int nb, nr, x, y, w, h, seed;
+    if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
+                     &x, &y, &w, &h, &seed))
+        return;
+    const rd_font *f = dfont(e->small);
+    int tp = dtext(e->small), rp = drow(e->small);
     uint8_t base = 68, hi = 149;
     draw_speaker(speaker, x, y, w);
     rm_plaque(x, y, w, h);
     for (int i = 0; i < nb; i++)
         span_text(f, body[i], x + 5, y + 6 + i * tp, base, hi);
-    int seed = y + 6 + text_h + 3;
     for (int k = 0; k < nr; k++) {
         int oy = seed + k * rp;
         if (k == sel) rd_fill(x + 4, oy, w - 8, rp - 2, SELECT_GAME);
         span_text(f, rows[k], x + 9, oy + 1, base, hi);
     }
+}
+
+/* touch front ends: the option row under (mx,my) for the dialog
+ * rm_draw_dialog_event draws with the same key/subs/speaker — the row
+ * band is the selection-fill band (x+4..x+w-4, rp tall from its seed).
+ * Returns the row index, -2 = inside the plaque off the rows,
+ * -1 = outside the plaque. */
+int rm_dialog_row_hit(const char *key, const rm_subs *subs,
+                      const char *speaker, int mx, int my) {
+    dresolve();
+    const dat_events_entry_t *e = event_by_key(key);
+    char body[16][256], rows[16][256];
+    int nb, nr, x, y, w, h, seed;
+    if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
+                     &x, &y, &w, &h, &seed))
+        return -1;
+    if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
+    int rp = drow(e->small);
+    if (mx >= x + 4 && mx < x + w - 4 && my >= seed) {
+        int k = (my - seed) / rp;
+        if (k >= 0 && k < nr) return k;
+    }
+    return -2;
 }

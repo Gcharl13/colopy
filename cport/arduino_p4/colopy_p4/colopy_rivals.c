@@ -1,0 +1,1162 @@
+/* The rival-power turn — rivalTurn (game.js:7514) + checkContact (7317) +
+ * the AI-initiated meeting chain runMeeting/meetingTopic/meetingPeaceHub
+ * (8254/8266/8384, func_057F4E / func_059B90).
+ *
+ * The JS rival AI is itself a FLAGGED stand-in for the engine's strategic
+ * planner (func_04CC50) and per-unit pipeline (func_04E2D6) — ships sail
+ * west and plant colonies, land units garrison at peace and march at war —
+ * and this mirrors that stand-in draw-for-draw, since the JS port is the
+ * parity reference.  Byte-cited pieces carried over: the parley gates
+ * (turn >= 0x28, attitude >= 8 @0x57B1A, 16-turn lockout @0x58075), the
+ * action gate random(1000) < 200*diff+100 (@0x58315), the grace period
+ * 10*(10-diff) turns (@0x58374), the HELLO key build (@0x0588CD-0x058939),
+ * the MEEK/MANLY tone = strength comparison (@0x5881F, proxied), and the
+ * REL bit values (WAR matrix PowerRecord +0x34, TREATY +0x40).
+ *
+ * Trace semantics: askEvent is stubbed (key only, callback never runs), so
+ * every meeting topic ENDS at its first ask — treaties, tribute payments,
+ * war declarations and withdrawals never execute.  The war matrix starts
+ * empty (the JS importer does not populate it — TBD against PowerRecord
+ * +0x34) and no ported path writes REL.WAR, so rivalTurn's WAR branch
+ * (attack march + resolveAttack + the capture path) is unreachable for
+ * now; it lands with the combat-resolution slice and is marked below. */
+#include <string.h>
+
+#include "colopy_sim.h"
+#include "colopy_data.h"
+#include "colopy_text.h"   /* count MACROS only — no text symbols */
+
+#define REL_WAR       0x02
+#define REL_PRIVATEER 0x80
+#define REL_TREATY    0x40
+#define PARLEY_LOCKOUT 0x10
+#define PARLEY_FIRST_TURN 0x28
+
+static int at_war(int a, int b) {
+    return ((CR.war_matrix[a][b] | CR.war_matrix[b][a]) & REL_WAR) != 0;
+}
+static int have_treaty(int a, int b) {
+    return (CR.treaty_matrix[a][b] & REL_TREATY) != 0;
+}
+
+static int is_rival_unit(int ui, int rn) {
+    const UnitRecord *u = &CS.units[ui];
+    return (u->owner_flags & 0x0F) == rn && u->type < DAT_UNITS_COUNT &&
+           !CR.unit_in_natives[ui];      /* captured units left r.units */
+}
+static int R(int n) { return (int)((rng_next() * (uint32_t)n) >> 15); }
+
+/* powerMetric (game.js:8237): FLAGGED proxy for the [0x941C] strength
+ * word — total @UNIT combat over the side's units + 3 per colony. */
+static int power_metric(int power) {
+    int s = 0;
+    if (power == (int)cs_nation()) {
+        for (int ui = 0; ui < CS.n_units; ui++)
+            if (unit_on_map_player(ui)) s += dat_units[CS.units[ui].type].combat;
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == cs_nation()) s += 3;
+    } else {
+        for (int ui = 0; ui < CS.n_units; ui++)
+            if (is_rival_unit(ui, power)) s += dat_units[CS.units[ui].type].combat;
+        s += CR.rivals[power].n_col * 3;
+    }
+    return s;
+}
+static int meeting_tone(int rn) {          /* 1 = B speaks MEEKLY */
+    return power_metric(rn) < power_metric(cs_nation());
+}
+
+/* parleyEligible (game.js:8206).  G.attitude is 8 from boot and never
+ * changes headless, so the attitude clause is always satisfied. */
+static int parley_eligible(int rn) {
+    if (cs_turn() < PARLEY_FIRST_TURN) return 0;
+    if (CR.parley_lock[rn] > cs_turn()) return 0;
+    return 1;
+}
+
+static int gate(void) {                    /* action gate @0x58315 */
+    return (int)((rng_next() * 1000u) >> 15) < 200 * cs_difficulty() + 100;
+}
+
+/* demandValue (game.js:8214, byte-cited scaler @0x583A0/@0x5842B) */
+int32_t demand_value(int base) {
+    return base * 10 * (cs_difficulty() + 8) / 100 +
+           500 * (cs_difficulty() + 1);
+}
+/* declareWarOn / signTreaty / acceptTreaty (game.js:8186-8202/8409) */
+static void declare_war_on(int a, int b) {
+    CR.war_matrix[a][b] |= REL_WAR;
+    CR.treaty_matrix[a][b] &= (uint8_t)~REL_TREATY;
+    CR.treaty_matrix[b][a] &= (uint8_t)~REL_TREATY;
+    ev_emit("DECLAREWAR", 0, 0, dat_nations[a].adjective,
+            dat_nations[b].adjective);
+}
+static void accept_treaty(int rn) {
+    int me = cs_nation();
+    CR.war_matrix[me][rn] &= (uint8_t)~REL_WAR;
+    CR.war_matrix[rn][me] &= (uint8_t)~REL_WAR;
+    CR.treaty_matrix[me][rn] |= REL_TREATY;
+    CR.treaty_matrix[rn][me] |= REL_TREATY;
+    CR.parley_lock[rn] = (uint16_t)(cs_turn() + PARLEY_LOCKOUT);
+    /* silent: @SIGNTREATY belongs to the AI-AI ticker */
+}
+/* meetingWithdraw (game.js:8414): buy the loiterers off, or be refused. */
+static void meeting_withdraw(int rn) {
+    int me = cs_nation();
+    int forces[64], nf = 0;
+    for (int k = 0; k < CR.n_runits[rn] && nf < 64; k++) {
+        int ui = CR.runits_order[rn][k];
+        if (dat_units[CS.units[ui].type].hull > 0) continue;
+        for (int ci = 0; ci < CS.n_colonies; ci++) {
+            if ((CS.colonies[ci].owner_power & 3) != me) continue;
+            int dx = CS.colonies[ci].map_x - CR.runit_x[ui];
+            int dy = CS.colonies[ci].map_y - CR.runit_y[ui];
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+            if (dx <= 1 && dy <= 1) { forces[nf++] = ui; break; }
+        }
+    }
+    if (!nf) { ev_emit("NOTHINGWITHDRAW", 0, 0, 0, 0); return; }
+    int32_t price = 25 * (cs_difficulty() + 2) * nf - 50 * nf;
+    if (price < 100) price = 100;
+    if (at_war(me, rn)) price *= 2;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (strcmp(dat_fathers[i].name, "Benjamin Franklin") == 0 &&
+            ((CS.powers[me].founding_fathers >> i) & 1)) price >>= 1;
+    if (gate()) {
+        ev_emit("MAYBEWITHDRAW", price, 0, dat_nations[rn].adjective, 0);
+        int c = ask_choice();
+        if (c == 0) {
+            PowerRecord *p = &CS.powers[me];
+            if (p->gold < price) { ev_emit("NOTENOUGH", p->gold, 0, 0, 0); return; }
+            p->gold -= price;
+            for (int k = nf - 1; k >= 0; k--)    /* descending: safe shifts */
+                unit_remove(forces[k]);
+            ev_emit("WITHDRAW", 0, 0, 0, 0);
+        } else if (c == 1) ev_emit("THREATS", 0, 0, 0, 0);
+    } else ev_emit("NOTWITHDRAW", 0, 0, dat_nations[rn].adjective, 0);
+}
+/* meetingPeaceHub (game.js:8384): the answered rows under the %2 policy
+ * are 0 = accept the treaty, 1 = demand a withdrawal (rows 2/3 — threat
+ * and alliance — are unreachable under the scripted answers). */
+static void meeting_peace_hub(int rn) {
+    const char *key = (CR.woi_flags & WOI_DECLARED) ? "PEACEUSA"
+        : have_treaty(cs_nation(), rn)
+        ? (meeting_tone(rn) ? "OLDPEACEMEEK" : "OLDPEACEMANLY")
+        : (meeting_tone(rn) ? "PEACEMEEK" : "PEACEMANLY");
+    ev_emit(key, 0, 0, dat_nations[cs_nation()].adjective,
+            dat_nations[rn].adjective);
+    int c = ask_choice();
+    if (c == 0) accept_treaty(rn);
+    else if (c == 1) meeting_withdraw(rn);
+}
+
+/* meetingTopic (game.js:8266) — the topic cascade.  Draw accounting is the
+ * contract: each gate() draws only when its preceding conditions held, in
+ * JS short-circuit order. */
+static void meeting_topic(int rn) {
+    int me = cs_nation();
+    int in_grace = cs_turn() < 10 * (10 - cs_difficulty());
+    /* @PIRACY — B's accusation once the Privateer hidden-attribution
+     * bit is set against him (game.js:8275; reachable since the ship
+     * command layer can strike at peace).  Row 1 withdraws: every player
+     * Privateer sails for Europe (in G.units order — the crossing-list
+     * order is part of the parity contract); either row then falls to
+     * the peace hub. */
+    if ((CR.war_matrix[me][rn] & REL_PRIVATEER) && !at_war(me, rn)) {
+        CR.war_matrix[me][rn] &= (uint8_t)~REL_PRIVATEER;
+        ev_emit((CR.woi_flags & WOI_DECLARED) ? "PIRACYUSA" : "PIRACY",
+                0, 0, dat_nations[me].adjective, dat_regionname[rn]);
+        int k = ask_choice();
+        if (k == 1) {
+            int priv = -1;
+            for (int i = 0; i < DAT_UNITS_COUNT; i++)
+                if (strcmp(dat_units[i].name, "Privateer") == 0) priv = i;
+            int uis[64], nu = 0;
+            for (int q = 0; q < CR.n_units_order && nu < 64; q++) {
+                int ui = CR.units_order[q];
+                if (CS.units[ui].type == priv) uis[nu++] = ui;
+            }
+            for (int q = 0; q < nu; q++) {
+                cmd_sail_for_europe(uis[q]);
+                for (int w = q + 1; w < nu; w++)   /* records compacted */
+                    if (uis[w] > uis[q]) uis[w]--;
+            }
+        }
+        meeting_peace_hub(rn);
+        return;
+    }
+    /* @SIEGES — player attack-capable land units beside B's colonies */
+    if (!at_war(me, rn)) {
+        int besiegers = 0;
+        for (int ui = 0; ui < CS.n_units && !besiegers; ui++) {
+            if (!unit_on_map_player(ui)) continue;
+            const UnitRecord *u = &CS.units[ui];
+            if (dat_units[u->type].hull > 0 ||
+                dat_units[u->type].attack <= 0) continue;
+            const rival_rt *r = &CR.rivals[rn];
+            for (int k = 0; k < r->n_col; k++) {
+                int dx = r->col[k].x - u->map_x, dy = r->col[k].y - u->map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx <= 1 && dy <= 1) { besiegers = 1; break; }
+            }
+        }
+        if (besiegers && gate()) {
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "SIEGESUSA" : "SIEGES", 0, 0, dat_nations[me].adjective,
+                    dat_nations[rn].adjective);
+            /* game.js:8302: row 1 recalls the besiegers to the nearest own
+             * colony (the engine sends them "to Europe"; nearest-colony is
+             * the JS's flagged stand-in), then the hub either way */
+            if (ask_choice() == 1) {
+                for (int ui = 0; ui < CS.n_units; ui++) {
+                    if (!unit_on_map_player(ui)) continue;
+                    UnitRecord *u = &CS.units[ui];
+                    if (dat_units[u->type].hull > 0 ||
+                        dat_units[u->type].attack <= 0) continue;
+                    int near_rc = 0;
+                    const rival_rt *r = &CR.rivals[rn];
+                    for (int k = 0; k < r->n_col && !near_rc; k++) {
+                        int dx = r->col[k].x - u->map_x;
+                        int dy = r->col[k].y - u->map_y;
+                        if (dx < 0) dx = -dx;
+                        if (dy < 0) dy = -dy;
+                        if (dx <= 1 && dy <= 1) near_rc = 1;
+                    }
+                    if (!near_rc) continue;
+                    int best = -1, bd = 0;
+                    for (int ci = 0; ci < CS.n_colonies; ci++) {
+                        if ((CS.colonies[ci].owner_power & 3) != me) continue;
+                        int dx = CS.colonies[ci].map_x - u->map_x;
+                        int dy = CS.colonies[ci].map_y - u->map_y;
+                        int d = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
+                        if (best < 0 || d < bd) { best = ci; bd = d; }
+                    }
+                    if (best >= 0) {
+                        u->map_x = CS.colonies[best].map_x;
+                        u->map_y = CS.colonies[best].map_y;
+                        CR.runit_x[ui] = u->map_x;
+                        CR.runit_y[ui] = u->map_y;
+                    }
+                }
+            }
+            meeting_peace_hub(rn);
+            return;
+        }
+    }
+    /* @APOSTATES — a third power B is at war with while we hold a treaty
+     * (unreachable while both matrices are empty; scan kept for order) */
+    {
+        int third = -1;
+        for (int x = 0; x < 4 && third < 0; x++)
+            if (x != me && x != rn && CR.rivals[x].met &&
+                have_treaty(me, x) && at_war(rn, x)) third = x;
+        if (third >= 0 && gate()) {
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "APOSTATESUSA" : "APOSTATES", 0, 0, dat_nations[third].adjective, 0);
+            /* game.js:8326: row 1 breaks the treaty and joins B's war */
+            if (ask_choice() == 1) {
+                CR.treaty_matrix[me][third] &= (uint8_t)~REL_TREATY;
+                CR.treaty_matrix[third][me] &= (uint8_t)~REL_TREATY;
+                declare_war_on(me, third);
+            }
+            meeting_peace_hub(rn);
+            return;
+        }
+    }
+    /* @HEATHEN — first tribe at the 40-tension band (port stand-in,
+     * flagged in JS): gate() then the 0.34 roll, short-circuit order */
+    {
+        int heathen = -1;
+        for (int t = 0; t < 8 && heathen < 0; t++)
+            if (CR.tension[t] >= 40) heathen = t;
+        if (heathen >= 0 && !at_war(me, rn) && gate() &&
+            (int)rng_next() <= 11141) {    /* Math.random() < 0.34 */
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "HEATHENUSA" : "HEATHEN", 0, 0, dat_tribes[heathen].name, 0);
+            /* game.js:8340: row 1 turns on the tribe (@PISS4 cause) */
+            if (ask_choice() == 1) adjust_tension(heathen, 100, 4);
+            meeting_peace_hub(rn);
+            return;
+        }
+    }
+    /* @TRIBUTE — B's gold extortion, after the grace period */
+    if (!in_grace && !at_war(me, rn) && gate()) {
+        int32_t want = demand_value(500);
+        ev_emit((CR.woi_flags & WOI_DECLARED) ? "TRIBUTEUSA" : "TRIBUTE", want, 0, dat_nations[me].adjective,
+                dat_regionname[rn]);
+        /* game.js:8350: row 1 pays (NOTENOUGH if broke); a refusal that
+         * passes the action gate escalates to war (@WARMEEK/@WARMANLY) */
+        if (ask_choice() == 1) {
+            PowerRecord *p = &CS.powers[me];
+            if (p->gold < want) ev_emit("NOTENOUGH", p->gold, 0, 0, 0);
+            else { p->gold -= want; CR.rivals[rn].gold += want; }
+            meeting_peace_hub(rn);
+        } else if (gate()) {
+            ev_emit(meeting_tone(rn) ? "WARMEEK" : "WARMANLY", 0, 0,
+                    dat_regionname[rn], 0);
+            declare_war_on(rn, me);
+        } else meeting_peace_hub(rn);
+        return;
+    }
+    /* @WORTHY — the AI-proposed demarcation treaty */
+    if (!have_treaty(me, rn) && !at_war(me, rn) && gate()) {
+        ev_emit("WORTHY", 0, 0, dat_nations[me].adjective,
+                dat_nations[rn].adjective);
+        /* game.js:8375: row 0 accepts, anything else falls to the hub */
+        if (ask_choice() == 0) accept_treaty(rn);
+        else meeting_peace_hub(rn);
+        return;
+    }
+    meeting_peace_hub(rn);
+}
+
+/* runMeeting (game.js:8254).  The AI-initiated parley has no player unit
+ * (HELLOFIRST when ungreeted); a player SHIP knocking is HELLOAHOY. */
+void run_meeting(int rn, int via_ship) {
+    rival_rt *r = &CR.rivals[rn];
+    const char *key = (CR.woi_flags & WOI_DECLARED) ? "HELLOUSA"
+        : !r->greeted ? (via_ship ? "HELLOAHOY" : "HELLOFIRST")
+        : meeting_tone(rn) ? "HELLOMEEK" : "HELLOMANLY";
+    r->greeted = 1;
+    CR.parley_lock[rn] = (uint16_t)(cs_turn() + PARLEY_LOCKOUT);
+    ev_emit(key, 0, 0, dat_regionname[rn], 0);
+    meeting_topic(rn);
+}
+
+/* Relation accessors for the command layer (colopy_cmd.c) — the REL
+ * bit constants stay private to this unit. */
+int rel_at_war(int a, int b) { return at_war(a, b); }
+int rel_have_treaty(int a, int b) { return have_treaty(a, b); }
+int rel_parley_eligible(int rn) { return parley_eligible(rn); }
+void rel_declare_war(int a, int b) { declare_war_on(a, b); }
+void rel_set_privateer(int a, int b) {
+    CR.war_matrix[a][b] |= REL_PRIVATEER;   /* setWar(.., PRIVATEER, true) */
+}
+
+/* checkContact (game.js:7317): every imported rival is already met
+ * (importer game.js:10333 seeds met: true), so this is a no-op until
+ * fresh-game seeding lands — kept for pipeline-order fidelity. */
+static void check_contact(void) {
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        if (CR.rivals[rn].met) continue;
+        /* TBD with seedRivals: the near-scan + REL.MET + woodcut 10 */
+    }
+}
+
+void rival_turn(void) {
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        rival_rt *r = &CR.rivals[rn];
+        int war = at_war(cs_nation(), rn);
+        /* r.units order (the CR list): ships-then-land at import, plus
+         * succession appends.  JS iterates a slice() snapshot; the only
+         * mid-loop removal is the current attacker itself, handled at
+         * the resolve sites below. */
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            int ui = CR.runits_order[rn][k];
+            int ship = dat_units[CS.units[ui].type].hull > 0;
+            int16_t *px = &CR.runit_x[ui], *py = &CR.runit_y[ui];
+            if (ship) {
+                /* westward settler: coast ahead (W, N, S; off-map reads
+                 * Ocean, game.js:469) plants a colony */
+                static const int LDX[3] = { -1, 0, 0 };
+                static const int LDY[3] = { 0, -1, 1 };
+                int lx = 0, ly = 0, land = 0;
+                for (int k = 0; k < 3 && !land; k++) {
+                    int x = *px + LDX[k], y = *py + LDY[k];
+                    if (!tile_water(map_at(x, y))) { lx = x; ly = y; land = 1; }
+                }
+                if (land && r->n_col < 6) {
+                    int taken = 0;
+                    for (int ci = 0; ci < CS.n_colonies && !taken; ci++)
+                        if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
+                            CS.colonies[ci].map_x == lx &&
+                            CS.colonies[ci].map_y == ly) taken = 1;
+                    for (int k = 0; k < r->n_col && !taken; k++)
+                        if (r->col[k].x == lx && r->col[k].y == ly) taken = 1;
+                    for (int v = 0; v < CS.n_villages && !taken; v++)
+                        if (CS.villages[v].map_x == lx &&
+                            CS.villages[v].map_y == ly) taken = 1;
+                    if (!taken) {
+                        if (r->n_col < (int)(sizeof(r->col) / sizeof(r->col[0]))) {
+                            r->col[r->n_col].x = (int16_t)lx;
+                            r->col[r->n_col].y = (int16_t)ly;
+                            r->col[r->n_col].level = 0;
+                            r->col[r->n_col].pop = 1;
+                            r->n_col++;
+                        }
+                        r->next_colony++;    /* name rotation (names unused) */
+                        int nx2 = *px + 3;   /* stand off, look for another */
+                        *px = (int16_t)(nx2 > COLOPY_MAP_W - 1 ?
+                                        COLOPY_MAP_W - 1 : nx2);
+                        continue;
+                    }
+                }
+                {
+                    int nx = *px - 1;
+                    if (nx >= 0 && tile_water(map_at(nx, *py))) *px = (int16_t)nx;
+                    else *py = (int16_t)(*py + ((*py % 2) ? 1 : -1));
+                }
+                continue;
+            }
+            /* land units: garrison at peace; the parley when beside the
+             * player's people (screen is 'map', no dialog — headless) */
+            if (!war) {
+                /* G.screen === 'map' gate (game.js:7547): the retirement
+                 * report parks the screen elsewhere */
+                if (!CR.screen_map || !parley_eligible(rn)) continue;
+                int near = 0;
+                for (int pu = 0; pu < CS.n_units && !near; pu++) {
+                    if (!unit_on_map_player(pu)) continue;
+                    int dx = CS.units[pu].map_x - *px;
+                    int dy = CS.units[pu].map_y - *py;
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) near = 1;
+                }
+                for (int ci = 0; ci < CS.n_colonies && !near; ci++) {
+                    if ((CS.colonies[ci].owner_power & 3) != cs_nation())
+                        continue;
+                    int dx = CS.colonies[ci].map_x - *px;
+                    int dy = CS.colonies[ci].map_y - *py;
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) near = 1;
+                }
+                if (near) run_meeting(rn, 0);
+                continue;
+            }
+            /* WAR branch (game.js:7553): garrison-first, then the attack
+             * mission — strike an adjacent foe, assault the palisade, or
+             * march one step at the nearest player colony. */
+            {
+                int in_own = 0;
+                for (int k = 0; k < r->n_col && !in_own; k++)
+                    if (r->col[k].x == *px && r->col[k].y == *py) in_own = 1;
+                int stacked = 0;
+                for (int qi = 0; qi < CS.n_units && !stacked; qi++)
+                    if (qi != ui && is_rival_unit(qi, rn) &&
+                        dat_units[CS.units[qi].type].hull <= 0 &&
+                        CR.runit_x[qi] == *px && CR.runit_y[qi] == *py)
+                        stacked = 1;
+                if (in_own && !stacked) continue;
+                int target = -1, bd = 0;
+                for (int ci = 0; ci < CS.n_colonies; ci++) {
+                    if ((CS.colonies[ci].owner_power & 3) != cs_nation())
+                        continue;
+                    int ddx = CS.colonies[ci].map_x - *px;
+                    int ddy = CS.colonies[ci].map_y - *py;
+                    int d = (ddx < 0 ? -ddx : ddx) + (ddy < 0 ? -ddy : ddy);
+                    if (target < 0 || d < bd) { target = ci; bd = d; }
+                }
+                if (target < 0) continue;
+                int foe = -1;
+                for (int k = 0; k < CR.n_units_order && foe < 0; k++) {
+                    int pu = CR.units_order[k];      /* G.units order */
+                    if (dat_units[CS.units[pu].type].hull > 0) continue;
+                    int ddx = CS.units[pu].map_x - *px;
+                    int ddy = CS.units[pu].map_y - *py;
+                    if (ddx < 0) ddx = -ddx;
+                    if (ddy < 0) ddy = -ddy;
+                    if (ddx <= 1 && ddy <= 1) foe = pu;
+                }
+                if (foe >= 0) {
+                    /* the only unit this fight can remove from THIS list
+                     * is the attacker itself (death OR capture) — the JS
+                     * slice() snapshot just walks on; the live list slid,
+                     * so step back one slot */
+                    uint16_t nb = CR.n_runits[rn];
+                    resolve_attack(ui, foe);
+                    if (CR.n_runits[rn] < nb) k--;
+                    continue;
+                }
+                const ColonyRecord *tc = &CS.colonies[target];
+                int adx = tc->map_x - *px, ady = tc->map_y - *py;
+                if (adx < 0) adx = -adx;
+                if (ady < 0) ady = -ady;
+                if ((adx > ady ? adx : ady) <= 1) {
+                    int inside = -1;
+                    for (int k = 0; k < CR.n_units_order && inside < 0; k++) {
+                        int pu = CR.units_order[k];
+                        if (dat_units[CS.units[pu].type].hull <= 0 &&
+                            CS.units[pu].map_x == tc->map_x &&
+                            CS.units[pu].map_y == tc->map_y) inside = pu;
+                    }
+                    if (inside >= 0) {
+                        uint16_t nb = CR.n_runits[rn];
+                        resolve_attack(ui, inside);
+                        if (CR.n_runits[rn] < nb) k--;
+                        continue;
+                    }
+                    /* the empty colony falls: capture (plunder + transfer)
+                     * under six colonies, razing over (@CAPTURED/@BURNED2;
+                     * the burn-vs-capture selector is unread — flagged in
+                     * JS, mirrored) */
+                    int tx = tc->map_x, ty = tc->map_y;
+                    int tpop = tc->population ? tc->population : 1;
+                    colony_remove(target);
+                    if (r->n_col < 6) {
+                        PowerRecord *p = &CS.powers[cs_nation()];
+                        int32_t plunder = 50 * tpop;
+                        if (plunder > p->gold) plunder = p->gold;
+                        p->gold -= plunder;
+                        if (r->n_col < (int)(sizeof(r->col) / sizeof(r->col[0]))) {
+                            r->col[r->n_col].x = (int16_t)tx;
+                            r->col[r->n_col].y = (int16_t)ty;
+                            r->col[r->n_col].level = 0;
+                            r->col[r->n_col].pop = (uint8_t)tpop;
+                            r->col[r->n_col].spared = 0;
+                            r->n_col++;
+                        }
+                        ev_emit("CAPTURED", plunder, 0,
+                                dat_nations[rn].adjective, 0);
+                    } else {
+                        ev_emit("BURNED2", 0, 0, dat_nations[rn].country, 0);
+                    }
+                    continue;
+                }
+                /* one step at the target (straight-line stand-in, flagged) */
+                static const int DX[8] = { 1, -1, 0, 0, 1, 1, -1, -1 };
+                static const int DY[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
+                int bx = -1, by = -1, sd = 0;
+                for (int s = 0; s < 8; s++) {
+                    int x = *px + DX[s], y = *py + DY[s];
+                    if (x < 0 || y < 0 || x >= COLOPY_MAP_W ||
+                        y >= COLOPY_MAP_H) continue;
+                    if (tile_water(map_at(x, y))) continue;
+                    int blocked = 0;
+                    for (int qi = 0; qi < CS.n_units && !blocked; qi++)
+                        if (qi != ui && is_rival_unit(qi, rn) &&
+                            CR.runit_x[qi] == x && CR.runit_y[qi] == y)
+                            blocked = 1;
+                    for (int v = 0; v < CS.n_villages && !blocked; v++)
+                        if (CS.villages[v].map_x == x &&
+                            CS.villages[v].map_y == y) blocked = 1;
+                    if (blocked) continue;
+                    int ddx = tc->map_x - x, ddy = tc->map_y - y;
+                    int d = (ddx < 0 ? -ddx : ddx) + (ddy < 0 ? -ddy : ddy);
+                    if (bx < 0 || d < sd) { bx = x; by = y; sd = d; }
+                }
+                if (bx >= 0) { *px = (int16_t)bx; *py = (int16_t)by; }
+            }
+        }
+    }
+    check_contact();
+}
+
+/* ====================================================================
+ * The endTurn tail past rivalTurn — newsTick (game.js:7366), kingWarCycle
+ * (8956), kingTaxDemand (8647), shoreBombardment (6934), spanishSuccession
+ * (6998), aiDiplomacyTick (8484), the retirement clock (10800) — plus the
+ * steps that are structurally no-ops headless, named where they fall.
+ * ==================================================================== */
+
+/* nationalSoL (game.js:8856): pop-weighted colony SoL + Simon Bolivar. */
+int national_sol(void) {
+    int pop = 0;
+    long acc = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        if ((CS.colonies[ci].owner_power & 3) != cs_nation()) continue;
+        pop += CS.colonies[ci].population;
+        acc += (long)rt_sol(ci) * CS.colonies[ci].population;
+    }
+    int m = pop ? (int)(acc / pop) : 0;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (strcmp(dat_fathers[i].name, "Simon Bolivar") == 0 &&
+            ((CS.powers[cs_nation()].founding_fathers >> i) & 1)) m += 20;
+    return m < 0 ? 0 : m > 100 ? 100 : m;
+}
+static int rival_colony_level(int ci) {          /* colonyLevel by name */
+    if (colony_has_name(ci, "Fortress")) return 3;
+    if (colony_has_name(ci, "Fort")) return 2;
+    if (colony_has_name(ci, "Stockade")) return 1;
+    return 0;
+}
+
+/* newsTick (game.js:7366) — the third-party bulletin bus; rates flagged
+ * in the JS, mirrored draw-for-draw. */
+static void news_tick(void) {
+    int me = cs_nation();
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == me) continue;
+        rival_rt *r = &CR.rivals[rn];
+        if (!r->met) continue;
+        /* the independence race (PowerRecord +0x02 unmodeled — a flagged
+         * random walk stands in) */
+        if (cs_year() >= 1650 && !r->independent &&
+            !(CR.woi_flags & WOI_DECLARED)) {
+            int v = r->rebel_pct + ((int)rng_next() <= 19660 ? 1 : -1);
+            if (v < 0) v = 0;
+            r->rebel_pct = (uint8_t)v;
+            if (v >= 40 && !r->might_warned) {
+                r->might_warned = 1;
+                ev_emit("OTHERMIGHT", v, 0, dat_nations[rn].country, 0);
+            } else if (r->might_warned && v < 35 && !r->less_noted) {
+                r->less_noted = 1;
+                ev_emit("OTHERLESS", v, 0, dat_nations[rn].country, 0);
+            } else if (v >= 60) {
+                r->independent = 1;
+                ev_emit("OTHERGRANTED", v, 0, dat_nations[rn].country, 0);
+            }
+        }
+        /* @VIOLATE: a rival unit loitering beside our colony at peace */
+        if (!at_war(me, rn) && R(24) == 0) {
+            int tres = -1;
+            for (int k = 0; k < CR.n_runits[rn] && tres < 0; k++) {
+                int ui = CR.runits_order[rn][k];       /* r.units order */
+                for (int ci = 0; ci < CS.n_colonies; ci++) {
+                    if ((CS.colonies[ci].owner_power & 3) != me) continue;
+                    int dx = CS.colonies[ci].map_x - CR.runit_x[ui];
+                    int dy = CS.colonies[ci].map_y - CR.runit_y[ui];
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) { tres = ui; break; }
+                }
+            }
+            if (tres >= 0)
+                ev_emit("VIOLATE", 0, 0, dat_nations[rn].adjective, 0);
+        }
+        /* @SNEAK: undeclared hostilities — war lands as it fires */
+        if (!at_war(me, rn) && R(60) == 0) {
+            int agg = -1, prey = -1;
+            for (int rk = 0; rk < CR.n_runits[rn] && agg < 0; rk++) {
+                int ui = CR.runits_order[rn][rk];    /* r.units order */
+                if (dat_units[CS.units[ui].type].hull > 0) continue;
+                for (int k = 0; k < CR.n_units_order; k++) {
+                    int pu = CR.units_order[k];      /* G.units order */
+                    if (dat_units[CS.units[pu].type].hull > 0) continue;
+                    int dx = CS.units[pu].map_x - CR.runit_x[ui];
+                    int dy = CS.units[pu].map_y - CR.runit_y[ui];
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) { agg = ui; prey = pu; break; }
+                }
+            }
+            if (agg >= 0 && prey >= 0) {
+                ev_emit("SNEAK", 0, 0, dat_nations[rn].adjective, 0);
+                CR.war_matrix[rn][me] |= REL_WAR;
+                resolve_attack(agg, prey);
+                continue;                        /* game.js:7411 */
+            }
+        }
+        /* @LOOTFOREIGN: a rival treasure fleet reaches home (simulated) */
+        if (R(60) == 0 && r->n_col) {
+            int booty = 100 * (2 + R(11));
+            r->gold += booty;
+            ev_emit("LOOTFOREIGN", booty, 0, dat_nations[rn].adjective, 0);
+        }
+        /* @GIVECASH: a threatened AI colony buys the player off (stub) */
+        if (at_war(me, rn)) {
+            int scared = -1;
+            for (int k = 0; k < r->n_col && scared < 0; k++) {
+                if (r->col[k].spared) continue;
+                for (int pu = 0; pu < CS.n_units; pu++) {
+                    if (!unit_on_map_player(pu) ||
+                        dat_units[CS.units[pu].type].hull > 0 ||
+                        dat_units[CS.units[pu].type].attack <= 0) continue;
+                    int dx = r->col[k].x - CS.units[pu].map_x;
+                    int dy = r->col[k].y - CS.units[pu].map_y;
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) { scared = k; break; }
+                }
+            }
+            if (scared >= 0 && R(6) == 0) {
+                r->col[scared].spared = 1;
+                int32_t purse = 100 + 50 *
+                    (r->col[scared].pop ? r->col[scared].pop : 1);
+                ev_emit("GIVECASH", purse, 0, 0, 0);
+                if (ask_choice() == 0) {             /* game.js:7435 */
+                    CS.powers[me].gold += purse;
+                    r->gold = r->gold > purse ? r->gold - purse : 0;
+                }
+            }
+        }
+        /* native-vs-rival raiding (simulated; rates flagged in JS) */
+        if (!r->n_col) continue;
+        if (R(24) != 0) continue;
+        int rci = R(r->n_col);
+        rival_colony *rc = &r->col[rci];
+        int vi = -1;
+        for (int v = 0; v < CS.n_villages && vi < 0; v++) {
+            if (CR.alarm[v] < 0x80) continue;
+            int dx = CS.villages[v].map_x - rc->x;
+            int dy = CS.villages[v].map_y - rc->y;
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+            if (dx <= 4 && dy <= 4) vi = v;
+        }
+        if (vi < 0) continue;
+        {
+            int tribe = CS.villages[vi].owner_tribe - 4;
+            if (tribe < 0 || tribe >= 8) continue;
+            int k = (int)rng_next();
+            int pop = rc->pop ? rc->pop : 1;
+            if (k <= 6553 && pop <= 1) {             /* < 0.2 */
+                memmove(&r->col[rci], &r->col[rci + 1],
+                        (size_t)(r->n_col - rci - 1) * sizeof(rival_colony));
+                r->n_col--;
+                ev_emit("INDIANBURNCOLONY2", 0, 0, dat_tribes[tribe].name, 0);
+            } else if (k <= 16383) {                 /* < 0.5 */
+                rc->pop = (uint8_t)(pop - 1 > 1 ? pop - 1 : 1);
+                ev_emit("INDIANWINCOLONY2", 0, 0, dat_tribes[tribe].name, 0);
+            } else {
+                ev_emit("INDIANLOSE", 0, 0, dat_tribes[tribe].name, 0);
+            }
+        }
+    }
+    /* rival-vs-rival wars (simulated tick; bulletins byte-read) */
+    {
+        int list[3], nl = 0;
+        for (int n = 0; n < 4; n++)
+            if (n != me) list[nl++] = n;
+        for (int i = 0; i < nl; i++)
+            for (int j = i + 1; j < nl; j++) {
+                int a = list[i], b = list[j];
+                if (!CR.rivals[a].met || !CR.rivals[b].met) continue;
+                if (!CR.rival_wars[a][b]) {
+                    if (R(80) == 0) CR.rival_wars[a][b] = 1;
+                    continue;
+                }
+                if (R(80) == 0) { CR.rival_wars[a][b] = 0; continue; }
+                int k = (int)rng_next();
+                if (k <= 2730) {                     /* < 1/12: a battle */
+                    (void)((int)rng_next() <= 16383 ? a : b);  /* winner */
+                    (void)R(5);                      /* the unit type */
+                    ev_emit((int)rng_next() <= 16383 ? "EUROPEWIN"
+                                                     : "EUROPELOSE",
+                            0, 0, 0, 0);
+                } else if (k <= 3549 && CR.rivals[b].n_col) { /* < 13/120 */
+                    int victim = ((int)rng_next() <= 16383 &&
+                                  CR.rivals[a].n_col) ? a : b;
+                    int winner = victim == a ? b : a;
+                    rival_rt *vr = &CR.rivals[victim], *wr = &CR.rivals[winner];
+                    int vi2 = R(vr->n_col);
+                    rival_colony vc = vr->col[vi2];
+                    memmove(&vr->col[vi2], &vr->col[vi2 + 1],
+                            (size_t)(vr->n_col - vi2 - 1) * sizeof(rival_colony));
+                    vr->n_col--;
+                    if ((int)rng_next() <= 16383 && wr->n_col < 6) {
+                        if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
+                            wr->col[wr->n_col++] = vc;
+                        ev_emit("CAPTURED2", 0, 0, dat_nations[winner].country, 0);
+                    } else {
+                        ev_emit("BURNED3", 0, 0, dat_nations[winner].country, 0);
+                    }
+                }
+            }
+    }
+}
+
+/* kingWarCycle (game.js:8956): the Crown's European war — grant + veteran
+ * soldiers on entry, tax relief on exit, mercy/frigate rolls between. */
+static void king_war_cycle(void) {
+    if ((CR.woi_flags & WOI_DECLARED) || CR.retired) return;
+    int me = cs_nation();
+    PowerRecord *p = &CS.powers[me];
+    if (CR.king_war_rival < 0) {
+        if (cs_turn() < 40 || R(40) != 0) return;
+        int foes[3], nf = 0;
+        for (int n = 0; n < 4; n++)
+            if (n != me && CR.rivals[n].met) foes[nf++] = n;
+        if (!nf) return;
+        int foe = foes[R(nf)];
+        CR.king_war_rival = (int8_t)foe;
+        CR.king_war_turns = (uint8_t)(8 + R(8));
+        p->gold += 300;
+        int c0 = -1;
+        for (int ci = 0; ci < CS.n_colonies && c0 < 0; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == me) c0 = ci;
+        if (c0 >= 0) {
+            int ts = -1, vet = -1;
+            for (int i = 0; i < DAT_UNITS_COUNT; i++)
+                if (strcmp(dat_units[i].name, "Soldiers") == 0) ts = i;
+            for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
+                if (strcmp(dat_jobexpert[i], "Veteran Soldiers") == 0 &&
+                    vet < 0) vet = i;
+            for (int k = 0; k < 2; k++) {
+                int ui = unit_append(ts, me, CS.colonies[c0].map_x,
+                                     CS.colonies[c0].map_y);
+                if (ui >= 0 && vet >= 0)
+                    CS.units[ui].profession = (uint8_t)vet;
+            }
+        }
+        CR.treaty_matrix[me][foe] &= (uint8_t)~REL_TREATY;   /* symmetric */
+        CR.treaty_matrix[foe][me] &= (uint8_t)~REL_TREATY;
+        CR.war_matrix[me][foe] |= REL_WAR;
+        ev_emit("KINGNEWWAR", 300, 2, dat_nations[foe].adjective, 0);
+        return;
+    }
+    CR.king_war_turns--;
+    if (CR.king_war_turns == 0) {
+        p->tax_rate = (uint8_t)(p->tax_rate >= 2 ? p->tax_rate - 2 : 0);
+        ev_emit("KINGVICTORY", 2, p->tax_rate,
+                dat_nations[CR.king_war_rival].adjective, 0);
+        CR.war_matrix[me][CR.king_war_rival] &= (uint8_t)~REL_WAR;
+        CR.king_war_rival = -1;
+        return;
+    }
+    int roll = R(24);
+    if (roll == 0) {
+        p->tax_rate = (uint8_t)(p->tax_rate >= 1 ? p->tax_rate - 1 : 0);
+        ev_emit("KINGMERCY", 1, p->tax_rate, 0, 0);
+    } else if (roll == 1 && !CR.king_frigate) {
+        /* @KINGFRIGATE needs a fleet: a G.units ship or a crossing/port
+         * ship (game.js:8996 — G.units.some(ship) || G.europe.length) */
+        int fleet = CR.n_europe > 0;
+        for (int k = 0; k < CR.n_units_order && !fleet; k++) {
+            int ui = CR.units_order[k];
+            if (CS.units[ui].type < DAT_UNITS_COUNT &&
+                dat_units[CS.units[ui].type].hull > 0) fleet = 1;
+        }
+        if (fleet) {
+            ev_emit("KINGFRIGATE", 0, 0, 0, 0);
+            /* game.js:9000: row 0 accepts — the latch stops repeats and
+             * the gift Frigate parks in the home harbour, empty */
+            if (ask_choice() == 0) {
+                CR.king_frigate = 1;
+                if (CR.n_europe <
+                    (int)(sizeof(CR.europe) / sizeof(CR.europe[0]))) {
+                    euro_crossing *e = &CR.europe[CR.n_europe++];
+                    memset(e, 0, sizeof(*e));
+                    for (int ti = 0; ti < DAT_UNITS_COUNT; ti++)
+                        if (strcmp(dat_units[ti].name, "Frigate") == 0)
+                            e->type = (uint8_t)ti;
+                    e->state = 0;                 /* port */
+                    e->lane_x = e->lane_y = -1;   /* no lane */
+                }
+            }
+        }
+    }
+}
+
+/* petitionLowerTaxes (game.js:8898): the Europe screen's 'k' key.  A
+ * rock-bottom rate backfires (@KINGRAISE); a rate above the era cap MAY
+ * drop (@KINGLOWER — the roll is behind the cap test, JS && order);
+ * else @KINGNOTHING. */
+void king_petition(void) {
+    PowerRecord *p = &CS.powers[cs_nation()];
+    int d = cs_difficulty();
+    if (p->tax_rate <= 1) {
+        int delta = 2 * (1 + R(d > 1 ? d : 1));
+        p->tax_rate = (uint8_t)(p->tax_rate + delta);
+        ev_emit("KINGRAISE", delta, p->tax_rate, 0, 0);
+        return;
+    }
+    int cap = ((d & ~1) * 2 + 4) * ((int)cs_turn() / 400 + 1);
+    if (p->tax_rate > cap + 5 && 1 + R(d + 1) == 1) {
+        int delta = 1 + R(5 - d > 1 ? 5 - d : 1);
+        if (delta > p->tax_rate) delta = p->tax_rate;
+        p->tax_rate = (uint8_t)(p->tax_rate - delta);
+        ev_emit("KINGLOWER", delta, p->tax_rate, 0, 0);
+        return;
+    }
+    ev_emit("KINGNOTHING", 0, 0, 0, 0);
+}
+
+/* kingTaxDemand (game.js:8647): cadence func_036138, raise func_034AE0,
+ * pretext severity @0x361CC — the ask is stubbed, so the tax never moves
+ * headless (row 0 is the callback's). */
+static void king_tax_demand(void) {
+    if (CR.woi_flags & WOI_DECLARED) return;   /* no King to obey (8648) */
+    int me = cs_nation();
+    PowerRecord *p = &CS.powers[me];
+    if (cs_turn() < 30 || p->tax_rate > 85) return;
+    int base = cs_year() >= 1750 ? 9 : cs_year() >= 1700 ? 12
+             : cs_year() >= 1600 ? 15 : 18;
+    int interval = base - (cs_difficulty() - 2);
+    if (interval < 2) interval = 2;
+    if (cs_turn() % interval != 0) return;
+    int candidate = (((cs_difficulty() & 0xFE) << 1) + 4) *
+                    ((int)cs_turn() / 400 + 1);
+    if (p->tax_rate <= candidate && 1 + R(cs_difficulty() + 1) == 1) return;
+    int raise = 75 - p->tax_rate < candidate ? 75 - p->tax_rate : candidate;
+    if (raise < 1) raise = 1;
+    /* the Party good: the good your colonies hold most of (game.js:8658,
+     * strict-greater scan from 0 — lowest index on ties) */
+    int good = 0;
+    {
+        long tot[16] = { 0 };
+        for (int ci = 0; ci < CS.n_colonies; ci++) {
+            if ((CS.colonies[ci].owner_power & 3) != me) continue;
+            for (int g = 0; g < 16; g++) tot[g] += CS.colonies[ci].stock[g];
+        }
+        for (int g = 1; g < 16; g++)
+            if (tot[g] > tot[good]) good = g;
+    }
+    int sev = 1 + R(1000) + (2 * national_sol() - p->tax_rate) * 5 +
+              (int)(p->gold / 100) + (int)cs_turn() / 30;
+    const char *key;
+    if (sev < 0x28A) {
+        if (!CR.king_wed) { CR.king_wed = 1; key = "KINGWIFE"; }
+        else key = "KINGTAX";
+    } else if (sev < 0x3B6) key = "KINGWAR";
+    else if (sev < 0x44C) key = "KINGNAVACT";
+    else key = "KINGSTAMPACT";
+    ev_emit(key, raise, p->tax_rate + raise, dat_cargo[good].name, 0);
+    /* @TAXOPTIONS (game.js:8667): row 0 kisses the ring, row 1 holds the
+     * Party — teaParty (8676): the good is dumped at the first colony
+     * holding it, the tax is NOT raised, and the good is boycotted
+     * (RUNTIME G.boycotts) */
+    if (ask_choice() == 1) {
+        int ci = -1;
+        for (int k = 0; k < CS.n_colonies && ci < 0; k++)
+            if ((CS.colonies[k].owner_power & 3) == me &&
+                CS.colonies[k].stock[good] > 0) ci = k;
+        if (ci < 0)
+            for (int k = 0; k < CS.n_colonies && ci < 0; k++)
+                if ((CS.colonies[k].owner_power & 3) == me) ci = k;
+        int32_t tons = ci >= 0 ? CS.colonies[ci].stock[good] : 0;
+        if (ci >= 0) CS.colonies[ci].stock[good] = 0;
+        CR.boycotts |= (uint16_t)(1 << good);
+        ev_emit("TEAPARTY", tons, 0, dat_cargo[good].name,
+                ci >= 0 ? CS.colonies[ci].name : 0);
+    } else {
+        int t = p->tax_rate + raise;
+        p->tax_rate = (uint8_t)(t > 75 ? 75 : t);
+    }
+}
+
+/* shoreBombardment (game.js:6934): fort guns fire on a hostile ship
+ * beside a fortified colony with stacked Artillery.  One volley a turn. */
+static void shore_bombardment(void) {
+    int me = cs_nation();
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        if ((CS.colonies[ci].owner_power & 3) != me) continue;
+        int level = rival_colony_level(ci);
+        if (!level) continue;
+        int guns = 0;
+        for (int ui = 0; ui < CS.n_units; ui++)
+            if (unit_on_map_player(ui) &&
+                strcmp(dat_units[CS.units[ui].type].name, "Artillery") == 0 &&
+                CS.units[ui].map_x == CS.colonies[ci].map_x &&
+                CS.units[ui].map_y == CS.colonies[ci].map_y) guns++;
+        if (!guns) continue;
+        for (int rn = 0; rn < 4; rn++) {
+            if (rn == me || !at_war(me, rn)) continue;
+            int ship = -1;
+            for (int k = 0; k < CR.n_runits[rn] && ship < 0; k++) {
+                int ui = CR.runits_order[rn][k];     /* r.units order */
+                if (dat_units[CS.units[ui].type].hull <= 0) continue;
+                int dx = CR.runit_x[ui] - CS.colonies[ci].map_x;
+                int dy = CR.runit_y[ui] - CS.colonies[ci].map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx <= 1 && dy <= 1) ship = ui;
+            }
+            if (ship < 0) continue;
+            ev_emit("FORTFIRE", 0, 0, CS.colonies[ci].name,
+                    dat_units[CS.units[ship].type].name);
+            if (!CR.unit_damaged[ship]) CR.unit_damaged[ship] = 1;
+            else unit_remove(ship);
+            return;
+        }
+    }
+}
+
+/* spanishSuccession (game.js:6998, func_03C638): the Treaty of Utrecht —
+ * weakest AI cedes everything to the strongest, once per game. */
+static int power_strength(int rn) {
+    int s = CR.rivals[rn].n_col * 3;
+    for (int ui = 0; ui < CS.n_units; ui++)
+        if (is_rival_unit(ui, rn)) s++;
+    return s;
+}
+static void spanish_succession(void) {
+    if (CR.succession) return;
+    /* never once independence is declared (game.js:7000) — the gate sits
+     * BEFORE the R(600) draw, so it also keeps the streams aligned */
+    if (CR.woi_flags & WOI_DECLARED) return;
+    if (national_sol() >= 75) return;
+    int me = cs_nation();
+    int list[3], nl = 0;
+    for (int n = 0; n < 4; n++)
+        if (n != me) list[nl++] = n;
+    if (nl < 2) return;
+    if (R(600) != 0) return;
+    /* stable sort by strength ascending (JS Array.sort is stable) */
+    for (int i = 1; i < nl; i++) {
+        int v = list[i], j = i - 1;
+        while (j >= 0 && power_strength(list[j]) > power_strength(v)) {
+            list[j + 1] = list[j];
+            j--;
+        }
+        list[j + 1] = v;
+    }
+    int ceding = list[0], winner = list[nl - 1];
+    if (ceding == winner) return;
+    CR.succession = 1;
+    ev_emit("SUCCESSION", 0, 0, dat_nations[ceding].country,
+            dat_nations[winner].adjective);
+    rival_rt *cr_ = &CR.rivals[ceding], *wr = &CR.rivals[winner];
+    for (int k = 0; k < cr_->n_col; k++)
+        if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
+            wr->col[wr->n_col++] = cr_->col[k];
+    cr_->n_col = 0;
+    /* units transfer in the ceding LIST order, APPENDED to the winner's
+     * list (game.js:7015 winner.units.push) */
+    for (int k = 0; k < CR.n_runits[ceding]; k++) {
+        int ui = CR.runits_order[ceding][k];
+        CS.units[ui].owner_flags = (uint8_t)
+            ((CS.units[ui].owner_flags & 0xF0) | (winner & 0x0F));
+        runits_push(winner, ui);
+    }
+    CR.n_runits[ceding] = 0;
+}
+
+/* aiDiplomacyTick (game.js:8484): AI-AI peace/treaty signings. */
+static void ai_diplomacy_tick(void) {
+    if (cs_turn() < 0x28 || cs_turn() % 3) return;
+    int me = cs_nation();
+    int list[3], nl = 0;
+    for (int n = 0; n < 4; n++)
+        if (n != me && CR.rivals[n].met) list[nl++] = n;
+    for (int i = 0; i < nl; i++)
+        for (int j = i + 1; j < nl; j++) {
+            int a = list[i], b = list[j];
+            /* both attitudes are 8 — the <8 && <8 skip never fires */
+            if (R(1000) >= 200 * cs_difficulty() + 100) continue;
+            if (at_war(a, b)) {
+                CR.war_matrix[a][b] &= (uint8_t)~REL_WAR;
+                CR.war_matrix[b][a] &= (uint8_t)~REL_WAR;
+                ev_emit("SIGNTREATY", 0, 0, dat_nations[a].adjective,
+                        dat_nations[b].adjective);
+            } else if (!have_treaty(a, b)) {
+                CR.treaty_matrix[a][b] |= REL_TREATY;
+                CR.treaty_matrix[b][a] |= REL_TREATY;
+                ev_emit("SIGNTREATY", 0, 0, dat_nations[a].adjective,
+                        dat_nations[b].adjective);
+            }
+        }
+}
+
+/* endGameSequence (game.js:8119): the HoF write is browser-side (n.a.);
+ * what the sim sees is the retired latch, the @EXPLOITS card, ONE draw
+ * for the @SCORE joke-name pick, the @SCORED ask (stubbed), and the
+ * screen leaving the map — which closes the parley gate.  scoreParts is
+ * draw-free.  DAT_SCORENAMES_COUNT is a scalar macro from the text
+ * header; the strings themselves stay in the droppable text unit. */
+void end_game_sequence(void) {
+    CR.retired = 1;
+    ev_emit("EXPLOITS", 0, 0, 0, 0);
+    (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
+    CR.screen_map = 0;                   /* G.screen = 'report' */
+    ev_emit("SCORED", 0, 0, 0, 0);
+    ask_choice();                        /* game.js:8141: sets G.scored;
+                                          * the retired latch already
+                                          * gates re-entry here */
+    CR.scored = 1;
+}
+
+/* The retirement clock (endTurn:10800). */
+static void retirement_check(void) {
+    if (CR.retired) return;
+    if (!(CR.woi_flags & WOI_DECLARED)) {
+        int ncol = 0;
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == cs_nation()) ncol++;
+        if (cs_year() >= 1600 && !ncol && cs_turn() > 30) {
+            ev_emit("LOSENOCOLONIES", 0, 0, 0, 0);
+            end_game_sequence();
+            return;
+        }
+        if (cs_year() >= 1790 && !CR.soon_warned) {
+            CR.soon_warned = 1;
+            ev_emit("SOONRETIRING0", 0, 0, 0, 0);
+        }
+        if (cs_year() >= 1800) {
+            ev_emit("RETIRING", 0, 0, 0, 0);
+            end_game_sequence();
+        }
+    } else if (!(CR.woi_flags & WOI_WON)) {
+        /* the war-weary clock (endTurn:10815): G.soonWarned2 shares the
+         * CR field with the pre-war warning — both fire once and the
+         * branches are exclusive by WOI_DECLARED, so one latch serves
+         * only if the declaration cannot happen after 1790; it can, so
+         * the second warning gets its own bit (the high bit). */
+        if (cs_year() >= 1840 && !(CR.soon_warned & 0x80)) {
+            CR.soon_warned |= 0x80;
+            ev_emit("SOONRETIRING1", 0, 0, 0, 0);
+        }
+        if (cs_year() >= 1850) {
+            ev_emit("RETIRING2", 0, 0, 0, 0);
+            end_game_sequence();
+        }
+    }
+}
+
+/* advanceGoTo (game.js:2274): one step a turn toward the goal, trying
+ * the diagonal then each axis; a blocked turn cancels the order.  The
+ * element test bars a land unit from water unless a (player) colony
+ * sits there, and a ship from land outright; natives block. */
+static void advance_goto(void) {
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int ui = CR.units_order[k];
+        UnitRecord *u = &CS.units[ui];
+        if (u->orders != 3 || CR.goal_x[ui] < 0) continue;
+        int gx = CR.goal_x[ui], gy = CR.goal_y[ui];
+        if (u->map_x == gx && u->map_y == gy) {
+            u->orders = 0;
+            CR.goal_x[ui] = CR.goal_y[ui] = -1;
+            continue;
+        }
+        int dx = gx > u->map_x ? 1 : gx < u->map_x ? -1 : 0;
+        int dy = gy > u->map_y ? 1 : gy < u->map_y ? -1 : 0;
+        int is_ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
+        int tries[3][2] = { { dx, dy }, { dx, 0 }, { 0, dy } };
+        int moved = 0;
+        for (int ti = 0; ti < 3 && !moved; ti++) {
+            int mx = tries[ti][0], my = tries[ti][1];
+            if (!mx && !my) continue;
+            int nx = u->map_x + mx, ny = u->map_y + my;
+            if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H)
+                continue;
+            int water = tile_water(map_at(nx, ny));
+            int own_col = 0;
+            for (int ci = 0; ci < CS.n_colonies; ci++)
+                if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
+                    CS.colonies[ci].map_x == nx && CS.colonies[ci].map_y == ny)
+                    own_col = 1;
+            if ((is_ship != water) && !(own_col && !is_ship)) continue;
+            int blocked = 0;
+            for (int q = 0; q < CR.n_natives && !blocked; q++) {
+                int n = CR.natives_order[q];
+                if (unit_pos_x(n) == nx && unit_pos_y(n) == ny) blocked = 1;
+            }
+            if (blocked) continue;
+            u->map_x = (uint8_t)nx;
+            u->map_y = (uint8_t)ny;
+            moved = 1;
+        }
+        if (!moved) {
+            u->orders = 0;
+            CR.goal_x[ui] = CR.goal_y[ui] = -1;
+        }
+    }
+}
+
+/* The full endTurn tail, in engine order (endTurn:10781-10821).  Steps
+ * that are structural no-ops headless are named in place:
+ *   advanceTradeRoutes — no unit carries runtime trade orders (the
+ *     importer starts every unit at orders 0; routes: slice 3+);
+ *   runWar/toryUprising/offerMercenaries/checkIntervention — WoI-gated
+ *     (G.flags stays 0: the declaration is an ask the stub never answers);
+ */
+void turn_step5(void) {
+    rival_turn();          step_rng("rivalTurn");
+    news_tick();           step_rng("newsTick");
+    king_war_cycle();      step_rng("kingWarCycle");
+    king_tax_demand();     step_rng("kingTaxDemand");
+    /* advanceTradeRoutes(); — no-op (above) */
+    advance_goto();        step_rng("advanceGoTo");
+    run_war();             step_rng("runWar");
+    tory_uprising();       step_rng("toryUprising");
+    shore_bombardment();   step_rng("shoreBombardment");
+    spanish_succession();  step_rng("spanishSuccession");
+    ai_diplomacy_tick();   step_rng("aiDiplomacyTick");
+    offer_mercenaries();   step_rng("offerMercenaries");
+    check_intervention();  step_rng("checkIntervention");
+    market_drift();        step_rng("driftMarket");
+    advance_crossings();   step_rng("advanceCrossings");
+    retirement_check();    step_rng("retirement");
+}
