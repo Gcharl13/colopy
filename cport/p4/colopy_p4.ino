@@ -176,6 +176,80 @@ static void flush_fb(void) {
     g_lcd->drawBitmap(0, 0, P4_W, P4_H, (const uint8_t *)fbuf, -1);
 }
 
+
+/* ---- BLE mouse via the onboard ESP32-C6 (OPTIONAL) ------------------
+ * The board carries an ESP32-C6-MINI-1 as a wireless co-processor
+ * (Wi-Fi 6 + BLE 5.3); the P4 itself has no radio, so Bluetooth runs
+ * over ESP-Hosted with NimBLE on this side.  arduino-esp32's BLE
+ * library supports exactly that — BLEDevice.h guards its body with
+ * `SOC_BLE_SUPPORTED || CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE` and ships
+ * a hosted HCI transport (BLEHostedHCI.cpp) "automatically linked when
+ * building for ESP32-P4".
+ *
+ * THREE things must all hold for this to work, and only the first is
+ * under this sketch's control:
+ *   1. COLOPY_BLE_MOUSE below set to 1;
+ *   2. an arduino-esp32 core new enough to carry the hosted-BT build
+ *      (the P4 BLE build fix is recent — arduino-esp32 issue #11788);
+ *   3. the C6 running ESP-Hosted slave firmware with BT ENABLED.
+ *      Elecrow ship the C6 for Wi-Fi 6 and publish no Bluetooth
+ *      example, so whether their factory firmware exposes BT over the
+ *      transport is UNVERIFIED here.
+ * Because of 2 and 3 this is OFF by default: the shipped build is
+ * unaffected and still compiles on cores without hosted BT.
+ *
+ * Only BLE mice can ever work — the C6 has no Bluetooth Classic radio,
+ * so a Classic-only mouse cannot pair at any layer.
+ *
+ * The report parse below is the HID BOOT-mouse layout (byte 0 buttons,
+ * 1 dx, 2 dy, 3 wheel, signed 8-bit).  Report formats vary by mouse
+ * and the Report Map is NOT parsed here, so an unrecognised mouse will
+ * move oddly; every report is dumped to serial as hex so the layout
+ * can be identified from a real device.  FLAGGED: untested against
+ * hardware. */
+#ifndef COLOPY_BLE_MOUSE
+#define COLOPY_BLE_MOUSE 0
+#endif
+
+#if COLOPY_BLE_MOUSE
+/* included HERE, above every sketch function: the IDE hoists its
+ * generated prototypes to just after the last #include, so an include
+ * further down the file would push them below their call sites */
+#include <BLEDevice.h>
+static int  bt_mode = 0;              /* 0 off, 1 the pairing screen */
+static int  bt_state = 0;             /* 0 idle, 1 scanning, 2 list,
+                                       * 3 connecting, 4 connected, 5 fail */
+static void bt_init(void);
+static void bt_pump(void);
+static void bt_ui_draw(void);
+static int  bt_ui_tap(int gx, int gy);
+#else
+static int  bt_mode = 0;
+static void bt_init(void) {}
+static void bt_pump(void) {}
+static void bt_ui_draw(void) {}
+static int  bt_ui_tap(int gx, int gy) { (void)gx; (void)gy; return 0; }
+#endif
+
+/* the title screen's Bluetooth row.  SHELL CHROME: the DOS main menu
+ * has five rows only (dat_text_beginmenu[1..5], drawn by rm_draw_title
+ * inside the plaque at 77,91,166,58 -> rows y=107..147), so the pairing
+ * entry sits just BELOW the plaque and never disturbs the game's own
+ * menu geometry.  Drawn only when the build has BLE compiled in. */
+#define BT_ROW_Y 155
+static void draw_bt_row(void) {
+#if COLOPY_BLE_MOUSE
+    if (!pak_ready) return;
+    static rd_font btf;
+    if (!btf.payload && !rd_font_open(&RD.pak, "FONTTINY.FF", &btf)) return;
+    const uint8_t ink[4] = { 0xFF, 0xFE, 0xFD, 0 };
+    rd_fill(77, BT_ROW_Y - 2, 166, 11, 0x2E);
+    rd_text(&btf, bt_state == 4 ? "Bluetooth mouse: connected"
+                                : "Bluetooth mouse...",
+            77 + 9, BT_ROW_Y, ink);
+#endif
+}
+
 /* ---- touch ----------------------------------------------------------
  * Classified on the RELEASE edge so a long-press can differ from a
  * tap: TAP / LONG (>= 600 ms) / ESC (a second finger seen during the
@@ -511,7 +585,10 @@ static void draw_screen(void) {
     cyc_wanted = (UI.screen == SCR_MAP || UI.screen == SCR_VILLAGE ||
                   UI.screen == SCR_OPTIONS || UI.screen == SCR_TRADE);
     switch (UI.screen) {
-    case SCR_TITLE: rm_draw_title(UI.menu_row); break;
+    case SCR_TITLE:
+        rm_draw_title(UI.menu_row);
+        draw_bt_row();               /* SHELL CHROME under the plaque */
+        break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
     case SCR_NATION: rm_draw_nation(UI.nation); break;
     case SCR_NAME:
@@ -628,6 +705,7 @@ static void draw_screen(void) {
         if (dlg_is_text()) draw_kbd();
         else draw_kpad();
     }
+    if (bt_mode) bt_ui_draw();
     flush_fb();
 }
 
@@ -732,6 +810,14 @@ static void game_long(int gx, int gy) {
 
 /* a tap in the game loop (outside an ask) */
 static void game_tap(int gx, int gy) {
+    if (bt_mode) { bt_ui_tap(gx, gy); return; }
+    if (UI.screen == SCR_TITLE && !have_pending && !UI.dlg &&
+        gy >= BT_ROW_Y - 1 && gy < BT_ROW_Y + 8 &&
+        gx >= 81 && gx < 81 + 158) {
+        bt_mode = 1;                         /* SHELL CHROME row */
+        draw_screen();
+        return;
+    }
     if (have_pending) {                      /* the modal swallow */
         have_pending = 0;
         draw_screen();
@@ -1072,6 +1158,202 @@ static int board_ask(void) {
     return ret;
 }
 
+/* ---- BLE mouse: the implementation (needs draw_screen/game_tap) --- */
+#if COLOPY_BLE_MOUSE
+
+#define BT_MAX_DEV 8
+static int  bt_n = 0, bt_sel = 0;
+static char bt_name[BT_MAX_DEV][28];
+static char bt_addr[BT_MAX_DEV][20];
+static BLEClient *bt_client = nullptr;
+/* cursor state, in the 320x200 logical space */
+static int  ms_x = 160, ms_y = 100, ms_btn = 0, ms_moved = 0;
+
+static void bt_report(uint8_t *d, size_t n) {
+    if (n < 3) return;
+    int8_t dx = (int8_t)d[1], dy = (int8_t)d[2];
+    int b = d[0] & 0x07;
+    ms_x += dx;
+    ms_y += dy;
+    if (ms_x < 0) ms_x = 0;
+    if (ms_x > RD_W - 1) ms_x = RD_W - 1;
+    if (ms_y < 0) ms_y = 0;
+    if (ms_y > RD_GAME_H - 1) ms_y = RD_GAME_H - 1;
+    if (dx || dy) ms_moved = 1;
+    ms_btn = b;
+}
+
+/* NOTE the one-space indent: the IDE's prototype generator only picks
+ * up definitions whose return type starts at column 0, and it hoists
+ * what it finds ABOVE every #include — a hoisted prototype naming a
+ * BLE type would not compile.  Indenting hides this one from it. */
+ static void bt_notify_cb(BLERemoteCharacteristic *c, uint8_t *data,
+                          size_t len, bool isNotify) {
+    (void)c; (void)isNotify;
+    bt_report(data, len);
+}
+
+/* scan for devices ADVERTISING the HID service (0x1812) */
+static void bt_scan(void) {
+    bt_state = 1;
+    bt_n = 0;
+    BLEScan *scan = BLEDevice::getScan();
+    scan->setActiveScan(true);
+    BLEScanResults *res = scan->start(5, false);
+    for (int i = 0; res && i < res->getCount() && bt_n < BT_MAX_DEV; i++) {
+        BLEAdvertisedDevice d = res->getDevice(i);
+        if (!d.isAdvertisingService(BLEUUID((uint16_t)0x1812))) continue;
+        snprintf(bt_name[bt_n], sizeof(bt_name[0]), "%s",
+                 d.getName().length() ? d.getName().c_str() : "(unnamed)");
+        snprintf(bt_addr[bt_n], sizeof(bt_addr[0]), "%s",
+                 d.getAddress().toString().c_str());
+        bt_n++;
+    }
+    scan->clearResults();
+    bt_state = 2;
+    bt_sel = 0;
+}
+
+static void bt_connect(int i) {
+    if (i < 0 || i >= bt_n) return;
+    bt_state = 3;
+    if (!bt_client) bt_client = BLEDevice::createClient();
+    BLEAddress addr(bt_addr[i]);
+    if (!bt_client->connect(addr)) { bt_state = 5; return; }
+    BLERemoteService *svc = bt_client->getService(BLEUUID((uint16_t)0x1812));
+    if (!svc) { bt_client->disconnect(); bt_state = 5; return; }
+    /* subscribe to every Report characteristic (0x2A4D) the mouse has */
+    int subscribed = 0;
+    std::map<std::string, BLERemoteCharacteristic *> *cs =
+        svc->getCharacteristics();
+    if (cs)
+        for (auto &kv : *cs) {
+            BLERemoteCharacteristic *ch = kv.second;
+            if (!ch->getUUID().equals(BLEUUID((uint16_t)0x2A4D))) continue;
+            if (!ch->canNotify()) continue;
+            ch->registerForNotify(bt_notify_cb);
+            subscribed++;
+        }
+    bt_state = subscribed ? 4 : 5;
+}
+
+static void bt_ui_draw(void) {
+    rm_plaque(30, 40, 260, 120);
+    static rd_font bf;
+    if (!bf.payload && !rd_font_open(&RD.pak, "FONTTINY.FF", &bf)) return;
+    const uint8_t ink[4] = { 0xFF, 0xFE, 0xFD, 0 };
+    const uint8_t hi[4] = { 0xFF, 0xFC, 0xFB, 0 };
+    rd_text(&bf, "Bluetooth mouse", 40, 48, hi);
+    const char *msg = bt_state == 1 ? "Scanning..."
+                    : bt_state == 3 ? "Connecting..."
+                    : bt_state == 4 ? "Connected - tap to play"
+                    : bt_state == 5 ? "Failed - tap Scan to retry"
+                    : bt_n ? "Tap a device to pair:"
+                           : "No BLE mice found - tap Scan";
+    rd_text(&bf, msg, 40, 60, ink);
+    for (int i = 0; i < bt_n; i++) {
+        int y = 74 + i * 9;
+        if (i == bt_sel) rd_fill(38, y - 1, 244, 9, 138);
+        rd_text(&bf, bt_name[i], 42, y, i == bt_sel ? hi : ink);
+        rd_text(&bf, bt_addr[i], 190, y, ink);
+    }
+    rd_text(&bf, "[Scan]", 40, 148, hi);
+    rd_text(&bf, "[Close]", 240, 148, hi);
+}
+
+/* returns 1 when the tap was consumed by the pairing screen */
+static int bt_ui_tap(int gx, int gy) {
+    if (!bt_mode) return 0;
+    if (gy >= 145 && gy < 158) {
+        if (gx < 120) { bt_scan(); draw_screen(); return 1; }
+        bt_mode = 0;
+        draw_screen();
+        return 1;
+    }
+    for (int i = 0; i < bt_n; i++) {
+        int y = 74 + i * 9;
+        if (gy >= y - 1 && gy < y + 8) {
+            bt_sel = i;
+            draw_screen();          /* show the highlight before blocking */
+            bt_connect(i);
+            draw_screen();
+            return 1;
+        }
+    }
+    return 1;                        /* the screen swallows stray taps */
+}
+
+/* the software cursor: save the patch under it so a move costs a small
+ * restore + redraw rather than a whole frame */
+static uint8_t ms_save[10 * 10];
+static int ms_shown = 0, ms_sx = 0, ms_sy = 0;
+static void cursor_hide(void) {
+    if (!ms_shown) return;
+    for (int y = 0; y < 10; y++) {
+        int fy = ms_sy + y;
+        if (fy < 0 || fy >= RD_GAME_H) continue;
+        for (int x = 0; x < 10; x++) {
+            int fx = ms_sx + x;
+            if (fx < 0 || fx >= RD_W) continue;
+            RD.fb[fy * RD_W + fx] = ms_save[y * 10 + x];
+        }
+    }
+    ms_shown = 0;
+}
+static void cursor_show(void) {
+    ms_sx = ms_x;
+    ms_sy = ms_y;
+    for (int y = 0; y < 10; y++) {
+        int fy = ms_sy + y;
+        for (int x = 0; x < 10; x++) {
+            int fx = ms_sx + x;
+            ms_save[y * 10 + x] = (fx >= 0 && fx < RD_W && fy >= 0 &&
+                                   fy < RD_GAME_H)
+                                      ? RD.fb[fy * RD_W + fx] : 0;
+        }
+    }
+    for (int i = 0; i < 8; i++) {          /* a simple arrow in 0x0F/0 */
+        if (ms_y + i < RD_GAME_H) RD.fb[(ms_y + i) * RD_W + ms_x] = 0x0F;
+        if (ms_x + i < RD_W) RD.fb[ms_y * RD_W + ms_x + i] = 0x0F;
+    }
+    ms_shown = 1;
+}
+
+/* called from loop(): move the cursor and turn buttons into taps */
+static void bt_pump(void) {
+    static int last_btn = 0;
+    if (bt_state != 4 || !game_mode || ask_active) return;
+    if (ms_moved) {
+        ms_moved = 0;
+        cursor_hide();
+        cursor_show();
+        flush_fb();
+    }
+    if (ms_btn != last_btn) {
+        int pressed = ms_btn & ~last_btn;
+        last_btn = ms_btn;
+        if (pressed & 0x01) {            /* left button = a tap */
+            cursor_hide();
+            if (bt_mode) bt_ui_tap(ms_x, ms_y);
+            else game_tap(ms_x, ms_y);
+            cursor_show();
+            flush_fb();
+        } else if (pressed & 0x02) {     /* right button = Escape */
+            cursor_hide();
+            game_key("Escape", 0, 0);
+            cursor_show();
+            flush_fb();
+        }
+    }
+}
+
+static void bt_init(void) {
+    BLEDevice::init("Colopy");
+    Serial.println("BLE: host up (hosted C6). Open Bluetooth on the title "
+                   "screen to pair a mouse.");
+}
+#endif
+
 /* ---- the serial shell (mirrors the Teensy build) ------------------- */
 static void run_turn(void) {
     turn_step_prefix();
@@ -1295,6 +1577,7 @@ void setup() {
     sd_mount();
 
     audio_init();      /* I2S speaker path (Elecrow Lesson12) */
+    bt_init();         /* BLE mouse over the C6 (no-op unless enabled) */
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 
@@ -1313,6 +1596,7 @@ void loop() {
      * (asks pump their own touch inside board_ask): tap = click /
      * adjacent-tile move, long-press = Space (skip the active unit),
      * two-finger tap = Escape */
+    bt_pump();                 /* BLE mouse (no-op unless enabled) */
     if (game_mode && !ask_active) {
         int gx, gy;
         int ev = touch_poll(&gx, &gy);
