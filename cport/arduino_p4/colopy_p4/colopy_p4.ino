@@ -100,6 +100,9 @@ extern "C" {
 #include "colopy_render.h"
 #include "colopy_input.h"
 #include "colopy_data.h"
+#ifdef COLOPY_AUDIO
+#include "colopy_audio.h"
+#endif
 }
 
 using namespace esp_panel::drivers;
@@ -298,6 +301,54 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
     return n;
 }
 
+/* ---- audio (opt-in COLOPY_AUDIO — cport/audio/, docs/AUDIO_PORT.md).
+ * COLAUDIO.PAK streams from the SD card (stdio over VFS-FAT seeks fine);
+ * the engine never allocates. Until a P4 audio backend exists (I2S DMA,
+ * gated on hardware verification) this block stays compiled out. ------ */
+#ifdef COLOPY_AUDIO
+static FILE *audio_f = nullptr;
+static int audio_rd(void *ctx, uint32_t off, void *dst, uint32_t len) {
+    (void)ctx;
+    return audio_f && fseek(audio_f, (long)off, SEEK_SET) == 0 &&
+           fread(dst, 1, len, audio_f) == len;
+}
+static void audio_init(void) {
+    audio_f = fopen("/sdcard/COLAUDIO.PAK", "rb");
+    if (!audio_f) { Serial.println("no COLAUDIO.PAK -- audio silent"); return; }
+    fseek(audio_f, 0, SEEK_END);
+    long sz = ftell(audio_f);
+    if (!au_init_stream(audio_rd, nullptr, (uint32_t)sz)) {
+        Serial.println("COLAUDIO.PAK unreadable -- audio silent");
+        fclose(audio_f);
+        audio_f = nullptr;
+        return;
+    }
+    au_seed((uint32_t)esp_random());
+    Serial.printf("audio pak up (%ld bytes)\n", sz);
+}
+/* scheduler tick: the war flag + the func_004EE6 pump */
+static void audio_tick(void) {
+    au_set_war(colopy_power(cs_nation())->declared);
+    au_pump();
+}
+/* shell-side cue edges (the core/game layers stay untouched): new game =
+ * the BRIEFING->MAP transition; woodcut = a new plate on screen */
+static void audio_screen_edges(void) {
+    static int last_screen = SCR_TITLE, last_wc = -1;
+    if (last_screen == SCR_BRIEFING && UI.screen == SCR_MAP)
+        au_on_new_game();
+    if (UI.screen == SCR_WOODCUT) {
+        if (UI.woodcut != last_wc) {
+            au_on_woodcut(UI.woodcut);
+            last_wc = UI.woodcut;
+        }
+    } else {
+        last_wc = -1;
+    }
+    last_screen = UI.screen;
+}
+#endif
+
 /* ---- Phase 7/8: the screens + the game loop (mirrors the Teensy
  * shell — cport/teensy/colopy_teensy.ino) ---------------------------- */
 static int game_mode = 0;
@@ -367,8 +418,15 @@ static void draw_screen(void) {
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
     }
-    if (!have_pending && colopy_next_event(&pending_ev))
+#ifdef COLOPY_AUDIO
+    audio_screen_edges();
+#endif
+    if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
+#ifdef COLOPY_AUDIO
+        au_on_event(pending_ev.key, pending_ev.p[0]);
+#endif
+    }
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
                          { pending_ev.p[0], pending_ev.p[1], 0, 0 },
@@ -478,6 +536,9 @@ static int ask_wait(int *gx, int *gy) {
     int len = 0;
     ask_key[0] = 0;
     for (;;) {
+#ifdef COLOPY_AUDIO
+        audio_tick();                /* keep the rotation alive in asks */
+#endif
         int ev = touch_poll(gx, gy);
         if (ev == TT_ESC) {                  /* two-finger = Escape */
             snprintf(ask_key, sizeof(ask_key), "Escape");
@@ -597,8 +658,12 @@ static int board_ask(void) {
     colopy_event q[8];
     int n = 0;
     colopy_event e2;
-    while (colopy_next_event(&e2))
+    while (colopy_next_event(&e2)) {
+#ifdef COLOPY_AUDIO
+        au_on_event(e2.key, e2.p[0]);
+#endif
         if (n < 8) q[n++] = e2;
+    }
     ask_active = 1;
     for (int i = 0; i + 1 < n; i++) {
         if (!rm_event_exists(q[i].key)) continue;
@@ -665,6 +730,11 @@ static void cmd_load(const char *name) {
                                      * digest diverges from the host */
     for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     sav_loaded = true;
+#ifdef COLOPY_AUDIO
+    /* the save's [0x5386] mirror low bits: bit1 BG / bit2 Event / bit3
+     * SFX (spec §2, pinned @0x023301) */
+    au_load_switches((uint8_t)(cs_tut_mask() & 0x0E));
+#endif
     Serial.printf("loaded %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }
@@ -847,6 +917,9 @@ void setup() {
 
     sd_mount();
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
+#ifdef COLOPY_AUDIO
+    if (sd_ready) audio_init();
+#endif
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 
     if (sd_ready && fbuf && g_lcd) {
@@ -865,6 +938,9 @@ void loop() {
      * adjacent-tile move, long-press = Space (skip the active unit),
      * two-finger tap = Escape */
     if (game_mode && !ask_active) {
+#ifdef COLOPY_AUDIO
+        audio_tick();
+#endif
         int gx, gy;
         int ev = touch_poll(&gx, &gy);
         if (ev == TT_ESC) game_key("Escape", 0, 0);

@@ -39,6 +39,11 @@ SOURCES = [
     "cport/data/colopy_pak.h",
     "cport/render/*.c", "cport/render/*.h",
     "cport/game/*.c", "cport/game/*.h",
+    # audio milestone (docs/AUDIO_PORT.md) — inert unless the sketch
+    # defines COLOPY_AUDIO (the banner keeps it off until the board's
+    # backend is hardware-verified)
+    "cport/audio/*.c", "cport/audio/*.h",
+    "cport/data/colopy_audio_pak.h",
 ]
 
 INO_SRC = ROOT / "cport" / "p4" / "colopy_p4.ino"

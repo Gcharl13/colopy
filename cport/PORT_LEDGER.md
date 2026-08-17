@@ -315,9 +315,9 @@ Status column is maintained by hand as porting proceeds:
 | `optionChecked` | 7947 | 5 |  | todo |
 | `openOptions` | 7953 | 5 |  | todo |
 | `optionsCommit` | 7959 | 5 |  | todo |
-| `musicRow` | 8024 | 10 |  | todo |
-| `playTune` | 8035 | 3 |  | todo |
-| `pickMusic` | 8039 | 15 |  | todo |
+| `musicRow` | 8024 | 10 |  | ported — `cport/audio/` (the id→row table is engine data; the picker UI screen itself is still todo) |
+| `playTune` | 8035 | 3 |  | ported — `cport/audio/colopy_audio.c` `au_cmd`/`au_current_tune`; unlike the JS stub this one PLAYS (COLAUDIO.PAK renders/slices, empirical-capture tier — docs/AUDIO_PORT.md) |
+| `pickMusic` | 8039 | 15 |  | todo (UI screen; the engine side — gate, scheduler, class verbs — is ported in `cport/audio/`) |
 | `exitToDos` | 8055 | 31 |  | todo |
 | `tutOnce` | 8087 | 27 |  | todo |
 | `endGameSequence` | 8115 | 29 |  | ported |
