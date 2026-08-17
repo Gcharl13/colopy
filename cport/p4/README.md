@@ -44,7 +44,9 @@ choice — the DOS game is 200 rows) is not shown here.
     it** (`rm_dialog_row_hit` re-derives the exact box the painter
     drew), tap outside the box = dismiss (Escape).  An amount modal:
     tap the box = Enter (empty entry = the full amount), outside =
-    Escape; typed digits need serial.
+    Escape.  Digits come from the on-screen numeric keypad and free
+    text from the alpha keyboard (both shipped 2026-08; this said
+    "typed digits need serial" until 2026-08-17, which was stale).
   - Every unit order (fortify, sentry, plow, road, build...) is also
     a row in the tappable ORDERS pulldown, and the reports live in
     the menu bar — so the key vocabulary is reachable by touch.
@@ -79,8 +81,11 @@ choice — the DOS game is 200 rows) is not shown here.
 
 - Long-press → right-click mapping for the pointer layer (taps are
   left-clicks today).
-- On-screen keyboard for the naming dialogs (founding uses the
-  suggested name via `colopy_front_live`; free-text entry needs
-  serial for now).
+- ~~On-screen keyboard for the naming dialogs.~~  **SHIPPED** — the
+  numeric keypad and alpha keyboard cover @LANDHO, colony founding and
+  renaming, and the Europe/colony amount modals.
+- **Ending a turn with nothing active** (fortify/sentry everything and
+  the cycle offers nobody): long-press the map, or ORDERS -> "Wait for
+  next unit", the one row left live in that state.
 - The presentation follow-ups shared with the Teensy build
   (`cport/README.md` ledger).

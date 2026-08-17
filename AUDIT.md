@@ -3,6 +3,10 @@
 **Date:** 2026-06-18 · **Branch:** `claude/repo-audit-map-editor-rt0v5l`
 (identical to `main` @ `2855885`)
 
+> **2026-08-17:** for the *forward* view — what is still open to finish the
+> handheld build — see **`docs/REMAINING_WORK.md`**. This document remains the
+> record of correct-vs-misleading information; that one is the work queue.
+
 Purpose: establish the **real** progress of this reverse-engineering bench,
 separate **correct** information from **bad/misleading** information that has
 been blocking completion, and record the decision to re-approach the map editor

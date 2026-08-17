@@ -31,6 +31,7 @@ Where the port's work is tracked, in the order to consult them:
 
 | Document | Role |
 |---|---|
+| **`docs/REMAINING_WORK.md`** | **START HERE for what is left.** The complete open-items ledger for finishing the handheld build (2026-08-17): blocking bugs, missing features, fidelity debt, board verification, unshipped assets, audio, tooling. Compiled by auditing the whole tree, and it records where the ledgers below disagree with each other. |
 | **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status, regenerated mechanically by `python3 port/tools/message_status.py`. Current (Phase 4 complete): **411 done + 29 via-DATA, 0 missing, 0 unwired**; **1 BLOCKED** (FULL's join-colony crowding threshold, behind func_02883E's jump table), 34 N/A, 24 support lists. |
 | **`docs/POPUP_AUDIT_2026-08-08.md`** | The 200-row audited gap ledger with severities and evidence notes. Rows resolved by rulings i-m are superseded by RULINGS.md; unresolved HIGH/MEDIUM rows are the work queue. |
 | **`notes/rulings/RULINGS.md`** | Per-batch decisions: what was byte-solved, what was implemented, which stand-ins are flagged TBD. The 2026-08-07 series (a-m) is the port-era log. |

@@ -63,7 +63,9 @@ amounts are all free-text on the board), menu bars that track the
 finger with the selection highlighted under it, ending a turn with no
 active unit, and the Pick Music binding.
 
-Still open, and stated plainly:
+Still open, and stated plainly (the COMPLETE ledger, including the
+gameplay mechanics still missing and every flagged approximation, is
+`docs/REMAINING_WORK.md` — this list is the board-side summary):
 
 - **Drag and drop** is absent by design — every drag in the JS port has
   a tap-driven equivalent on the board (menus, the plaza/field taps,

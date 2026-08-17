@@ -5,8 +5,10 @@
  * drawSettlement:5008, nationPlate:1721, drawUnit:1727,
  * drawMenuBar:1738, drawSidebar:1914) over the C records — the same
  * O514 -> O513 -> O512 chain of §6.3-6.11 with the byte citations kept
- * at each site.  Zoom levels 1/2 are UNPORTED (flagged): the ILI9341
- * target renders the native 16px tiles only.
+ * at each site.  Zoom levels 0-3 ARE ported: rm_draw_map_zoom (below)
+ * draws the shrunken tiles and set_zoom (colopy_input.c) clamps 0..3 on
+ * z/x.  (This comment said "zoom 1/2 UNPORTED" until 2026-08-17 — true
+ * of the original ILI9341 target, stale since the P4 work.)
  *
  * Palette model (flagged): the JS resolves sprites through pre-baked
  * atlas palettes and fills/text through the usePalette merge; the C fb

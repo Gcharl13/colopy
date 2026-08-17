@@ -1,5 +1,15 @@
 # PLAN — Finish the Colonization port
 
+> **STATUS NOTE (2026-08-17).** This document records no phase as complete, and
+> that is now misleading: Phases 0-3 and the Phase-4 capture batch landed during
+> the 2026-08-07 n-z14 series. `docs/MESSAGE_STATUS.md` reports 0 missing / 0
+> unwired, and the popup audit carries RESOLVED->ruling pointers. What the plan
+> did NOT cover, and what remains, is in **`docs/REMAINING_WORK.md`** — chiefly
+> that wiring a message key is not the same as implementing the mechanic behind
+> it (14 HIGH and 74 MEDIUM popup rows are still mechanic-absent). Treat the
+> phase lists below as historical.
+
+
 ## Context
 
 The port is playable start-to-endgame (229/229 behavioural checks, save/load,
