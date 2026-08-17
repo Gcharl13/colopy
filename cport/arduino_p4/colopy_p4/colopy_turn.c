@@ -802,6 +802,7 @@ int unit_append(int type, int owner, int x, int y) {
     CR.runit_y[i] = (int16_t)y;
     if ((owner & 0x0F) == cs_nation()) units_push(i);   /* G.units.push */
     CR.unit_work[i] = 0;
+    CR.unit_sail_home[i] = 0;
     CR.unit_offered[i] = 0;
     CR.unit_faith[i] = 0;
     CR.unit_damaged[i] = 0;
@@ -827,6 +828,7 @@ void unit_remove(int ui) {
     size_t n = (size_t)(CS.n_units - ui - 1);
     memmove(&CS.units[ui], &CS.units[ui + 1], n * sizeof(UnitRecord));
     memmove(&CR.unit_work[ui], &CR.unit_work[ui + 1], n);
+    memmove(&CR.unit_sail_home[ui], &CR.unit_sail_home[ui + 1], n);
     memmove(&CR.unit_offered[ui], &CR.unit_offered[ui + 1], n);
     memmove(&CR.unit_faith[ui], &CR.unit_faith[ui + 1], n);
     memmove(&CR.unit_damaged[ui], &CR.unit_damaged[ui + 1], n);

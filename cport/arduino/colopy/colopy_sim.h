@@ -259,6 +259,8 @@ int  father_by_name(const char *name);
 void europe_seed_from_load(void);     /* importer 10477: off-map ships dock */
 void advance_crossings(void);         /* advanceCrossings (game.js:3258) */
 void cmd_sail_for_europe(int ui);     /* sailForEurope (game.js:3231) */
+int  nearest_sea_lane(int ui, int *x, int *y);  /* nearestSeaLane */
+int  cmd_order_sail_home(int ui);     /* orderSailHome; 1 = departed */
 const char *colony_suggested_name(void);  /* the @COLONY prefill */
 void euro_sail_new_world(int ei);     /* sailForNewWorld (game.js:3243) */
 void euro_sell_from_ship(int ei, int good, int32_t qty); /* sellFromShip */
@@ -366,6 +368,10 @@ typedef struct {
     uint8_t alarm[COLOPY_MAX_SETTLEMENTS];  /* per-village (JS v.alarm) */
     uint8_t brave_owed[COLOPY_MAX_SETTLEMENTS]; /* JS v.braveOwed */
     uint8_t unit_work[COLOPY_MAX_UNITS];    /* pioneer work counters */
+    /* JS u.sailHome: this ship is under a Go To whose destination is
+     * the sea lane it was ordered home through, so ARRIVING there
+     * departs instead of just clearing the order. */
+    uint8_t unit_sail_home[COLOPY_MAX_UNITS];
     uint8_t unit_offered[COLOPY_MAX_UNITS]; /* treasure offer latch */
     uint8_t unit_faith[COLOPY_MAX_UNITS];   /* convert countdown, 0 = none */
     uint8_t unit_damaged[COLOPY_MAX_UNITS]; /* JS u.damaged (raids/refit) */

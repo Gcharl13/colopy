@@ -234,10 +234,16 @@ static void begin_goto_page(int ui, int page) {
             ev_emit("EUROPENOTAVAIL", 0, 0, 0, 0);
             return;
         }
-        cmd_sail_for_europe(ui);
-        if (UI.sel >= CR.n_units_order)
-            UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
-        UI.screen = SCR_EUROPE;
+        /* off the lane this only ORDERS the ship there (game.js's
+         * orderSailHome); the harbour opens when it actually departs */
+        if (cmd_order_sail_home(ui)) {
+            if (UI.sel >= CR.n_units_order)
+                UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
+            UI.screen = SCR_EUROPE;
+        } else {
+            UI.goto_arm = 0;                 /* setGoTo (game.js:2268) */
+            advance();
+        }
         return;
     }
     cmd_goto(ui, CS.colonies[e].map_x, CS.colonies[e].map_y);
@@ -1833,7 +1839,13 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 ev_emit("EUROPENOTAVAIL", 0, 0, 0, 0);
             } else {
                 if (ui >= 0 && dat_units[CS.units[ui].type].hull > 0) {
-                    cmd_sail_for_europe(ui);
+                    /* a ship off the lane is sent TO the lane and the
+                     * harbour stays shut until it gets there */
+                    if (!cmd_order_sail_home(ui)) {
+                        UI.goto_arm = 0;     /* setGoTo (game.js:2268) */
+                        advance();
+                        break;
+                    }
                     if (UI.sel >= CR.n_units_order)
                         UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
                 }

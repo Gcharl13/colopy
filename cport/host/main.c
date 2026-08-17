@@ -162,12 +162,17 @@ static void script_commands(int t) {
         UnitRecord *u = &CS.units[ui];
         int ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
         if (ship) {
-            /* slice 3: an idle ship sails home now and then; the splice
-             * shifts the list and the loop steps past the slot, exactly
+            /* slice 3: an idle ship is ORDERED HOME now and then.  This
+             * goes through cmd_order_sail_home, not cmd_sail_for_europe,
+             * so the oracle covers the whole sail-to-the-lane leg: the Go
+             * To out to the nearest sea lane, advance_goto walking it
+             * there, and the arrival that starts the crossing.  A ship
+             * already on the lane still leaves at once, and the splice
+             * shifts the list so the loop steps past the slot, exactly
              * like the JS iteration. */
             if (u->orders == 0 && (t + k) % 17 == 0 && t > 0 &&
                 !woi_locked()) {
-                cmd_sail_for_europe(ui);
+                cmd_order_sail_home(ui);
                 continue;
             }
             /* slice 4c: a water step (interception, naval attack,

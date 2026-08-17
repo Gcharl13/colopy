@@ -504,10 +504,15 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
     for (let k = 0; k < G.units.length; k++) {
       const u = G.units[k];
       if (u.ship) {
-        // slice 3: an idle ship sails home now and then; the splice
-        // shifts the list and the loop steps past the slot (mirrored).
+        // slice 3: an idle ship is ORDERED HOME now and then. This goes
+        // through orderSailHome, not sailForEurope, so the oracle covers
+        // the whole sail-to-the-lane leg: the Go To out to the nearest
+        // sea lane, advanceGoTo walking it there, and the arrival that
+        // starts the crossing. A ship already on the lane still leaves at
+        // once, and the splice shifts the list so the loop steps past the
+        // slot (mirrored).
         if (u.orders === 0 && (t + k) % 17 === 0 && t > 0 && !woiLocked()) {
-          sailForEurope(u); continue;
+          orderSailHome(u); continue;
         }
         // slice 4c: a water step (interception, naval attack, parley;
         // the sea lane's SAILHOME dialog is inert so skip its tiles)

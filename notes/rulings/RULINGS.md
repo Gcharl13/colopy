@@ -26,6 +26,93 @@ Format:
 
 ---
 
+## 2026-08-17 — A ship ordered home sails to the sea lane; it does not vanish where it stands
+
+**Conflict**: choosing "Return to Europe" (the ORDERS row / `e` key, or the Go To
+picker's homeport row) lifted the ship off the map instantly from wherever it
+was floating, and the crossing recorded THAT square as its return point (user
+report, 2026-08-17).
+
+**Source A** — `docs/GAME_MANUAL.md` p18 (Sea Lane terrain) and p57 (SAILING TO
+AND FROM EUROPE), both explicit and agreeing: "To return to Europe, a ship only
+has to enter a sea lane, then move toward the east (if exiting east) or west (if
+exiting west) map edge", and "the ship must enter a Sea Lane square on the map
+display, then move toward the nearest map edge. When this occurs, the ship
+disappears from the map display... When the ship arrives back in American
+waters, it appears in the Sea Lane square from which it left."
+
+**Source B** — the port, JS and C alike: `sailForEurope` / `cmd_sail_for_europe`
+spliced the unit out on the spot. The ORDERS row was already gated on
+`onSeaLane` (capture-derived: the census frigate mid-Ocean shows the row
+DIMMED), so the two halves of the port disagreed with each other — the menu knew
+the lane mattered, the command did not.
+
+**Ruling**: the manual wins on the FUNCTION of a feature (TRUTH_HIERARCHY: the
+manual is HIGH trust for what a feature does; EXE bytes win only on exact
+numbers, and no byte site here is read). A ship already on the lane departs at
+once; one in open water is ordered to the NEAREST lane and begins its crossing
+the moment it arrives. "Nearest" is Chebyshev distance — ships step 8-way, so
+that is the turn count — with ties broken on the first square in scan order so
+both engines land on the same lane.
+
+**Action taken**:
+- `port/src/game.js` — new `nearestSeaLane` + `orderSailHome`; `returnToEurope`
+  and the Go To picker's Europe row route through it; `advanceGoTo` collects
+  ships that reached their lane and departs them after the loop (sailForEurope
+  splices the array being iterated).
+- `cport/core/colopy_europe.c` — `nearest_sea_lane` + `cmd_order_sail_home`;
+  `cport/core/colopy_rivals.c` `advance_goto` mirrors the arrival hook, re-basing
+  queued indices because `unit_remove` compacts the records.
+- `cport/core/colopy_sim.h` / `colopy_turn.c` — `CR.unit_sail_home[]`, compacted
+  in `unit_remove` and cleared in `unit_append`.
+- `tools/sim_trace.py` + `cport/host/main.c` — the `script` harness now orders
+  its idle ships home through `orderSailHome`/`cmd_order_sail_home` instead of
+  departing them directly, so 300 turns x 3 fixtures of oracle cover the whole
+  leg: the Go To out, advanceGoTo walking it, and the arrival.
+
+**Two things this did NOT change**, deliberately:
+- **Trade routes.** `runTradeRoute`'s STOP_EUROPE still departs directly; routing
+  it would overwrite ORDER_TRADE with the Go To order and break the route state
+  machine. Automated, not a player order — out of scope, flagged here.
+- **The forced privateer recall** in the diplomacy branch (game.js:8287) still
+  departs immediately: the rival is throwing the ships out, not the player
+  ordering them home.
+
+**Follow-up**: `advanceGoTo` moves a unit ONE square per turn regardless of its
+movement allowance, so the sail-to-lane leg is slower than the ship should be (a
+Merchantman took 11 turns to cross 8 squares in the savstart check). That is a
+pre-existing limitation of the Go To executor in BOTH engines, not something this
+change introduced, and fixing it needs its own evidence pass. TBD.
+
+---
+
+## 2026-08-17 — Rival colony capture never announced @CAPTURED3 in the C
+
+**Conflict**: `advance_goto`'s new arrival hook shifted turn timing just enough
+for a rival to take a player colony AFTER the declaration in the 100-turn
+`agitate script` run, and the turns oracle went red on one field of one turn:
+`sav1653` turn 52 `.events` — JS `CAPTURED3`, C `CAPTURED`.
+
+**Source A** — game.js:7642 (rivalTurn) gates the announcement
+`G.declared ? 'CAPTURED3' : 'CAPTURED'`, citing the byte-read split
+`func_05CA7E @0x5DED1`. The C's OWN player-capture site
+(`colopy_cmd.c:742`) already carries the same gate on `CR.woi_flags &
+WOI_DECLARED`.
+
+**Source B** — `colopy_rivals.c:512` emitted a hard-coded `"CAPTURED"`.
+
+**Ruling**: the C site is simply missing the gate its sibling already has, and
+the byte citation is on the JS side. Fixed to match.
+
+**Action taken**: `cport/core/colopy_rivals.c` — the rival-capture emit now
+splits on `CR.woi_flags & WOI_DECLARED`.
+
+**Follow-up**: this is the FOURTH latent JS/C divergence surfaced in one day by
+changing behaviour the fixed oracle scripts had never driven into. The pattern is
+worth naming: a green oracle means the scripts agree, not that the engines do.
+
+---
+
 ## 2026-08-17 — Standing orders in the unit cycle, and the three divergences it unmasked
 
 **Conflict**: `nextUnit()` / `next_unit()` handed a unit back as the active unit

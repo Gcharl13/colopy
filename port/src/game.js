@@ -1773,6 +1773,43 @@ const MENU_GROUP_LABELS = {
 // the row DIMMED, so the menu enables it only on the sea-lane column
 // (terrain 26). Capture-derived; the engine's own test is unread. FLAGGED.
 const onSeaLane = (u) => (at(u.x, u.y) & 0x1F) === 26;
+// The nearest sea-lane square, by Chebyshev distance -- ships step 8-way, so
+// that IS the turn count. GAME_MANUAL.md p18/p57: a ship bound for Europe
+// "must enter a Sea Lane square on the map display, then move toward the
+// nearest map edge", so the lane is where a crossing BEGINS and a ship
+// ordered home from open water has to sail there under its own power first.
+// Ties break on the first square in scan order, which keeps the C port on
+// the same answer.
+function nearestSeaLane(u) {
+  let best = null, bd = Infinity;
+  for (let y = 0; y < MAP.h; y++)
+    for (let x = 0; x < MAP.w; x++) {
+      if ((at(x, y) & 0x1F) !== 26) continue;
+      const d = Math.max(Math.abs(x - u.x), Math.abs(y - u.y));
+      if (d < bd) { bd = d; best = [x, y]; }
+    }
+  return best;
+}
+// "Return to Europe" from anywhere on the map. A ship already ON the lane
+// leaves at once; one in open water is ordered to the NEAREST lane and starts
+// its crossing the moment it arrives (advanceGoTo). Until 2026-08-17 the port
+// took the ship off the map from wherever it stood, which is neither the
+// manual's model nor what the player sees. Returns true when the crossing
+// began this instant -- the callers use that to decide whether to open the
+// Europe screen.
+function orderSailHome(u) {
+  if (onSeaLane(u)) {
+    sailForEurope(u);
+    G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
+    return true;
+  }
+  const lane = nearestSeaLane(u);
+  if (!lane) { G.msg = `${u.type} can find no sea lane.`; return false; }
+  u.sailHome = true;
+  setGoTo(u, lane[0], lane[1]);
+  G.msg = `${u.type} makes for the sea lane.`;
+  return false;
+}
 function ordersMenuRows() {
   const u = G.units[G.sel];
   if (!u) return DATA.menus[2].rows.map(r => ({ label: r.label, cmd: r.label, dim: true }));
@@ -2259,9 +2296,7 @@ function beginGoToPage(u, page) {
     const e = slice[k];
     if (e.europe) {
       if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
-      sailForEurope(u);
-      G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
-      G.screen = 'europe';
+      if (orderSailHome(u)) G.screen = 'europe';
       return;
     }
     setGoTo(u, e.c.x, e.c.y);
@@ -2274,10 +2309,17 @@ function setGoTo(u, x, y) {
   advance();
 }
 function advanceGoTo() {
+  // Ships that reached their lane this turn. Collected, not sailed in place:
+  // sailForEurope splices G.units and this loop is iterating it.
+  const arrived = [];
   for (const u of G.units) {
     if (u.orders !== 3 || !u.goal) continue;
     const [gx, gy] = u.goal;
-    if (u.x === gx && u.y === gy) { u.orders = 0; u.goal = null; continue; }
+    if (u.x === gx && u.y === gy) {
+      u.orders = 0; u.goal = null;
+      if (u.sailHome) arrived.push(u);
+      continue;
+    }
     // One step a turn toward the goal, respecting the unit's element.
     const dx = Math.sign(gx - u.x), dy = Math.sign(gy - u.y);
     const tries = [[dx, dy], [dx, 0], [0, dy]];
@@ -2294,7 +2336,20 @@ function advanceGoTo() {
       moved = true;
       break;
     }
-    if (!moved) { u.orders = 0; u.goal = null; G.msg = `${u.type} can go no further.`; }
+    if (moved && u.x === gx && u.y === gy) {
+      u.orders = 0; u.goal = null;
+      if (u.sailHome) arrived.push(u);
+    }
+    if (!moved) {
+      u.orders = 0; u.goal = null; u.sailHome = false;
+      G.msg = `${u.type} can go no further.`;
+    }
+  }
+  // Arrival on the lane IS the departure -- no @SAILHOME ask, the player
+  // already gave the order that sent the ship here.
+  for (const u of arrived) {
+    u.sailHome = false;
+    if (u.ship && onSeaLane(u)) sailForEurope(u);
   }
 }
 
@@ -11236,10 +11291,9 @@ function improveOrder(n) {
 function returnToEurope() {
   if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
   const u = G.units[G.sel];
-  if (u && u.ship) {
-    sailForEurope(u);
-    G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
-  }
+  // A ship off the lane is sent TO the lane and the harbour stays shut until
+  // it gets there; only a crossing that actually began opens Europe.
+  if (u && u.ship && !orderSailHome(u)) return;
   G.screen = 'europe';
 }
 function centreView() { const u = G.units[G.sel]; if (u) centerOn(u.x, u.y); }

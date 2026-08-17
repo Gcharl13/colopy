@@ -509,8 +509,16 @@ void rival_turn(void) {
                             r->col[r->n_col].spared = 0;
                             r->n_col++;
                         }
-                        ev_emit("CAPTURED", plunder, 0,
-                                dat_nations[rn].adjective, 0);
+                        /* the @CAPTURED family split @0x5DED1, same gate
+                         * the player's own capture uses (colopy_cmd.c):
+                         * declared -> CAPTURED3 (no plunder line).  This
+                         * site emitted a hard-coded "CAPTURED" until
+                         * 2026-08-17, when a Go To timing change let a
+                         * rival take a colony after the declaration and
+                         * the turns oracle caught it. */
+                        ev_emit((CR.woi_flags & WOI_DECLARED)
+                                    ? "CAPTURED3" : "CAPTURED",
+                                plunder, 0, dat_nations[rn].adjective, 0);
                     } else {
                         ev_emit("BURNED2", 0, 0, dat_nations[rn].country, 0);
                     }
@@ -1319,6 +1327,10 @@ void advance_trade_routes(void) {
 }
 
 static void advance_goto(void) {
+    /* Ships that reached their sea lane this turn.  Collected, not sailed
+     * in place: cmd_sail_for_europe calls unit_remove, which compacts the
+     * very arrays this loop is walking. */
+    int arrived[COLOPY_MAX_UNITS], n_arrived = 0;
     for (int k = 0; k < CR.n_units_order; k++) {
         int ui = CR.units_order[k];
         UnitRecord *u = &CS.units[ui];
@@ -1327,6 +1339,7 @@ static void advance_goto(void) {
         if (u->map_x == gx && u->map_y == gy) {
             u->orders = 0;
             CR.goal_x[ui] = CR.goal_y[ui] = -1;
+            if (CR.unit_sail_home[ui]) arrived[n_arrived++] = ui;
             continue;
         }
         int dx = gx > u->map_x ? 1 : gx < u->map_x ? -1 : 0;
@@ -1358,10 +1371,32 @@ static void advance_goto(void) {
             colopy_reveal(nx, ny, unit_sight_radius(ui));  /* game.js:2291 */
             moved = 1;
         }
+        if (moved && u->map_x == gx && u->map_y == gy) {
+            u->orders = 0;
+            CR.goal_x[ui] = CR.goal_y[ui] = -1;
+            if (CR.unit_sail_home[ui]) arrived[n_arrived++] = ui;
+        }
         if (!moved) {
             u->orders = 0;
             CR.goal_x[ui] = CR.goal_y[ui] = -1;
+            CR.unit_sail_home[ui] = 0;
         }
+    }
+    /* Arrival on the lane IS the departure — no @SAILHOME ask, the player
+     * already gave the order that sent the ship here.  Each removal
+     * compacts the unit records, so re-base the indices still queued. */
+    for (int a = 0; a < n_arrived; a++) {
+        int ui = arrived[a];
+        CR.unit_sail_home[ui] = 0;
+        int is_ship = CS.units[ui].type < DAT_UNITS_COUNT &&
+                      dat_units[CS.units[ui].type].hull > 0;
+        if (!is_ship ||
+            tile_terrain(map_at(CS.units[ui].map_x, CS.units[ui].map_y)) !=
+                TERR_SEALANE)
+            continue;
+        cmd_sail_for_europe(ui);
+        for (int b = a + 1; b < n_arrived; b++)
+            if (arrived[b] > ui) arrived[b]--;
     }
 }
 

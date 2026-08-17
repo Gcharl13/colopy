@@ -213,6 +213,51 @@ void cmd_sail_for_europe(int ui) {
     unit_remove(ui);
 }
 
+/* nearestSeaLane (game.js, next to onSeaLane): the closest terrain-26
+ * square by CHEBYSHEV distance — ships step 8-way, so that IS the turn
+ * count.  GAME_MANUAL.md p18/p57: a ship bound for Europe "must enter a
+ * Sea Lane square on the map display, then move toward the nearest map
+ * edge", so the lane is where a crossing BEGINS.  Terrain 26 is hard
+ * rule 2 (CLAUDE.md).  Ties break on the first square in scan order, to
+ * keep this and the JS on the same answer. */
+int nearest_sea_lane(int ui, int *out_x, int *out_y) {
+    int bx = -1, by = -1;
+    long bd = -1;
+    int ux = CS.units[ui].map_x, uy = CS.units[ui].map_y;
+    for (int y = 0; y < COLOPY_MAP_H; y++)
+        for (int x = 0; x < COLOPY_MAP_W; x++) {
+            if (tile_terrain(map_at(x, y)) != TERR_SEALANE) continue;
+            int ax = x > ux ? x - ux : ux - x;
+            int ay = y > uy ? y - uy : uy - y;
+            long d = ax > ay ? ax : ay;
+            if (bd < 0 || d < bd) { bd = d; bx = x; by = y; }
+        }
+    if (bx < 0) return 0;
+    *out_x = bx;
+    *out_y = by;
+    return 1;
+}
+
+/* orderSailHome (game.js, next to nearestSeaLane): a ship already ON the
+ * lane leaves at once; one in open water is ordered to the NEAREST lane
+ * and departs the moment advance_goto lands it there.  Until 2026-08-17
+ * the port lifted the ship off the map from wherever it stood, which is
+ * neither the manual's model nor what the player sees (user report).
+ * Returns 1 when the crossing began this instant — the callers use that
+ * to decide whether to open the Europe screen. */
+int cmd_order_sail_home(int ui) {
+    if (tile_terrain(map_at(CS.units[ui].map_x, CS.units[ui].map_y)) ==
+        TERR_SEALANE) {
+        cmd_sail_for_europe(ui);
+        return 1;
+    }
+    int lx, ly;
+    if (!nearest_sea_lane(ui, &lx, &ly)) return 0;   /* G.msg only */
+    CR.unit_sail_home[ui] = 1;
+    cmd_goto(ui, lx, ly);
+    return 0;
+}
+
 /* sailForNewWorld (game.js:3243): dock units board in order, skipping
  * any held back by the no-board flag, to the 6-passenger cap. */
 void euro_sail_new_world(int ei) {
