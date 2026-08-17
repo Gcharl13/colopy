@@ -717,6 +717,9 @@ void colony_turn(int ci) {
         int32_t v = (int32_t)c->stock[i] + o.out[i];
         c->stock[i] = (uint16_t)(v < 0 ? 0 : v);
     }
+    /* The foals join the herd; their feed is already inside o.eaten
+     * (BYTE_VERIFIED func_00A3E1 @0x0A63F — see colopy_colony.c). */
+    c->stock[HORSES] = (uint16_t)(c->stock[HORSES] + o.horses_bred);
     {
         int32_t f = (int32_t)c->stock[FOOD] - o.eaten;
         c->stock[FOOD] = (uint16_t)(f < 0 ? 0 : f);
@@ -747,15 +750,7 @@ void colony_turn(int ci) {
         colonist_add(c);
         ev_emit("NEWCOLONIST", 0, 0, c->name, 0);
     }
-    /* horses breed: threshold 25 with a Stable, 50 without (@0xA5BB) */
     resolve();
-    {
-        int herd = c->stock[HORSES];
-        if (herd >= (has_bld(ci, BLD_STABLE) ? 25 : 50)) {
-            int grow = herd / 10;
-            c->stock[HORSES] = (uint16_t)(herd + (grow < 1 ? 1 : grow));
-        }
-    }
     /* tutorial bindings: NOT ported (see header) */
     /* @DEPLETION roll per worked silver cell, 1/50 (flagged in JS) */
     for (int k = 0; k < 8; k++) {

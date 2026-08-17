@@ -46,7 +46,8 @@ typedef struct {
     int32_t consumed[N_GOODS];
     int32_t hammers, bells, crosses, teaching;
     int32_t centre;             /* the centre tile's food */
-    int32_t eaten;              /* 2 * population, BYTE_VERIFIED @0xA5F2 */
+    int32_t eaten;              /* 2*population + horses_bred, @0xA5F2/@0xA63F */
+    int32_t horses_bred;        /* this turn's foals, BYTE_VERIFIED @0x0A5B4.. */
     int32_t net_food;
     uint16_t outages;           /* bit per raw good that starved a converter */
 } colony_output;

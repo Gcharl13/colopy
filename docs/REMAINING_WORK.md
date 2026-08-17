@@ -65,7 +65,7 @@ Source: `docs/POPUP_AUDIT_2026-08-08.md`, rows not marked RESOLVED.
 | `@STARVE1` | Popup, winter band and the multi-colonist removal loop all absent |
 | `@WAREHOUSEFULL` | Capacity rule at unload (the confirm gate landed 2026-08-17; the rule did not) |
 | `@NEEDTOOLS` | Construction stalls with zero feedback |
-| `@NEWCOLONIST` | Status string instead of a popup; threshold model diverges; **no population cap**; 25/50 evidence mis-attributed to horses |
+| `@NEWCOLONIST` | Fires as a popup and the population cap (32, `@0x009432`) is enforced by `colonist_add`; the **200-food threshold is still tier R (manual), not byte-located** — flagged in both engines. The "25/50 evidence mis-attributed to horses" claim was itself wrong and is **withdrawn 2026-08-17**: that pair belongs to horse breeding, byte-proved (RULINGS 2026-08-17). The real per-turn food-growth store is unlocated. |
 | `@REBELUP50` | Announcement and the rebel-power-designation state write both absent |
 | `@TRAINPROFESSION` | STRING0/STRING1 transposed in every graduation popup; option gating absent |
 | `@NODOCKS` | Docks prerequisite and refusal popup both absent |

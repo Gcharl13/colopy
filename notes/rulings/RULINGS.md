@@ -26,6 +26,70 @@ Format:
 
 ---
 
+## 2026-08-17 — `ColonyRecord +0xAA` is the HORSES stock, not a food-growth store; `func_00A3E1` is horse breeding
+
+**Conflict**: `spec/systems/colony.md` §3 builds the colony **food**-growth model on
+`ColonyRecord +0xAA` and reads `func_00A3E1 @0x0A5B4..@0x0A63F` as the food-growth
+gate, with a "25 with a Stable / 50 without" threshold. Both engines' horse-breeding
+code cited the same offsets for **horses**. They cannot both be right.
+
+**Source A** — `spec/systems/colony.md` §3 ("Growth & starvation mechanism", refined
+2026-06-27) said: `+0xAA` is the food-growth store, `func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD`
+is its 25/50 threshold, and the per-turn `+= surplus/2` accumulation into `+0xAA` is the
+one write with no statically-resolvable site image-wide (write census, 2026-06-28).
+
+**Source B** — the EXE bytes, read directly this session.
+
+**Ruling**: Source B. `+0xAA` is the **Horses** stock and `func_00A3E1
+@0x0A5B4..@0x0A63F` is the **horse-breeding** calculation. Three independent byte
+anchors settle it:
+
+1. `push word ptr [bx+si+0x9a]` **@0x08E6E** with `si = good_id * 2` and
+   `bx = [0x8542]` (the current-colony pointer) — the colony stock array is at
+   `ColonyRecord +0x9A`, u16 per good, indexed by good id. `+0x9A + 2*8 = +0xAA`,
+   and cargo row 8 is **Horses**.
+2. The same helper's `mov ax,[bx-0x7238]` **@0x08E50** (`bx = good*2`) resolves to
+   DGROUP `0x8DC8` — so the `[0x8dc8]` read at @0x0A5F7 is `produced[FOOD]`, good 0.
+3. Buildings row **0x11 is the Stable** (`dat_buildings[17]`), which is what
+   @0x0A5C0 `push 0x11; call 0x863e` queries.
+
+Read as horses, the block is coherent end to end, and every constant lands:
+`herd < 2 -> no breeding` (@0x0A5B4 `cmp [bx+0xaa],2`) is the classic
+"you need a pair"; `T = Stable ? 25 : 50` is the **divisor** in the per-turn cap
+`2*ceil(herd/T)` (@0x0A5D6..@0x0A5E2), never a gate; the feed is
+`ceil(max(0, produced_food - 2*pop)/2)` (@0x0A5F7..@0x0A606); the herd cannot exceed
+the warehouse (`room = max(0, func_008D00() - herd)` @0x0A614..@0x0A625, and
+`func_008D00 @0x08D00` returns 100 at level 0 else `(level+1)*100`); and the foals'
+feed is added to the colony's food consumption at @0x0A63F. Read as food, the
+`cmp ...,2` gate, the `*2` cap and the warehouse clamp are all unexplained — and so
+is the write census's finding that no per-turn `+0xAA` write exists, which is exactly
+what you expect of a **stock** field updated by the generic indexed goods loop.
+
+This also disproves `docs/REMAINING_WORK.md` B.1 `@NEWCOLONIST`, which claimed the
+25/50 evidence was "mis-attributed to horses". It was correctly attributed. The
+separate `@NEWCOLONIST` 200-food threshold stays **tier R (manual)** and flagged —
+this ruling finds no byte evidence for it either way and does not touch it.
+
+**Action taken**:
+- Both engines: horse breeding rewritten to the byte model. The previous rule —
+  gate `herd >= 25/50`, then `herd += max(1, herd/10)` — was invented at both ends.
+  `cport/core/colopy_colony.c` `horses_bred()` / `colony_store_cap()`;
+  `port/src/game.js` `horsesBredThisTurn()` / `warehouseCapacity()`.
+- Colony food consumption now includes the foals' feed (@0x0A63F), so `eaten` is
+  `2*pop + bred` and the colony screen's food row matches the engine's.
+- Retires the JS flag "the herd compounds past 65,535": `room` bounds it every turn.
+  Observed in the oracle traces — Curacao and Guadeloupe now stop dead at 100, the
+  level-0 warehouse capacity.
+- `spec/systems/colony.md` §3 corrected; `docs/REMAINING_WORK.md` B.1 corrected.
+
+**Follow-up**: the real per-turn food-growth store for `@NEWCOLONIST` is still
+unlocated — the write census that went looking for it was searching the wrong field.
+The 200 threshold remains manual-tier. Also unread: whether the engine applies
+breeding before or after the goods loop banks production (this port computes it from
+the pre-update herd, matching what the forecast `func_00A3E1` reads).
+
+---
+
 ## 2026-08-17 — The SFX id→COLDIG.BIN map: byte-decoded index beats the empirical correlation map
 
 **Conflict**: two committed tables claim to say where each SFX id's samples live

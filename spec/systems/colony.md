@@ -334,6 +334,28 @@ population count `+0x1F` and the secondary index `[bp+8]` against `0x13`=19 — 
 accumulator vs the 25/50 threshold** in `func_00A3E1` (next paragraph); the 200 figure was a
 mis-attribution.
 
+> **SUPERSEDED IN PART, 2026-08-17 (see `notes/rulings/RULINGS.md`).** Everything
+> below that treats **`ColonyRecord +0xAA` as a food-growth store**, and that reads
+> `func_00A3E1 @0x0A5B4..@0x0A63F` (the "25 with a Stable / 50 without" threshold) as
+> the food-growth gate, is a **misattribution**. `+0xAA` is the **Horses** stock and
+> that block is **horse breeding**. The colony stock array is at `+0x9A`, u16 per
+> good, indexed by good id — proved by `push word ptr [bx+si+0x9a]` **@0x08E6E**
+> with `si = good*2` — so `+0x9A + 2*8 = +0xAA` is cargo row 8, Horses; buildings row
+> `0x11` (queried @0x0A5C0) is the Stable. Read as horses the block is coherent: gate
+> `herd >= 2` @0x0A5B4, per-turn cap `2*ceil(herd/T)` @0x0A5D6..@0x0A5E2, feed
+> `ceil(max(0, produced_food - 2*pop)/2)` @0x0A5F7..@0x0A606, warehouse clamp
+> @0x0A614..@0x0A627 (`func_008D00 @0x08D00`: 100 at level 0, else `(level+1)*100`),
+> and the foals' feed added to the colony's food consumption @0x0A63F. It also
+> explains the write census below: no per-turn `+0xAA` write exists because a **stock**
+> field is written by the generic indexed goods loop, not by a named displacement.
+>
+> What survives unchanged: the starvation-WARNING emitter and the removal site in
+> `func_02D658`, the `eaten = 2*pop` base @0xA5F2, the pop cap 32 and the
+> `+0xC6 += 100` birth write in `func_009318`, and the `+0xC8` correction. What is now
+> **open**: the real per-turn food-growth store for `@NEWCOLONIST` is unlocated — the
+> census that went looking for it was searching the wrong field — and the 200-food
+> threshold stays tier **R** (manual), flagged in both engines.
+
 **Growth & starvation mechanism — refined 2026-06-27 (B mechanism + B warning-trigger + B
 starvation-removal site `func_02D658 @0x2E2DE`; the per-turn `+0xAA` write was found NOT to exist — write-census closed **B**, see foot of section).** Per turn the
 food **surplus = max(0, producedFood[`0x8DC8`] − 2·pop)** (`@0xA5F7`); **half of it**

@@ -2794,9 +2794,51 @@ function colonyProduce(c) {
   // (spec/ui/colony_screen.md §3.6). Snapshot `gross` before netting.
   const gross = out.slice();
   for (let i = 0; i < consumed.length; i++) out[i] -= consumed[i];
-  const eaten = 2 * c.colonists.length;                   // BYTE_VERIFIED @0xA5F2
-  return { out, gross, consumed, tally, centre, eaten, outages,
+  let eaten = 2 * c.colonists.length;                     // BYTE_VERIFIED @0xA5F2
+  const horsesBred = horsesBredThisTurn(c, gross[GOOD.FOOD], eaten);
+  eaten += horsesBred;                                    // BYTE_VERIFIED @0x0A63F
+  return { out, gross, consumed, tally, centre, eaten, horsesBred, outages,
            netFood: out[GOOD.FOOD] - eaten };
+}
+// Warehouse capacity -- BYTE_VERIFIED func_008D00 @0x08D00: 100 flat while
+// warehouse_level (+0x95) is 0, else (level + 1) * 100 (cmp byte [bx+0x95],0
+// @0x08D0D; inc ax; imul ax,ax,0x64 @0x08D1A).
+function warehouseCapacity(c) {
+  const lvl = warehouseLevel(c);
+  return lvl ? (lvl + 1) * 100 : 100;
+}
+// Horse breeding -- BYTE_VERIFIED func_00A3E1 @0x0A5B4..0x0A63F.
+//
+// This block used to be read as a FOOD-growth accumulator on ColonyRecord
+// +0xAA, and both engines carried an invented rule from it ("herd >= 25/50,
+// then herd += max(1, herd/10)"). +0xAA is not a food field: the colony stock
+// array is at +0x9A, u16 per good, indexed by good id -- proved directly by
+// `push word ptr [bx+si+0x9a]` @0x08E6E with si = good*2 -- so
+// +0x9A + 2*8 = +0xAA is HORSES (cargo row 8), and 0x11 is the Stable
+// (buildings row 17).
+//
+//   herd < 2                     -> no breeding    @0x0A5B4 cmp [bx+0xaa],2
+//   T   = Stable ? 25 : 50       @0x0A5BB / @0x0A5C0 push 0x11 / @0x0A5CD
+//   cap = 2 * ceil(herd / T)     @0x0A5D6..@0x0A5E2
+//   surplus = max(0, producedFood - 2*pop)         @0x0A5F7..@0x0A603
+//   accrual = min(ceil(surplus/2), cap)            @0x0A606 / @0x0A609
+//   room    = max(0, capacity - herd)              @0x0A614 / @0x0A61F
+//   bred    = min(accrual, room)                   @0x0A627
+//   food eaten += bred                             @0x0A63F
+//
+// So the 25/50 Stable pair is the DIVISOR inside the per-turn cap, never the
+// gate, and breeding both COSTS food and cannot push the herd past the
+// warehouse -- which retires the old "the herd compounds past 65,535" flag,
+// since `room` bounds it every turn.
+function horsesBredThisTurn(c, producedFood, eaten) {
+  const herd = c.stock[GOOD.HORSES];
+  if (herd < 2) return 0;
+  const t = c.buildings.includes('Stable') ? 25 : 50;
+  const cap = 2 * Math.ceil(herd / t);
+  const surplus = Math.max(0, producedFood - eaten);
+  const accrual = Math.min((surplus + 1) >> 1, cap);
+  const room = Math.max(0, warehouseCapacity(c) - herd);
+  return Math.min(accrual, room);
 }
 // Kept for the panel and the tests: the food line only.
 function colonyFood(c) {
@@ -3118,6 +3160,9 @@ function colonyTurn(c) {
     if (!r.outages.has(Number(k))) delete c.outageLatch[k];
   for (let i = 0; i < r.out.length; i++)
     c.stock[i] = Math.max(0, c.stock[i] + r.out[i]);      // banked with a floor at 0
+  // The foals join the herd; their feed is already inside r.eaten
+  // (BYTE_VERIFIED func_00A3E1 @0x0A63F -- see horsesBredThisTurn).
+  c.stock[GOOD.HORSES] += r.horsesBred;
   // Food: eat first, then the surplus feeds the growth store. The engine posts
   // real popups here (func_02D658), not status-bar lines: a low-food WARNING
   // (@FOODLOW, once, while stores are thin), then STARVATION (@STARVE1) when a
@@ -3157,16 +3202,6 @@ function colonyTurn(c) {
     c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
     showEvent('NEWCOLONIST', { STRING0: c.name });
   }
-  // Horses breed in a colony that holds them: the per-turn growth threshold is
-  // 25 with a Stable (building 0x11) and 50 without -- byte-verified at
-  // func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD.
-  const herd = c.stock[GOOD.HORSES];
-  if (herd >= (c.buildings.includes('Stable') ? 25 : 50))
-    // The record's stock field is a byte-verified u16 (ColonyRecord +0x9A),
-    // so the engine's own store wraps at 16 bits -- surfaced by the C-port
-    // parity harness when an untended herd compounds past 65,535. Whether
-    // the engine also CAPS herd growth earlier is unread: flagged.
-    c.stock[GOOD.HORSES] = (herd + Math.max(1, Math.floor(herd / 10))) & 0xFFFF;
   // Tutorial bindings: TUTORIAL6 (func_02D658 @0x2EA4C) when a sellable
   // cargo has built up; 7 (func_02883E @0x28D41) when the colony can use a
   // stockade; 16 on the first food deficit. Thresholds flagged.

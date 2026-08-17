@@ -290,6 +290,53 @@ int indoor_yield(int ci, int sol, int job, uint8_t prof) {
 /* The nine field jobs are @JOB rows 0..8 (game.js:2596 FIELD_JOBS). */
 static int is_field_job(int job) { return job >= 0 && job <= 8; }
 
+/* Warehouse capacity — BYTE_VERIFIED `func_008D00 @0x08D00`: 100 flat while
+ * `warehouse_level` (+0x95) is 0, else `(level + 1) * 100`
+ * (`cmp byte [bx+0x95],0` @0x08D0D; `inc ax; imul ax,ax,0x64` @0x08D1A). */
+static int32_t colony_store_cap(const ColonyRecord *c) {
+    return c->warehouse_level ? (c->warehouse_level + 1) * 100 : 100;
+}
+
+/* Horse breeding — BYTE_VERIFIED `func_00A3E1 @0x0A5B4..0x0A63F`.
+ *
+ * This block was previously read as a FOOD-growth accumulator on
+ * `ColonyRecord +0xAA`, and both engines carried an invented rule from it
+ * ("herd >= 25/50, then herd += max(1, herd/10)").  `+0xAA` is not a food
+ * field at all: the colony stock array is at `+0x9A`, u16 per good, indexed
+ * by good id — proved directly by `push word ptr [bx+si+0x9a]`
+ * @0x08E6E with `si = good*2` — so `+0x9A + 2*8 = +0xAA` is **Horses**
+ * (cargo row 8), and 0x11 is the **Stable** (buildings row 17).
+ *
+ *   herd < 2                      -> no breeding      @0x0A5B4 cmp [bx+0xaa],2
+ *   T    = Stable ? 25 : 50       @0x0A5BB mov [bp-0x1e],0x19 /
+ *                                 @0x0A5C0 push 0x11; call 0x863e /
+ *                                 @0x0A5CD mov [bp-0x1e],0x32
+ *   cap  = 2 * ceil(herd / T)     @0x0A5D6..@0x0A5E2 (add T; dec; idiv T; shl 1)
+ *   surplus = max(0, produced_food - 2*pop)   @0x0A5F7..@0x0A603
+ *   accrual = min(ceil(surplus/2), cap)       @0x0A606 inc;sar 1 / @0x0A609
+ *   room    = max(0, capacity - herd)         @0x0A614 call 0x8d00 / @0x0A61F
+ *   bred    = min(accrual, room)              @0x0A627
+ *   food eaten += bred                        @0x0A63F add [bp-4],ax
+ *
+ * So the 25/50 Stable pair is the DIVISOR inside the per-turn cap, never the
+ * gate, and breeding both COSTS food and cannot push the herd past the
+ * warehouse — which also retires the old "the herd compounds past 65,535"
+ * flag, since `room` bounds it every turn. */
+static int32_t horses_bred(int ci, int32_t produced_food, int32_t eaten) {
+    const ColonyRecord *c = &CS.colonies[ci];
+    int32_t herd = c->stock[HORSES];
+    if (herd < 2) return 0;
+    int32_t t = colony_has_bld_name(ci, "Stable") ? 25 : 50;
+    int32_t cap = 2 * ((herd + t - 1) / t);
+    int32_t surplus = produced_food - eaten;
+    if (surplus < 0) surplus = 0;
+    int32_t accrual = (surplus + 1) >> 1;
+    if (accrual > cap) accrual = cap;
+    int32_t room = colony_store_cap(c) - herd;
+    if (room < 0) room = 0;
+    return accrual < room ? accrual : room;
+}
+
 void colony_produce(int ci, colony_output *r) {
     const ColonyRecord *c = &CS.colonies[ci];
     int sol = rt_sol(ci);
@@ -372,5 +419,7 @@ void colony_produce(int ci, colony_output *r) {
     memcpy(r->gross, r->out, sizeof(r->gross));
     for (int i = 0; i < N_GOODS; i++) r->out[i] -= r->consumed[i];
     r->eaten = 2 * c->population;               /* BYTE_VERIFIED @0xA5F2 */
+    r->horses_bred = horses_bred(ci, r->gross[FOOD], r->eaten);
+    r->eaten += r->horses_bred;                 /* BYTE_VERIFIED @0x0A63F */
     r->net_food = r->out[FOOD] - r->eaten;
 }
