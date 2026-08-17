@@ -27,11 +27,31 @@ TRIM_PEAK = 100
 PAD_MS = 120
 
 
+def render_sfx_ids():
+    """SFX ids that ship as renders, not slices: no clean in-bank match
+    (FM sounds, or partial/approximate alignments) — per coldig_slices.json.
+    """
+    table = HERE.parent.parent / "data_extracted" / "data" / "coldig_slices.json"
+    if not table.exists():
+        return set()
+    slices = json.loads(table.read_text())["slices"]
+    out = set()
+    for key, ent in slices.items():
+        if ent.get("no_signal"):
+            continue
+        if not ent.get("in_bank") or ent.get("approximate"):
+            out.add(int(key, 16))
+    return out
+
+
 def main():
     MASTERS.mkdir(parents=True, exist_ok=True)
     manifest = {}
+    sfx_render = render_sfx_ids()
+    sfx_caps = [p for p in CAPTURES.glob("sfx_*.wav")
+                if int(p.stem.split("_")[1], 16) in sfx_render]
     for cap in sorted(list(CAPTURES.glob("tune_*.wav")) +
-                      list(CAPTURES.glob("fanfare_*.wav"))):
+                      list(CAPTURES.glob("fanfare_*.wav")) + sfx_caps):
         with wave.open(str(cap)) as w:
             rate = w.getframerate()
             raw = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)
