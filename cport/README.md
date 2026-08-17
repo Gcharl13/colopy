@@ -74,6 +74,14 @@ Still open, and stated plainly:
   decoded from those drivers (`formats/BIN.md`), and the board plays
   the cues whose call sites are byte-verified — the rest stay silent
   rather than guessed.
+- **Ending a turn with nothing active.**  Fortify or sentry every unit
+  and the cycle offers nobody.  Two ways out on the board: a long-press
+  anywhere on the map, or ORDERS -> "Wait for next unit", the one row
+  left live in that state.  The DOS `@ORDERS` menu has no End-of-Turn
+  row and none was invented.
+- **The Bluetooth pairing row is compiled out by default.**  It sits on
+  the TITLE screen just below the menu plaque (y=155) and appears only
+  when `COLOPY_BLE_MOUSE` is set to 1 at the top of `colopy_p4.ino`.
 - **Bluetooth mouse** support exists but is opt-in and **untested
   against hardware** (`COLOPY_BLE_MOUSE`); it needs a core with hosted
   BT for the P4 and C6 firmware that exposes Bluetooth, neither of

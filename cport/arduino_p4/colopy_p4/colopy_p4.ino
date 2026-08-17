@@ -65,7 +65,10 @@
  *                   coordinate (menus, colony, Europe, dialogs); on
  *                   the map, a tap on a tile ADJACENT to the active
  *                   unit MOVES it there (the 8-way movement keys)
- *   long-press      Space — skip the active unit (>= 600 ms); on the
+ *   long-press      Space — skip the active unit (>= 600 ms); with
+ *                   NOTHING active (everything fortified/sentried) it
+ *                   ENDS THE TURN, as does ORDERS -> "Wait for next
+ *                   unit", the one row left live in that state; on the
  *                   Europe market bar it BUYS 100 of that good (a tap
  *                   there sells, as the DOS pointer layer does)
  *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
