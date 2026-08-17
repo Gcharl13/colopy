@@ -12,7 +12,7 @@ extern "C" {
 enum {
     SCR_TITLE = 0, SCR_DIFFICULTY, SCR_NATION, SCR_NAME, SCR_BRIEFING,
     SCR_HOF, SCR_MAP, SCR_REPORT, SCR_COLONY, SCR_EUROPE, SCR_WOODCUT,
-    SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA
+    SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA, SCR_OPTIONS
 };
 
 typedef struct {
@@ -47,6 +47,8 @@ typedef struct {
     int8_t  pedia_cat;               /* G.pediaCat (7 = Complete) */
     int16_t pedia_sel;               /* G.pediaSel */
     int8_t  pedia_mode;              /* G.pediaMode: 0 index, 1 entry */
+    int8_t  options_which;           /* 0 game / 1 colony / 2 sound */
+    int8_t  options_row;
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
                                       *                2 build */
     int8_t  colonist_sel;            /* G.colonistSel (game.js:566) */

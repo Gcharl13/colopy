@@ -286,6 +286,19 @@ static void run_menu_row(void) {
             UI.screen = SCR_TITLE;
             UI.menu_row = 0;
         }
+    } else if (strcmp(l, "Game Options") == 0) {
+        UI.options_which = 0;            /* openOptions (game.js:7957) */
+        UI.options_row = 0;
+        UI.screen = SCR_OPTIONS;
+    } else if (strcmp(l, "Colony Report Options") == 0) {
+        UI.options_which = 1;
+        UI.options_row = 0;
+        UI.screen = SCR_OPTIONS;
+    } else if (strcmp(l, "Sound Options") == 0) {
+        UI.options_which = 2;
+        UI.options_row = 0;
+        UI.screen = SCR_OPTIONS;
+    /* Pick Music: the board has no audio backend — left unbound */
     /* the COLONIZOPEDIA rows + F1 (the JS dispatch, 11393-11416) */
     } else if (strcmp(l, "Cargo Types") == 0) {
         open_pedia(0);
@@ -1242,6 +1255,20 @@ static void in_key_inner(const char *k, int alt, int shift) {
         if (key_is(k, "Enter") || key_is(k, " ") || key_is(k, "Escape"))
             wc_dismiss();
         break;
+    case SCR_OPTIONS: {
+        /* onKey options (game.js:12446): arrows walk, Enter toggles,
+         * Escape/x leaves */
+        int n = rm_options_rows(UI.options_which);
+        if (n < 1) n = 1;
+        if (key_is(k, "ArrowUp"))
+            UI.options_row = (int8_t)((UI.options_row + n - 1) % n);
+        if (key_is(k, "ArrowDown"))
+            UI.options_row = (int8_t)((UI.options_row + 1) % n);
+        if (key_is(k, "Enter") || key_is(k, " "))
+            rm_options_toggle(UI.options_which, UI.options_row);
+        if (key_is(k, "Escape") || key_is(k, "x")) UI.screen = SCR_MAP;
+        break;
+    }
     case SCR_PEDIA: {
         /* onKey pedia (game.js:12109) */
         int n = rm_pedia_count(UI.pedia_cat);
@@ -1468,6 +1495,15 @@ static void in_click_inner(int mx, int my, int right) {
     case SCR_WOODCUT:
         wc_dismiss();
         break;
+    case SCR_OPTIONS: {
+        int r = rm_options_row_hit(UI.options_which, mx, my);
+        if (r >= 0) {
+            UI.options_row = (int8_t)r;
+            rm_options_toggle(UI.options_which, r);
+        } else if (r == -1)
+            UI.screen = SCR_MAP;         /* off the box = leave */
+        break;
+    }
     case SCR_PEDIA: {
         if (UI.pedia_mode != 0) { UI.pedia_mode = 0; break; }
         int n = rm_pedia_count(UI.pedia_cat);

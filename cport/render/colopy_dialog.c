@@ -477,3 +477,108 @@ int rm_dialog_row_hit(const char *key, const rm_subs *subs,
     }
     return -2;
 }
+
+/* ---- the options dialogs (drawOptions game.js:7969) -----------------
+ * @GAMEOPTIONS/@COLONYOPTIONS/@SOUNDOPTIONS: body[0] is the title, the
+ * rest are rows, each wearing a ROUND radio mark (ring; orange 0x0E
+ * centre dot when on — census-corrected 2026-08-08).  Game bits
+ * [0x8000,0x4000,0x1000,0x0800,0x0400,0x0200,0x0100,0x0080]; colony
+ * bits 1<<(row+1); water cycling (0x0100) and every colony row are
+ * INVERTED (a set bit reads unchecked). */
+static const char *const OPT_KEYS[3] = {
+    "GAMEOPTIONS", "COLONYOPTIONS", "SOUNDOPTIONS"
+};
+static const uint16_t GAME_OPT_BITS[8] = {
+    0x8000, 0x4000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0100, 0x0080
+};
+
+static uint16_t *opt_word(int which) {
+    return which == 1 ? &CR.colony_options
+         : which == 2 ? &CR.sound_options : &CR.game_options;
+}
+
+static uint16_t opt_bit(int which, int row) {
+    if (which == 0) return row < 8 ? GAME_OPT_BITS[row] : 0;
+    return (uint16_t)(1u << (row + 1));
+}
+
+static int opt_checked(int which, int row) {
+    uint16_t bit = opt_bit(which, row);
+    int on = (*opt_word(which) & bit) != 0;
+    int inverted = which == 1 || (which == 0 && bit == 0x0100);
+    return inverted ? !on : on;
+}
+
+int rm_options_rows(int which) {
+    const dat_events_entry_t *e = event_by_key(OPT_KEYS[which & 3]);
+    return e && e->n_body > 1 ? e->n_body - 1 : 0;
+}
+
+void rm_options_toggle(int which, int row) {   /* optionsCommit (7963) */
+    *opt_word(which) ^= opt_bit(which, row);
+}
+
+static int options_geom(int which, int *x, int *y, int *w, int *h,
+                        int *seed, const dat_events_entry_t **eo) {
+    const dat_events_entry_t *e = event_by_key(OPT_KEYS[which & 3]);
+    if (!e || e->n_body < 2) return 0;
+    const rd_font *f = dfont(0);
+    int tp = dtext(0), rp = drow(0);
+    int nr = e->n_body - 1;
+    int cw = 190;
+    for (int k = 0; k < nr; k++) {
+        int lw = stripped_width(f, e->body[1 + k]) + 28;
+        if (lw > cw) cw = lw;
+    }
+    *w = cw + 6;
+    *h = 6 + tp + 3 + nr * rp + 3;
+    *x = round_half(320 - *w);
+    int y0 = round_half(200 - *h);
+    *y = y0 < 10 ? 10 : y0;
+    *seed = *y + 6 + tp + 3;
+    *eo = e;
+    return 1;
+}
+
+void rm_draw_options(int which, int row) {
+    dresolve();
+    const dat_events_entry_t *e;
+    int x, y, w, h, seed;
+    if (!options_geom(which, &x, &y, &w, &h, &seed, &e)) return;
+    const rd_font *f = dfont(0);
+    int rp = drow(0);
+    rm_plaque(x, y, w, h);
+    {
+        const uint8_t tk[4] = { 0xFF, 0xFC, 0xFB, 0 };
+        rd_text(f, e->body[0], x + 5, y + 6, tk);
+    }
+    int nr = e->n_body - 1;
+    for (int k = 0; k < nr; k++) {
+        int ry = seed + k * rp;
+        int is = k == row;
+        if (is) rd_fill(x + 3, ry, w - 6, rp - 2, SELECT_GAME);
+        /* the radio ring + the on-dot */
+        int mx2 = x + 10, my2 = ry + 4;
+        rd_fill(mx2 - 2, my2 - 3, 4, 1, 0xFE);
+        rd_fill(mx2 - 2, my2 + 2, 4, 1, 0xFE);
+        rd_fill(mx2 - 3, my2 - 2, 1, 4, 0xFE);
+        rd_fill(mx2 + 2, my2 - 2, 1, 4, 0xFE);
+        if (opt_checked(which, k)) rd_fill(mx2 - 1, my2 - 1, 2, 2, 0x0E);
+        span_text(f, e->body[1 + k], x + 18, ry + 1,
+                  (uint8_t)(is ? 0xFC : 0xFE), 0x0E);
+    }
+}
+
+int rm_options_row_hit(int which, int mx, int my) {
+    dresolve();
+    const dat_events_entry_t *e;
+    int x, y, w, h, seed;
+    if (!options_geom(which, &x, &y, &w, &h, &seed, &e)) return -1;
+    if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
+    int rp = drow(0);
+    if (my >= seed) {
+        int k = (my - seed) / rp;
+        if (k >= 0 && k < e->n_body - 1) return k;
+    }
+    return -2;
+}

@@ -228,6 +228,10 @@ static void draw_screen(void) {
     case SCR_PEDIA:
         rm_draw_pedia(UI.pedia_cat, UI.pedia_sel, UI.pedia_mode);
         break;
+    case SCR_OPTIONS:
+        rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
+        rm_draw_options(UI.options_which, UI.options_row);
+        break;
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);
         break;

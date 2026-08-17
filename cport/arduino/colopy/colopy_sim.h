@@ -493,6 +493,10 @@ typedef struct {
                                       * capture-pinned 2026-08-07);
                                       * the SHELL loads/persists it */
     uint8_t n_hof, hof_dirty;
+    uint16_t game_options, colony_options, sound_options;
+                                     /* G option words (defaults 0x0200 /
+                                      * 0 / 0x07, game.js:580); Combat
+                                      * Analysis = game bit 0x0200 */
     int16_t ref_pool[4];             /* Regulars/Cavalry/Man-O-War/Artillery */
     int32_t royal_fund;
     uint8_t razed;

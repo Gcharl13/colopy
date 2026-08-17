@@ -135,6 +135,12 @@ void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */
  * mode 0 = index, 1 = entry page */
 void rm_draw_pedia(int cat, int sel, int mode);
 int  rm_pedia_count(int cat);
+/* the options dialogs (drawOptions 7969): which 0 game / 1 colony
+ * report / 2 sound; toggle = optionsCommit's XOR */
+void rm_draw_options(int which, int row);
+int  rm_options_rows(int which);
+int  rm_options_row_hit(int which, int mx, int my);
+void rm_options_toggle(int which, int row);
 /* pulldown row model (colopy_map_render.c) — shared with the input layer */
 typedef struct { const char *label; const char *accel; uint8_t dim, sep; } rm_mrow;
 int  rm_menu_rows(int mi, int sel, rm_mrow *out);
