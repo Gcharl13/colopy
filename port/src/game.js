@@ -11166,9 +11166,28 @@ function moveSel(dx, dy) {
 // Cycle to the next unit that still has moves -- the engine's Tab/next-unit.
 // Returns false when every unit is spent.
 function nextUnit() {
+  // TODO(user report 2026-08-17): a unit under a STANDING ORDER should NOT
+  // be offered here.  @ORDERS (NAMES.TXT, BYTE_VERIFIED, spec/systems/unit.md) is
+  // 0=No Orders, 1=Sentry, 2=Trade Route, 3=Go To, 4=Live In Village,
+  // 5=Fortify, 6=Fortified, 7=Build Colony, 8=Clear/Plow, 9=Build Road --
+  // so anything non-zero is busy.  Without this a pioneer given Clear/Plow
+  // or Build Road is handed back every single turn once its moves refresh,
+  // and moving it silently throws the part-done work away (user report
+  // 2026-08-17).  setOrder() already zeroes movesLeft, which only covers the
+  // turn the order was given.
+  //
+  // The one-line fix (`&& !u.orders`, plus `orders == 0` in the C next_unit)
+  // is READY but not shipped: it changes which unit is active, and that walks
+  // the fixed oracle scripts into states where the two engines disagree --
+  // savraleigh `.vy: JS 41 != C 42` from event 58 (view scroll, cosmetic) and
+  // sav1653 `.dg: JS 1 != C 2` from event 117 (dialog kind, NOT cosmetic),
+  // both with `.sel` and `.u` still agreeing.  Two more latent JS/C
+  // divergences that only surface once selection changes.  Resolve those
+  // first, then apply.
   for (let i = 1; i <= G.units.length; i++) {
     const k = (G.sel + i) % G.units.length;
-    if (G.units[k].movesLeft > 0) { G.sel = k; centerOn(G.units[k].x, G.units[k].y); return true; }
+    const u = G.units[k];
+    if (u.movesLeft > 0) { G.sel = k; centerOn(u.x, u.y); return true; }  // TODO orders test, see below
   }
   return false;
 }

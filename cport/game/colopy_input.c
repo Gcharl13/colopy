@@ -73,7 +73,21 @@ static int sel_unit(void) {
     return CR.units_order[UI.sel];
 }
 
-/* nextUnit (game.js:11168): the next unit with moves, view centred */
+/* nextUnit (game.js:11168): the next unit with moves AND NO STANDING
+ * ORDER, view centred.  @ORDERS (NAMES.TXT, BYTE_VERIFIED) is 0=No
+ * Orders, 1=Sentry, 2=Trade Route, 3=Go To, 4=Live In Village, 5=Fortify,
+ * 6=Fortified, 7=Build Colony, 8=Clear/Plow, 9=Build Road — anything
+ * non-zero is busy and must not be offered.  Without the orders test a
+ * pioneer on Clear/Plow or Build Road came back as the active unit every
+ * turn once its moves refreshed, and moving it threw the part-done work
+ * away (user report 2026-08-17).
+ *
+ * TODO: the `&& CS.units[ui].orders == 0` test belongs here and in the
+ * JS nextUnit, but adding it changes which unit is active, which walks
+ * the fixed oracle scripts into states where the engines disagree —
+ * savraleigh `.vy` off by one from event 58 (cosmetic) and sav1653
+ * `.dg: JS 1 != C 2` from event 117 (dialog kind, not cosmetic), both
+ * with `.sel`/`.u` still agreeing.  Resolve those two first. */
 static int next_unit(void) {
     int n = CR.n_units_order;
     for (int i = 1; i <= n; i++) {
