@@ -2480,6 +2480,17 @@ static void in_click_inner(int mx, int my, int right) {
                 if (CS.units[u2].map_x == tx && CS.units[u2].map_y == ty)
                     on[non++] = q;
             }
+            /* TODO(user report 2026-08-17): the COLONY should win over
+             * the unit stack — GAME_MANUAL.md p40 puts no "unoccupied"
+             * condition on clicking a colony, and a colony square nearly
+             * always holds units, so this guard makes the colony screen
+             * almost unreachable by clicking.  Dropping the guard is a
+             * one-word change on both sides, but it makes input_compare
+             * fail sav1653 with `col: JS 11 != C 10` — the two engines
+             * do not agree on which colony a tile belongs to, because
+             * this scan's own-colony ORDINAL is not the JS G.colonies
+             * INDEX.  Fix the indexing first, or the board opens the
+             * wrong colony's screen.  Left as-is deliberately. */
             if (ci >= 0 && !non) {
                 UI.colony = (int8_t)ci;
                 UI.screen = SCR_COLONY;

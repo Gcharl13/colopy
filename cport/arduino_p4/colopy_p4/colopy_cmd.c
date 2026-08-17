@@ -429,6 +429,13 @@ int cmd_found_colony(int ui, const char *name) {
     c->map_x = u->map_x;
     c->map_y = u->map_y;
     c->owner_power = (uint8_t)cs_nation();
+    /* A new colony lifts the fog over its whole working area.  The
+     * colony screen's scene panel draws the 5x5 around the town
+     * (spec/ui/colony_screen.md 3.8), so anything still fogged there
+     * shows as fog INSIDE the colony you just built.  r=2 covers that
+     * 5x5 exactly.  Fog is CR runtime, not .SAV state, so this touches
+     * no record and no oracle field.  User report 2026-08-17. */
+    colopy_reveal(c->map_x, c->map_y, 2);
     snprintf(c->name, sizeof(c->name), "%s", name);
     colony_record_reset(ci);
     const char *tn = dat_units[u->type].name;
