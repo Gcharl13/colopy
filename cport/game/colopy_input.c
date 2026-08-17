@@ -7,8 +7,12 @@
  * renderers draw and calling the Phase-5 command layer for the sim
  * side.  Slice 1 covers the keys the shared input script exercises
  * (boot navigation, viewMode panning, the unit cycle with its endTurn
- * rollover, orders, F-key reports, pulldown navigation); the pointer
- * layer and the remaining screen vocabularies follow in later slices. */
+ * rollover, orders, F-key reports, pulldown navigation).  The pointer
+ * layer and every screen vocabulary are in as of 2026-08-17 — map,
+ * colony (popups, scene panel, plaza, build buttons), Europe (menus,
+ * market, dock), village, trade, pedia, options and the entry
+ * dialogs.  Pick Music is the one MENU.TXT row still unbound: this
+ * build has no audio backend. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1838,9 +1842,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
     case SCR_COLONY:
         /* an open popup owns the keyboard (onKey colony case,
          * game.js:12485): arrows walk the rows, Enter/space commits,
-         * ESC closes, everything else is swallowed. Build and jobs are
-         * fully modelled; the occupation popup (a colonist-click flow,
-         * mouse-only) is a later slice (#92). */
+         * ESC closes, everything else is swallowed.  All three popups
+         * are modelled — build, jobs, and the scene panel's occupation
+         * menu (kind 3, reached by tapping a working colonist twice). */
         if (UI.colony_popup) {
             int cci = player_colony_rec(UI.colony);
             const char *names[BUILD_MAX_ROWS];
@@ -2022,10 +2026,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
         /* §26.9 keys: arrows walk the market cursor, L/=/+ buy to the
          * active ship, R/1 P/2 T/3 open the recruit/purchase/train
          * menus (openEuroMenu, game.js:4778), K petitions the King,
-         * S asks @SAILAWAY (openDialog — inert under the shared
-         * conventions, so unbound), ESC/x/E exit.  The sell key runs
-         * the @HOWMUCH5 amount dialog — its numeric-entry modal is a
-         * later slice. */
+         * S asks @SAILAWAY (confirmSailAway — live-front only, the
+         * harness stubs openDialog), ESC/x/E exit.  The sell key runs
+         * the @HOWMUCH5 amount modal, which is live on both sides. */
         if (key_is(k, "ArrowLeft"))
             UI.market_sel = (int8_t)((UI.market_sel + 15) % 16);
         if (key_is(k, "ArrowRight"))
@@ -2079,9 +2082,11 @@ static void in_key_inner(const char *k, int alt, int shift) {
  * The boot screens, the report exit, the map screen (menubar, pulldown
  * rows, viewport: colony-open / stack-cycle / centre), the colony
  * screen's buttons/dock/exit, and the Europe screen's ship boxes,
- * market bar and exit.  The drag layer, the popup/scene/plaza colonist
- * moves and the context menus stay with later slices — the shared
- * script does not click those regions. */
+ * market bar and exit — plus, since 2026-08-17, the colony popups /
+ * scene panel / plaza colonist moves and the Europe context menus.
+ * Only the DRAG layer is absent: every function it carries is
+ * reachable through a menu or a tap, which is what the touch-only
+ * board needs. */
 static int hit(int mx, int my, int x, int y, int w, int h) {
     return mx >= x && mx < x + w && my >= y && my < y + h;
 }
