@@ -312,13 +312,13 @@ static void in_project(void) {
                  ? CR.units_order[UI.sel] : -1;
     printf("{\"s\":%d,\"mr\":%d,\"d\":%d,\"n\":%d,\"ldr\":\"%s\","
            "\"bp\":%d,\"rep\":\"%s\",\"sel\":%d,\"vx\":%d,"
-           "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,"
+           "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,\"z\":%d,"
            "\"col\":%d,\"cv\":%d,\"mks\":%d,\"sh\":%d,"
            "\"cn\":%d,\"vr\":%d,\"cp\":%d,\"cpr\":%d,\"cs\":%d,"
            "\"em\":%d,\"emr\":%d,\"dg\":%d,\"dge\":\"%s\",",
            UI.screen, UI.menu_row, UI.difficulty, UI.nation, UI.leader,
            UI.brief_page, UI.report, UI.sel, UI.view_x, UI.view_y,
-           UI.open_menu, UI.menu_sel, UI.view_mode,
+           UI.open_menu, UI.menu_sel, UI.view_mode, UI.zoom,
            UI.colony, UI.colony_view, UI.market_sel, UI.show_hidden,
            UI.colony_numbers, UI.village_row,
            UI.colony_popup, UI.colony_popup_row, UI.colonist_sel,

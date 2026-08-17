@@ -26,6 +26,7 @@ typedef struct {
     int     sel;                     /* units_order ordinal (G.sel) */
     int8_t  open_menu, menu_sel;     /* pulldown state */
     int8_t  view_mode;               /* G.viewMode */
+    int8_t  zoom;                    /* G.zoom (§26.7, 0..3) */
     int8_t  colony, colony_view, colony_ship_sel;
     int8_t  market_sel, euro_row, euro_ship, euro_dock_sel;
     int8_t  euro_menu;               /* G.euroMenu: 0 none, 1 recruit,

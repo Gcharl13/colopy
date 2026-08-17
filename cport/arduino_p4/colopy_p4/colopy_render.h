@@ -99,6 +99,10 @@ int  rd_text_width(const rd_font *f, const char *s);
 /* drawMap (game.js:1555) at zoom 0 over the loaded sim state.  sel is a
  * units_order index (-1 = none); blink hides the active unit's frame. */
 void rm_draw_map(int view_x, int view_y, int sel, int blink);
+/* drawMap over §26.7 zoom 0..3 (game.js:752/1569): subwindow-composed
+ * nearest-neighbour downscale into the same 240x192 viewport */
+void rm_draw_map_zoom(int view_x, int view_y, int sel, int blink,
+                      int zoom);
 /* drawPulldown (game.js:1836) over an open bar title; the ORDERS menu
  * builds its rows from the selected unit's context (game.js:1780). */
 void rm_draw_pulldown(int menu_idx, int menu_sel, int sel);

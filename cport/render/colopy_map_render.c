@@ -48,6 +48,15 @@ typedef struct {
 
 static rd_font TINY;
 
+/* §26.7 zoom (game.js:752): level z spans (0xF<<z) x (0xC<<z) tiles at
+ * (0x10>>z) px.  Tiles only draw at native 16px, so a zoomed view is
+ * composed one 15x12 subwindow at a time and downscaled (the JS
+ * zoomBuffer, 1544).  zoom_pass marks a subwindow render: colony
+ * names, village war-marks and the capital sparkle are zoom-0-only
+ * (game.js:1582/1605); cur_zoom scales the minimap view rect. */
+static int zoom_pass = 0;
+static int cur_zoom = 0;
+
 /* tile classes come from the sim's exported tile_* helpers */
 #define t_hills(v)     tile_hills((uint8_t)(v))
 #define t_mountains(v) tile_mountains((uint8_t)(v))
@@ -481,7 +490,7 @@ static void draw_sidebar(const rm_view *vw) {
                 (uint8_t)dat_nations[CS.colonies[ci].owner_power & 3].color);
     }
     rm_hollow_rect(mmx + (vw->view_x - sx), mmy + (vw->view_y - sy),
-                VIEW_COLS, VIEW_ROWS, 0x0F);
+                VIEW_COLS << cur_zoom, VIEW_ROWS << cur_zoom, 0x0F);
 
     char buf[64];
     snprintf(buf, sizeof(buf), "%s %u", dat_seasons[cs_season()], cs_year());
@@ -599,8 +608,9 @@ void rm_scene_tile(int mx, int my, int px, int py) {
     }
 }
 
-/* drawMap (game.js:1555) — zoom 0; pulldown/dialog are cluster C */
-void rm_draw_map(int view_x, int view_y, int sel, int blink) {
+/* drawMap (game.js:1555) at native 16px — one 15x12 window; the
+ * pulldown/dialog layers are cluster C */
+static void draw_map_native(int view_x, int view_y, int sel, int blink) {
     rm_view vw = { view_x, view_y, sel, blink, 0 };
     if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
     rm_use_map_palette();
@@ -624,10 +634,13 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
         rm_draw_settlement(px, py, rm_colony_level_ci(ci), c->owner_power & 3,
                         0, 0xFF);
-        char nm[25];
-        memcpy(nm, c->name, 24);
-        nm[24] = 0;
-        tiny_center_shadow(nm, px + TILE / 2, py + TILE, lut_of(0x0F), 0);
+        if (!zoom_pass) {              /* names at zoom 0 only (1582) */
+            char nm[25];
+            memcpy(nm, c->name, 24);
+            nm[24] = 0;
+            tiny_center_shadow(nm, px + TILE / 2, py + TILE,
+                               lut_of(0x0F), 0);
+        }
     }
     /* native settlements */
     for (int vi = 0; vi < CS.n_villages; vi++) {
@@ -643,7 +656,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         /* §19.6 war-stance marks: count = raid-target score / 4 + 1
          * (0x181F:0x316 = func_0460F8; RULINGS 2026-08-07e) */
         int score, best = raid_target_score(vi, &score);
-        if (best >= 0 && score >= 0) {
+        if (!zoom_pass && best >= 0 && score >= 0) {
             int alarm = CR.alarm[vi];
             int tension = ti >= 0 && ti < 8 ? CR.tension[ti] : 0;
             int level = tension >= 75 ? 3
@@ -659,7 +672,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
                 xb += 2;
             }
         }
-        if (v->flags & 0x04)                 /* capital sparkle @0x4051 */
+        if (!zoom_pass && (v->flags & 0x04)) /* capital sparkle @0x4051 */
             rd_blit(&RD.icons, 17, px, py);
     }
     /* braves + natives-parked units (G.natives order) */
@@ -973,4 +986,45 @@ void rm_draw_pulldown(int mi, int menu_sel, int sel) {
         }
         py += 8;
     }
+}
+
+
+/* drawMap over G.zoom (game.js:1569-1686): zoom 0 draws straight to
+ * the fb; a zoomed view renders each 15x12 subwindow at native 16px
+ * and downscales it (nearest-neighbour — the JS drawImage scaling is
+ * a canvas artefact, FLAGGED) into the same 240x192 viewport, then
+ * one native pass lays down the chrome (bar/sidebar) around it. */
+void rm_draw_map_zoom(int view_x, int view_y, int sel, int blink,
+                      int zoom) {
+    if (zoom < 0) zoom = 0;
+    if (zoom > 3) zoom = 3;
+    cur_zoom = zoom;
+    if (zoom == 0) {
+        draw_map_native(view_x, view_y, sel, blink);
+        return;
+    }
+    static uint8_t zbuf[240 * 192];
+    int S = 1 << zoom;
+    zoom_pass = 1;
+    for (int j = 0; j < S; j++)
+        for (int i = 0; i < S; i++) {
+            draw_map_native(view_x + i * VIEW_COLS,
+                            view_y + j * VIEW_ROWS, sel, blink);
+            int qw = 240 / S, qh = 192 / S;
+            int qx = i * qw, qy = j * qh;
+            for (int y = 0; y < qh; y++) {
+                const uint8_t *src =
+                    RD.fb + (VP_Y + y * S) * RD_W + VP_X;
+                uint8_t *dst = zbuf + (qy + y) * 240 + qx;
+                for (int x = 0; x < qw; x++) dst[x] = src[x * S];
+            }
+        }
+    zoom_pass = 0;
+    draw_map_native(view_x, view_y, sel, blink);   /* the chrome pass */
+    for (int y = 0; y < 192; y++)
+        memcpy(RD.fb + (VP_Y + y) * RD_W + VP_X, zbuf + y * 240, 240);
+}
+
+void rm_draw_map(int view_x, int view_y, int sel, int blink) {
+    rm_draw_map_zoom(view_x, view_y, sel, blink, 0);
 }

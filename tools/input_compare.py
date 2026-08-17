@@ -67,6 +67,7 @@ def boot_click_script():
 def map_script():
     ev = []
     K = lambda k, a=0, s=0: ev.append([k, a, s])
+    C = lambda x, y: ev.append(["CLICK", x, y])
     # real unit movement first: empty land, water no-ops, ships,
     # villages, rumours and the newly ported native/REF attack arm all
     # resolve identically; the directions are empirically pinned to
@@ -80,6 +81,21 @@ def map_script():
               "ArrowUp", "ArrowUp"):
         K(k)
     K("m")
+    # §26.7 zoom: x out (recentres), pan in viewMode, click at 8px
+    # tiles, level rows via VIEW, z back in
+    K("x")                          # zoom 1 (30 x 24)
+    K("v")
+    K("ArrowRight")
+    K("m")
+    C(120, 104)                     # viewport centre at TILE_PX 8
+    K("x")                          # zoom 2 (60 x 48)
+    C(60, 52)
+    K("z")
+    K("z")                          # back to 15 x 12
+    K("v", 1)                       # Alt+V opens VIEW
+    K("X")                          # accel: the Zoom Out row
+    K("v", 1)
+    K("Z")                          # accel: the Zoom In row — home
     # unit cycle: centre view, next, skip, orders — several turns' worth,
     # with movement bursts so DIFFERENT units step (village entries,
     # rumour squares and the attack arm all get live chances)

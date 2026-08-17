@@ -170,7 +170,7 @@ INPUT = """([save, events]) => {
       mr: G.menuRow, d: G.difficulty, n: G.nation, ldr: G.leader,
       bp: G.briefPage || 0, rep: G.report || '', sel: G.sel,
       vx: G.view.x, vy: G.view.y, om: G.openMenu, ms: G.menuSel,
-      vm: G.viewMode ? 1 : 0, col: G.colony, cv: G.colonyView,
+      vm: G.viewMode ? 1 : 0, z: G.zoom, col: G.colony, cv: G.colonyView,
       mks: G.marketSel, sh: G.showHidden ? 1 : 0,
       cn: G.colonyNumbers ? 1 : 0, vr: G.villageRow,
       cp: G.colonyPopup === 'build' ? 2 : G.colonyPopup === 'occupation' ? 3

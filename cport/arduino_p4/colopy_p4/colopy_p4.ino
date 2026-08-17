@@ -424,7 +424,8 @@ static void draw_screen(void) {
         /* 4th arg = the BLINK flag (unit drawn while truthy), NOT
          * show_hidden — passing 0 there kept the active unit invisible
          * on the board (user report 2026-08-16, the hidden caravel) */
-        rm_draw_map(UI.view_x, UI.view_y, UI.sel, map_blink);
+        rm_draw_map_zoom(UI.view_x, UI.view_y, UI.sel, map_blink,
+                         UI.zoom);
         if (UI.open_menu >= 0)
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
@@ -543,6 +544,8 @@ static void game_tap(int gx, int gy) {
      * active unit's own tile falls through to the click layer's
      * stacked-unit cycling; everything else clicks. */
     if (UI.screen == SCR_MAP && UI.open_menu < 0 && !UI.view_mode &&
+        UI.zoom == 0 &&                /* 16px tiles only; zoomed taps
+                                        * go to in_click (TILE_PX-aware) */
         gx < 240 && gy >= 8 &&
         UI.sel >= 0 && UI.sel < CR.n_units_order) {
         int u = CR.units_order[UI.sel];
@@ -1000,7 +1003,9 @@ void loop() {
         /* animation: redraw the map when the unit blink flips; re-flush
          * (LUT only, no redraw) when the water cycle steps a phase */
         int bl = blink_now();
-        if (UI.screen == SCR_MAP && bl != map_blink) {
+        /* zoom >= 2 composes 16-64 subwindows per frame — too dear for
+         * the 3 Hz blink; the unit stays drawn (FLAGGED perf choice) */
+        if (UI.screen == SCR_MAP && UI.zoom < 2 && bl != map_blink) {
             map_blink = bl;
             draw_screen();
         } else if (cyc_wanted) {

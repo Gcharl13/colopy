@@ -42,13 +42,25 @@ void ui_init(void) {
 
 /* centerOn (game.js:758) */
 static void center_on(int tx, int ty) {
-    int x = tx - (VIEW_COLS >> 1), y = ty - (VIEW_ROWS >> 1);
-    if (x > COLOPY_MAP_W - VIEW_COLS) x = COLOPY_MAP_W - VIEW_COLS;
-    if (y > COLOPY_MAP_H - VIEW_ROWS) y = COLOPY_MAP_H - VIEW_ROWS;
+    /* the JS VIEW_COLS()/VIEW_ROWS() are zoom-scaled (game.js:755) */
+    int cols = VIEW_COLS << UI.zoom, rows = VIEW_ROWS << UI.zoom;
+    int x = tx - (cols >> 1), y = ty - (rows >> 1);
+    if (x > COLOPY_MAP_W - cols) x = COLOPY_MAP_W - cols;
+    if (y > COLOPY_MAP_H - rows) y = COLOPY_MAP_H - rows;
     if (x < 0) x = 0;
     if (y < 0) y = 0;
     UI.view_x = x;
     UI.view_y = y;
+}
+
+/* setZoom (game.js:11342): clamp 0..3, recentre on the active unit or
+ * the old window's centre */
+static int sel_unit(void);
+static void set_zoom(int z) {
+    UI.zoom = (int8_t)(z < 0 ? 0 : z > 3 ? 3 : z);
+    int ui = sel_unit();
+    if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
+    else center_on(UI.view_x + 7, UI.view_y + 6);
 }
 
 static int sel_unit(void) {
@@ -246,6 +258,22 @@ static void run_menu_row(void) {
         if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
     } else if (strcmp(l, "Show Hidden Terrain") == 0) {
         UI.show_hidden = (int8_t)!UI.show_hidden;
+    /* the zoom rows (game.js:11375-11383; MENU.TXT spells the accels
+     * into the labels, both spellings resolve) */
+    } else if (strcmp(l, "Zoom In") == 0 ||
+               strcmp(l, "Zoom In   Z") == 0) {
+        set_zoom(UI.zoom - 1);
+    } else if (strcmp(l, "Zoom Out") == 0 ||
+               strcmp(l, "Zoom Out   X") == 0) {
+        set_zoom(UI.zoom + 1);
+    } else if (strcmp(l, "Zoom Level 15 x 12") == 0) {
+        set_zoom(0);
+    } else if (strcmp(l, "Zoom Level 30 x 24") == 0) {
+        set_zoom(1);
+    } else if (strcmp(l, "Zoom Level 60 x 48") == 0) {
+        set_zoom(2);
+    } else if (strcmp(l, "Zoom Level 120 x 96") == 0) {
+        set_zoom(3);
     /* ORDERS rows — the JS dispatch table (game.js:11350) binds these
      * to the SAME functions the map keys run, so each row re-enters
      * in_key with its key (the menu is already closed at this point) */
@@ -1004,6 +1032,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
             }
             return;
         }
+        /* §26.7 zoom keys (game.js:12608): z in, x out */
+        if (key_is(k, "z") || key_is(k, "Z")) { set_zoom(UI.zoom - 1); return; }
+        if (key_is(k, "x") || key_is(k, "X")) { set_zoom(UI.zoom + 1); return; }
         /* 8-way movement (game.js:12603) */
         static const struct { const char *k; int8_t dx, dy; } DIR[] = {
             { "ArrowLeft", -1, 0 }, { "ArrowRight", 1, 0 },
@@ -1628,8 +1659,9 @@ static void in_click_inner(int mx, int my, int right) {
             return;
         }
         if (hit(mx, my, 0, 8, 240, 192)) {
-            int tx = UI.view_x + (mx - 0) / 16;
-            int ty = UI.view_y + (my - 8) / 16;
+            int tp = 16 >> UI.zoom;          /* TILE_PX (game.js:757) */
+            int tx = UI.view_x + (mx - 0) / tp;
+            int ty = UI.view_y + (my - 8) / tp;
             /* a pending Go To takes this click (goToClick: the armed
              * unit walks toward the tile over as many turns as needed —
              * cmd_goto sets orders 3 + the goal the turn step walks) */

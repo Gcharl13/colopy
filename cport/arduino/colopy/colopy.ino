@@ -289,7 +289,8 @@ static void draw_screen(void) {
     default:                                 /* map + everything else */
         /* 4th arg = the BLINK flag (unit drawn while truthy), NOT
          * show_hidden — passing 0 there kept the active unit hidden */
-        rm_draw_map(UI.view_x, UI.view_y, UI.sel, map_blink);
+        rm_draw_map_zoom(UI.view_x, UI.view_y, UI.sel, map_blink,
+                         UI.zoom);
         if (UI.open_menu >= 0)
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
@@ -550,7 +551,9 @@ void loop() {
      * (LUT only) when the water cycle steps a phase */
     if (game_mode && !ask_active) {
         int bl = blink_now();
-        if (UI.screen == SCR_MAP && bl != map_blink) {
+        /* zoom >= 2 composes 16-64 subwindows per frame — too dear for
+         * the 3 Hz blink; the unit stays drawn (FLAGGED perf choice) */
+        if (UI.screen == SCR_MAP && UI.zoom < 2 && bl != map_blink) {
             map_blink = bl;
             draw_screen();
         } else if (cyc_wanted) {
