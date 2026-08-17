@@ -384,6 +384,41 @@ static void scene_grab(int px, int py, uint8_t *dst, int tw, int th) {
         }
 }
 
+/* the plaza row's colonist under (mx,my) — the SAME pack the painter
+ * solves (func_0270D0): people first, then the garrison after a 4-px
+ * gap.  Garrison entries are units, not colonists, so they answer -1
+ * (game.js:12193 skips e.colonist < 0). */
+int rm_plaza_hit(int ci, int mx, int my) {
+    if (ci < 0 || ci >= CS.n_colonies) return -1;
+    const ColonyRecord *c = &CS.colonies[ci];
+    int icons[64], nicons = 0, npeople;
+    for (int k = 0; k < c->population && k < 32; k++)
+        icons[nicons++] = colonist_figure(c->profession[k]);
+    npeople = nicons;
+    for (int q = 0; q < CR.n_units_order && nicons < 64; q++) {
+        int ui = CR.units_order[q];
+        if (CS.units[ui].map_x == c->map_x && CS.units[ui].map_y == c->map_y)
+            icons[nicons++] = (int)dat_units[CS.units[ui].type].icon - 1;
+    }
+    if (!nicons) return -1;
+    int total_w = 0;
+    for (int i = 0; i < nicons; i++) total_w += icon_w(icons[i]);
+    int extra = nicons > npeople ? 4 : 0;
+    int gap = 2;
+    while (gap * (nicons - 1) + extra + total_w >= 96) gap--;
+    int x = 2;
+    for (int i = 0; i < nicons; i++) {
+        int w = icon_w(icons[i]), h = icon_h(icons[i]);
+        if (i < npeople && mx >= x && mx < x + w &&
+            my >= 142 && my < 142 + h)
+            return i;
+        int adv = w + gap;
+        x += adv > 1 ? adv : 1;
+        if (i == npeople - 1) x += 4;
+    }
+    return -1;
+}
+
 void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                     int ship_sel, int view, int numbers);
 

@@ -510,6 +510,93 @@ int rm_dialog_row_hit(const char *key, const rm_subs *subs,
 }
 
 
+
+/* ---- the colony popups (drawColonyPopup, game.js:3955) --------------
+ * A WOODTILE plaque titled from LABELS @CTITLE (4 "Select An Item To
+ * Build" / 8 "Select a Profession for <who>"), then label rows with a
+ * right-aligned NOTE column (build: "(N Hammers) (M Tools)"; jobs:
+ * "job - made").  The BUILD picker runs at the SMALL pitches with a
+ * bright-gold "(F1 for Help)" footer (census3_build_picker); the jobs
+ * popup keeps the framework font.  The row model is the input layer's
+ * (build_rows/jobs_rows) — this draws and hit-tests it. */
+static int cpop_geom(const char *title, const char *const *labels,
+                     const char *const *notes, int n, int small,
+                     int *x, int *y, int *w, int *h, int *seed) {
+    dresolve();
+    const rd_font *f = dfont(small);
+    int tp = dtext(small), rp = drow(small);
+    int cw = 0x50;
+    for (int i = 0; i < n; i++) {
+        int lw = rd_text_width(f, labels[i]) +
+                 (notes && notes[i] ? rd_text_width(f, notes[i]) : 0) + 20;
+        if (lw > cw) cw = lw;
+    }
+    if (title) {
+        int tw = rd_text_width(f, title) + 10;
+        if (tw > cw) cw = tw;
+    }
+    int foot = small ? 10 : 0;
+    *w = cw + 6;
+    *h = 6 + tp + 3 + n * rp + 3 + foot;
+    *x = round_half(320 - *w);
+    {
+        int yy = round_half(200 - *h);
+        *y = yy < 2 ? 2 : yy;
+    }
+    *seed = *y + 6 + tp + 3;
+    return 1;
+}
+
+void rm_draw_colony_popup(const char *title, const char *const *labels,
+                          const char *const *notes, int n, int row,
+                          int small) {
+    int x, y, w, h, seed;
+    if (n < 0) n = 0;
+    if (!cpop_geom(title, labels, notes, n, small, &x, &y, &w, &h, &seed))
+        return;
+    const rd_font *f = dfont(small);
+    int rp = drow(small);
+    rm_plaque(x, y, w, h);
+    if (title) {
+        const uint8_t ink[4] = { 0xFF, 0xFE, 0xFD, 0 };
+        rd_text(f, title, x + 5, y + 6, ink);
+    }
+    for (int k = 0; k < n; k++) {
+        int ry = seed + k * rp;
+        int sel = k == row;
+        if (sel) rd_fill(x + 3, ry, w - 6, rp - 2, SELECT_GAME);
+        const uint8_t ink[4] = { 0xFF, (uint8_t)(sel ? 0xFC : 0xFE),
+                                 (uint8_t)(sel ? 0xFB : 0xFD), 0 };
+        rd_text(f, labels[k], x + 9, ry + 1, ink);
+        if (notes && notes[k] && notes[k][0])
+            rd_text(f, notes[k],
+                    x + w - 8 - rd_text_width(f, notes[k]), ry + 1, ink);
+    }
+    if (small) {
+        const uint8_t ink[4] = { 0xFF, 0xFC, 0xFB, 0 };
+        const char *f1 = "(F1 for Help)";
+        rd_text(f, f1, x + w - 8 - rd_text_width(f, f1), y + h - 11, ink);
+    }
+}
+
+/* the tapped row, -1 outside the box (the JS dismisses and falls
+ * through), -2 inside the box but off the rows */
+int rm_colony_popup_hit(const char *title, const char *const *labels,
+                        const char *const *notes, int n, int small,
+                        int mx, int my) {
+    int x, y, w, h, seed;
+    if (n < 0) n = 0;
+    if (!cpop_geom(title, labels, notes, n, small, &x, &y, &w, &h, &seed))
+        return -1;
+    if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
+    int rp = drow(small);
+    if (mx >= x + 3 && mx < x + w - 3 && my >= seed) {
+        int k = (my - seed) / rp;
+        if (k >= 0 && k < n) return k;
+    }
+    return -2;
+}
+
 /* ---- the trade-route screen (drawTrade, game.js:7896) ---------------
  * Over the map: a WOODTILE plaque with the mode's GAME.TXT head
  * (@TRADESTART with NUMBER0 = the next stop number / @TRADEDELETE /

@@ -173,6 +173,7 @@ def map_script():
     K("Escape")                      # close without committing
     K("l")                           # @LOBOTOMIZE (colony) / load (map)
     K("b")                           # rush-buy ask (colony) / build (map)
+    colony_clicks(C, K)              # the colony pointer layer, live here
     K("c")
     # slice 2: menu Enter + accelerators
     K("v", 1)                        # Alt+V opens VIEW
@@ -268,6 +269,23 @@ def map_script():
     K("Escape")
     C(310, 185)                     # exit box -> map
     return ev
+
+
+def colony_clicks(C, K):
+    """the colony screen's pointer layer (onClick 'colony', 12130):
+    scene cells, the plaza row, the build buttons, popup rows."""
+    C(256, 64)                      # scene centre cell: works itself, no-op
+    C(280, 64)                      # cell (1,0): send the selected colonist
+    C(280, 64)                      # again: select him / open his menu
+    C(160, 100)                     # a popup row (or dismiss + fall through)
+    C(6, 146)                       # plaza colonist 0
+    C(6, 146)                       # again -> the jobs popup
+    C(160, 96)                      # commit a popup row
+    C(303, 162)                     # view button 2 (build)
+    C(276, 142)                     # BUILD_BTN change -> the picker
+    C(160, 60)                      # a picker row
+    C(224, 142)                     # BUILD_BTN buy -> the rush-buy ask
+    C(303, 132)                     # view button 0 (production)
 
 
 def main():

@@ -252,8 +252,17 @@ static void draw_screen(void) {
     case SCR_COLONY: {
         int ci = ui_colony_cs_index();
         if (ci >= 0)
-            rm_draw_colony(ci, 1653u, -1, 0, UI.colony_view,
+            rm_draw_colony(ci, 1653u, UI.colonist_sel, 0, UI.colony_view,
                            cs_colony_numbers());
+        /* the jobs / construction popup over it (drawColonyPopup) */
+        if (UI.colony_popup) {
+            static char cl[64][40], cn[64][40], ct[64];
+            static const char *clp[64], *cnp[64];
+            int pn = ui_colony_popup_model(cl, cn, ct, (int)sizeof(ct), 64);
+            for (int i = 0; i < pn; i++) { clp[i] = cl[i]; cnp[i] = cn[i]; }
+            rm_draw_colony_popup(ct, clp, cnp, pn, UI.colony_popup_row,
+                                 ui_colony_popup_small());
+        }
         break;
     }
     case SCR_EUROPE:

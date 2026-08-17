@@ -789,6 +789,7 @@ static int player_colony_rec(int ord) {
     return -1;
 }
 
+
 /* ---- the construction picker (openBuildPicker, game.js:3989) ----------
  * Row NAMES in colonyPopupRows 'build' order (game.js:3914): the
  * "(No Production)" stop row, then buildOptions (game.js:2938) — every
@@ -1009,6 +1010,149 @@ static void jobs_popup_commit(void) {
 }
 /* colonyPopupCommit (game.js:3996), the 'build' arm: the row becomes
  * the construction target and the popup closes */
+/* ---- the colony popups' display model (colonyPopupRows 3895) --------
+ * build: @CTITLE 4 titles it, row 0 is @CTITLE 5 "(No Production)",
+ * labels in CAPITALS with "(N Hammers) (M Tools)" notes; jobs: @CTITLE
+ * 8 + the colonist, row 0 "No job (plaza)", each workplace noting
+ * "job - made".  Shared with the shells' painter and the hit-test. */
+int ui_colony_popup_model(char labels[][40], char notes[][40],
+                          char *title, int tcap, int cap) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci < 0 || !UI.colony_popup) return 0;
+    const ColonyRecord *c = &CS.colonies[cci];
+    const char *names[BUILD_MAX_ROWS];
+    if (UI.colony_popup == 3) {
+        /* occupationRows (game.js:3883): every OUTDOOR job with THIS
+         * cell's yield, then "Return to the fence" */
+        int k = UI.colonist_sel, slot = -1;
+        for (int q = 0; q < 8; q++)
+            if ((uint8_t)c->tiles[q] == (uint8_t)k) slot = q;
+        if (k < 0 || k >= c->population || slot < 0) return 0;
+        snprintf(title, (size_t)tcap, "%s %s", dat_text_ctitle[8],
+                 c->profession[k] < DAT_JOBEXPERT_COUNT
+                     ? dat_jobexpert[c->profession[k]] : "");
+        int sol = rt_sol(cci), n2 = 0;
+        for (int job = 0; job <= 8 && n2 < cap - 1; job++) {
+            int y = field_yield(c, sol, job, c->profession[k],
+                                colony_cell_dx[slot], colony_cell_dy[slot]);
+            int g = colony_job_good(job);
+            snprintf(labels[n2], 40, "%s",
+                     job < DAT_JOBS_COUNT ? dat_jobs[job] : "");
+            snprintf(notes[n2], 40, "%d %s", y,
+                     g >= 0 && g < N_GOODS ? dat_cargo[g].name : "");
+            n2++;
+        }
+        if (n2 < cap) {
+            snprintf(labels[n2], 40, "Return to the fence");
+            notes[n2][0] = 0;
+            n2++;
+        }
+        return n2;
+    }
+    int n = UI.colony_popup == 2 ? build_rows(cci, names)
+                                 : jobs_rows(cci, names);
+    if (n > cap) n = cap;
+    if (UI.colony_popup == 2) {
+        snprintf(title, (size_t)tcap, "%s", dat_text_ctitle[4]);
+        for (int i = 0; i < n; i++) {
+            notes[i][0] = 0;
+            if (!names[i]) {
+                snprintf(labels[i], 40, "%s", dat_text_ctitle[5]);
+                continue;
+            }
+            char up[40];
+            snprintf(up, sizeof(up), "%s", names[i]);
+            for (char *q = up; *q; q++)
+                if (*q >= 'a' && *q <= 'z') *q = (char)(*q - 32);
+            snprintf(labels[i], 40, "%s", up);
+            for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
+                if (strcmp(dat_buildings[b].name, names[i]) == 0) {
+                    if (dat_buildings[b].tools_x10)
+                        snprintf(notes[i], 40, "(%d Hammers) (%d Tools)",
+                                 (int)dat_buildings[b].cost,
+                                 (int)dat_buildings[b].tools_x10 * 10);
+                    else
+                        snprintf(notes[i], 40, "(%d Hammers)",
+                                 (int)dat_buildings[b].cost);
+                    break;
+                }
+        }
+        return n;
+    }
+    {
+        int k = UI.colonist_sel;
+        const char *who = k >= 0 && k < c->population &&
+                          c->profession[k] < DAT_JOBEXPERT_COUNT
+                              ? dat_jobexpert[c->profession[k]] : "";
+        snprintf(title, (size_t)tcap, "%s %s", dat_text_ctitle[8], who);
+    }
+    for (int i = 0; i < n; i++) {
+        notes[i][0] = 0;
+        if (!names[i]) {
+            snprintf(labels[i], 40, "No job (plaza)");
+            continue;
+        }
+        snprintf(labels[i], 40, "%s", names[i]);
+        int job = workplace_job_for_name(names[i]);
+        if (job < 0) continue;
+        int g = colony_job_good(job);
+        const char *made = g >= 0 && g < N_GOODS ? dat_cargo[g].name
+                         : g == -1 ? "Hammers" : g == -2 ? "Bells"
+                         : g == -3 ? "Crosses" : "Teaching";
+        snprintf(notes[i], 40, "%s - %s",
+                 job < DAT_JOBS_COUNT ? dat_jobs[job] : "", made);
+    }
+    return n;
+}
+int ui_colony_popup_small(void) { return UI.colony_popup == 2; }
+
+/* bestFieldJob (game.js:2601): the field job with the best yield on
+ * this cell; an EXPERT keeps his own trade when it yields anything */
+static int best_field_job(int cci, int k, int dx, int dy) {
+    const ColonyRecord *c = &CS.colonies[cci];
+    int sol = rt_sol(cci), best = 0, besty = -1;
+    for (int job = 0; job <= 8; job++) {
+        int y = field_yield(c, sol, job, c->profession[k], dx, dy);
+        if (y > besty) { besty = y; best = job; }
+    }
+    uint8_t prof = c->profession[k];
+    if (prof) {
+        for (int job = 0; job <= 8; job++)
+            if (colony_is_expert(prof, job) &&
+                field_yield(c, sol, job, prof, dx, dy) > 0)
+                return job;
+    }
+    return best;
+}
+
+/* colonyPopupCommit 'occupation' (game.js:4003): a job row re-tasks the
+ * worker on his cell (Teacher through the same guard); the last row
+ * calls him back to the plaza (cell null + job null) */
+static void occupation_commit(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci < 0) { UI.colony_popup = 0; return; }
+    ColonyRecord *c = &CS.colonies[cci];
+    int k = UI.colonist_sel, row = UI.colony_popup_row;
+    if (k >= 0 && k < c->population) {
+        if (row == 9) {                       /* Return to the fence */
+            for (int q = 0; q < 8; q++)
+                if ((uint8_t)c->tiles[q] == (uint8_t)k)
+                    c->tiles[q] = (int8_t)0xFF;
+            c->occupation[k] = 0xFF;
+        } else if (row >= 0 && row <= 8) {
+            int job = row;
+            if (job < DAT_JOBS_COUNT &&
+                strcmp(dat_jobs[job], "Teacher") == 0 &&
+                teacher_guard(cci, k)) {
+                UI.colony_popup = 0;
+                return;
+            }
+            c->occupation[k] = (uint8_t)job;
+        }
+    }
+    UI.colony_popup = 0;
+}
+
 static void build_picker_commit(void) {
     int cci = player_colony_rec(UI.colony);
     if (cci >= 0) {
@@ -1649,6 +1793,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
             int n = 1;
             if (cci >= 0)
                 n = UI.colony_popup == 2 ? build_rows(cci, names)
+                  : UI.colony_popup == 3 ? 10      /* 9 jobs + the fence */
                                          : jobs_rows(cci, names);
             if (key_is(k, "ArrowUp"))
                 UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
@@ -1656,6 +1801,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 UI.colony_popup_row = (int8_t)((UI.colony_popup_row + 1) % n);
             if (key_is(k, "Enter") || key_is(k, " ")) {
                 if (UI.colony_popup == 2) build_picker_commit();
+                else if (UI.colony_popup == 3) occupation_commit();
                 else jobs_popup_commit();
             }
             if (key_is(k, "Escape")) UI.colony_popup = 0;
@@ -1986,8 +2132,10 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     }
     case SCR_COLONY: {
-        /* order per the JS: dock ships, view buttons, build buttons
-         * (unbound), the production numbers toggle, the exit box */
+        /* order per the JS (onClick 'colony', game.js:12130): an open
+         * popup, the scene panel's nine cells, the plaza row, dock
+         * ships, view buttons, the build buttons, the numbers toggle,
+         * the exit box */
         const ColonyRecord *c = 0;
         int cci = -1, ord = -1;
         for (int k = 0; k < CS.n_colonies; k++) {
@@ -1995,6 +2143,77 @@ static void in_click_inner(int mx, int my, int right) {
             if (++ord == UI.colony) { cci = k; break; }
         }
         if (cci >= 0) c = &CS.colonies[cci];
+        if (UI.colony_popup) {
+            /* a row commits; anything else DISMISSES and falls through
+             * so the click is not wasted (game.js:12140) */
+            static char plabels[64][40], pnotes[64][40], ptitle[64];
+            const char *lp[64], *np[64];
+            int pn = ui_colony_popup_model(plabels, pnotes, ptitle,
+                                           (int)sizeof(ptitle), 64);
+            for (int i = 0; i < pn; i++) { lp[i] = plabels[i];
+                                           np[i] = pnotes[i]; }
+            int r = rm_colony_popup_hit(ptitle, lp, np, pn,
+                                        ui_colony_popup_small(), mx, my);
+            if (r >= 0) {
+                UI.colony_popup_row = (int8_t)r;
+                if (UI.colony_popup == 2) build_picker_commit();
+                else if (UI.colony_popup == 3) occupation_commit();
+                else jobs_popup_commit();
+                return;
+            }
+            UI.colony_popup = 0;
+        }
+        /* the scene panel's nine cells (224,32,72,72 at 24px): a click
+         * on a WORKING colonist selects him, a second opens his jobs
+         * menu; an empty cell sends the SELECTED colonist out to it on
+         * the field's best job (game.js:12146-12190) */
+        if (c && hit(mx, my, 224, 32, 72, 72)) {
+            int cx = (mx - 224) / 24 - 1, cy = (my - 32) / 24 - 1;
+            if (!cx && !cy) return;               /* the centre works itself */
+            int slot = -1;
+            for (int q = 0; q < 8; q++)
+                if (colony_cell_dx[q] == cx && colony_cell_dy[q] == cy)
+                    slot = q;
+            if (slot < 0) return;
+            ColonyRecord *cw = &CS.colonies[cci];
+            int tw = (uint8_t)cw->tiles[slot];      /* 0xFF = empty */
+            int on = (tw != 0xFF && tw < cw->population) ? tw : -1;
+            if (on >= 0) {
+                if (UI.colonist_sel == on) {
+                    UI.colony_popup = 3;      /* his OCCUPATION menu */
+                    UI.colony_popup_row = 0;
+                } else
+                    UI.colonist_sel = (int8_t)on;
+                return;
+            }
+            int k = UI.colonist_sel;
+            if (k >= 0 && k < cw->population) {
+                if (tile_water(map_at(cw->map_x + cx, cw->map_y + cy)) &&
+                    !colony_has_name(cci, "Docks")) {
+                    ev_emit("NODOCKS", 0, 0, cw->name, 0);   /* @NODOCKS */
+                    return;
+                }
+                for (int q = 0; q < 8; q++)      /* leave his old cell */
+                    if ((uint8_t)cw->tiles[q] == (uint8_t)k)
+                        cw->tiles[q] = (int8_t)0xFF;
+                cw->tiles[slot] = (int8_t)k;
+                cw->occupation[k] = (uint8_t)best_field_job(cci, k, cx, cy);
+            }
+            return;
+        }
+        /* the plaza row (0,130,120,48): select, re-click = the jobs
+         * menu.  Garrison units carry no menu (game.js:12193) */
+        if (c && hit(mx, my, 0, 130, 120, 48)) {
+            int k = rm_plaza_hit(cci, mx, my);
+            if (k >= 0) {
+                if (UI.colonist_sel == k) {
+                    UI.colony_popup = 1;
+                    UI.colony_popup_row = 0;
+                } else
+                    UI.colonist_sel = (int8_t)k;
+            }
+            return;
+        }
         if (c) {
             int nships = 0;
             for (int q = 0; q < CR.n_units_order; q++) {
@@ -2014,6 +2233,15 @@ static void in_click_inner(int mx, int my, int right) {
                 UI.colony_view = (int8_t)k;
                 return;
             }
+        /* BUILD_BTN (game.js:4130): buy (216,137,18,11) rush-buys,
+         * change (270,137,29,11) opens the picker — build view only */
+        if (UI.colony_view == 2) {
+            if (hit(mx, my, 216, 137, 18, 11)) { rush_buy(); return; }
+            if (hit(mx, my, 270, 137, 29, 11)) {
+                open_build_picker();
+                return;
+            }
+        }
         if (UI.colony_view == 0 && hit(mx, my, 207, 130, 95, 48)) {
             UI.colony_numbers = (int8_t)!UI.colony_numbers;
             return;

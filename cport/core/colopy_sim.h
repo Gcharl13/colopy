@@ -73,6 +73,12 @@ int  colony_has(const ColonyRecord *c, const char *building_name);
  * flat-list model the port mirrors; FLAGGED. */
 int  colony_has_name(int ci, const char *name);   /* JS includes(name) */
 int  workplace_job_for_name(const char *building_name); /* jobForBuilding */
+int  colony_is_expert(uint8_t prof, int job);  /* isExpert (2526) */
+/* worker slot -> cell offset (CELL_OF_WORKER, game.js:10338) */
+extern const int8_t colony_cell_dx[8], colony_cell_dy[8];
+int  colony_job_good(int job);   /* JOB_GOOD[job]: cargo id, or < 0 for
+                                  * hammers(-1)/bells(-2)/crosses(-3)/
+                                  * teaching(-4) */
 int  colony_school_level(int ci);     /* schoolLevel (game.js:3042) */
 int  colony_profession_class(int prof); /* professionClass: tier, 4 = none */
 int  bld_first_row(int idx);         /* JS bldIndex/DATA.buildings.find */

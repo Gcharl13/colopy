@@ -24,6 +24,9 @@ static const int8_t JOB_GOOD[19] = {
 static int job_good(int job) {
     return (job >= 0 && job < 19) ? JOB_GOOD[job] : J_NONE;
 }
+/* the same map for the UI layer's popup notes ("job - made"): >= 0 is a
+ * cargo id, the negatives are hammers/bells/crosses/teaching */
+int colony_job_good(int job) { return job_good(job); }
 
 /* Raw input per finished good (game.js:2466 RAW_FOR; five chains byte-cited
  * @0xA660..0xA68C, hammers<-lumber PEDIA @BUILDING35, muskets<-tools the
@@ -45,6 +48,9 @@ static int raw_for(int g) {
  * CELL_OF_WORKER; order pinned by census3 Jamestown). */
 static const int8_t CELL_DX[8] = { 0, 1, 0, -1, -1, 1, 1, -1 };
 static const int8_t CELL_DY[8] = { -1, 0, 1, 0, -1, -1, 1, 1 };
+/* the same table for the UI layer's scene-panel hit-test */
+const int8_t colony_cell_dx[8] = { 0, 1, 0, -1, -1, 1, 1, -1 };
+const int8_t colony_cell_dy[8] = { -1, 0, 1, 0, -1, -1, 1, 1 };
 
 /* The tier-packed buildings field (+0x84): [bit base, width, chain length]
  * per family, family base bit == its chain's first @BUILDING index
@@ -220,11 +226,13 @@ static int tory_penalty(const ColonyRecord *c, int sol) {
 /* isExpert (game.js:2526): the colonist's profession byte is a @JOB row;
  * expert when its expert TITLE matches the working job's expert title
  * (title comparison, exactly as the JS compares the strings). */
+int colony_is_expert(uint8_t prof, int job);   /* UI layer's bestFieldJob */
 static int is_expert(uint8_t prof, int job) {
     if (prof < 1 || prof >= DAT_JOBEXPERT_COUNT) return 0;
     if (job < 0 || job >= DAT_JOBEXPERT_COUNT) return 0;
     return strcmp(dat_jobexpert[prof], dat_jobexpert[job]) == 0;
 }
+int colony_is_expert(uint8_t prof, int job) { return is_expert(prof, job); }
 
 /* improvementBonus (game.js:2535, byte-verified @0x9EC6..0x9F23): ROAD adds
  * for goods > 3, PLOW for goods <= 3; the bonus is 2 for lumber or a

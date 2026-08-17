@@ -116,6 +116,8 @@ int  rm_building_group(int id);               /* BUILDING_GROUP[id], -1 OOB */
 void rm_draw_settlement(int px, int py, int level, int nation,
                         int tribe_colour, int mission);
 int  rm_colony_level_ci(int ci);
+/* the plaza row's colonist under a click, -1 = none/garrison */
+int  rm_plaza_hit(int ci, int mx, int my);
 int  rm_is_seen(int x, int y);
 /* the func_0033F2/003104 count-row machinery (colopy_colony_render.c) */
 typedef struct { int frame, count, sub, flags; } rm_crow_cell;
@@ -187,6 +189,14 @@ void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
 int  rm_dialog_rows_hit(const char *key, const rm_subs *subs,
                         const char *speaker, int mx, int my,
                         const char *const *rrows, int nrr);
+/* the colony popups (drawColonyPopup game.js:3955): label rows with a
+ * right-aligned note column; small = the build picker's pitches */
+void rm_draw_colony_popup(const char *title, const char *const *labels,
+                          const char *const *notes, int n, int row,
+                          int small);
+int  rm_colony_popup_hit(const char *title, const char *const *labels,
+                         const char *const *notes, int n, int small,
+                         int mx, int my);
 /* the trade-route screen (drawTrade game.js:7896): mode 1 create /
  * 2 assign / 3 delete over the caller's runtime rows */
 void rm_draw_trade(int mode, int step_no, const char *sofar,

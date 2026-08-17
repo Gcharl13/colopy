@@ -92,6 +92,11 @@ void ui_trade_sofar(char *out, int cap);
  * GAME.TXT caption its box quotes — for the shells' painter */
 int  ui_euro_menu_rows(char out[][64], int cap);
 const char *ui_euro_menu_caption(void);
+/* the colony popups' display model (colonyPopupRows, game.js:3895):
+ * labels + right-aligned notes + the @CTITLE title; small = build */
+int  ui_colony_popup_model(char labels[][40], char notes[][40],
+                           char *title, int tcap, int cap);
+int  ui_colony_popup_small(void);
 void in_key(const char *key, int alt, int shift);
 void in_click(int mx, int my, int right);
 
