@@ -1,7 +1,7 @@
 # .BIN — Audio Sample Bank
 
-A single concatenated PCM audio bank file referenced by the .COL
-sound-config files.
+A single concatenated PCM audio bank file, indexed from inside the loaded
+`?SOUND.COL` driver overlay (see the 2026-08-16 correction below).
 
 **1 .BIN file in COLONIZE/**:
 - `COLDIG.BIN` — 993,755 bytes
@@ -11,8 +11,14 @@ sound-config files.
 ## Layout
 
 Concatenated 8-bit unsigned PCM samples at 11025 Hz mono. No header.
-Each .COL configuration provides (offset, length) records into this
-file naming each sound effect.
+
+**Corrected 2026-08-16:** the per-effect (offset, length) index does NOT live
+in a decodable `.COL` data format — the `.COL` files are MZ driver executables
+(`formats/COL.md`, `docs/RESIDUAL_FINDINGS.md` §3) and the index sits in the
+loaded driver's data segment, which is not decoded. The audio milestone's
+empirical id→slice map (cross-correlation of per-id DOSBox captures against
+this file) is committed at `data_extracted/data/coldig_slices.json` with
+per-entry provenance — see `docs/AUDIO_PORT.md`.
 
 Total ~90 seconds of audio at 11025 Hz mono.
 

@@ -1,7 +1,13 @@
 # .MOV — MicroProse Cinematic Script
 
-A small index/script file that drives the opening cinematic. References
-sprite sequences from .SS files plus audio cues from COLDIG.BIN.
+A small index/script file that drives the opening cinematic's demo sequence.
+
+**Corrected 2026-08-16:** `.MOV` contains **no audio references** — the
+"audio cues from COLDIG.BIN" claim in the earlier version of this page was
+speculation, falsified when the file was decoded. The decoded record is
+`data_extracted/data/AMERICA_MOV.json` (structure in `spec/ui/cinematics.md`
+§11.3); the inferred per-frame layout below predates that decode and is kept
+only as history — trust the JSON, not this sketch.
 
 **1 .MOV file in COLONIZE/**:
 - `AMERICA.MOV` — 572 bytes (suspiciously small for a real video)

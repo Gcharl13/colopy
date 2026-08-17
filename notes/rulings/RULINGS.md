@@ -9820,3 +9820,47 @@ UnitRecord/PowerRecord layouts `importSav` decodes, and `func_02CFD0`'s
 decompile (writes DGROUP `[0x337]` on a modal result) matches the panel-mode
 model already in `port/src/game.js` — identifications and confidence, not
 behavior changes.
+
+## 2026-08-16 — Audio commissioned as a separately-scoped cport milestone (pragmatic tier)
+
+**Directive (user, 2026-08-16):** "this needs to be separate, but i need you to
+port the audio portion of colonization."
+
+**What stands, what changes.** The AUDIO_SPIKE NO-GO
+(`notes/rulings/AUDIO_SPIKE.md`) stands *for the fidelity done-bar*: the game
+port's bar remains "100% identical except audio", and nothing in this milestone
+gates or touches the P1–P7 pixel/behaviour oracles. What is superseded is the
+"no audio work" consequence: audio is now an active, **separately-scoped**
+milestone targeting the embedded C port, on its own branch
+(`claude/colonization-audio-port-mwt067`) and its own module (`cport/audio/`,
+compiled out of any build that does not opt in via `COLOPY_AUDIO`).
+
+**Scope decisions (user, question round 2026-08-16):**
+
+1. **Target = `cport/`** (Teensy 4.1 + CrowPanel Advance 7" ESP32-P4), as a
+   separate module. The JS port's `playTune` stub is unchanged.
+2. **Music = offline OPL2 render.** Each tune is rendered once, offline, by the
+   ORIGINAL `?SOUND.COL` driver running under the DOSBox harness
+   (`tools/dosbox_harness/`), captured per tune id via the in-game Sound Test
+   cheat. No runtime FM synthesis; no music-sequence-format RE required.
+3. **Fidelity bar = pragmatic first pass** ("APPROXIMABLE" per
+   `REWRITE_READINESS.md`): working audio now, every approximation explicitly
+   catalogued (`cport/audio/README.md`), nothing silently guessed.
+
+**New provenance tier: "empirical capture".** Sits below byte-verified and
+above speculation in `notes/TRUTH_HIERARCHY.md` terms. An empirical-capture
+artifact is *measured from the real game running under emulation* (a per-id WAV
+capture; a cross-correlation-derived `COLDIG.BIN` slice) rather than read from
+bytes at a cited offset. Every such artifact must carry a `"provenance"` field
+naming its capture, and must never be presented as byte-cited. SFX payloads
+themselves stay bit-clean (verbatim `COLDIG.BIN` slices); only the id→slice
+*mapping* is empirical.
+
+**Action.** `notes/PROJECT_BOARD.md` audio section rewritten and its stale
+`docs/AUDIO_SPIKE.md` links corrected to `notes/rulings/AUDIO_SPIKE.md` (same
+fix in `port/README.md`; note AUDIO_SPIKE itself cites a `docs/MOV_FORMAT.md`
+that does not exist — the decoded-MOV record is `spec/ui/cinematics.md` §11.3 +
+`data_extracted/data/AMERICA_MOV.json`). `formats/COL.md` rewritten around the
+MZ-overlay evidence (its "(sound_id, offset, size) triples" model was falsified
+by AUDIO_SPIKE / `docs/RESIDUAL_FINDINGS.md` §3); `formats/BIN.md` and
+`formats/MOV.md` corrected likewise. Design doc: `docs/AUDIO_PORT.md`.

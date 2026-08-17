@@ -134,4 +134,7 @@ What is left:
 - **AI opponents**, deliberately last: `spec/systems/ai.md` is the thinnest area
   in the spec and real opponents would mean inventing behaviour rather than
   porting it. The rival powers exist as diplomatic actors, not as players.
-- **Audio**, out of fidelity scope by user decision (`docs/AUDIO_SPIKE.md`).
+- **Audio**, out of fidelity scope by user decision
+  (`notes/rulings/AUDIO_SPIKE.md`); since 2026-08-16 a separately-scoped
+  milestone targets the embedded `cport/` instead (`docs/AUDIO_PORT.md`) —
+  this JS port's `playTune` stub stays a stub.
