@@ -897,6 +897,12 @@ static int build_rows(int cci, const char **names) {
     }
     return n;
 }
+/* test-only probe: the build picker's row model, so tools can diff it
+ * against the JS colonyPopupRows() (see the build-picker TODO above). */
+int ui_build_rows_probe(int cci, const char **names) {
+    return build_rows(cci, names);
+}
+
 /* the JS c.building NAME for the record's target byte. Units cannot be
  * expressed in the record's @BUILDING index, so a unit target committed
  * from the picker is held as 0xC0+u (input-layer encoding, outside the
@@ -2484,14 +2490,23 @@ static void in_click_inner(int mx, int my, int right) {
              * the unit stack — GAME_MANUAL.md p40 puts no "unoccupied"
              * condition on clicking a colony, and a colony square nearly
              * always holds units, so this guard makes the colony screen
-             * almost unreachable by clicking.  Dropping it on BOTH engines
-             * is correct and they agree on the colony (verified: JS
-             * G.colonies index == this own-colony ordinal, Vlissingen = 10
-             * in sav1653).  It is blocked one layer deeper: opening that
-             * colony makes the script reach the BUILD PICKER, and there
-             * input_compare shows `.cpr: JS 0 != C 1` — build_rows() and
-             * the JS colonyPopupRows() put the same build target at
-             * different row indices.  Reconcile the row MODEL first. */
+             * almost unreachable by clicking.  Dropping `&& !non` here and
+             * `&& !on.length` in the JS is the whole change.
+             *
+             * PROVEN so far (dumped from both engines, sav1653 colony 10
+             * "Vlissingen"): the colony INDEX agrees (JS G.colonies index
+             * == this own-colony ordinal), the build-picker ROW MODEL is
+             * identical row for row, and dat_buildings == DATA.buildings.
+             * So the earlier "index mismatch" and "row-model ordering"
+             * diagnoses were both WRONG — the first was a stale JS bundle
+             * (now guarded in tools/sim_trace.py).
+             *
+             * STILL OPEN: with the guard dropped, input_compare sav1653
+             * reports `.cpr: JS 0 != C 1` on 16 events beginning at event
+             * 188, the 'c' key on the newly-reachable colony screen.  The
+             * colony's build target at THAT point in the script (not at
+             * load) is the thing to dump next — ui_build_rows_probe()
+             * below exists for exactly that. */
             if (ci >= 0 && !non) {
                 UI.colony = (int8_t)ci;
                 UI.screen = SCR_COLONY;

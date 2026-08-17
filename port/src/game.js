@@ -12315,11 +12315,12 @@ function onClick(mx, my) {
         // through the units standing on that tile.
         // TODO(user report 2026-08-17): the COLONY should win over the stack
         // (GAME_MANUAL.md p40 attaches no "unoccupied" condition, and a colony
-        // square nearly always holds units).  The two engines DO agree on the
-        // colony itself; the blocker is one layer deeper -- opening it lets the
-        // sav1653 script reach the build picker, where input_compare reports
-        // `.cpr: JS 0 != C 1`, i.e. colonyPopupRows() and the C build_rows()
-        // order the same target differently.  Reconcile the row model first.
+        // square nearly always holds units).  PROVEN: the colony index, the
+        // build-picker row model and DATA.buildings all agree with the C port
+        // (dumped for sav1653 colony 10, Vlissingen).  STILL OPEN: dropping
+        // the guard leaves `.cpr: JS 0 != C 1` on 16 events from event 188 --
+        // the 'c' key on the newly-reachable colony screen.  Dump the colony's
+        // build target at that point in the script, not at load.
         const ci = G.colonies.findIndex(c => c.x === tx && c.y === ty);
         const on = G.units.map((u, i) => i).filter(i => G.units[i].x === tx && G.units[i].y === ty);
         if (ci >= 0 && !on.length) { G.colony = ci; G.screen = 'colony'; }
