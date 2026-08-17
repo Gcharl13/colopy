@@ -19,7 +19,11 @@ SCRATCH = ROOT / "cport" / "pak"
 
 
 def main():
-    key = sys.argv[1] if len(sys.argv) > 1 else "FOUNTAIN"
+    # Default = a REAL @-key.  It was "FOUNTAIN" until 2026-08-17, which
+    # is a WOODCUT caption ("THE FOUNTAIN OF YOUTH"), not an event key --
+    # so the bare invocation always exited 2 with "unknown event key"
+    # and this oracle silently never ran unless given an argument.
+    key = sys.argv[1] if len(sys.argv) > 1 else "RAIDSTORES"
     mode = int(sys.argv[2]) if len(sys.argv) > 2 else 0
     sel = int(sys.argv[3]) if len(sys.argv) > 3 else 0
     speaker = sys.argv[4] if len(sys.argv) > 4 else ""

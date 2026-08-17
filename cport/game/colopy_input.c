@@ -82,18 +82,18 @@ static int sel_unit(void) {
  * turn once its moves refreshed, and moving it threw the part-done work
  * away (user report 2026-08-17).
  *
- * TODO: the `&& CS.units[ui].orders == 0` test belongs here and in the
- * JS nextUnit, but adding it changes which unit is active, which walks
- * the fixed oracle scripts into states where the engines disagree —
- * savraleigh `.vy` off by one from event 58 (cosmetic) and sav1653
- * `.dg: JS 1 != C 2` from event 117 (dialog kind, not cosmetic), both
- * with `.sel`/`.u` still agreeing.  Resolve those two first. */
+ * Adding the test changed WHICH unit is active, which walked the fixed
+ * oracle scripts into three latent JS/C divergences they had never
+ * reached before (all fixed the same day): end_turn's missing recentre
+ * tail, the missing @WAREHOUSEFULL gate on unload, and the input
+ * oracle's dialog-shape-vs-dialog-kind projection mismatch. */
 static int next_unit(void) {
     int n = CR.n_units_order;
     for (int i = 1; i <= n; i++) {
         int k = (UI.sel + i) % n;
         int ui = CR.units_order[k];
-        if (!CR.unit_moves_undef[ui] && CS.units[ui].moves_remaining > 0) {
+        if (!CR.unit_moves_undef[ui] && CS.units[ui].moves_remaining > 0 &&
+            CS.units[ui].orders == 0) {
             UI.sel = k;
             center_on(CS.units[ui].map_x, CS.units[ui].map_y);
             return 1;
@@ -102,12 +102,21 @@ static int next_unit(void) {
     return 0;
 }
 
-/* endTurn = the full parity-verified step chain (host --turns order) */
+/* endTurn = the full parity-verified step chain (host --turns order),
+ * plus the JS endTurn's own TAIL (game.js:10820) — `G.msg = ''` and a
+ * recentre on the still-selected unit.  That tail was absent here and
+ * invisible for as long as the nextUnit() right after end_turn always
+ * succeeded and re-centred on its own.  Once next_unit learned to skip
+ * a unit under a standing order it can return 0, and then this is the
+ * only centring the new turn gets: savraleigh event 58 caught the C
+ * holding vy=42 where the JS had scrolled to 41. */
 static void end_turn(void) {
     turn_step_prefix();
     turn_step2();
     turn_step3();
     turn_step5();
+    int ui = sel_unit();
+    if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
 }
 
 /* advance (game.js:10866) */
@@ -1862,6 +1871,31 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 int ci = colony_rec_at_xy(CS.units[ui].map_x,
                                           CS.units[ui].map_y);
                 if (ci >= 0) {
+                    /* @WAREHOUSEFULL (game.js:11298): the pre-unload
+                     * spoilage warning.  The FIRST hold good that would
+                     * push the colony over the 100-ton threshold asks a
+                     * 2-row confirm, and only row 1 ("...anyway") lets
+                     * the unload run.  Absent here until 2026-08-17 —
+                     * the C walked straight into @CARGOUNLOAD.  It went
+                     * unseen because the fixed oracle script never had a
+                     * loaded ship sitting in a colony until the standing-
+                     * order fix changed which unit was active. */
+                    int full = -1;
+                    for (int s2 = 0; s2 < CR.unit_n_hold[ui]; s2++) {
+                        const hold_slot *h = &CR.unit_hold[ui][s2];
+                        if (CS.colonies[ci].stock[h->good] + h->qty > 100) {
+                            full = s2;
+                            break;
+                        }
+                    }
+                    if (full >= 0) {
+                        const hold_slot *h = &CR.unit_hold[ui][full];
+                        ev_emit("WAREHOUSEFULL",
+                                CS.colonies[ci].stock[h->good], 100,
+                                CS.colonies[ci].name,
+                                dat_cargo[h->good].name);
+                        if (ask_choice() != 1) return;
+                    }
                     int slots[EURO_HOLD_MAX], n = 0;
                     for (int s2 = 0; s2 < CR.unit_n_hold[ui]; s2++)
                         if (CR.unit_hold[ui][s2].qty > 0) slots[n++] = s2;

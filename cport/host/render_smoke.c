@@ -325,6 +325,16 @@ static void in_project(void) {
            UI.colony_popup, UI.colony_popup_row, UI.colonist_sel,
            UI.euro_menu, UI.euro_menu_row, UI.dlg, UI.dlg_entry,
            ui_build_target_probe());
+    /* the whole unit cycle's orders+moves, mirroring sim_trace's
+     * `ord` — the projection field that pins WHICH units next_unit
+     * is allowed to skip. */
+    printf("\"ord\":[");
+    for (int i = 0; i < CR.n_units_order; i++) {
+        int uu = CR.units_order[i];
+        printf("%s[%d,%d]", i ? "," : "", CS.units[uu].orders,
+               CR.unit_moves_undef[uu] ? -1 : CS.units[uu].moves_remaining);
+    }
+    printf("],");
     if (su >= 0)
         printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
                CS.units[su].map_y, CS.units[su].orders,

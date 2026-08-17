@@ -180,12 +180,25 @@ INPUT = """([save, events]) => {
       em: G.euroMenu ? ({ recruit: 1, purchase: 2, train: 3, ship: 4,
                           dockunit: 5 })[G.euroMenu] || 0 : 0,
       emr: G.euroMenuRow || 0,
-      dg: G.dialog ? (G.dialog.opts ? 2 : 1) : 0,
+      // The dialog KIND, matching the C's UI.dlg enum (colopy_input.h):
+      // 0 none, 1 @HOWMUCH5 (Europe sell), 2 @HOWMUCH1 (colony load),
+      // 3 @HOWMUCH2 (colony unload), 4 any other openDialog.  This read
+      // the SHAPE (opts?2:1) until 2026-08-17, which agreed with the C
+      // only because the fixed scripts reached @HOWMUCH5 and nothing
+      // else; once selection changed, the colony load/unload dialogs
+      // came up and the two vocabularies collided.
+      dg: G.dialog ? ({ HOWMUCH5: 1, HOWMUCH1: 2, HOWMUCH2: 3 })[G.dialog.key] || 4 : 0,
       dge: G.dialog ? (G.dialog.entry || '') : '',
       // The current colony's BUILD TARGET.  Absent until 2026-08-17, which
       // let a target divergence hide from the oracle until the build picker
       // surfaced it as a row number.
       bld: (G.colonies[G.colony] && G.colonies[G.colony].building) || '',
+      // EVERY player unit's standing order + moves, not just the
+      // selected one.  Added 2026-08-17 while hunting the view-follow
+      // divergence: `sel`/`u` agreeing proved nothing about the units
+      // the cycle SKIPPED, and skipping is what the orders test changed.
+      ord: G.units.map(x => [x.orders | 0,
+                             typeof x.movesLeft === 'number' ? x.movesLeft : -1]),
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };

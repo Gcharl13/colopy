@@ -26,6 +26,72 @@ Format:
 
 ---
 
+## 2026-08-17 — Standing orders in the unit cycle, and the three divergences it unmasked
+
+**Conflict**: `nextUnit()` / `next_unit()` handed a unit back as the active unit
+even when it carried a standing order, so a pioneer told to Clear/Plow or Build
+Road came round again the moment its moves refreshed, and stepping it threw the
+part-done work away (user report, 2026-08-17). Adding the obvious `!u.orders`
+test then broke the input oracle in three places at once, and the first two
+diagnoses of WHY were wrong.
+
+**Source A** — `@ORDERS`, NAMES.TXT (byte-verified, `spec/systems/unit.md`):
+0=No Orders, 1=Sentry, 2=Trade Route, 3=Go To, 4=Live In Village, 5=Fortify,
+6=Fortified, 7=Build Colony, 8=Clear/Plow, 9=Build Road. Any non-zero value is a
+unit that is busy; `docs/GAME_MANUAL.md` §5 describes an ordered unit as skipped
+by the cycle until the order completes or is cancelled.
+
+**Source B** — the JS/C parity oracles, which went RED on `savraleigh` (`.vy`,
+event 58) and `sav1653` (`.dg`, event 117) as soon as the test was added, with
+`.sel` and `.u` still agreeing on both sides.
+
+**Ruling**: the orders test is CORRECT and ships in both engines. Red oracles
+after a correct change mean the oracle found a pre-existing divergence, not that
+the change is wrong — the oracles prove C == JS, and both were free to be wrong
+together anywhere the fixed scripts never reached. All three were real and are
+fixed:
+
+1. **`end_turn()` had no recentre tail.** The JS `endTurn()` ends with
+   `G.msg = ''; if (G.units[G.sel]) centerOn(...)` (game.js:10820). The C's
+   `end_turn()` stopped after `turn_step5()`. Invisible for as long as the
+   `next_unit()` immediately after `end_turn()` always succeeded and re-centred
+   on its own; once a cycle of fully-ordered units let it return 0, the C held
+   its view where the JS scrolled. Fixed in `cport/game/colopy_input.c`.
+2. **The C's `unloadCargo` skipped `@WAREHOUSEFULL`.** The JS gates the whole
+   unload behind the 100-ton spoilage confirm and only proceeds on row 1
+   (game.js:11298); the C walked straight into `@CARGOUNLOAD`. Never reached
+   before because no loaded ship had been the active unit inside a colony.
+   Fixed in `cport/game/colopy_input.c`.
+3. **The input oracle compared two different vocabularies.** `sim_trace.py`
+   projected the dialog SHAPE (`G.dialog.opts ? 2 : 1`) while
+   `render_smoke.c` printed the C's dialog KIND (`UI.dlg`: 1=@HOWMUCH5,
+   2=@HOWMUCH1, 3=@HOWMUCH2). They agreed only because the scripts had reached
+   `@HOWMUCH5` and nothing else. The JS now tags each dialog with its key and
+   projects the same KIND. This was an ORACLE bug, not an engine divergence —
+   worth logging because it presented exactly like one.
+
+**Action taken**:
+- `port/src/game.js` — `!u.orders` in `nextUnit`; `key` recorded on every
+  `openDialog`/`askAmount` dialog.
+- `cport/game/colopy_input.c` — `orders == 0` in `next_unit`; the `end_turn`
+  recentre tail; the `@WAREHOUSEFULL` gate on unload.
+- `tools/sim_trace.py` — `dg` projects the dialog kind; new `ord` field
+  projecting EVERY unit's orders+moves (the field that proved the two engines
+  had identical unit state and so moved the hunt to the view path).
+- `cport/host/render_smoke.c` — the mirrored `ord` field.
+- `tools/render_event_compare.py` — default key was `FOUNTAIN`, a WOODCUT
+  caption and not an event key, so the bare invocation always exited 2 and this
+  oracle silently never ran; default is now `RAIDSTORES`.
+
+**Follow-up**: two earlier diagnoses of the colony-click blocker (a "colony index
+mismatch" and a "build-picker row-model ordering" problem) were both wrong and
+are withdrawn; the stale-bundle guard in `tools/sim_trace.py` exists because of
+the first. The remaining queued behaviour fixes (colony click regardless of the
+active unit, ship-to-Europe via the nearest sea lane, colonists at the fence and
+out of the food count) are unblocked by this and not yet landed.
+
+---
+
 ## 2026-06-19 — Runtime memory dump (`colonization-memory-map (1).md`) reconciled against the static disasm
 
 **Conflict**: a runtime-verified PowerRecord field map (observed in js-dos/DOSBox,
