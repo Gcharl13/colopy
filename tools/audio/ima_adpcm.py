@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""IMA ADPCM (DVI) 4-bit mono codec — the COLAUDIO.PAK music codec.
+
+Block format (COLAUDIO.PAK codec 1, defined in docs/AUDIO_PORT.md):
+every block encodes exactly BLOCK samples (1024) and is byte-self-contained:
+
+    i16le predictor   decoder state entering the block
+    u8    step_index  0..88
+    u8    pad         0
+    512 B nibbles     1024 4-bit codes, low nibble first
+
+Self-contained blocks make SD streaming seekable at block granularity. The C
+decoder in cport/audio/colopy_audio_mix.c implements the same spec; the host
+test round-trips one against the other (smoke --audio).
+
+Standard IMA tables; no dependency on the deprecated `audioop` module.
+Run this file directly for a self-test: encode/decode a synthetic sweep and
+report SNR (expect > 26 dB) plus exact state-chaining across blocks.
+"""
+import struct
+
+BLOCK = 1024
+
+STEP_TABLE = [
+    7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41,
+    45, 50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190,
+    209, 230, 253, 279, 307, 337, 371, 408, 449, 494, 544, 598, 658, 724,
+    796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 2272,
+    2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132,
+    7845, 8630, 9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500,
+    20350, 22385, 24623, 27086, 29794, 32767,
+]
+INDEX_TABLE = [-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8]
+
+
+def _clamp16(v):
+    return -32768 if v < -32768 else (32767 if v > 32767 else v)
+
+
+def _encode_sample(sample, pred, index):
+    step = STEP_TABLE[index]
+    diff = sample - pred
+    code = 0
+    if diff < 0:
+        code = 8
+        diff = -diff
+    if diff >= step:
+        code |= 4
+        diff -= step
+    if diff >= step >> 1:
+        code |= 2
+        diff -= step >> 1
+    if diff >= step >> 2:
+        code |= 1
+    # reconstruct exactly as the decoder will
+    delta = step >> 3
+    if code & 4:
+        delta += step
+    if code & 2:
+        delta += step >> 1
+    if code & 1:
+        delta += step >> 2
+    pred = _clamp16(pred - delta if code & 8 else pred + delta)
+    index = min(88, max(0, index + INDEX_TABLE[code]))
+    return code, pred, index
+
+
+def _decode_sample(code, pred, index):
+    step = STEP_TABLE[index]
+    delta = step >> 3
+    if code & 4:
+        delta += step
+    if code & 2:
+        delta += step >> 1
+    if code & 1:
+        delta += step >> 2
+    pred = _clamp16(pred - delta if code & 8 else pred + delta)
+    index = min(88, max(0, index + INDEX_TABLE[code]))
+    return pred, index
+
+
+def encode(samples):
+    """s16 iterable -> bytes of self-contained BLOCK-sample IMA blocks.
+    Pads the tail block with its last sample (constant -> near-silent cost)."""
+    samples = list(samples)
+    if not samples:
+        return b""
+    out = bytearray()
+    pred, index = 0, 0
+    for base in range(0, len(samples), BLOCK):
+        blk = samples[base:base + BLOCK]
+        if len(blk) < BLOCK:
+            blk = blk + [blk[-1]] * (BLOCK - len(blk))
+        out += struct.pack("<hBB", pred, index, 0)
+        nibbles = []
+        for s in blk:
+            code, pred, index = _encode_sample(s, pred, index)
+            nibbles.append(code)
+        for lo, hi in zip(nibbles[0::2], nibbles[1::2]):
+            out.append(lo | (hi << 4))
+    return bytes(out)
+
+
+def decode(blob):
+    """bytes of blocks -> list of s16 samples."""
+    out = []
+    bs = 4 + BLOCK // 2
+    for base in range(0, len(blob), bs):
+        blk = blob[base:base + bs]
+        if len(blk) < bs:
+            break
+        pred, index, _ = struct.unpack("<hBB", blk[:4])
+        for byte in blk[4:]:
+            for code in (byte & 0xF, byte >> 4):
+                pred, index = _decode_sample(code, pred, index)
+                out.append(pred)
+    return out
+
+
+def _selftest():
+    import math
+    n = BLOCK * 5 + 137          # deliberately ragged tail
+    src = [int(12000 * math.sin(i * (0.02 + i * 3e-6))) for i in range(n)]
+    blob = encode(src)
+    dec = decode(blob)
+    assert len(dec) % BLOCK == 0 and len(dec) >= n
+    err = sum((a - b) ** 2 for a, b in zip(src, dec[:n])) / n
+    sig = sum(a * a for a in src) / n
+    snr = 10 * math.log10(sig / err) if err else 99.0
+    rate = len(blob) / (len(dec) / 22050)
+    print(f"selftest: n={n} blob={len(blob)}B ({rate/1024:.1f} KB/s @22050) "
+          f"SNR={snr:.1f} dB")
+    assert snr > 26.0, "ADPCM SNR regression"
+    print("OK")
+
+
+if __name__ == "__main__":
+    _selftest()

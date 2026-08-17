@@ -4,6 +4,17 @@ SB="$(cd "$(dirname "$0")" && pwd)"
 CMD="${1:-}"
 DISP=:77
 
+# AUDIO=1 (opt-in, tools/audio capture pipeline): un-mute the emulated SB16 so
+# DOSBox's Ctrl-F6 WAV capture records the driver's OPL/DSP output. SDL audio
+# stays on the dummy driver either way — nothing tries to reach real hardware.
+# Default path (AUDIO unset) writes the exact same dosbox.conf as before.
+NOSOUND=true
+RATE=22050
+if [ "${AUDIO:-0}" = "1" ]; then
+  NOSOUND=false
+  RATE=44100
+fi
+
 pkill -f "dosbox -conf $SB/dosbox.conf" 2>/dev/null
 pkill -f "Xvfb $DISP" 2>/dev/null
 pkill -f "twm -f" 2>/dev/null
@@ -22,8 +33,8 @@ scaler=none
 core=dynamic
 cycles=${CYCLES:-60000}
 [mixer]
-nosound=true
-rate=22050
+nosound=$NOSOUND
+rate=$RATE
 [sblaster]
 sbtype=sb16
 sbbase=220

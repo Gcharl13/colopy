@@ -54,3 +54,6 @@ tools/dosbox_harness/dosbox.log
 # Phase 6: the microSD asset pack is regenerable (tools/gen_sd_pack.py)
 cport/pak/
 cport/arduino/colopy/colopy_pak_blob.c
+# audio milestone: raw per-id captures + local pak are regenerable
+tools/audio/captures/
+cport/pak/COLAUDIO.PAK
