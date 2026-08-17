@@ -523,21 +523,25 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
 
     /* 5x5 scene composited in a corner buffer, then 2->3 upscaled */
     {
-        /* STATIC, not a local: 80*320 = 25,600 bytes is far more stack
-         * than an embedded task has (the ESP32 Arduino loop task is a
-         * few KB), and this was the largest frame in the whole port —
-         * a guaranteed stack smash on the board.  The painter is
-         * single-threaded and never re-entered, so one shared scratch
-         * band is correct.  Found 2026-08-17 chasing a board crash. */
-        static uint8_t save[80 * RD_W];
-        memcpy(save, RD.fb, sizeof(save));      /* borrow rows 0..79 */
+        /* HEAP, not a local and not a static: 80*320 = 25,600 bytes was
+         * by far the largest stack frame in the port (a smash on a
+         * board whose UI task stack is a few KB), and as a static it
+         * moved the same bytes into internal .bss, which overflowed the
+         * P4's internal-RAM link budget.  A heap block is neither —
+         * on the board it comes out of PSRAM.  Allocated once; the
+         * painter is single-threaded so one band is enough.
+         * Found 2026-08-17 chasing a board crash. */
+        static uint8_t *save;
+        if (!save) save = (uint8_t *)malloc(80 * RD_W);
+        if (!save) return;
+        memcpy(save, RD.fb, 80 * RD_W);         /* borrow rows 0..79 */
         for (int ty = 0; ty < 5; ty++)
             for (int tx = 0; tx < 5; tx++) {
                 int wx = c->map_x - 2 + tx, wy = c->map_y - 2 + ty;
                 rm_scene_tile(wx, wy, tx * 16, ty * 16);
             }
         scene_grab(0, 0, scene80, 80, 80);
-        memcpy(RD.fb, save, sizeof(save));      /* restore */
+        memcpy(RD.fb, save, 80 * RD_W);         /* restore */
         /* func_00531C: cols pair at dst%3==0, rows at dst%3==1; the
          * central 3x3 window lands at (224,32) 72x72 */
         for (int r = 0; r < 72; r++) {

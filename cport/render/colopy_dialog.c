@@ -23,6 +23,7 @@
  * Event/dialog text comes from the generated dat_events_index /
  * dat_dialogs_index (colopy_text.c — the same GAME.TXT content). */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../core/colopy_sim.h"
@@ -40,6 +41,44 @@ static void dresolve(void) {
 static const rd_font *dfont(int small) { return small ? &D_TINY : &D_INTR; }
 static int dtext(int small) { return small ? 6 : 10; }
 static int drow(int small) { return small ? 8 : 12; }
+
+
+/* ---- scratch line buffers -------------------------------------------
+ * These started as LOCALS, which gave the dialog painters multi-KB
+ * stack frames — a crash on a board whose UI task stack is a few KB.
+ * Making them `static` fixed the stack but moved the same ~36 KB into
+ * internal .bss, which then overflowed the ESP32-P4's internal-RAM link
+ * budget (`--enable-non-contiguous-regions discards section .sbss...`).
+ * The heap is the third and correct answer: on the board a block this
+ * size comes out of PSRAM, off both the stack and internal RAM.  The
+ * painters are single-threaded and never nest, so one lazily-allocated
+ * arena per shape is enough; a failed allocation makes the painter bail
+ * out rather than scribble. */
+static char (*sc_lines(void))[256] {
+    static char (*p)[256];
+    if (!p) p = (char (*)[256])malloc(16 * 256);
+    return p;
+}
+static char (*sc_body(void))[256] {
+    static char (*p)[256];
+    if (!p) p = (char (*)[256])malloc(16 * 256);
+    return p;
+}
+static char (*sc_rows256(void))[256] {
+    static char (*p)[256];
+    if (!p) p = (char (*)[256])malloc(16 * 256);
+    return p;
+}
+static char (*sc_rows96(void))[96] {
+    static char (*p)[96];
+    if (!p) p = (char (*)[96])malloc(12 * 96);
+    return p;
+}
+static char (*sc_head(void))[256] {
+    static char (*p)[256];
+    if (!p) p = (char (*)[256])malloc(2 * 256);
+    return p;
+}
 
 static const dat_events_entry_t *event_by_key(const char *key) {
     for (int i = 0; i < DAT_EVENTS_INDEX_COUNT; i++)
@@ -229,7 +268,8 @@ void rm_draw_event(const char *key, const rm_subs *subs,
                    const char *speaker) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    static char lines[16][256];
+    char (*lines)[256] = sc_lines();
+    if (!lines) return;   /* no arena -> no hit */
     int nl, x, y, w, h;
     if (!event_geom(e, subs, speaker, lines, &nl, &x, &y, &w, &h)) return;
     const rd_font *f = dfont(e->small);
@@ -247,7 +287,8 @@ int rm_event_hit(const char *key, const rm_subs *subs,
                  const char *speaker, int mx, int my) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    static char lines[16][256];
+    char (*lines)[256] = sc_lines();
+    if (!lines) return -1;   /* no arena -> no hit */
     int nl, x, y, w, h;
     if (!event_geom(e, subs, speaker, lines, &nl, &x, &y, &w, &h)) return 0;
     return mx >= x && mx < x + w && my >= y && my < y + h;
@@ -304,7 +345,9 @@ void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
                          const char *const *rrows, int nrr) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    static char body[16][256], rows[16][256];
+    char (*body)[256] = sc_body();
+    char (*rows)[256] = sc_rows256();
+    if (!body || !rows) return;
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
                      &x, &y, &w, &h, &seed, rrows, nrr))
@@ -417,7 +460,9 @@ static int village_geom(char body[16][256], int *nb_out,
 
 void rm_draw_village(int village_row) {
     dresolve();
-    static char body[16][256], rows[12][96];
+    char (*body)[256] = sc_body();
+    char (*rows)[96] = sc_rows96();
+    if (!body || !rows) return;
     int nb, nr, x, y, w, h, seed;
     if (!village_geom(body, &nb, rows, &nr, &x, &y, &w, &h, &seed)) return;
     const rd_font *f = dfont(0);
@@ -467,7 +512,9 @@ void rm_draw_village(int village_row) {
 int rm_village_row_hit(int cur, int mx, int my) {
     (void)cur;
     dresolve();
-    static char body[16][256], rows[12][96];
+    char (*body)[256] = sc_body();
+    char (*rows)[96] = sc_rows96();
+    if (!body || !rows) return -1;
     int nb, nr, x, y, w, h, seed;
     if (!village_geom(body, &nb, rows, &nr, &x, &y, &w, &h, &seed))
         return -2;
@@ -490,7 +537,9 @@ int rm_dialog_rows_hit(const char *key, const rm_subs *subs,
                        const char *const *rrows, int nrr) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    static char body[16][256], rows[16][256];
+    char (*body)[256] = sc_body();
+    char (*rows)[256] = sc_rows256();
+    if (!body || !rows) return -1;
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
                      &x, &y, &w, &h, &seed, rrows, nrr))
@@ -644,7 +693,8 @@ static int trade_geom(int mode, int step_no, const char *sofar,
 
 void rm_draw_trade(int mode, int step_no, const char *sofar,
                    const char *const *rows, int n, int sel) {
-    static char head[2][256];
+    char (*head)[256] = sc_head();
+    if (!head) return;
     int nh, x, y, w, h, seed;
     if (!trade_geom(mode, step_no, sofar, rows, n, head, &nh,
                     &x, &y, &w, &h, &seed))
@@ -663,7 +713,8 @@ void rm_draw_trade(int mode, int step_no, const char *sofar,
 
 int rm_trade_row_hit(int mode, int step_no, const char *sofar,
                      const char *const *rows, int n, int mx, int my) {
-    static char head[2][256];
+    char (*head)[256] = sc_head();
+    if (!head) return -1;
     int nh, x, y, w, h, seed;
     if (!trade_geom(mode, step_no, sofar, rows, n, head, &nh,
                     &x, &y, &w, &h, &seed))
