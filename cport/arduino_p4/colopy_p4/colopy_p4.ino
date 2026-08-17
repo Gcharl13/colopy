@@ -124,8 +124,10 @@ static LCD *g_lcd = nullptr;
 static uint16_t *fbuf = nullptr;      /* 1024x600 RGB565, in PSRAM */
 static uint8_t *pakbuf = nullptr;     /* COLOPY.PAK from SD, in PSRAM */
 static uint8_t *savbuf = nullptr;     /* .SAV image buffer (~80 KB) */
+static uint8_t *sidebuf = nullptr;    /* the .SAV sidecar, in PSRAM */
 #define PAKBUF_CAP 3500000
 #define SAVBUF_CAP 80000
+#define SIDEBUF_CAP 8192
 static uint16_t lut565[256];
 static int pak_ready = 0;
 static bool sav_loaded = false;
@@ -475,12 +477,15 @@ static void sfx_play(int id) {
     if (!f) return;
     if (fseek(f, (long)r->offset, SEEK_SET) != 0) { fclose(f); return; }
     if (!audio_set_rate(r->rate)) { fclose(f); return; }
-    static uint8_t src[256];
-    static int16_t dst[512];
+    /* heap, not statics: internal SRAM is 320 KB and near full, so
+     * every buffer this sketch adds comes out of PSRAM */
+    uint8_t *src = (uint8_t *)malloc(256);
+    int16_t *dst = (int16_t *)malloc(512 * sizeof(int16_t));
+    if (!src || !dst) { free(src); free(dst); fclose(f); return; }
     uint32_t left = r->length;
     digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_ON);
     while (left) {
-        size_t want = left > sizeof(src) ? sizeof(src) : left;
+        size_t want = left > 256 ? 256 : left;
         size_t n = fread(src, 1, want, f);
         if (!n) break;
         for (size_t i = 0; i < n; i++) {
@@ -492,6 +497,8 @@ static void sfx_play(int id) {
         left -= (uint32_t)n;
     }
     digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
+    free(src);
+    free(dst);
     fclose(f);
 }
 
@@ -1534,26 +1541,27 @@ static void sidecar_path(const char *name, char *out, size_t cap) {
 }
 
 static void sidecar_save(const char *name) {
-    static uint8_t side[8192];
-    size_t sn = colopy_extras_write(side, sizeof(side));
+    if (!sidebuf) return;            /* PSRAM, not a static: internal
+                                      * SRAM is only 320 KB and full */
+    size_t sn = colopy_extras_write(sidebuf, SIDEBUF_CAP);
     if (!sn) return;
     char path[112];
     sidecar_path(name, path, sizeof(path));
     FILE *f = fopen(path, "wb");
     if (!f) return;
-    fwrite(side, 1, sn, f);
+    fwrite(sidebuf, 1, sn, f);
     fclose(f);
 }
 
 static void sidecar_load(const char *name) {
+    if (!sidebuf) return;
     char path[112];
     sidecar_path(name, path, sizeof(path));
     FILE *f = fopen(path, "rb");
     if (!f) return;
-    static uint8_t side[8192];
-    size_t sn = fread(side, 1, sizeof(side), f);
+    size_t sn = fread(sidebuf, 1, SIDEBUF_CAP, f);
     fclose(f);
-    if (sn && colopy_extras_read(side, sn))
+    if (sn && colopy_extras_read(sidebuf, sn))
         Serial.println("sidecar applied (build targets + trade routes)");
 }
 
@@ -1764,6 +1772,7 @@ void setup() {
                                         MALLOC_CAP_SPIRAM);
     pakbuf = (uint8_t *)heap_caps_malloc(PAKBUF_CAP, MALLOC_CAP_SPIRAM);
     savbuf = (uint8_t *)heap_caps_malloc(SAVBUF_CAP, MALLOC_CAP_SPIRAM);
+    sidebuf = (uint8_t *)heap_caps_malloc(SIDEBUF_CAP, MALLOC_CAP_SPIRAM);
     if (!fbuf || !pakbuf || !savbuf)
         Serial.println("PSRAM alloc FAILED (is PSRAM enabled in Tools?)");
     if (fbuf && g_lcd) {                     /* black screen + pillarbox */

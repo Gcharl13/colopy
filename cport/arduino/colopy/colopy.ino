@@ -561,16 +561,17 @@ static void sidecar_path(const char *name, char *out, size_t cap) {
         snprintf(out + l, cap - l, ".CPX");
 }
 
+static uint8_t sidebuf[8192];        /* shared by save and load */
+
 static void sidecar_save(const char *name) {
-    static uint8_t side[8192];
-    size_t sn = colopy_extras_write(side, sizeof(side));
+    size_t sn = colopy_extras_write(sidebuf, sizeof(sidebuf));
     if (!sn) return;
     char path[80];
     sidecar_path(name, path, sizeof(path));
     SD.remove(path);
     File f = SD.open(path, FILE_WRITE);
     if (!f) return;
-    f.write(side, sn);
+    f.write(sidebuf, sn);
     f.close();
 }
 
@@ -579,10 +580,9 @@ static void sidecar_load(const char *name) {
     sidecar_path(name, path, sizeof(path));
     File f = SD.open(path, FILE_READ);
     if (!f) return;
-    static uint8_t side[8192];
-    size_t sn = f.read(side, sizeof(side));
+    size_t sn = f.read(sidebuf, sizeof(sidebuf));
     f.close();
-    if (sn && colopy_extras_read(side, sn))
+    if (sn && colopy_extras_read(sidebuf, sn))
         Serial.println("sidecar applied (build targets + trade routes)");
 }
 
