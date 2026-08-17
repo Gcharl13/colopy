@@ -115,7 +115,20 @@ size_t colopy_save_sav(uint8_t *buf, size_t cap) {
     memcpy(p, CS.prelude, SAV_PRELUDE);            p += SAV_PRELUDE;
     memcpy(p, CS.globals, SAV_GLOBALS);            p += SAV_GLOBALS;
     memcpy(p, CS.mid, SAV_MID);                    p += SAV_MID;
-    memcpy(p, CS.colonies, (size_t)CS.n_colonies * sizeof(ColonyRecord));
+    {   /* A colony building a UNIT holds the port's own 0xC0+u marker
+         * (the record's @BUILDING index cannot name a unit).  That byte
+         * is OUTSIDE the .SAV vocabulary (0..41 / 0xFF), so the write
+         * lands it as 0xFF — "no target" — rather than putting an
+         * invented value in a file the DOS game may read.  The banked
+         * hammers survive; the target is re-picked after a reload.
+         * FLAGGED: the engine's own unit-build encoding is unread. */
+        ColonyRecord *cw = (ColonyRecord *)(void *)p;
+        memcpy(p, CS.colonies, (size_t)CS.n_colonies * sizeof(ColonyRecord));
+        for (int i = 0; i < CS.n_colonies; i++)
+            if (cw[i].building_in_production >= 0xC0 &&
+                cw[i].building_in_production < 0xC7)
+                cw[i].building_in_production = 0xFF;
+    }
     p += (size_t)CS.n_colonies * sizeof(ColonyRecord);
     memcpy(p, CS.units, (size_t)CS.n_units * sizeof(UnitRecord));
     p += (size_t)CS.n_units * sizeof(UnitRecord);

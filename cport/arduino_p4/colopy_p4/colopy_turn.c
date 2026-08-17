@@ -320,12 +320,83 @@ static void sol_announce(int ci) {
 }
 
 /* ---- construction (advanceConstruction, game.js:3114) ------------------ */
+/* the colony-buildable UNITS (BUILDABLE_UNITS, game.js:2963) — the
+ * record's @BUILDING index cannot express them, so the picker stores
+ * 0xC0+u (colopy_input.c's encoding). */
+static const char *const BUILD_UNIT_NAMES[7] = {
+    "Wagon Train", "Artillery", "Caravel", "Merchantman", "Galleon",
+    "Privateer", "Frigate",
+};
+static int unit_row_named(const char *name) {
+    for (int i = 0; i < DAT_UNITS_COUNT; i++)
+        if (strcmp(dat_units[i].name, name) == 0) return i;
+    return -1;
+}
+
 static void advance_construction(int ci, int hammers) {
     ColonyRecord *c = &CS.colonies[ci];
     colony_rt *r = &CR.col[ci];
     c->hammers = (uint16_t)(c->hammers + hammers);
     int bip = c->building_in_production;
-    if (bip >= DAT_BUILDINGS_COUNT) return;      /* none / unit target (TBD) */
+    /* unitBuildRow (game.js:2965): cost = @UNIT cost x 32, EXCEPT the
+     * Wagon Train's off-scale 40 (census3_build_picker "(40 Hammers)");
+     * tools = the @UNIT tools column x 10, like a building's. */
+    int is_unit = bip >= 0xC0 && bip < 0xC0 + 7;
+    if (is_unit) {
+        const char *un = BUILD_UNIT_NAMES[bip - 0xC0];
+        int urow = unit_row_named(un);
+        if (urow < 0) return;
+        int cost = strcmp(un, "Wagon Train") == 0
+                       ? 40 : (int)dat_units[urow].cost * 32;
+        int need_tools = (int)dat_units[urow].tools * 10;
+        if (r->sieged) return;
+        if (c->hammers < cost) { r->tool_warned = 0; return; }
+        /* @NOMOREWAGONS: wagons are capped at the colony count — the
+         * build STALLS (target kept), announced once (game.js:3127) */
+        if (strcmp(un, "Wagon Train") == 0) {
+            int wagons = 0, ncol = 0;
+            for (int i = 0; i < CS.n_units; i++)
+                if (unit_on_map_player(i) &&
+                    strcmp(dat_units[CS.units[i].type].name,
+                           "Wagon Train") == 0) wagons++;
+            for (int i = 0; i < CS.n_colonies; i++)
+                if ((CS.colonies[i].owner_power & 3) == cs_nation()) ncol++;
+            if (wagons >= ncol) {
+                if (!r->cap_warned) {
+                    r->cap_warned = 1;
+                    ev_emit("NOMOREWAGONS", ncol, 0, c->name, 0);
+                }
+                return;
+            }
+        }
+        r->cap_warned = 0;
+        if (c->stock[TOOLS] < need_tools) {
+            if (!r->tool_warned) {
+                r->tool_warned = 1;
+                ev_emit(c->stock[TOOLS] > 0 ? "NEEDTOOLS" : "NEEDTOOLS0",
+                        need_tools, c->stock[TOOLS], c->name, un);
+                if (ask_choice() == 1) {
+                    CR.screen_map = 0;
+                    int ord = -1;
+                    for (int q = 0; q <= ci; q++)
+                        if ((CS.colonies[q].owner_power & 3) == cs_nation())
+                            ord++;
+                    CR.zoom_colony = (int16_t)ord;
+                }
+            }
+            return;
+        }
+        r->tool_warned = 0;
+        c->hammers = (uint16_t)(c->hammers - cost);
+        c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
+        /* the finished unit steps onto the colony square (ships sit in
+         * port on that same tile) */
+        unit_append(urow, (int)cs_nation(), c->map_x, c->map_y);
+        c->building_in_production = 0xFF;
+        ev_emit("BUILT", 0, 0, c->name, un);
+        return;
+    }
+    if (bip >= DAT_BUILDINGS_COUNT) return;      /* no target */
     const dat_buildings_t *b = &dat_buildings[bip];
     int need_tools = b->tools_x10 * 10;
     if (r->sieged) return;
