@@ -14,6 +14,7 @@
  * (EGA-stub low-16 -> master, magenta placeholders -> OPENMENU) and
  * the compare tool accepts the known sprite-side grey deltas. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../core/colopy_sim.h"
@@ -1003,7 +1004,17 @@ void rm_draw_map_zoom(int view_x, int view_y, int sel, int blink,
         draw_map_native(view_x, view_y, sel, blink);
         return;
     }
-    static uint8_t zbuf[240 * 192];
+    /* The compose buffer lives on the HEAP, not in .bss — 45 KB of
+     * static data overflowed the ESP32-P4's internal SRAM (user build
+     * 2026-08-17).  On that board a malloc this size is served from
+     * PSRAM (the Arduino core routes big allocations there when PSRAM
+     * is enabled); on OOM the view falls back to zoom 0. */
+    static uint8_t *zbuf;
+    if (!zbuf) zbuf = (uint8_t *)malloc(240 * 192);
+    if (!zbuf) {
+        draw_map_native(view_x, view_y, sel, blink);
+        return;
+    }
     int S = 1 << zoom;
     zoom_pass = 1;
     for (int j = 0; j < S; j++)
