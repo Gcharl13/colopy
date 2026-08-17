@@ -280,7 +280,8 @@ static void draw_screen(void) {
         rm_subs subs = { { dat_cargo[UI.dlg_good].name, UI.dlg_entry, 0, 0 },
                          { UI.dlg_max, 0, 0, 0 },
                          { 1, 0, 0, 0 } };
-        rm_draw_event("HOWMUCH5", &subs, 0);
+        rm_draw_event(UI.dlg == 4 ? "RENAMECOLONY" : "HOWMUCH5",
+                      &subs, 0);
     }
     flush_fb();
 }
@@ -415,15 +416,29 @@ static int board_ask(void) {
         ask_wait_key();
     }
     int ret = 0;
+    /* runtime option rows (the JS askEvent rows argument) on the
+     * live-front channel — snapshot and clear before pumping input */
+    char rr[18][26];
+    const char *rp[18];
+    int nrr = CR.n_ask_rows;
+    if (nrr > 18) nrr = 18;
+    for (int i = 0; i < nrr; i++) {
+        memcpy(rr[i], CR.ask_rows[i], sizeof(rr[i]));
+        rp[i] = rr[i];
+    }
+    CR.n_ask_rows = 0;
     if (n > 0 && rm_event_exists(q[n - 1].key)) {
-        int rows = rm_event_rows(q[n - 1].key);
+        int rows = nrr > 0 ? nrr : rm_event_rows(q[n - 1].key);
         if (rows < 1) rows = 1;
         int sel = 0;
         for (;;) {
             rm_subs subs = { { q[n - 1].s[0], q[n - 1].s[1], 0, 0 },
                              { q[n - 1].p[0], q[n - 1].p[1], 0, 0 },
                              { 1, 1, 0, 0 } };
-            rm_draw_dialog_event(q[n - 1].key, &subs, 0, sel);
+            if (nrr > 0)
+                rm_draw_dialog_rows(q[n - 1].key, &subs, 0, sel, rp, nrr);
+            else
+                rm_draw_dialog_event(q[n - 1].key, &subs, 0, sel);
             flush_fb();
             const char *k = ask_wait_key();
             if (strcmp(k, "ArrowUp") == 0) sel = (sel + rows - 1) % rows;

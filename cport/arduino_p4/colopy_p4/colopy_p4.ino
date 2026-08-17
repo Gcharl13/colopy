@@ -444,7 +444,18 @@ static void draw_screen(void) {
     if (UI.dlg) {
         rm_subs subs;
         dlg_subs(&subs);
-        rm_draw_event("HOWMUCH5", &subs, 0);
+        rm_draw_event(UI.dlg == 4 ? "RENAMECOLONY" : "HOWMUCH5",
+                      &subs, 0);
+        if (UI.dlg == 4) {           /* rename: live entry line + the
+                                      * shell's touch keyboard */
+            static rd_font ef;
+            if (ef.payload || rd_font_open(&RD.pak, "FONTTINY.FF", &ef)) {
+                const uint8_t ink[4] = { 0xFF, 68, 67, 0 };
+                rd_fill(8, KBD_Y - 13, 304, 11, 0x2E);
+                rd_text(&ef, UI.dlg_entry, 12, KBD_Y - 11, ink);
+            }
+            draw_kbd();
+        }
     }
     flush_fb();
 }
@@ -480,6 +491,19 @@ static void game_tap(int gx, int gy) {
     if (UI.dlg) {                            /* amount modal: box = Enter */
         rm_subs subs;
         dlg_subs(&subs);
+        if (UI.dlg == 4) {                   /* rename: keyboard first */
+            char ch = kbd_hit(gx, gy);
+            if (ch == '<') in_key("Backspace", 0, 0);
+            else if (ch == '#') in_key("Enter", 0, 0);
+            else if (ch) {
+                char one[2] = { ch, 0 };
+                in_key(one, 0, 0);
+            } else
+                in_key(rm_event_hit("RENAMECOLONY", &subs, 0, gx, gy)
+                           ? "Enter" : "Escape", 0, 0);
+            draw_screen();
+            return;
+        }
         in_key(rm_event_hit("HOWMUCH5", &subs, 0, gx, gy) ? "Enter"
                                                           : "Escape", 0, 0);
         draw_screen();
@@ -721,20 +745,37 @@ static int board_ask(void) {
         ask_wait(&gx, &gy);                  /* any input dismisses */
     }
     int ret = 0;
+    /* runtime option rows (the JS askEvent rows argument) arrive on the
+     * live-front channel — snapshot and clear before pumping input */
+    char rr[18][26];
+    const char *rp[18];
+    int nrr = CR.n_ask_rows;
+    if (nrr > 18) nrr = 18;
+    for (int i = 0; i < nrr; i++) {
+        memcpy(rr[i], CR.ask_rows[i], sizeof(rr[i]));
+        rp[i] = rr[i];
+    }
+    CR.n_ask_rows = 0;
     if (n > 0 && rm_event_exists(q[n - 1].key)) {
-        int rows = rm_event_rows(q[n - 1].key);
+        int rows = nrr > 0 ? nrr : rm_event_rows(q[n - 1].key);
         if (rows < 1) rows = 1;
         int sel = 0;
         for (;;) {
             rm_subs subs = { { q[n - 1].s[0], q[n - 1].s[1], 0, 0 },
                              { q[n - 1].p[0], q[n - 1].p[1], 0, 0 },
                              { 1, 1, 0, 0 } };
-            rm_draw_dialog_event(q[n - 1].key, &subs, 0, sel);
+            if (nrr > 0)
+                rm_draw_dialog_rows(q[n - 1].key, &subs, 0, sel, rp, nrr);
+            else
+                rm_draw_dialog_event(q[n - 1].key, &subs, 0, sel);
             flush_fb();
             int gx, gy;
             int ev = ask_wait(&gx, &gy);
             if (ev == TT_TAP) {
-                int r = rm_dialog_row_hit(q[n - 1].key, &subs, 0, gx, gy);
+                int r = nrr > 0
+                    ? rm_dialog_rows_hit(q[n - 1].key, &subs, 0, gx, gy,
+                                         rp, nrr)
+                    : rm_dialog_row_hit(q[n - 1].key, &subs, 0, gx, gy);
                 if (r >= 0) { ret = r; break; }      /* tap a row */
                 if (r == -1) { ret = -1; break; }    /* outside = dismiss */
                 continue;                            /* body: ignore */

@@ -236,6 +236,7 @@ void rel_declare_war(int a, int b);
 void rel_set_privateer(int a, int b);
 int32_t demand_value(int base);       /* demandValue (game.js:8210) */
 int  father_owned(int idx);           /* G.fathersOwned.includes */
+int  colony_has_bld_name(int ci, const char *name);  /* c.buildings.includes */
 int  immigration_threshold(void);     /* game.js:10135 (F2 report) */
 int  father_cost_now(void);           /* fatherCost (F3 report) */
 int  father_by_name(const char *name);
@@ -528,6 +529,13 @@ typedef struct {
                                       * seed (beginGame game.js:677; loads
                                       * pin 1653 per the trace convention) */
     colony_rt col[COLOPY_MAX_COLONIES];
+    /* LIVE-FRONT presentation channel: the runtime option rows of the
+     * NEXT ask (the JS askEvent's rows argument — goto port picker,
+     * @CUSTOM export toggles).  A live front draws them in place of
+     * the event's static tail rows and clears the count; the harness
+     * ask policy never reads them. */
+    char ask_rows[18][26];
+    int8_t n_ask_rows;
 } colopy_runtime;
 extern colopy_runtime CR;
 

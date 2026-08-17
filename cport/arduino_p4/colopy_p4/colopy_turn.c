@@ -72,6 +72,11 @@ static void resolve(void) {
 
 static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); }
 
+static int has_bld(int ci, int idx);
+int colony_has_bld_name(int ci, const char *name) {
+    return has_bld(ci, bld_by_name(name));
+}
+
 int father_owned(int idx) {
     return idx >= 0 && ((CS.powers[cs_nation()].founding_fathers >> idx) & 1);
 }

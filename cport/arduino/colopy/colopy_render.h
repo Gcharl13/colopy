@@ -178,6 +178,14 @@ int  rm_event_hit(const char *key, const rm_subs *subs,
                   const char *speaker, int mx, int my);
 int  rm_dialog_row_hit(const char *key, const rm_subs *subs,
                        const char *speaker, int mx, int my);
+/* the same dialog with RUNTIME option rows (the JS askEvent rows arg —
+ * goto port picker, @CUSTOM toggles) in place of the GAME.TXT tail */
+void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
+                         const char *speaker, int sel,
+                         const char *const *rrows, int nrr);
+int  rm_dialog_rows_hit(const char *key, const rm_subs *subs,
+                        const char *speaker, int mx, int my,
+                        const char *const *rrows, int nrr);
 /* the village screen (drawVillage game.js:6746) over the OPEN village
  * (CR.cur_village); the row hit-test shares its geometry */
 void rm_draw_village(int village_row);

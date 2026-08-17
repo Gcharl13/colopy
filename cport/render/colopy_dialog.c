@@ -247,12 +247,14 @@ int rm_event_hit(const char *key, const rm_subs *subs,
 static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
                        const char *speaker, char body[16][256],
                        char rows[16][256], int *nb_out, int *nr_out,
-                       int *x, int *y, int *w, int *h, int *seed) {
+                       int *x, int *y, int *w, int *h, int *seed,
+                       const char *const *rrows, int nrr) {
     if (!e || !e->body) return 0;
     const rd_font *f = dfont(e->small);
     int tp = dtext(e->small), rp = drow(e->small);
     int nb = e->n_body < 16 ? e->n_body : 16;
-    int nr = e->n_tail < 16 ? e->n_tail : 16;
+    int nr = rrows ? (nrr < 16 ? nrr : 16)
+                   : (e->n_tail < 16 ? e->n_tail : 16);
     int cw = e->width;
     for (int i = 0; i < nb; i++) {
         fill_template(e->body[i], subs, body[i], sizeof(body[i]));
@@ -260,7 +262,10 @@ static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
         if (lw > cw) cw = lw;
     }
     for (int i = 0; i < nr; i++) {
-        fill_template(e->tail[i], subs, rows[i], sizeof(rows[i]));
+        if (rrows)
+            snprintf(rows[i], 256, "%s", rrows[i]);
+        else
+            fill_template(e->tail[i], subs, rows[i], sizeof(rows[i]));
         int lw = stripped_width(f, rows[i]) + 10;
         if (lw > cw) cw = lw;
     }
@@ -280,14 +285,15 @@ static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
     return 1;
 }
 
-void rm_draw_dialog_event(const char *key, const rm_subs *subs,
-                          const char *speaker, int sel) {
+void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
+                         const char *speaker, int sel,
+                         const char *const *rrows, int nrr) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
     char body[16][256], rows[16][256];
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
-                     &x, &y, &w, &h, &seed))
+                     &x, &y, &w, &h, &seed, rrows, nrr))
         return;
     const rd_font *f = dfont(e->small);
     int tp = dtext(e->small), rp = drow(e->small);
@@ -301,6 +307,11 @@ void rm_draw_dialog_event(const char *key, const rm_subs *subs,
         if (k == sel) rd_fill(x + 4, oy, w - 8, rp - 2, SELECT_GAME);
         span_text(f, rows[k], x + 9, oy + 1, base, hi);
     }
+}
+
+void rm_draw_dialog_event(const char *key, const rm_subs *subs,
+                          const char *speaker, int sel) {
+    rm_draw_dialog_rows(key, subs, speaker, sel, 0, 0);
 }
 
 /* ---- the village screen (drawVillage game.js:6746) ------------------
@@ -460,14 +471,15 @@ int rm_village_row_hit(int cur, int mx, int my) {
  * band is the selection-fill band (x+4..x+w-4, rp tall from its seed).
  * Returns the row index, -2 = inside the plaque off the rows,
  * -1 = outside the plaque. */
-int rm_dialog_row_hit(const char *key, const rm_subs *subs,
-                      const char *speaker, int mx, int my) {
+int rm_dialog_rows_hit(const char *key, const rm_subs *subs,
+                       const char *speaker, int mx, int my,
+                       const char *const *rrows, int nrr) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
     char body[16][256], rows[16][256];
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
-                     &x, &y, &w, &h, &seed))
+                     &x, &y, &w, &h, &seed, rrows, nrr))
         return -1;
     if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
     int rp = drow(e->small);
@@ -476,6 +488,11 @@ int rm_dialog_row_hit(const char *key, const rm_subs *subs,
         if (k >= 0 && k < nr) return k;
     }
     return -2;
+}
+
+int rm_dialog_row_hit(const char *key, const rm_subs *subs,
+                      const char *speaker, int mx, int my) {
+    return rm_dialog_rows_hit(key, subs, speaker, mx, my, 0, 0);
 }
 
 /* ---- the options dialogs (drawOptions game.js:7969) -----------------

@@ -178,8 +178,26 @@ static void begin_goto_page(int ui, int page) {
     int cnt = n - from > 10 ? 10 : n - from;
     int more = n > from + 10;
     int rows = cnt + (more ? 1 : 0);
+    /* the row labels (census: Europe = "<homeport> (<country>)", pager
+     * "(More)") ride the live-front channel for the board's picker */
+    CR.n_ask_rows = 0;
+    for (int q = 0; q < cnt; q++) {
+        if (ecs[from + q] < 0)
+            snprintf(CR.ask_rows[CR.n_ask_rows++],
+                     sizeof(CR.ask_rows[0]), "%s (%s)",
+                     dat_nations[cs_nation()].homeport,
+                     dat_nations[cs_nation()].country);
+        else
+            snprintf(CR.ask_rows[CR.n_ask_rows++],
+                     sizeof(CR.ask_rows[0]), "%.24s",
+                     CS.colonies[ecs[from + q]].name);
+    }
+    if (more)
+        snprintf(CR.ask_rows[CR.n_ask_rows++],
+                 sizeof(CR.ask_rows[0]), "(More)");
     ev_emit(ship ? "SAILPORT" : "TRAVELPLACE", 0, 0, 0, 0);
     int k = ask_choice();
+    CR.n_ask_rows = 0;
     if (k < 0 || k >= rows) { UI.goto_arm = 1; return; }
     if (more && k == rows - 1) { begin_goto_page(ui, page + 1); return; }
     int e = ecs[from + k];
@@ -384,6 +402,24 @@ static int key_is(const char *k, const char *want) {
  * Escape cancels a numeric dialog to 0.  A click commits like Enter
  * (dialogClick's non-opts arm, game.js:12410). */
 static void dialog_done(int cancel) {
+    if (UI.dlg == 4) {               /* RENAMECOLONY (game.js:2198):
+                                      * a TRIMMED nonempty entry renames,
+                                      * anything else leaves the name */
+        int cci = UI.dlg_port;
+        char nm[24];
+        snprintf(nm, sizeof(nm), "%s", UI.dlg_entry);
+        UI.dlg = 0;
+        UI.dlg_entry[0] = 0;
+        if (cancel) return;
+        char *b = nm;
+        while (*b == ' ') b++;
+        char *e = b + strlen(b);
+        while (e > b && e[-1] == ' ') *--e = 0;
+        if (*b && cci >= 0 && cci < CS.n_colonies)
+            snprintf(CS.colonies[cci].name,
+                     sizeof(CS.colonies[cci].name), "%s", b);
+        return;
+    }
     int32_t qty;
     if (cancel) {
         qty = 0;                             /* closeDialog(-1) -> 0 */
@@ -419,7 +455,9 @@ static void dialog_key(const char *k) {
         if (n) UI.dlg_entry[n - 1] = 0;
         return;
     }
-    if (k[0] && !k[1] && k[0] >= '0' && k[0] <= '9') {
+    int printable = UI.dlg == 4 ? (k[0] >= ' ' && k[0] <= '~')
+                                : (k[0] >= '0' && k[0] <= '9');
+    if (k[0] && !k[1] && printable) {
         size_t n = strlen(UI.dlg_entry);
         if (n < 23) { UI.dlg_entry[n] = k[0]; UI.dlg_entry[n + 1] = 0; }
     }
@@ -877,6 +915,32 @@ static void wc_dismiss(void) {
     }
 }
 
+/* customHouseMenu (game.js:3196): the per-good export toggle loop.
+ * '*' marks an exported good ('customOff' is the JS map; the record's
+ * custom_house_flags stores the inverse — bit SET = export on, the
+ * importer's reading at game.js:10411); each pick toggles and the menu
+ * re-opens until Done/none.  Rows ride the live-front channel. */
+static void custom_house_menu(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci < 0 || !colony_has_bld_name(cci, "Custom House")) return;
+    ColonyRecord *c = &CS.colonies[cci];
+    for (;;) {
+        CR.n_ask_rows = 0;
+        for (int i = 0; i < 16; i++)
+            snprintf(CR.ask_rows[CR.n_ask_rows++],
+                     sizeof(CR.ask_rows[0]), "%s%s",
+                     (c->custom_house_flags >> i) & 1 ? "* " : "  ",
+                     dat_cargo[i].name);
+        snprintf(CR.ask_rows[CR.n_ask_rows++],
+                 sizeof(CR.ask_rows[0]), "Done");
+        ev_emit("CUSTOM", 0, 0, 0, 0);
+        int ch = ask_choice();
+        CR.n_ask_rows = 0;
+        if (ch < 0 || ch >= 16) return;
+        c->custom_house_flags ^= (uint16_t)(1u << ch);
+    }
+}
+
 static void in_key_inner(const char *k, int alt, int shift);
 void in_key(const char *k, int alt, int shift) {
     in_key_inner(k, alt, shift);
@@ -1260,6 +1324,20 @@ static void in_key_inner(const char *k, int alt, int shift) {
             UI.colony_view = (int8_t)(k[0] - '1');
         if (key_is(k, "c") || key_is(k, "C")) open_build_picker();
         if (key_is(k, "b") || key_is(k, "B")) rush_buy();
+        if (key_is(k, "e") || key_is(k, "E")) custom_house_menu();
+        if (key_is(k, "r") || key_is(k, "R")) {
+            /* renameColony (game.js:2195 via 12513): @RENAMECOLONY as
+             * a text-entry modal, prefilled with the current name.
+             * openDialog is inert under the shared harness (the trace
+             * conventions), so the modal is front-live only. */
+            int cci = player_colony_rec(UI.colony);
+            if (colopy_front_live && cci >= 0) {
+                UI.dlg = 4;
+                UI.dlg_port = (int16_t)cci;
+                snprintf(UI.dlg_entry, sizeof(UI.dlg_entry), "%s",
+                         CS.colonies[cci].name);
+            }
+        }
         if (key_is(k, "l") || key_is(k, "L")) {
             /* @LOBOTOMIZE (game.js:12503): clear the selected
              * colonist's specialty on row 0 */
