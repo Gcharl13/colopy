@@ -201,6 +201,14 @@ static void brief_begin(void) {
     UI.screen = SCR_MAP;
 }
 
+/* openPedia (game.js:11429) */
+static void open_pedia(int cat) {
+    UI.pedia_cat = (int8_t)cat;
+    UI.pedia_sel = 0;
+    UI.pedia_mode = 0;
+    UI.screen = SCR_PEDIA;
+}
+
 static void run_menu_row(void) {
     if (UI.open_menu < 0) return;
     rm_mrow rows[64];
@@ -278,6 +286,24 @@ static void run_menu_row(void) {
             UI.screen = SCR_TITLE;
             UI.menu_row = 0;
         }
+    /* the COLONIZOPEDIA rows + F1 (the JS dispatch, 11393-11416) */
+    } else if (strcmp(l, "Cargo Types") == 0) {
+        open_pedia(0);
+    } else if (strcmp(l, "Unit Types") == 0) {
+        open_pedia(1);
+    } else if (strcmp(l, "Terrain Types") == 0 ||
+               strcmp(l, "F1 Terrain Information") == 0) {
+        open_pedia(2);
+    } else if (strcmp(l, "Colonist Skills") == 0) {
+        open_pedia(3);
+    } else if (strcmp(l, "Colony Buildings") == 0) {
+        open_pedia(4);
+    } else if (strcmp(l, "Founding Fathers") == 0) {
+        open_pedia(5);
+    } else if (strcmp(l, "Miscellaneous") == 0) {
+        open_pedia(6);
+    } else if (strcmp(l, "Complete") == 0) {
+        open_pedia(7);
     } else if (strcmp(l, "Save Game") == 0) {
         UI.request = 'S';                /* the board shell owns the disk */
     } else if (strcmp(l, "Load Game") == 0) {
@@ -288,7 +314,7 @@ static void run_menu_row(void) {
         int off = 2;
         if (l[2] >= '0' && l[2] <= '9') { fn = fn * 10 + l[2] - '0'; off = 3; }
         if (l[off] == ' ') {
-            if (fn == 1) return;             /* pedia: a later slice */
+            if (fn == 1) { open_pedia(2); return; }   /* hard rule 7 */
             if (fn == 8 && (CR.woi_flags & WOI_DECLARED) &&
                 !(CR.woi_flags & WOI_WON)) {
                 ev_emit("FOREIGNNOTAVAIL", 0, 0, 0, 0);
@@ -951,9 +977,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
         }
         int fn;
         if (is_fkey(k, &fn)) {
-            /* F1 = the pedia TERRAIN page (hard rule 7) — slice 2;
+            /* F1 = the pedia TERRAIN page (hard rule 7);
              * F8 gated by woiLocked; F2-F10 = the report ladder */
-            if (fn == 1) return;
+            if (fn == 1) { open_pedia(2); return; }
             if (fn == 8 && (CR.woi_flags & WOI_DECLARED) &&
                 !(CR.woi_flags & WOI_WON)) {
                 ev_emit("FOREIGNNOTAVAIL", 0, 0, 0, 0);
@@ -1216,6 +1242,33 @@ static void in_key_inner(const char *k, int alt, int shift) {
         if (key_is(k, "Enter") || key_is(k, " ") || key_is(k, "Escape"))
             wc_dismiss();
         break;
+    case SCR_PEDIA: {
+        /* onKey pedia (game.js:12109) */
+        int n = rm_pedia_count(UI.pedia_cat);
+        if (n < 1) n = 1;
+        if (UI.pedia_mode == 0) {
+            if (key_is(k, "ArrowUp"))
+                UI.pedia_sel = (int16_t)((UI.pedia_sel + n - 1) % n);
+            if (key_is(k, "ArrowDown"))
+                UI.pedia_sel = (int16_t)((UI.pedia_sel + 1) % n);
+            if (key_is(k, "ArrowLeft"))
+                UI.pedia_sel = (int16_t)(UI.pedia_sel >= 22
+                                             ? UI.pedia_sel - 22 : 0);
+            if (key_is(k, "ArrowRight")) {
+                int v = UI.pedia_sel + 22;
+                UI.pedia_sel = (int16_t)(v < n ? v : n - 1);
+            }
+            if (key_is(k, "Enter") || key_is(k, " ")) UI.pedia_mode = 1;
+            if (key_is(k, "Escape") || key_is(k, "x")) UI.screen = SCR_MAP;
+        } else {
+            if (key_is(k, "ArrowLeft") || key_is(k, "ArrowUp"))
+                UI.pedia_sel = (int16_t)((UI.pedia_sel + n - 1) % n);
+            if (key_is(k, "ArrowRight") || key_is(k, "ArrowDown"))
+                UI.pedia_sel = (int16_t)((UI.pedia_sel + 1) % n);
+            if (key_is(k, "Escape") || key_is(k, "x")) UI.pedia_mode = 0;
+        }
+        break;
+    }
     case SCR_VILLAGE: {
         /* the @ACTIONS menu keys (onKey village case, game.js:12460):
          * arrows walk the rows, Enter/space commits, ESC/x leaves and
@@ -1415,6 +1468,17 @@ static void in_click_inner(int mx, int my, int right) {
     case SCR_WOODCUT:
         wc_dismiss();
         break;
+    case SCR_PEDIA: {
+        if (UI.pedia_mode != 0) { UI.pedia_mode = 0; break; }
+        int n = rm_pedia_count(UI.pedia_cat);
+        int r = (my - 24) / 7;
+        int i = (mx >= 160 ? 22 : 0) + r;
+        if (r >= 0 && r < 22 && i < n) {
+            UI.pedia_sel = (int16_t)i;
+            UI.pedia_mode = 1;
+        }
+        break;
+    }
     case SCR_VILLAGE: {
         /* tap an action row (the box geometry re-derived by the
          * painter's own helper) */

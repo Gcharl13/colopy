@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 #include "colopy_sim.h"
 #include "colopy_data.h"
@@ -502,4 +503,300 @@ void rm_draw_hof(void) {
                  (long)r->rating);
         center_shadow(&B_INTR, buf, 160, y + 22, ink, 0);
     }
+}
+
+/* ---- the Colonizopedia (drawPedia game.js:10671) --------------------
+ * Index: column-major, 22 rows x up to 3 columns, pitch 7, first row
+ * y=26, columns at x=7+104c; masthead @MISC[108] WHITE (WOODPANL 15);
+ * (More)/(Exit) @MISC[109]/[110].  Entry page: name + category line,
+ * the PEDIA.TXT article wrapped at 300 with {..} gold spans, then the
+ * NAMES stat block in ink 0x0E.  Terrain ids are NOT contiguous
+ * (@UNFORESTED 0..7, @FORESTED 8..15, @OTHER 24..28); category lists
+ * sort alphabetically (localeCompare — mirrored case-insensitive). */
+#define PEDIA_PER_COL 22
+#define PEDIA_COLS 3
+
+typedef struct { const char *name; char buf[40]; int cat, idx; } pedia_row;
+
+static const char *const PEDIA_KEYS[7] = {
+    "CARGO", "UNIT", "TERRAIN", "JOB", "BUILDING", "FATHER", 0
+};
+
+static int pedia_misc_count(void) {
+    for (int i = 0; i < 165; i++)
+        if (strcmp(dat_pedia_entries_keys[i], "MISCELLANEOUS") == 0) {
+            int n = 0;
+            const char *p = dat_pedia_entries_vals[i];
+            while (*p >= '0' && *p <= '9') n = n * 10 + *p++ - '0';
+            return n;
+        }
+    return 0;
+}
+
+static const char *pedia_misc_name(int idx, char *buf, size_t cap) {
+    for (int i = 0; i < 165; i++)
+        if (strcmp(dat_pedia_entries_keys[i], "MISCELLANEOUS") == 0) {
+            const char *p = strchr(dat_pedia_entries_vals[i], '\n');
+            for (int k = 0; p && k < idx; k++) p = strchr(p + 1, '\n');
+            if (!p) return "";
+            p++;
+            const char *e = strchr(p, '\n');
+            size_t n = e ? (size_t)(e - p) : strlen(p);
+            while (n && (*p == ' ')) { p++; n--; }
+            while (n && p[n - 1] == ' ') n--;
+            if (n >= cap) n = cap - 1;
+            memcpy(buf, p, n);
+            buf[n] = 0;
+            return buf;
+        }
+    return "";
+}
+
+/* one category's rows, unsorted counts (pediaNames 10611) */
+static int pedia_cat_count(int cat) {
+    switch (cat) {
+    case 0: return DAT_CARGO_COUNT;
+    case 1: return DAT_UNITS_COUNT;
+    case 2: return 21;
+    case 3: return 28;
+    case 4: return DAT_BUILDINGS_COUNT;
+    case 5: return DAT_FATHERS_COUNT;
+    case 6: return pedia_misc_count();
+    default: return 0;
+    }
+}
+
+static void pedia_cat_row(int cat, int i, pedia_row *r) {
+    r->cat = cat;
+    r->idx = i;
+    r->name = "";
+    switch (cat) {
+    case 0: r->name = dat_cargo[i].name; break;
+    case 1: r->name = dat_units[i].name; break;
+    case 2:
+        if (i < 8) { r->name = dat_terrain_unforested[i]; r->idx = i; }
+        else if (i < 16) {
+            snprintf(r->buf, sizeof(r->buf), "%s %s",
+                     dat_terrain_forested[i - 8], dat_terrain_othernames[0]);
+            r->name = r->buf;
+            r->idx = i;                      /* engine ids 8..15 */
+        } else {
+            r->name = dat_terrain_other[i - 16];
+            r->idx = 24 + (i - 16);          /* @OTHER ids 24..28 */
+        }
+        break;
+    case 3: r->name = dat_jobs[i]; break;
+    case 4: r->name = dat_buildings[i].name; break;
+    case 5: r->name = dat_fathers[i].name; break;
+    case 6: r->name = pedia_misc_name(i, r->buf, sizeof(r->buf)); break;
+    }
+}
+
+/* the browse list: one category alphabetised, or 7 = Complete (every
+ * category merged, alphabetised) — max 165ish rows */
+#define PEDIA_MAX 200
+static int pedia_build(int cat, pedia_row *rows) {
+    int n = 0;
+    if (cat == 7) {
+        for (int c = 0; c < 7; c++)
+            for (int i = 0; i < pedia_cat_count(c) && n < PEDIA_MAX; i++)
+                pedia_cat_row(c, i, &rows[n++]);
+    } else {
+        for (int i = 0; i < pedia_cat_count(cat) && n < PEDIA_MAX; i++)
+            pedia_cat_row(cat, i, &rows[n++]);
+    }
+    /* insertion sort, case-insensitive (localeCompare mirror; ties by
+     * strcmp — FLAGGED approximation) */
+    for (int i = 1; i < n; i++) {
+        pedia_row t = rows[i];
+        int j = i - 1;
+        while (j >= 0) {
+            int c = strcasecmp(rows[j].name, t.name);
+            if (c < 0 || (c == 0 && strcmp(rows[j].name, t.name) <= 0)) break;
+            rows[j + 1] = rows[j];
+            j--;
+        }
+        /* re-anchor buf-backed names after the moves */
+        rows[j + 1] = t;
+    }
+    for (int i = 0; i < n; i++)
+        if (rows[i].name != rows[i].buf && rows[i].buf[0] &&
+            strcmp(rows[i].name, rows[i].buf) == 0)
+            rows[i].name = rows[i].buf;
+    return n;
+}
+
+int rm_pedia_count(int cat) {
+    static pedia_row rows[PEDIA_MAX];
+    return pedia_build(cat, rows);
+}
+
+static const char *pedia_body(int cat, int idx) {
+    if (cat < 0 || cat > 6 || !PEDIA_KEYS[cat]) return 0;
+    char key[24];
+    snprintf(key, sizeof(key), "%s%d", PEDIA_KEYS[cat], idx);
+    for (int i = 0; i < 165; i++)
+        if (strcmp(dat_pedia_entries_keys[i], key) == 0)
+            return dat_pedia_entries_vals[i];
+    return 0;
+}
+
+/* left-aligned {..} gold spans (spanText) */
+static int left_spans(const char *l, int x, int y) {
+    const char *p = l;
+    while (*p) {
+        const char *q;
+        int gold = 0;
+        if (*p == '{') {
+            q = strchr(p + 1, '}');
+            q = q ? q + 1 : p + strlen(p);
+            gold = 1;
+        } else {
+            q = strchr(p, '{');
+            if (!q) q = p + strlen(p);
+        }
+        char seg[256];
+        size_t o = 0;
+        for (const char *r = p; r < q && o + 1 < sizeof(seg); r++)
+            if (*r != '{' && *r != '}') seg[o++] = *r;
+        seg[o] = 0;
+        x = rd_text(&B_TINY, seg, x, y, blut(gold ? 0xFC : 0xFE));
+        p = q;
+    }
+    return x;
+}
+
+static int pedia_wrap(const char *s, int width, int start, char *out,
+                      size_t cap) {
+    size_t best = 0, o = 0;
+    size_t i = (size_t)start;
+    while (s[i] && o + 1 < cap) {
+        out[o++] = s[i++];
+        out[o] = 0;
+        if (s[i] == ' ' || !s[i]) {
+            char plain[256];
+            size_t po = 0;
+            for (const char *r = out; *r && po + 1 < sizeof(plain); r++)
+                if (*r != '{' && *r != '}') plain[po++] = *r;
+            plain[po] = 0;
+            if (rd_text_width(&B_TINY, plain) > width && best) {
+                out[best] = 0;
+                return start + (int)best + 1;
+            }
+            best = o;
+        }
+    }
+    out[o] = 0;
+    return start + (int)i - start;
+}
+
+void rm_draw_pedia(int cat, int sel, int mode) {
+    bresolve();
+    rd_use_palette("WOODPANL.PIK");
+    rd_pik("WOODPANL.PIK");
+    static pedia_row rows[PEDIA_MAX];
+    int n = pedia_build(cat, rows);
+    center_shadow(&B_TINY, dat_text_misc[108], 160, 5, blut(15), 0);
+    if (sel < 0) sel = 0;
+    if (sel >= n) sel = n ? n - 1 : 0;
+    if (mode == 0) {                         /* the index */
+        int per = PEDIA_PER_COL * PEDIA_COLS;
+        int page = (sel / per) * per;
+        for (int k = 0; k < per && page + k < n; k++) {
+            int x = 7 + (k / PEDIA_PER_COL) * 104;
+            int y = 26 + (k % PEDIA_PER_COL) * 7;
+            int is = page + k == sel;
+            if (is) rd_fill(x - 2, y - 1, 102, 7, 138);
+            rd_text(&B_TINY, rows[page + k].name, x, y,
+                    blut(is ? 0xFC : 0xFE));
+        }
+        if (page + per < n)
+            rd_text(&B_TINY, dat_text_misc[109], 246, 5, blut(68));
+        rd_text(&B_TINY, dat_text_misc[110], 295, 5, blut(68));
+        return;
+    }
+    const pedia_row *e = &rows[sel];
+    char head[96];
+    snprintf(head, sizeof(head), "%s   %s", e->name,
+             dat_pedia_categories[e->cat < 7 ? e->cat : 6]);
+    center_shadow(&B_TINY, head, 160, 12, blut(0xFC), 0);
+    int y = 12 + 5 + 0xE;
+    const char *body = pedia_body(e->cat, e->idx);
+    if (body) {
+        const char *p = body;
+        while (*p && y < 178) {
+            const char *le = strchr(p, '\n');
+            size_t len = le ? (size_t)(le - p) : strlen(p);
+            char para[512];
+            if (len >= sizeof(para)) len = sizeof(para) - 1;
+            memcpy(para, p, len);
+            para[len] = 0;
+            /* trim */
+            size_t pl = strlen(para);
+            while (pl && para[pl - 1] == ' ') para[--pl] = 0;
+            const char *t0 = para;
+            while (*t0 == ' ') t0++;
+            if (!*t0)
+                y += 4;
+            else {
+                int at = 0;
+                while (t0[at] && y < 178) {
+                    char line[256];
+                    at = pedia_wrap(t0, 300, at, line, sizeof(line));
+                    left_spans(line, 10, y);
+                    y += 6;
+                }
+            }
+            if (!le) break;
+            p = le + 1;
+        }
+    } else {
+        rd_text(&B_TINY, "(no article in PEDIA.TXT for this entry)",
+                10, y, blut(0x5D));
+        y += 9;
+    }
+    y += 4;
+    char st[96];
+    if (e->cat == 0) {
+        const dat_cargo_t *c = &dat_cargo[e->idx];
+        snprintf(st, sizeof(st), "Price %ld-%ld gold", (long)c->start1,
+                 (long)c->start2);
+        rd_text(&B_TINY, st, 10, y, blut(0x0E));
+        y += 6;
+        snprintf(st, sizeof(st), "Spread %ld", (long)c->burden + 1);
+        rd_text(&B_TINY, st, 10, y, blut(0x0E));
+    } else if (e->cat == 1) {
+        const dat_units_t *u = &dat_units[e->idx];
+        snprintf(st, sizeof(st), "Moves %ld   Attack %ld   Defend %ld",
+                 (long)u->movement, (long)u->attack, (long)u->combat);
+        rd_text(&B_TINY, st, 10, y, blut(0x0E));
+        y += 6;
+        if (u->cargo) {
+            snprintf(st, sizeof(st), "Cargo %ld", (long)u->cargo);
+            rd_text(&B_TINY, st, 10, y, blut(0x0E));
+            y += 6;
+        }
+        if (u->hull) {
+            snprintf(st, sizeof(st), "Hull %ld", (long)u->hull);
+            rd_text(&B_TINY, st, 10, y, blut(0x0E));
+        }
+    } else if (e->cat == 4) {
+        const dat_buildings_t *b = &dat_buildings[e->idx];
+        if (b->tools_x10)
+            snprintf(st, sizeof(st), "%ld hammers, %ld tools",
+                     (long)b->cost, (long)b->tools_x10 * 10);
+        else
+            snprintf(st, sizeof(st), "%ld hammers", (long)b->cost);
+        rd_text(&B_TINY, st, 10, y, blut(0x0E));
+        y += 6;
+        snprintf(st, sizeof(st), "Needs %ld colonists", (long)b->min_colony);
+        rd_text(&B_TINY, st, 10, y, blut(0x0E));
+        y += 6;
+        if (b->upkeep)
+            snprintf(st, sizeof(st), "Upkeep %ld", (long)b->upkeep);
+        else
+            snprintf(st, sizeof(st), "No upkeep");
+        rd_text(&B_TINY, st, 10, y, blut(0x0E));
+    }
+    center_shadow(&B_TINY, "(Esc back)", 160, 190, blut(0x5D), 0);
 }

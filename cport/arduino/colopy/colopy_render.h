@@ -131,6 +131,10 @@ void rm_draw_king(int nation);
 void rm_draw_cards(int card, int nation, int difficulty,
                    const char *leader);
 void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */
+/* the Colonizopedia (drawPedia 10671): cat 0..6 + 7 = Complete;
+ * mode 0 = index, 1 = entry page */
+void rm_draw_pedia(int cat, int sel, int mode);
+int  rm_pedia_count(int cat);
 /* pulldown row model (colopy_map_render.c) — shared with the input layer */
 typedef struct { const char *label; const char *accel; uint8_t dim, sep; } rm_mrow;
 int  rm_menu_rows(int mi, int sel, rm_mrow *out);

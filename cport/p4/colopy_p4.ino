@@ -347,6 +347,9 @@ static void draw_screen(void) {
     case SCR_HOF:
         rm_draw_hof();
         break;
+    case SCR_PEDIA:
+        rm_draw_pedia(UI.pedia_cat, UI.pedia_sel, UI.pedia_mode);
+        break;
     case SCR_COLONY: {
         int ci = ui_colony_cs_index();
         if (ci >= 0)

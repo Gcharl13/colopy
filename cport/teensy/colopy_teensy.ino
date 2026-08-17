@@ -225,6 +225,9 @@ static void draw_screen(void) {
     case SCR_HOF:
         rm_draw_hof();
         break;
+    case SCR_PEDIA:
+        rm_draw_pedia(UI.pedia_cat, UI.pedia_sel, UI.pedia_mode);
+        break;
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);
         break;
