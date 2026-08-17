@@ -40,7 +40,91 @@ extern "C" {
 #include "colopy_data.h"
 #include "colopy_sfx.h"
 #endif
+#ifdef COLOPY_AUDIO
+#include "colopy_audio.h"
+#endif
 }
+
+/* ---- audio (opt-in COLOPY_AUDIO — cport/audio/, docs/AUDIO_PORT.md).
+ * COLAUDIO.PAK streams from the built-in SD (music never fits the 8 MB
+ * flash — MEMORY_BUDGET.md). Output = MQS on pin 12 (MQSL) + pin 10
+ * (MQSR) — MQS claims BOTH pins, so the TFT chip-select must move off
+ * pin 10 (COLOPY_TFT_CS) and the TFT MISO line stays unwired (the
+ * display path is write-only). The Audio library pulls 44100 Hz blocks
+ * in ISR context, so a lock-free ring decouples it from au_render()'s
+ * SD reads (which happen in loop context via audio_tick()). UNTESTED ON
+ * HARDWARE — same checklist gate as the panel path. ------------------ */
+#ifdef COLOPY_AUDIO
+#include <Audio.h>
+static File audio_f;
+#define AU_RING 4096                       /* samples; power of two */
+static int16_t au_ring[AU_RING];
+static volatile uint16_t au_rh = 0, au_rt = 0;   /* SPSC head/tail */
+class ColopyAudioSource : public AudioStream {
+public:
+    ColopyAudioSource() : AudioStream(0, nullptr) {}
+    virtual void update(void) {
+        audio_block_t *b = allocate();
+        if (!b) return;
+        uint16_t used = (uint16_t)(au_rt - au_rh);
+        /* 128 frames @44100 = 64 ring samples @22050, zero-order held x2;
+         * underrun pads silence */
+        for (int i = 0; i < 64; i++) {
+            int16_t s = (i < used)
+                        ? au_ring[(uint16_t)(au_rh + i) & (AU_RING - 1)]
+                        : (int16_t)0;
+            b->data[2 * i] = s;
+            b->data[2 * i + 1] = s;
+        }
+        au_rh += (used < 64) ? used : 64;
+        transmit(b);
+        release(b);
+    }
+};
+static ColopyAudioSource au_src;
+static AudioOutputMQS au_mqs;
+static AudioConnection au_cord1(au_src, 0, au_mqs, 0);
+static AudioConnection au_cord2(au_src, 0, au_mqs, 1);
+static void audio_ring_fill(void) {        /* loop context: SD reads OK */
+    static int16_t tmp[256];
+    for (;;) {
+        uint16_t used = (uint16_t)(au_rt - au_rh);
+        if (used > AU_RING - 260) break;
+        au_render(tmp, 256);
+        for (int i = 0; i < 256; i++)
+            au_ring[(uint16_t)(au_rt + i) & (AU_RING - 1)] = tmp[i];
+        au_rt += 256;
+    }
+}
+static int audio_rd(void *ctx, uint32_t off, void *dst, uint32_t len) {
+    (void)ctx;
+    if (!audio_f) return 0;
+    if (!audio_f.seek(off)) return 0;
+    return audio_f.read((uint8_t *)dst, len) == (int)len;
+}
+static void audio_init(void) {
+    audio_f = SD.open("COLAUDIO.PAK", FILE_READ);
+    if (!audio_f) { Serial.println("no COLAUDIO.PAK -- audio silent"); return; }
+    if (!au_init_stream(audio_rd, nullptr, (uint32_t)audio_f.size())) {
+        Serial.println("COLAUDIO.PAK unreadable -- audio silent");
+        audio_f.close();
+        return;
+    }
+    au_seed(micros());
+    AudioMemory(8);                          /* MQS + source blocks */
+    Serial.printf("audio up: COLAUDIO.PAK %lu bytes, MQS pins 10/12\n",
+                  (unsigned long)audio_f.size());
+}
+/* scheduler tick: the war flag + the func_004EE6 pump + ring refill */
+static void audio_tick(void) {
+    /* [0x5382]&1.  The audio branch read a `declared` field off
+     * PowerRecord that no version of the records carries; the WoI
+     * flag lives in CR.woi_flags (colopy_sim.h). */
+    au_set_war((CR.woi_flags & WOI_DECLARED) != 0);
+    au_pump();
+    audio_ring_fill();
+}
+#endif
 
 /* ---- Phase 7: the ILI9341 panel (optional; -DCOLOPY_ILI9341) --------
  * Requires the 8 MB PSRAM fitted (COLOPY.PAK is ~3 MB and lives in
@@ -193,6 +277,25 @@ static void cmd_view(void) {                 /* 'v': render the map view */
  * JS G.eventQueue head) overlays as a popup and swallows the next key
  * (the modal rule, game.js:12403).  Every consumed key redraws. */
 static int game_mode = 0;
+
+/* shell-side cue edges (the core/game layers stay untouched): new game =
+ * the BRIEFING->MAP transition; woodcut = a new plate on screen */
+#ifdef COLOPY_AUDIO
+static void audio_screen_edges(void) {
+    static int last_screen = SCR_TITLE, last_wc = -1;
+    if (last_screen == SCR_BRIEFING && UI.screen == SCR_MAP)
+        au_on_new_game();
+    if (UI.screen == SCR_WOODCUT) {
+        if (UI.woodcut != last_wc) {
+            au_on_woodcut(UI.woodcut);
+            last_wc = UI.woodcut;
+        }
+    } else {
+        last_wc = -1;
+    }
+    last_screen = UI.screen;
+}
+#endif
 static colopy_event pending_ev;
 static int have_pending = 0;
 /* the active unit's blink: DRAWN while truthy, hidden on the off half
@@ -301,8 +404,15 @@ static void draw_screen(void) {
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
     }
-    if (!have_pending && colopy_next_event(&pending_ev))
+#ifdef COLOPY_AUDIO
+    audio_screen_edges();
+#endif
+    if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
+#ifdef COLOPY_AUDIO
+        au_on_event(pending_ev.key, pending_ev.p[0]);
+#endif
+    }
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
                          { pending_ev.p[0], pending_ev.p[1], 0, 0 },
@@ -416,6 +526,9 @@ static const char *ask_wait_key(void) {
 #ifdef COLOPY_USBHOST
         usbh.Task();
 #endif
+#ifdef COLOPY_AUDIO
+        audio_tick();                /* keep the rotation alive in asks */
+#endif
         if (ask_key[0]) return ask_key;
         while (Serial.available()) {
             char ch = (char)Serial.read();
@@ -445,8 +558,12 @@ static int board_ask(void) {
     colopy_event q[8];
     int n = 0;
     colopy_event e2;
-    while (colopy_next_event(&e2))
+    while (colopy_next_event(&e2)) {
+#ifdef COLOPY_AUDIO
+        au_on_event(e2.key, e2.p[0]);
+#endif
         if (n < 8) q[n++] = e2;
+    }
     ask_active = 1;
     for (int i = 0; i + 1 < n; i++) {
         if (!rm_event_exists(q[i].key)) continue;
@@ -571,6 +688,11 @@ static void cmd_load(const char *name) {
                                      * first digest diverges */
     for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     sav_loaded = true;
+#ifdef COLOPY_AUDIO
+    /* the save's [0x5386] mirror low bits: bit1 BG / bit2 Event / bit3
+     * SFX (spec §2, pinned @0x023301) */
+    au_load_switches((uint8_t)(cs_tut_mask() & 0x0E));
+#endif
     Serial.printf("loaded %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }
@@ -600,6 +722,9 @@ void setup() {
     while (!Serial && millis() < 4000) {}
     if (!SD.begin(BUILTIN_SDCARD)) Serial.println("SD init FAILED");
     else Serial.println("colopy shell ready (l/t/d/i/s)");
+#ifdef COLOPY_AUDIO
+    audio_init();
+#endif
 #ifdef COLOPY_ILI9341
     tft.begin(COLOPY_TFT_SPIHZ);
     tft.setRotation(1);                     /* 320x240 landscape */
@@ -621,6 +746,9 @@ void loop() {
     /* animation: redraw the map when the unit blink flips; re-flush
      * (LUT only) when the water cycle steps a phase */
     if (game_mode && !ask_active) {
+#ifdef COLOPY_AUDIO
+        audio_tick();
+#endif
         int bl = blink_now();
         /* zoom >= 2 composes 16-64 subwindows per frame — too dear for
          * the 3 Hz blink; the unit stays drawn (FLAGGED perf choice) */

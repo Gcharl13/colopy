@@ -240,15 +240,27 @@ agent when it becomes the bottleneck.
 5. If a task seems too big for one session, split it.
 
 ---
-## Out of fidelity scope — audio
+## Out of fidelity scope — audio (now a separately-scoped cport milestone)
 
 Audio is **explicitly excluded** from the "100% identical except audio"
 done-bar (user scope decision). It does not gate any Tier task and cannot
 regress the pixel/behaviour fidelity gate.
 
-- Spike findings: `docs/AUDIO_SPIKE.md` (in-scope go/no-go = **NO-GO**).
+- Spike findings: `notes/rulings/AUDIO_SPIKE.md` (in-scope go/no-go = **NO-GO**;
+  that bar stands).
 - Verified fact: `COLONIZE/{A,G,P,R}SOUND.COL` are `MZ` DOS executables
-  (sound *drivers*), not decodable sample banks; `AMERICA.MOV` is route
-  overlay data, not audio (`docs/MOV_FORMAT.md`).
-- Future, separately-scoped milestone only — entry points in
-  `docs/AUDIO_SPIKE.md`. Do not pull into P1–P7.
+  (sound *drivers*), not decodable sample banks; `AMERICA.MOV` is a decoded
+  demo script, not audio (`spec/ui/cinematics.md` §11.3,
+  `data_extracted/data/AMERICA_MOV.json`).
+- **2026-08-16: commissioned as a separately-scoped pragmatic milestone**
+  targeting `cport/` (user directive; ruling in `notes/rulings/RULINGS.md`
+  2026-08-16; design in `docs/AUDIO_PORT.md`). Still does not pull into P1–P7.
+- **2026-08-17: delivered through the software phases.** Scheduler/gate/class
+  verbs byte-pinned (spec §4/§5) and ported (`cport/audio/`, host tests
+  green); full capture sweep done (all tunes, fanfares, SFX; 3 ids silent =
+  unmapped); `COLAUDIO.PAK` 67 entries (16 bit-clean COLDIG slices + 51
+  renders) validator-clean; cues + pump wired in both shells; P4 I2S and
+  Teensy MQS backends written. **Remaining = hardware:** flip `COLOPY_AUDIO`
+  on a real board, run the A/B listen pass (`docs/AUDIO_PORT.md` §listen),
+  record outcomes. Cue gaps (European-contact fanfare, combat SFX) and the
+  Pick-Music/Sound-Options screens in cport's input layer stay open.

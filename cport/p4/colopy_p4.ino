@@ -72,6 +72,16 @@
 #include "esp_panel_drivers_conf.h"
 #include "esp_panel_board_custom_conf.h"
 #include "ESP_Panel_Library.h"
+/* audio on by default; -DCOLOPY_AUDIO=0 builds a mute sketch.  Defined
+ * HERE, above the include it guards — the 2026-08-17 audio merge left
+ * this #if 300 lines ahead of the #define, which silently dropped the
+ * I2S header. */
+#ifndef COLOPY_AUDIO
+#define COLOPY_AUDIO 1
+#endif
+#if COLOPY_AUDIO
+#include <ESP_I2S.h>                // speaker I2S (Elecrow Lesson12 path)
+#endif
 
 extern "C" {
 #include "colopy_core.h"
@@ -80,7 +90,10 @@ extern "C" {
 #include "colopy_render.h"
 #include "colopy_input.h"
 #include "colopy_data.h"
-#include "colopy_sfx.h"
+#include "colopy_sfx.h"          /* the byte-decoded COLDIG index */
+#if COLOPY_AUDIO
+#include "colopy_audio.h"         /* the COLAUDIO.PAK mixer + cue engine */
+#endif
 }
 
 using namespace esp_panel::drivers;
@@ -237,6 +250,17 @@ static void bt_ui_draw(void) {}
 static int  bt_ui_tap(int gx, int gy) { (void)gx; (void)gy; return 0; }
 #endif
 
+/* THE LAST #include IN THIS FILE, AND IT MUST STAY UNCONDITIONAL.
+ * The IDE hoists its generated prototypes to just after the last
+ * #include it sees.  If that include sits inside a #if that is FALSE,
+ * every prototype lands in the dead block and the whole sketch fails
+ * with "not declared in this scope" at the first forward call.  That is
+ * exactly what happened on 2026-08-17 when the audio merge moved
+ * <ESP_I2S.h> up, leaving <BLEDevice.h> (guarded by COLOPY_BLE_MOUSE,
+ * off by default) as the last one.  Keep an unconditional include here
+ * so the hoist point is always live. */
+#include <stddef.h>
+
 /* the title screen's Bluetooth row.  SHELL CHROME: the DOS main menu
  * has five rows only (dat_text_beginmenu[1..5], drawn by rm_draw_title
  * inside the plaque at 77,91,166,58 -> rows y=107..147), so the pairing
@@ -377,30 +401,32 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
     fclose(f);
     return n;
 }
-
-/* ---- audio (Elecrow Lesson12, cport/p4/PROVENANCE.md) ---------------
- * The board carries an I2S speaker path and a PDM mic array; Lesson12
- * "Playing Local Music from SD Card" is the citation for every number
- * here: audio power on GPIO 30 (LOW enables), I2S BCLK 22 / LRCLK 21 /
- * DOUT 23 driven through the core's ESP_I2S I2SClass at 16-bit.
+/* ---- audio ----------------------------------------------------------
+ * TWO paths share the one I2S port and the choice is made ONCE at boot;
+ * whichever wins owns `i2s_spk` for the session (they cannot coexist —
+ * the pack engine runs mono at AU_MIX_RATE off a task, the COLDIG path
+ * runs stereo and re-clocks per sample).
  *
- * WHAT IT PLAYS, for sound effects, is now the GAME'S OWN SAMPLES.
- * COLDIG.BIN is a headerless 993 KB bank of 8-bit unsigned PCM; its
- * per-sample index lives inside the four driver overlays and was
- * decoded 2026-08-17 (notes/rulings/RULINGS.md; the table is
- * re-derived from the bytes by tools/decode_coldig.py into
- * cport/data/colopy_sfx.c).  Copy COLDIG.BIN to the SD card next to
- * COLOPY.PAK and sfx_play() streams straight out of it, at the
- * sample's own rate.
+ *   1. COLAUDIO.PAK on the card -> the cport/audio engine
+ *      (docs/AUDIO_PORT.md): music AND mixed cues, a FreeRTOS task
+ *      pulling au_render().  The full experience.
+ *   2. no pack -> COLDIG.BIN direct: the game's own 993 KB sample bank,
+ *      one blocking voice, no music.  KEPT on purpose — COLAUDIO.PAK is
+ *      25.9 MB, gitignored, and has to be rebuilt from a DOSBox capture
+ *      run, so making it mandatory would silence every board whose owner
+ *      has not been through that pipeline (merge decision 2026-08-17).
  *
- * MUSIC is still unavailable: the tunes are synthesised inside the
- * driver overlays (AdLib/GM/PC-speaker/MT-32 register streams), not
- * stored as audio anywhere, so no music file exists to play.  Nothing
- * here invents one (CLAUDE.md prime directive).  audio_play_wav()
- * remains for user-supplied WAVs; COLOPY_AUDIO switches the lot off. */
-#ifndef COLOPY_AUDIO
-#define COLOPY_AUDIO 1
-#endif
+ * Hardware numbers are Elecrow's Lesson12 for this exact board
+ * (cport/p4/elecrow_ref/lesson12_audio.ino + lesson12_board_config.h,
+ * PROVENANCE.md — vendored by the audio branch, which is what finally
+ * resolved this file's one broken citation chain): plain I2S std mode
+ * into the on-board amplifier (no codec chip), LRCLK 21 / BCLK 22 /
+ * SDATA 23, audio power gate GPIO 30 (LOW = on).
+ *
+ * MUSIC comes only from path 1.  The tunes are synthesised inside the
+ * `?SOUND.COL` driver overlays, so there is no music file to play; the
+ * pack carries offline renders of the ORIGINAL driver under emulation.
+ * Nothing here invents one (CLAUDE.md prime directive). */
 #define AUDIO_GPIO_CTRL   30          /* audio power, LOW = enabled */
 #define AUDIO_POWER_ON    LOW
 #define AUDIO_POWER_OFF   HIGH
@@ -409,10 +435,9 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
 #define AUDIO_GPIO_SDATA  23
 
 #if COLOPY_AUDIO
-#include <ESP_I2S.h>
-static I2SClass i2s_spk;
+static I2SClass i2s_spk;         /* <ESP_I2S.h> is included at the top */
 static int audio_ready = 0;
-
+static int audio_pack_live = 0;          /* 1 = path 1 owns the I2S port */
 static int audio_rate = 0;               /* the rate I2S is running at */
 
 static int audio_set_rate(int hz) {
@@ -425,14 +450,77 @@ static int audio_set_rate(int hz) {
     return audio_ready;
 }
 
-static void audio_init(void) {
+
+/* ---- path 1: the COLAUDIO.PAK engine ---- */
+static FILE *audio_f = nullptr;
+static int audio_rd(void *ctx, uint32_t off, void *dst, uint32_t len) {
+    (void)ctx;
+    return audio_f && fseek(audio_f, (long)off, SEEK_SET) == 0 &&
+           fread(dst, 1, len, audio_f) == len;
+}
+static void audio_task(void *arg) {
+    (void)arg;
+    static int16_t abuf[512];
+    for (;;) {
+        au_render(abuf, 512);                /* task context: SD reads OK */
+        i2s_spk.write((uint8_t *)abuf, sizeof abuf);
+    }
+}
+static int audio_pack_init(void) {
+    audio_f = fopen("/sdcard/COLAUDIO.PAK", "rb");
+    if (!audio_f) return 0;                  /* fall back to COLDIG */
+    fseek(audio_f, 0, SEEK_END);
+    long sz = ftell(audio_f);
+    if (!au_init_stream(audio_rd, nullptr, (uint32_t)sz)) {
+        Serial.println("COLAUDIO.PAK unreadable -- audio silent");
+        fclose(audio_f);
+        audio_f = nullptr;
+        return 0;
+    }
+    au_seed((uint32_t)esp_random());
     pinMode(AUDIO_GPIO_CTRL, OUTPUT);
-    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
+    digitalWrite(AUDIO_GPIO_CTRL, LOW);      /* amp power on (Lesson12) */
     i2s_spk.setPins(AUDIO_GPIO_BCLK, AUDIO_GPIO_LRCLK, AUDIO_GPIO_SDATA);
-    audio_ready = 1;
-    if (!audio_set_rate(16000)) Serial.println("audio: I2S init failed");
+    if (!i2s_spk.begin(I2S_MODE_STD, AU_MIX_RATE, I2S_DATA_BIT_WIDTH_16BIT,
+                       I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT)) {
+        Serial.println("I2S init failed -- audio silent");
+        digitalWrite(AUDIO_GPIO_CTRL, HIGH);
+        fclose(audio_f);
+        audio_f = nullptr;
+        return 0;
+    }
+    xTaskCreate(audio_task, "colopy_audio", 4096, nullptr, 3, nullptr);
+    Serial.printf("audio up: COLAUDIO.PAK %ld bytes, I2S %d Hz\n",
+                  sz, AU_MIX_RATE);
+    return 1;
 }
 
+/* scheduler tick: the war flag + the func_004EE6 pump */
+static void audio_tick(void) {
+    /* [0x5382]&1.  The audio branch read a `declared` field off
+     * PowerRecord that no version of the records carries; the WoI
+     * flag lives in CR.woi_flags (colopy_sim.h). */
+    au_set_war((CR.woi_flags & WOI_DECLARED) != 0);
+    au_pump();
+}
+/* shell-side cue edges (the core/game layers stay untouched): new game =
+ * the BRIEFING->MAP transition; woodcut = a new plate on screen */
+static void audio_screen_edges(void) {
+    static int last_screen = SCR_TITLE, last_wc = -1;
+    if (last_screen == SCR_BRIEFING && UI.screen == SCR_MAP)
+        au_on_new_game();
+    if (UI.screen == SCR_WOODCUT) {
+        if (UI.woodcut != last_wc) {
+            au_on_woodcut(UI.woodcut);
+            last_wc = UI.woodcut;
+        }
+    } else {
+        last_wc = -1;
+    }
+    last_screen = UI.screen;
+}
+
+/* ---- path 2: COLDIG.BIN direct ---- */
 /* play one COLDIG.BIN sample by the ENGINE'S sound id (0x40..0x5D).
  * colopy_sfx_index() is the driver's own id -> index jump table and
  * colopy_sfx[] its (offset, length, rate) row, both generated from the
@@ -496,12 +584,29 @@ static void audio_play_wav(const char *name) {
     digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
     fclose(f);
 }
+static void audio_init(void) {
+    pinMode(AUDIO_GPIO_CTRL, OUTPUT);
+    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
+    i2s_spk.setPins(AUDIO_GPIO_BCLK, AUDIO_GPIO_LRCLK, AUDIO_GPIO_SDATA);
+    if (sd_ready && audio_pack_init()) {  /* path 1 wins if the pack is there */
+        audio_pack_live = 1;
+        return;
+    }
+    audio_ready = 1;                      /* path 2: COLDIG on demand */
+    if (!audio_set_rate(16000)) {
+        Serial.println("audio: I2S init failed");
+        return;
+    }
+    Serial.println(sd_ready ? "audio: COLDIG.BIN cues (no COLAUDIO.PAK)"
+                            : "audio: silent (no SD)");
+}
 #else
 static void audio_init(void) {}
 static void audio_play_wav(const char *name) { (void)name; }
 static void sfx_play(int id) { (void)id; }
+static void audio_tick(void) {}
+static void audio_screen_edges(void) {}
 #endif
-
 
 /* ---- Phase 7/8: the screens + the game loop (mirrors the Teensy
  * shell — cport/teensy/colopy_teensy.ino) ---------------------------- */
@@ -804,9 +909,20 @@ static void draw_screen(void) {
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
     }
+#if COLOPY_AUDIO
+    audio_screen_edges();
+#endif
     if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
+        /* whichever audio path owns the port takes the cue: the pack
+         * engine mixes it, otherwise the byte-decoded COLDIG table
+         * plays it straight (see the audio block above). */
+#if COLOPY_AUDIO
+        if (audio_pack_live) au_on_event(pending_ev.key, pending_ev.p[0]);
+        else sfx_pending = event_sfx(pending_ev.key, &sfx_pending2);
+#else
         sfx_pending = event_sfx(pending_ev.key, &sfx_pending2);
+#endif
     }
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
@@ -1107,6 +1223,9 @@ static int ask_wait(int *gx, int *gy) {
     int len = 0;
     ask_key[0] = 0;
     for (;;) {
+#if COLOPY_AUDIO
+        audio_tick();                /* keep the rotation alive in asks */
+#endif
         int ev = touch_poll(gx, gy);
         if (ev == TT_ESC) {                  /* two-finger = Escape */
             snprintf(ask_key, sizeof(ask_key), "Escape");
@@ -1236,8 +1355,12 @@ static int board_ask(void) {
     colopy_event q[8];
     int n = 0;
     colopy_event e2;
-    while (colopy_next_event(&e2))
+    while (colopy_next_event(&e2)) {
+#if COLOPY_AUDIO
+        au_on_event(e2.key, e2.p[0]);
+#endif
         if (n < 8) q[n++] = e2;
+    }
     ask_active = 1;
     for (int i = 0; i + 1 < n; i++) {
         if (!rm_event_exists(q[i].key)) continue;
@@ -1575,6 +1698,11 @@ static void cmd_load(const char *name) {
                                      * digest diverges from the host */
     for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     sav_loaded = true;
+#if COLOPY_AUDIO
+    /* the save's [0x5386] mirror low bits: bit1 BG / bit2 Event / bit3
+     * SFX (spec §2, pinned @0x023301) */
+    au_load_switches((uint8_t)(cs_tut_mask() & 0x0E));
+#endif
     Serial.printf("loaded %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }
@@ -1779,9 +1907,9 @@ void setup() {
 
     sd_mount();
 
-    audio_init();      /* I2S speaker path (Elecrow Lesson12) */
     bt_init();         /* BLE mouse over the C6 (no-op unless enabled) */
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
+    audio_init();      /* picks COLAUDIO.PAK or COLDIG.BIN, or stays mute */
     stack_report("boot");
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 
@@ -1802,6 +1930,9 @@ void loop() {
      * two-finger tap = Escape */
     bt_pump();                 /* BLE mouse (no-op unless enabled) */
     if (game_mode && !ask_active) {
+#if COLOPY_AUDIO
+        audio_tick();
+#endif
         int gx, gy;
         int ev = touch_poll(&gx, &gy);
         if (ev == TT_ESC) game_key("Escape", 0, 0);

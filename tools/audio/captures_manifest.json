@@ -1,0 +1,562 @@
+{
+ "0x20": {
+  "duration_s": 68.68,
+  "file": "tune_20.wav",
+  "first_signal_s": 0.5,
+  "id": 32,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x21": {
+  "duration_s": 69.71,
+  "file": "tune_21.wav",
+  "first_signal_s": 0.5,
+  "id": 33,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x22": {
+  "duration_s": 99.87,
+  "file": "tune_22.wav",
+  "first_signal_s": 0.5,
+  "id": 34,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x23": {
+  "duration_s": 101.88,
+  "file": "tune_23.wav",
+  "first_signal_s": 0.5,
+  "id": 35,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x24": {
+  "duration_s": 70.71,
+  "file": "tune_24.wav",
+  "first_signal_s": 0.5,
+  "id": 36,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x25": {
+  "duration_s": 74.23,
+  "file": "tune_25.wav",
+  "first_signal_s": 0.5,
+  "id": 37,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x26": {
+  "duration_s": 75.22,
+  "file": "tune_26.wav",
+  "first_signal_s": 0.5,
+  "id": 38,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x27": {
+  "duration_s": 30.97,
+  "file": "tune_27.wav",
+  "first_signal_s": 0.5,
+  "id": 39,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x28": {
+  "duration_s": 90.33,
+  "file": "tune_28.wav",
+  "first_signal_s": 0.5,
+  "id": 40,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x29": {
+  "duration_s": 49.58,
+  "file": "tune_29.wav",
+  "first_signal_s": 0.5,
+  "id": 41,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x2A": {
+  "duration_s": 90.35,
+  "file": "tune_2a.wav",
+  "first_signal_s": 0.5,
+  "id": 42,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x2B": {
+  "duration_s": 79.1,
+  "file": "tune_2b.wav",
+  "first_signal_s": 0.5,
+  "id": 43,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x2C": {
+  "duration_s": 79.28,
+  "file": "tune_2c.wav",
+  "first_signal_s": 0.5,
+  "id": 44,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x2D": {
+  "duration_s": 51.1,
+  "file": "tune_2d.wav",
+  "first_signal_s": 0.5,
+  "id": 45,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x2E": {
+  "duration_s": 47.06,
+  "file": "tune_2e.wav",
+  "first_signal_s": 0.5,
+  "id": 46,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x2F": {
+  "duration_s": 100.97,
+  "file": "tune_2f.wav",
+  "first_signal_s": 0.5,
+  "id": 47,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x30": {
+  "duration_s": 112.0,
+  "file": "tune_30.wav",
+  "first_signal_s": 0.5,
+  "id": 48,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x31": {
+  "duration_s": 55.17,
+  "file": "tune_31.wav",
+  "first_signal_s": 0.5,
+  "id": 49,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x32": {
+  "duration_s": 48.56,
+  "file": "tune_32.wav",
+  "first_signal_s": 0.5,
+  "id": 50,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x33": {
+  "duration_s": 59.64,
+  "file": "tune_33.wav",
+  "first_signal_s": 0.51,
+  "id": 51,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x34": {
+  "duration_s": 242.18,
+  "file": "tune_34.wav",
+  "first_signal_s": 0.5,
+  "id": 52,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x35": {
+  "duration_s": 25.39,
+  "file": "tune_35.wav",
+  "first_signal_s": 0.5,
+  "id": 53,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x36": {
+  "duration_s": 38.02,
+  "file": "tune_36.wav",
+  "first_signal_s": 0.5,
+  "id": 54,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x37": {
+  "duration_s": 71.2,
+  "file": "tune_37.wav",
+  "first_signal_s": 0.5,
+  "id": 55,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x38": {
+  "duration_s": 166.34,
+  "file": "tune_38.wav",
+  "first_signal_s": 0.5,
+  "id": 56,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x39": {
+  "duration_s": 95.83,
+  "file": "tune_39.wav",
+  "first_signal_s": 0.5,
+  "id": 57,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x3A": {
+  "duration_s": 72.2,
+  "file": "tune_3a.wav",
+  "first_signal_s": 0.5,
+  "id": 58,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x3B": {
+  "duration_s": 94.33,
+  "file": "tune_3b.wav",
+  "first_signal_s": 0.5,
+  "id": 59,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x3E": {
+  "duration_s": 9.85,
+  "file": "tune_3e.wav",
+  "first_signal_s": 0.5,
+  "id": 62,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x3F": {
+  "duration_s": 9.85,
+  "file": "tune_3f.wav",
+  "first_signal_s": 0.5,
+  "id": 63,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x40": {
+  "duration_s": 5.83,
+  "file": "sfx_40.wav",
+  "first_signal_s": 0.5,
+  "id": 64,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x41": {
+  "duration_s": 6.33,
+  "file": "sfx_41.wav",
+  "first_signal_s": 0.5,
+  "id": 65,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x42": {
+  "duration_s": 6.83,
+  "file": "sfx_42.wav",
+  "first_signal_s": 0.5,
+  "id": 66,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x43": {
+  "duration_s": 7.33,
+  "file": "sfx_43.wav",
+  "first_signal_s": 0.5,
+  "id": 67,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x44": {
+  "duration_s": 6.83,
+  "file": "sfx_44.wav",
+  "first_signal_s": 0.5,
+  "id": 68,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x45": {
+  "duration_s": 6.83,
+  "file": "sfx_45.wav",
+  "first_signal_s": 0.5,
+  "id": 69,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x46": {
+  "duration_s": 16.88,
+  "file": "sfx_46.wav",
+  "first_signal_s": null,
+  "id": 70,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": false
+ },
+ "0x47": {
+  "duration_s": 5.83,
+  "file": "sfx_47.wav",
+  "first_signal_s": 0.5,
+  "id": 71,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x48": {
+  "duration_s": 6.83,
+  "file": "sfx_48.wav",
+  "first_signal_s": 0.5,
+  "id": 72,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x49": {
+  "duration_s": 7.84,
+  "file": "sfx_49.wav",
+  "first_signal_s": 0.5,
+  "id": 73,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x4A": {
+  "duration_s": 8.34,
+  "file": "sfx_4a.wav",
+  "first_signal_s": 0.5,
+  "id": 74,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x4B": {
+  "duration_s": 8.85,
+  "file": "sfx_4b.wav",
+  "first_signal_s": 0.5,
+  "id": 75,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x4C": {
+  "duration_s": 10.87,
+  "file": "sfx_4c.wav",
+  "first_signal_s": 0.5,
+  "id": 76,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x4D": {
+  "duration_s": 9.35,
+  "file": "sfx_4d.wav",
+  "first_signal_s": 0.5,
+  "id": 77,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x4E": {
+  "duration_s": 9.35,
+  "file": "sfx_4e.wav",
+  "first_signal_s": 0.5,
+  "id": 78,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x4F": {
+  "duration_s": 9.35,
+  "file": "sfx_4f.wav",
+  "first_signal_s": 0.5,
+  "id": 79,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x50": {
+  "duration_s": 9.85,
+  "file": "sfx_50.wav",
+  "first_signal_s": 0.5,
+  "id": 80,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x51": {
+  "duration_s": 9.35,
+  "file": "sfx_51.wav",
+  "first_signal_s": 0.5,
+  "id": 81,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x52": {
+  "duration_s": 8.83,
+  "file": "sfx_52.wav",
+  "first_signal_s": 0.5,
+  "id": 82,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x53": {
+  "duration_s": 10.84,
+  "file": "sfx_53.wav",
+  "first_signal_s": 0.5,
+  "id": 83,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x54": {
+  "duration_s": 10.86,
+  "file": "sfx_54.wav",
+  "first_signal_s": 0.5,
+  "id": 84,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x55": {
+  "duration_s": 7.34,
+  "file": "sfx_55.wav",
+  "first_signal_s": 0.5,
+  "id": 85,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x56": {
+  "duration_s": 9.35,
+  "file": "sfx_56.wav",
+  "first_signal_s": 0.5,
+  "id": 86,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x57": {
+  "duration_s": 9.84,
+  "file": "sfx_57.wav",
+  "first_signal_s": 0.5,
+  "id": 87,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x58": {
+  "duration_s": 6.34,
+  "file": "sfx_58.wav",
+  "first_signal_s": 0.5,
+  "id": 88,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x59": {
+  "duration_s": 6.33,
+  "file": "sfx_59.wav",
+  "first_signal_s": 0.5,
+  "id": 89,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x5A": {
+  "duration_s": 10.85,
+  "file": "sfx_5a.wav",
+  "first_signal_s": 0.5,
+  "id": 90,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x5B": {
+  "duration_s": 9.34,
+  "file": "sfx_5b.wav",
+  "first_signal_s": 0.5,
+  "id": 91,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x5C": {
+  "duration_s": 10.85,
+  "file": "sfx_5c.wav",
+  "first_signal_s": 0.5,
+  "id": 92,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x5D": {
+  "duration_s": 6.84,
+  "file": "sfx_5d.wav",
+  "first_signal_s": 0.5,
+  "id": 93,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x5E": {
+  "duration_s": 16.88,
+  "file": "sfx_5e.wav",
+  "first_signal_s": null,
+  "id": 94,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": false
+ },
+ "0x5F": {
+  "duration_s": 16.88,
+  "file": "sfx_5f.wav",
+  "first_signal_s": null,
+  "id": 95,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": false
+ },
+ "0x8020": {
+  "duration_s": 9.42,
+  "file": "fanfare_8020.wav",
+  "first_signal_s": 0.5,
+  "id": 32800,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8021": {
+  "duration_s": 9.44,
+  "file": "fanfare_8021.wav",
+  "first_signal_s": 0.5,
+  "id": 32801,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8022": {
+  "duration_s": 10.96,
+  "file": "fanfare_8022.wav",
+  "first_signal_s": 0.5,
+  "id": 32802,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8023": {
+  "duration_s": 9.45,
+  "file": "fanfare_8023.wav",
+  "first_signal_s": 0.5,
+  "id": 32803,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8024": {
+  "duration_s": 12.96,
+  "file": "fanfare_8024.wav",
+  "first_signal_s": 0.5,
+  "id": 32804,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8025": {
+  "duration_s": 14.97,
+  "file": "fanfare_8025.wav",
+  "first_signal_s": 0.5,
+  "id": 32805,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8026": {
+  "duration_s": 47.13,
+  "file": "fanfare_8026.wav",
+  "first_signal_s": 0.5,
+  "id": 32806,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ },
+ "0x8027": {
+  "duration_s": 47.16,
+  "file": "fanfare_8027.wav",
+  "first_signal_s": 0.5,
+  "id": 32807,
+  "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
+  "signal": true
+ }
+}

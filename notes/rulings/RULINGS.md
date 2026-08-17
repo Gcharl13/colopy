@@ -26,6 +26,58 @@ Format:
 
 ---
 
+## 2026-08-17 — The SFX id→COLDIG.BIN map: byte-decoded index beats the empirical correlation map
+
+**Conflict**: two committed tables claim to say where each SFX id's samples live
+in `COLDIG.BIN`, and they disagree on every id they share.
+
+**Source A** — `data_extracted/data/coldig_slices.json`
+(`tools/audio/map_coldig.py`, from the audio branch) said: offsets and lengths
+recovered by chunked cross-correlation of DOSBox captures against the bank,
+carrying per-row `score`/`approximate` flags and self-labelled
+`"tier": "empirical capture (RULINGS 2026-08-16) — NOT byte-cited"`. 16 ids clean
+enough to ship as verbatim slices, including `0x59`; `0x4D` `0x4E` `0x4F` `0x5B`
+shipped as FM renders instead.
+
+**Source B** — `data_extracted/coldig_index.json` (`tools/decode_coldig.py`) said:
+the sample table read out of the `.COL` sound drivers themselves — 35 samples with
+`(offset, length)`, `sfx_id_to_index` for the 25 ids the dispatcher maps,
+`sfx_ids_not_samples` for the 5 it does not, and `rate_rule` from `cmp bx,5` at
+ASOUND `0x00F19`.
+
+**Ruling**: Source B. `notes/TRUTH_HIERARCHY.md` puts a driver's own table, read
+at a cited offset, above an empirical capture correlation. Source B also passes
+three independent self-checks that Source A cannot: the 35 lengths sum to exactly
+993,755 = the byte size of `COLDIG.BIN`, the offsets are fully contiguous with no
+gap or overlap, and the terminator lands on EOF. Measured against Source B,
+Source A's offsets drift by tens to thousands of bytes on all 15 shared ids and
+its lengths run uniformly short (trimmed decay tails), and it maps `0x59`, which
+the drivers list as not a bank sample at all.
+
+**Action taken**:
+- `tools/gen_audio_pack.py`, `tools/audio/verify_pack.py`,
+  `tools/audio/trim_masters.py` now read `coldig_index.json`.
+- `COLAUDIO.PAK` SFX census 16 -> 25 entries, all 25 verified bit-clean against
+  the bank (`tools/audio/verify_pack.py`: 0 failures). `0x4E` `0x4F` `0x5B` —
+  wired cues `RAIDGOLD` / `RAIDSTORES` / `RAIDNOTHING` — become real samples
+  instead of FM renders; `0x4D` and `0x50`..`0x56` join them.
+- The generator now rejects any sample that is not 11025 Hz, because the mixer's
+  PCM8U path is a fixed 2x hold (`cport/audio/colopy_audio_mix.c:115`). No sfx id
+  maps to one of the five 19050 Hz samples today (the lowest maps to index 5),
+  so nothing is excluded — the check exists so a future remap cannot ship a
+  sample at the wrong pitch silently.
+- `data_extracted/data/coldig_slices.json` retained as a record of the capture
+  work, marked superseded in its own `_meta`, read by nothing.
+- `formats/BIN.md`, `docs/AUDIO_PORT.md`, `cport/audio/README.md`,
+  `tools/audio/README.md`, `docs/REMAINING_WORK.md` Part F updated.
+
+**Follow-up**: sample indices 0..4 (19050 Hz) are not reachable through
+`sfx_id_to_index` — what plays them is still TBD. The 5 `sfx_ids_not_samples`
+(`0x46` `0x47` `0x59` `0x5A` `0x5D`) remain FM, shipped as capture renders when
+the masters dir is present; `0x46`'s capture carried no signal and is excluded.
+
+---
+
 ## 2026-08-17 — Founding a colony crashed the board: a 1 KB stack array in the end-turn chain
 
 **Conflict**: on the P4, Build Colony crashed the board (user report). Nothing
@@ -10353,3 +10405,46 @@ while the change waits.
 `0xD1D:0xEC6` 32-bit divide by `3 * [bp-0xA]`, and why goods 13..15 are
 excluded), then port pool + `trade_total` into the JS first and the C second,
 so both oracles move together.
+## 2026-08-16 — Audio commissioned as a separately-scoped cport milestone (pragmatic tier)
+
+**Directive (user, 2026-08-16):** "this needs to be separate, but i need you to
+port the audio portion of colonization."
+
+**What stands, what changes.** The AUDIO_SPIKE NO-GO
+(`notes/rulings/AUDIO_SPIKE.md`) stands *for the fidelity done-bar*: the game
+port's bar remains "100% identical except audio", and nothing in this milestone
+gates or touches the P1–P7 pixel/behaviour oracles. What is superseded is the
+"no audio work" consequence: audio is now an active, **separately-scoped**
+milestone targeting the embedded C port, on its own branch
+(`claude/colonization-audio-port-mwt067`) and its own module (`cport/audio/`,
+compiled out of any build that does not opt in via `COLOPY_AUDIO`).
+
+**Scope decisions (user, question round 2026-08-16):**
+
+1. **Target = `cport/`** (Teensy 4.1 + CrowPanel Advance 7" ESP32-P4), as a
+   separate module. The JS port's `playTune` stub is unchanged.
+2. **Music = offline OPL2 render.** Each tune is rendered once, offline, by the
+   ORIGINAL `?SOUND.COL` driver running under the DOSBox harness
+   (`tools/dosbox_harness/`), captured per tune id via the in-game Sound Test
+   cheat. No runtime FM synthesis; no music-sequence-format RE required.
+3. **Fidelity bar = pragmatic first pass** ("APPROXIMABLE" per
+   `REWRITE_READINESS.md`): working audio now, every approximation explicitly
+   catalogued (`cport/audio/README.md`), nothing silently guessed.
+
+**New provenance tier: "empirical capture".** Sits below byte-verified and
+above speculation in `notes/TRUTH_HIERARCHY.md` terms. An empirical-capture
+artifact is *measured from the real game running under emulation* (a per-id WAV
+capture; a cross-correlation-derived `COLDIG.BIN` slice) rather than read from
+bytes at a cited offset. Every such artifact must carry a `"provenance"` field
+naming its capture, and must never be presented as byte-cited. SFX payloads
+themselves stay bit-clean (verbatim `COLDIG.BIN` slices); only the id→slice
+*mapping* is empirical.
+
+**Action.** `notes/PROJECT_BOARD.md` audio section rewritten and its stale
+`docs/AUDIO_SPIKE.md` links corrected to `notes/rulings/AUDIO_SPIKE.md` (same
+fix in `port/README.md`; note AUDIO_SPIKE itself cites a `docs/MOV_FORMAT.md`
+that does not exist — the decoded-MOV record is `spec/ui/cinematics.md` §11.3 +
+`data_extracted/data/AMERICA_MOV.json`). `formats/COL.md` rewritten around the
+MZ-overlay evidence (its "(sound_id, offset, size) triples" model was falsified
+by AUDIO_SPIKE / `docs/RESIDUAL_FINDINGS.md` §3); `formats/BIN.md` and
+`formats/MOV.md` corrected likewise. Design doc: `docs/AUDIO_PORT.md`.

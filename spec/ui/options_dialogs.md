@@ -21,8 +21,15 @@ cmd 4 → **Pick Music** (`0x181f:0xf54` → `func_023344`) @0x0235EF–0x023617
   (section picker); reads back rows via `0x191f:0x306` into the three globals
   @0x0232E8–0x0232F3; mirrors bits into `[0x5386]` @0x023301–0x023322
   (persisted save-side flag word).
-- If an option was turned off: sends **driver command 1 (stop)** @0x023339
-  via `0x181f:0x4de`.
+- **`[0x5386]` bit assignment (byte-pinned 2026-08-17 from 0x023301..0x023322):**
+  `and byte [0x5386],0xF1` clears mask 0x0E, then `[0xA2]`≠0 → **bit1 (0x02)
+  Background Music**, `[0xA0]`≠0 → **bit2 (0x04) Event Music**, `[0xA4]`≠0 →
+  **bit3 (0x08) Sound Effects**. (Consistent with the new-game seed
+  `mov [0x5386],0x0E` @0x755EB = all three on — see RULINGS 2026-08-08 area
+  entry on the 0x5386 shared word.)
+- Stop condition (pinned @0x023327–0x023343): if **any** of the three
+  switches is off after the dialog — not just on an off-transition — sends
+  **driver command 1 (stop)** @0x023339 via `0x181f:0x4de`.
 
 ## 3. Pick Music (`@PICKMUSIC` + 3 sub-pickers, `func_023344` @0x023344) — B
 One function drives all four GAME.TXT sections (strings in one DGROUP
@@ -89,18 +96,57 @@ No `.XMI` filenames exist in VICEROY.EXE — ids resolve inside the external
 sound driver (§5).
 
 ## 4. Background-music rotation (`func_004EE6` @0x004EE6, pump verb `0x181f:0x470`) — B
-Called from input-idle loops. Skips unless `[0xA2]` (BG on) or one-shot
-`[0x9E]`; polls driver id 8 ("playing?"); honors forced-next `[0x94]`;
-otherwise seeds RNG from `[0x83A8]` and picks a tune-index window:
-- peace (`[0x5382]&1`==0): indices 1–12 folk, 1-in-9 → 13–23;
-- War of Independence: 13–18, 1-in-5 → folk;
-- class requests `[0x9A]` (set by events via `0x181f:0x498/0x4a2/0x4ac/0x4b6`
-  = `func_0050F0/0050FC/005108/00513C`, plus scenario helper `func_00543C`):
-  1→folk A, 2→folk B, 3→independence, 4→military, 5→0x33 once, 6→0x35,
-  7→0x36 (jump table @0x005008).
-Index→id map `func_004DF8` (table @0x004EAC); re-rolls on ==`[0x96]`;
-plays via `func_00518E`. "Queue tune next" API = `func_0050BC`
-(`0x181f:0x48e`): sets `[0x94]`, sends stop so the pump switches.
+
+Called from input-idle loops. Fully byte-pinned 2026-08-17 (tail
+0x5016..0x50BB and both jump tables read from the reconstituted EXE).
+
+**Flow**: skips unless `[0xA2]` (BG on) or one-shot `[0x9E]` (@0x4EEA);
+polls driver id 8 "playing?" and returns while sounding (@0x4EFB, result also
+clears `[0x9E]` @0x4F0C); forced-next `[0x94]` ≥ 0 wins (played, then reset
+to 0xFFFF, @0x4F15); otherwise seeds RNG from tick word `[0x83A8]` (@0x4F24)
+and selects a window `(base,count)` of 1-based tune *indices*:
+
+- peace (`[0x5382]&1`==0): `(1,12)` folk; `random(0,8)==0` (1-in-9) →
+  `(13,11)` = indices 13–23 (@0x4F37–0x4F5B);
+- War of Independence: `(13,6)`; `random(0,4)==0` (1-in-5) → `(1,12)` folk
+  (@0x4F5E–0x4F7D);
+- `[0x828]` ≠ 0 overrides to `(1,24)` — all 24 rotation indices (@0x4F82;
+  the flag's writer is still open item 5);
+- class request `[0x9A]` ≠ 0 (set by events via
+  `0x181f:0x498/0x4a2/0x4ac/0x4b6` = `func_0050F0/0050FC/005108/00513C`,
+  plus scenario helper `func_00543C`) overrides via jump table @0x005008
+  (7 near targets, pinned): **1→(1,7)** folk A, **2→(8,5)** folk B,
+  **3→(13,6)** independence, **4→(19,4)** military, **5→(23,1)** = 0x33,
+  **6→(25,1)** = 0x35, **7→(26,1)** = 0x36. Classes 5/6/7 guard
+  "already playing that tune" (`cmp [0x96],0x33/0x35/0x36` @0x4FCA/0x4FDE/
+  0x4FEC) and on match fall through to the RNG-chosen window instead.
+
+**Pick** (@0x5016–0x503A): `i = base + random(0, count-1)`; id =
+`func_004DF8(i)`; **re-roll the whole pick while id == `[0x96]`**.
+
+**Index→id map `func_004DF8`** (dispatch `dec ax; cmp ax,0x19; ja default`
+@0x4E9E, 26-entry jump table @0x004EAC, all read):
+
+| index | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| id | 20 | 21 | 22 | 23 | **3A** | **3B** | **38** | 24 | 25 | 26 | 27 | **39** |
+
+indices 13–22 → `id = index + 0x1B` (0x28–0x31, shared default body
+@0x4E68); **23 → 0x33 (Natives)** and **24 → 0x32 (Indian Victory)** —
+explicit cases @0x4E76/@0x4E80, *swapped* relative to the +0x1B formula;
+25 → 0x35 @0x4E8A; 26 → 0x36 @0x4E94; out-of-range → +0x1B default.
+
+**After the pick** (@0x503C–0x50BB): re-seed from the *other* tick word
+`[0x83A6]` (@0x503C); if `[0x9A]`==0, derive it from the picked index
+(@0x504F–0x5097: 7, then ≤25→6, ≤24→5, ≤22→4, ≤18→3, ≤12→2, ≤6→1 — i.e.
+the class of what will play); publish **`[0x9C]` = that class** (@0x50A0);
+shift **`[0x98]` → `[0x9A]`** and clear `[0x98]` (@0x50A3–0x50A9) —
+class requests are double-buffered: `[0x9A]` consumed this round, `[0x98]`
+is the queued-next request. Finally `[0x96]` = id and far call
+`0x2D8:0xE` with AX=id (@0x50B5) — the play path.
+
+"Queue tune next" API = `func_0050BC` (`0x181f:0x48e`): sets `[0x94]`,
+sends stop so the pump switches.
 
 ## 5. Sound-driver architecture (B)
 - **Gate `func_00518E`** (AX=id): ids <0x10 = driver commands always pass;
@@ -182,7 +228,14 @@ Builder verb `0x181f:0x3fe` → wrapper @0x06F594: hardwires file "GAME"
    only; break on the far call.
 2. Config byte `[0x2608]` + words `[0x260A..0x2616]` writers (driver
    filename selection) — trace boot config parse.
-3. Tune-id→XMI names for 0x28/0x34/0x37/0x3E — inside `?SOUND.COL` (driver
-   binary absent from `raw/COLONIZE/`).
+3. Tune-id→sequence names for 0x28/0x34/0x37/0x3E — the id→sequence
+   resolution lives inside `?SOUND.COL` (MZ driver overlays; in `col.zip`,
+   materialized to `raw/COLONIZE/` by `bin/reconstitute.py` — not decoded).
 4. 16×8-byte table at DGROUP 0x26F0 (id→byte[+6] @0x0129FF) — writer TBD.
-5. `[0x828]` flag (widens rotation to all 24) — meaning TBD.
+5. `[0x828]` flag — its window override is byte-pinned (§4: `(1,24)`, all
+   indices); its *writer/meaning* is still TBD.
+6. Play far-call target `0x2D8:0xE` — carries AX=id at every caller
+   (@0x50B5 the scheduler's pick; @0x50E5/@0x5134 stop issued as AX=1,
+   matching the gate's command-1 semantics), so it behaves as the gated
+   play entry; its thunk identity vs `0x181f:0x4c0`/`func_00518E` is
+   still untraced.

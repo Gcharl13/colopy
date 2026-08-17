@@ -303,25 +303,43 @@ extraction.
 
 ## Part F — Audio
 
-**F1. Merge `claude/colonization-audio-port-mwt067`.** It delivers what this
-branch cannot: music (each tune rendered offline by the *original* `?SOUND.COL`
-driver under DOSBox, shipped as IMA renders — no runtime FM synthesis), a 2-voice
-mixer, a byte-pinned cue/scheduler layer, `COLAUDIO.PAK` (67 entries, 25.9 MB),
-host tests, and both P4 I2S and Teensy MQS backends. **14 files conflict**,
-including both board sketches — each branch grew a P4 audio backend
-independently — plus `formats/BIN.md`, `formats/COL.md`, `RULINGS.md` and both
-sketch generators.
+**F1. Merge `claude/colonization-audio-port-mwt067`. — DONE 2026-08-17.**
+It delivered what this branch could not: music (each tune rendered offline by the
+*original* `?SOUND.COL` driver under DOSBox, shipped as IMA renders — no runtime
+FM synthesis), a 2-voice mixer, a byte-pinned cue/scheduler layer, `COLAUDIO.PAK`,
+host tests (`./smoke --audio`, `./smoke --audiopak`), and both P4 I2S and Teensy
+MQS backends. Ten files conflicted, including both board sketches — each branch
+had grown a P4 audio backend independently.
 
-**F2. Replace its SFX slice table with the byte-decoded one.** That branch
-locates effects in `COLDIG.BIN` by cross-correlation and labels the result
-"empirical capture — NOT byte-cited". This branch decoded the driver's actual
-`(offset,length)` table. They disagree on **all 21 shared ids**: offsets drift up
-to 61,992 bytes (id `0x50` matches the wrong sample entirely) and lengths run
-short, clipping decay tails. Four ids they ship as FM renders — `0x4D` `0x4E`
-`0x4F` `0x5B` — the driver's own dispatcher sends to real COLDIG samples. The
-byte table is exact by construction and passes three independent checks: the 35
-lengths sum to exactly 993,755 = the file size, offsets are fully contiguous, and
-the terminator lands on EOF.
+**Both** audio paths survive the merge, chosen at boot in `audio_init()`
+(`cport/p4/colopy_p4.ino`): if the SD card carries `COLAUDIO.PAK`, the merged
+pack backend takes it; otherwise this branch's direct `COLDIG.BIN` cue player
+runs. That is deliberate — the pack must be rebuilt from a DOSBox capture the
+user may not have, and dropping the COLDIG path would have silenced the board
+outright. `tools/audio/captures/` and `cport/pak/COLAUDIO.PAK` are gitignored, so
+the pack is not in the tree.
+
+**F2. Replace its SFX slice table with the byte-decoded one. — DONE 2026-08-17.**
+That branch located effects in `COLDIG.BIN` by cross-correlation and labelled the
+result "empirical capture — NOT byte-cited". This branch decoded the driver's
+actual `(offset,length)` table. They disagree on **every one of the 15 shared
+ids**: offsets drift by tens to thousands of bytes and lengths run uniformly
+short, clipping decay tails — and the empirical map shipped `0x59`, which the
+drivers list in `sfx_ids_not_samples` as not a bank sample at all. Four ids it
+shipped as FM renders — `0x4D` `0x4E` `0x4F` `0x5B` — the driver's own dispatcher
+sends to real COLDIG samples; `0x4E`, `0x4F` and `0x5B` are wired cues today
+(`RAIDGOLD`, `RAIDSTORES`, `RAIDNOTHING`), so they were audibly wrong.
+
+`tools/gen_audio_pack.py`, `tools/audio/verify_pack.py` and
+`tools/audio/trim_masters.py` now read `data_extracted/coldig_index.json`. The
+pack builds **25 SFX entries, all 25 bit-clean** against the bank
+(`tools/audio/verify_pack.py`: 0 failures) — up from 16, and every cue id the
+engine fires now resolves to a real sample. The generator also refuses any
+sample whose rate is not 11025 Hz, because the mixer's PCM8U path is a fixed
+2× hold (`cport/audio/colopy_audio_mix.c:115`); no sfx id maps to one of the
+five 19050 Hz samples today, and this catches it if that changes.
+`data_extracted/data/coldig_slices.json` is retained as a record of the capture
+work, marked superseded in its own `_meta`, and read by nothing.
 
 **F3. Then that branch's own open list:** the human A/B listen pass (needs
 speakers); tune `0x34` hit the 240 s capture cap and likely loops; SFX preemption
@@ -333,7 +351,7 @@ TBD**; the Sound Test and Pick-Music/Sound-Options screens not in cport's input
 layer; play far-call thunk identity untraced; PC-speaker and MT-32 variants not
 reproduced; 25.9 MB is SD-only on both boards.
 
-**F4. On this branch meanwhile:** 24 of the 40 `lcall 0x181F:0x4C0` play sites
+**F4. On the fallback COLDIG cue path** (used when no `COLAUDIO.PAK` is on the card): 24 of the 40 `lcall 0x181F:0x4C0` play sites
 stay silent because their event is TBD (four compute the id at runtime); only 12
 cues are wired. `sfx_play()` blocks for the sample's length — one voice, no
 mixing.

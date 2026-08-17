@@ -40,6 +40,11 @@ SOURCES = [
     "cport/data/colopy_pak.h",
     "cport/render/*.c", "cport/render/*.h",
     "cport/game/*.c", "cport/game/*.h",
+    # audio milestone (docs/AUDIO_PORT.md) — inert unless the sketch
+    # defines COLOPY_AUDIO (the banner keeps it off until the board's
+    # backend is hardware-verified)
+    "cport/audio/*.c", "cport/audio/*.h",
+    "cport/data/colopy_audio_pak.h",
 ]
 
 INO_SRC = ROOT / "cport" / "p4" / "colopy_p4.ino"
@@ -83,6 +88,14 @@ CONFIG = """\
 #define TT_DEBOUNCE_MS 300
 #define TT_RELEASE_MS 80
 #define TT_LONG_MS 600
+
+/* AUDIO (docs/AUDIO_PORT.md): uncomment to enable the cport/audio
+ * engine + the on-board speaker path (I2S BCLK 22 / LRCLK 21 / SDATA
+ * 23, amp gate GPIO 30 — Elecrow Lesson12).  Needs COLAUDIO.PAK on
+ * the SD card (python3 tools/gen_audio_pack.py after the tools/audio
+ * capture pipeline).  Default OFF until verified on hardware — flip
+ * it, listen, and record the outcome in docs/AUDIO_PORT.md. */
+/* #define COLOPY_AUDIO */
 
 """
 
@@ -142,6 +155,10 @@ tests and typing free-text names.
    `raw/COLONIZE/COLDIG.BIN` — the game's own 993 KB sample bank; the
    sketch streams cues straight out of it (see "Sound" below).  It is
    optional: without it the board is simply silent.
+   With `COLOPY_AUDIO` enabled, also copy `cport/pak/COLAUDIO.PAK` —
+   the music + mixed-cue pack (build it with the tools/audio capture
+   pipeline then `python3 tools/gen_audio_pack.py`; see
+   `docs/AUDIO_PORT.md`).
 5. Flash.  The board comes up on the **title screen** — New Game runs
    the full difficulty / nation / name / briefing / King / cards flow,
    Load Game opens an SD picker over the card's `.SAV` files.  To skip

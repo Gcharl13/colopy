@@ -541,6 +541,17 @@ int main(int argc, char **argv) {
         extern int pak_check_main(const char *path);
         return pak_check_main(argv[2]);
     }
+    /* --audio: deterministic cport/audio engine tests (audio milestone) */
+    if (argc > 1 && strcmp(argv[1], "--audio") == 0) {
+        extern int audio_smoke_main(void);
+        return audio_smoke_main();
+    }
+    /* --audiopak FILE [COLDIG.BIN]: validate COLAUDIO.PAK; with the bank
+     * present also prove every PCM payload is a verbatim slice */
+    if (argc > 2 && strcmp(argv[1], "--audiopak") == 0) {
+        extern int audio_pak_check_main(const char *path, const char *coldig);
+        return audio_pak_check_main(argv[2], argc > 3 ? argv[3] : 0);
+    }
     /* --render PAK OUT.ppm: Phase-7 render-core selftest scene */
     if (argc > 3 && strcmp(argv[1], "--render") == 0) {
         extern int render_smoke_main(const char *pak, const char *out);

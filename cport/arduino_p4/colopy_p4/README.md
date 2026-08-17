@@ -53,6 +53,10 @@ tests and typing free-text names.
    `raw/COLONIZE/COLDIG.BIN` — the game's own 993 KB sample bank; the
    sketch streams cues straight out of it (see "Sound" below).  It is
    optional: without it the board is simply silent.
+   With `COLOPY_AUDIO` enabled, also copy `cport/pak/COLAUDIO.PAK` —
+   the music + mixed-cue pack (build it with the tools/audio capture
+   pipeline then `python3 tools/gen_audio_pack.py`; see
+   `docs/AUDIO_PORT.md`).
 5. Flash.  The board comes up on the **title screen** — New Game runs
    the full difficulty / nation / name / briefing / King / cards flow,
    Load Game opens an SD picker over the card's `.SAV` files.  To skip

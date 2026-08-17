@@ -1,0 +1,347 @@
+{
+ "_meta": {
+  "bank": "COLDIG.BIN (993,755 B, 8-bit unsigned PCM @ ~11025 Hz)",
+  "note": "payloads ship as verbatim COLDIG.BIN slices named here; in_bank:false ids are FM sounds shipping as renders",
+  "source": "tools/audio/map_coldig.py (v2 chunked)",
+  "tier": "empirical capture (RULINGS 2026-08-16) — NOT byte-cited",
+  "superseded": "2026-08-17: superseded by data_extracted/coldig_index.json, the sample table decoded out of the .COL sound drivers. No tool reads this file any more. It disagrees with the drivers on every shared id (offsets off by tens to thousands of bytes, lengths uniformly short) and maps 0x59, which the drivers list in sfx_ids_not_samples. Retained as a record of the capture work. See formats/BIN.md and docs/AUDIO_PORT.md."
+ },
+ "slices": {
+  "0x40": {
+   "approximate": false,
+   "capture": "sfx_40.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 5743,
+   "offset": 917741,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.927,
+   "sha256": "eff45a630975676af538621ed18fb4f13c9cbd76f18204cdbbb46fd6440b1047",
+   "snapped_to_boundary": true
+  },
+  "0x41": {
+   "approximate": false,
+   "capture": "sfx_41.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 6691,
+   "offset": 923484,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.981,
+   "sha256": "d90934b88b84bf5d98d468f783de4849306d2d5d479f1a68fdc2f37f0103491c",
+   "snapped_to_boundary": true
+  },
+  "0x42": {
+   "approximate": false,
+   "capture": "sfx_42.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 13568,
+   "offset": 904173,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99634,
+   "score": 0.973,
+   "sha256": "3488485521e5f82e33705c61996b77516bee6205c825e2a22756954e303a26ed",
+   "snapped_to_boundary": true
+  },
+  "0x43": {
+   "approximate": false,
+   "capture": "sfx_43.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 15131,
+   "offset": 844118,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99668,
+   "score": 0.893,
+   "sha256": "bc8ac5d9f1da39d7330c36ef2d9706af87757b69c8f87068a7b6a4e6b646e6c4",
+   "snapped_to_boundary": false
+  },
+  "0x44": {
+   "approximate": false,
+   "capture": "sfx_44.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 11683,
+   "offset": 628893,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.884,
+   "sha256": "ecdbf7200dfd6e3efd373e78f78369e84b9113b77bfd96352f86b6e4740c9f46",
+   "snapped_to_boundary": true
+  },
+  "0x45": {
+   "approximate": false,
+   "capture": "sfx_45.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 6186,
+   "offset": 616863,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.913,
+   "sha256": "5cc88883d87a8e0469098d6aa4babf4385198eaf7eb06ad95c1178d268d17fff",
+   "snapped_to_boundary": true
+  },
+  "0x46": {
+   "capture": "sfx_46.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x47": {
+   "capture": "sfx_47.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x48": {
+   "approximate": false,
+   "capture": "sfx_48.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 10600,
+   "offset": 893573,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.999,
+   "sha256": "a4cc8fb227ed3e3df374f5e06d2aa07e883453dcae89c79485bd68f84cd1f13d",
+   "snapped_to_boundary": true
+  },
+  "0x49": {
+   "approximate": false,
+   "capture": "sfx_49.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 22746,
+   "offset": 969472,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99683,
+   "score": 0.81,
+   "sha256": "eff3aec22d28da696380acec28cc0a4913e2dcd85e54d865d61318deda4cb048",
+   "snapped_to_boundary": true
+  },
+  "0x4A": {
+   "approximate": false,
+   "capture": "sfx_4a.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 28740,
+   "offset": 863371,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99669,
+   "score": 0.848,
+   "sha256": "e46371403125d542c6371305d1f100958e4d076adc5edef9df40e8a3edf0925a",
+   "snapped_to_boundary": true
+  },
+  "0x4B": {
+   "approximate": false,
+   "capture": "sfx_4b.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 34232,
+   "offset": 933128,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99658,
+   "score": 0.936,
+   "sha256": "15024a440023039a5d107e0390949489b1d0c57181185b8cd83a2adc54a2254f",
+   "snapped_to_boundary": true
+  },
+  "0x4C": {
+   "approximate": false,
+   "capture": "sfx_4c.wav",
+   "chunk_coverage": 0.8,
+   "in_bank": true,
+   "length": 54698,
+   "offset": 452773,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9967,
+   "score": 0.779,
+   "sha256": "505d39f57cef5c2b209616ba817112e0bf5cc9bcb98c24bf6af681884db24f7c",
+   "snapped_to_boundary": true
+  },
+  "0x4D": {
+   "capture": "sfx_4d.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x4E": {
+   "capture": "sfx_4e.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x4F": {
+   "capture": "sfx_4f.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x50": {
+   "approximate": true,
+   "capture": "sfx_50.wav",
+   "chunk_coverage": 0.38,
+   "in_bank": true,
+   "length": 45940,
+   "offset": 172620,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99658,
+   "score": 0.764,
+   "sha256": "f86508eae4ab175e84ff8ca8fbae9658dccd26d00c92dc19e400de8ad7f2d2fa",
+   "snapped_to_boundary": true
+  },
+  "0x51": {
+   "approximate": true,
+   "capture": "sfx_51.wav",
+   "chunk_coverage": 0.45,
+   "in_bank": true,
+   "length": 43112,
+   "offset": 24452,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99674,
+   "score": 0.591,
+   "sha256": "4733de8127b80b85adab8539d5c90f8aee5e11c1492ab4fd46b116b276e9e9b4",
+   "snapped_to_boundary": true
+  },
+  "0x52": {
+   "approximate": true,
+   "capture": "sfx_52.wav",
+   "chunk_coverage": 0.13,
+   "in_bank": true,
+   "length": 34563,
+   "offset": 352023,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99561,
+   "score": 0.513,
+   "sha256": "165cab288294ecec8fe68fe3719654ff0ce4019994ccf490462f309bc2c4107f",
+   "snapped_to_boundary": true
+  },
+  "0x53": {
+   "approximate": false,
+   "capture": "sfx_53.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 55730,
+   "offset": 643710,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99666,
+   "score": 0.726,
+   "sha256": "c120e9b287470d6cabbd154a6b5a7702ab390c4bdc71149eeb6adca03270b9aa",
+   "snapped_to_boundary": true
+  },
+  "0x54": {
+   "approximate": true,
+   "capture": "sfx_54.wav",
+   "chunk_coverage": 0.48,
+   "in_bank": true,
+   "length": 59347,
+   "offset": 390620,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99638,
+   "score": 0.793,
+   "sha256": "a1e37b7d3fdca67a154e7f222543ff4bd3753a8960d7731be3b3792765567391",
+   "snapped_to_boundary": true
+  },
+  "0x55": {
+   "approximate": true,
+   "capture": "sfx_55.wav",
+   "chunk_coverage": 0.25,
+   "in_bank": true,
+   "length": 19834,
+   "offset": 701269,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99023,
+   "score": 0.755,
+   "sha256": "dfad74ceb3d91a307cf345b02a8c6baebd8168ac76915ec55331fd4e30685e2f",
+   "snapped_to_boundary": true
+  },
+  "0x56": {
+   "approximate": true,
+   "capture": "sfx_56.wav",
+   "chunk_coverage": 0.1,
+   "in_bank": true,
+   "length": 43705,
+   "offset": 223678,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99609,
+   "score": 0.547,
+   "sha256": "fe65d1c3ab20d41409bad4d0b43bb786b652c2d900a794e209c19821fafcaeab",
+   "snapped_to_boundary": false
+  },
+  "0x57": {
+   "approximate": false,
+   "capture": "sfx_57.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 45372,
+   "offset": 571225,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99668,
+   "score": 0.776,
+   "sha256": "f0ff5087cad3dd862df8ab1f73400d608029f274258742c97e95673a0c4836e7",
+   "snapped_to_boundary": false
+  },
+  "0x58": {
+   "approximate": false,
+   "capture": "sfx_58.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 7606,
+   "offset": 723635,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.75,
+   "sha256": "405b4eacb6ce2a7f8e44c60891519b5c5b213ff6ce3cf85bcf8828711d43e23f",
+   "snapped_to_boundary": true
+  },
+  "0x59": {
+   "approximate": false,
+   "capture": "sfx_59.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 7701,
+   "offset": 780520,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.9966,
+   "score": 0.984,
+   "sha256": "d869b654e196dab032e09fdcfcf6911e5dd4703650966440b474f1756d941c30",
+   "snapped_to_boundary": false
+  },
+  "0x5A": {
+   "capture": "sfx_5a.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x5B": {
+   "capture": "sfx_5b.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x5C": {
+   "approximate": false,
+   "capture": "sfx_5c.wav",
+   "chunk_coverage": 1.0,
+   "in_bank": true,
+   "length": 56040,
+   "offset": 162520,
+   "provenance": "empirical capture chunk-correlation, 2026-08-17",
+   "rate_ratio": 0.99665,
+   "score": 0.881,
+   "sha256": "e3ed822889f120ddea4caa0128ab15db73f6b2dca9ec2a4bf7854d84663b9b27",
+   "snapped_to_boundary": true
+  },
+  "0x5D": {
+   "capture": "sfx_5d.wav",
+   "in_bank": false,
+   "note": "no coherent bank alignment — FM-rendered by the driver; ships as an ADPCM render"
+  },
+  "0x5E": {
+   "capture": "sfx_5e.wav",
+   "in_bank": false,
+   "no_signal": true
+  },
+  "0x5F": {
+   "capture": "sfx_5f.wav",
+   "in_bank": false,
+   "no_signal": true
+  }
+ }
+}

@@ -120,6 +120,28 @@ Twelve sites name their event: `0x54` `REFIT` @`0x2F1CD`, `0x56` `TEAPARTY`
 
 ---
 
+## The audio branch's empirical slice map is SUPERSEDED
+
+The 2026-08-16 audio milestone located each effect inside `COLDIG.BIN` by
+cross-correlating per-id DOSBox captures against the bank, and committed the
+result as `data_extracted/data/coldig_slices.json`, labelled "empirical
+capture — NOT byte-cited". Its own note said the index "sits in the loaded
+driver's data segment, which is not decoded".
+
+That is no longer true: the table is in the overlay image and is decoded above.
+The two disagree on **all 21 shared ids** — offsets drift by up to 61,992 bytes
+(id `0x50` correlates onto the wrong sample entirely) and lengths run
+consistently short, clipping decay tails. Four ids the milestone shipped as FM
+renders — `0x4D`, `0x4E`, `0x4F`, `0x5B` — the driver's own dispatcher sends to
+real bank samples.
+
+Per `notes/TRUTH_HIERARCHY.md` the byte-read table wins, and it is exact by
+construction: the 35 lengths sum to exactly 993,755 = the file size, the offsets
+are fully contiguous, and the terminator lands on the end of the file. A
+correlation cannot beat that. `tools/gen_audio_pack.py` therefore slices from
+`data_extracted/coldig_index.json`; `coldig_slices.json` is kept only as the
+capture record that named the effects.
+
 ## Still open
 
 - **Names.** No name strings for the samples exist in the drivers; labelling
