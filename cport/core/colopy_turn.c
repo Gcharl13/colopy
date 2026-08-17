@@ -679,6 +679,7 @@ void turn_step_prefix(void) {
         }
     for (int i = 0; i < CS.n_units; i++)
         if (unit_on_map_player(i)) CR.unit_slip[i] = 0;  /* u.slipChecked */
+    colopy_reveal_all();                          /* revealAll (10741) */
     /* payUpkeep */
     {
         int32_t due = total_upkeep();

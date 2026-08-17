@@ -1,6 +1,7 @@
 /* Map/tile queries — ports of game.js:356-455 + tileYield (2415), each a
  * one-for-one transcription. The yield tables come from the generated
  * dat_yields_* (same @UNFORESTED/@FORESTED/@OTHER rows the JS reads). */
+#include <string.h>
 #include "colopy_sim.h"
 #include "colopy_data.h"
 
@@ -54,4 +55,44 @@ int tile_yield(uint8_t v, int col) {
     else if (t >= 24 && t - 24 < DAT_YIELDS_OTHER_COUNT) row = dat_yields_other[t - 24];
     else return 0;
     return (col >= 0 && col < 9) ? row[col] : 0;
+}
+
+/* ---- fog of war (game.js:8571..8600) ----
+ * The plane's own bit convention: 1<<(power+4) (importer note 10272).
+ * sightRadius (8576): Scouts 2; @UNIT rows 15..17 (Galleon/Privateer/
+ * Frigate) 2; any naval row 13..18 with Hernando de Soto 2; else 1. */
+int unit_sight_radius(int ui) {
+    int t = CS.units[ui].type;
+    if (t < 0 || t >= DAT_UNITS_COUNT) return 1;
+    if (strcmp(dat_units[t].name, "Scouts") == 0) return 2;
+    if (t >= 15 && t <= 17) return 2;
+    if (t >= 13 && t <= 18 &&
+        father_owned(father_by_name("Hernando de Soto"))) return 2;
+    return 1;
+}
+
+/* reveal (game.js:8584): the r-radius square OR of the player's bit */
+void colopy_reveal(int x, int y, int r) {
+    uint8_t bit = (uint8_t)(1u << (cs_nation() + 4));
+    for (int dy = -r; dy <= r; dy++)
+        for (int dx = -r; dx <= r; dx++) {
+            int tx = x + dx, ty = y + dy;
+            if (tx < 0 || ty < 0 || tx >= COLOPY_MAP_W ||
+                ty >= COLOPY_MAP_H)
+                continue;
+            CS.fog[ty * COLOPY_MAP_W + tx] |= bit;
+        }
+}
+
+/* revealAll (game.js:8594): every player map unit by its sight radius,
+ * every player colony at r=2 — run each turn (endTurn 10741) and at
+ * game start (beginGame 733). */
+void colopy_reveal_all(void) {
+    for (int i = 0; i < CS.n_units; i++)
+        if (unit_on_map_player(i))
+            colopy_reveal(CS.units[i].map_x, CS.units[i].map_y,
+                          unit_sight_radius(i));
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
+            colopy_reveal(CS.colonies[ci].map_x, CS.colonies[ci].map_y, 2);
 }

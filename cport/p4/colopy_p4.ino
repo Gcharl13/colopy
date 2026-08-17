@@ -101,6 +101,12 @@ static bool sav_loaded = false;
  * never change, a re-flush alone animates the sea. */
 static int cyc_start = 0, cyc_len = 0;
 static uint32_t cyc_step_ms = 0;
+/* The rotation is only meaningful over the MASTER map palette — a PIK
+ * screen (reports, Europe, woodcuts, cinematics) loads its own palette
+ * and rotating its band indices corrupts its colours.  Whoever paints
+ * the fb last sets this: draw_screen for game screens, cmd_view for
+ * the serial map view. */
+static int cyc_wanted = 0;
 
 static void cyc_load(void) {
     static int tried = 0;
@@ -128,7 +134,7 @@ static void build_lut(void) {
                                ((c[1] & 0xFC) << 3) | (c[2] >> 3));
     }
     cyc_load();
-    int phase = cyc_phase();
+    int phase = cyc_wanted ? cyc_phase() : 0;
     if (phase > 0) {
         for (int k = 0; k < cyc_len; k++) {
             int src = cyc_start +
@@ -335,6 +341,9 @@ static void dlg_subs(rm_subs *subs) {
 }
 
 static void draw_screen(void) {
+    /* sea animation only where the master map palette is on screen */
+    cyc_wanted = (UI.screen == SCR_MAP || UI.screen == SCR_VILLAGE ||
+                  UI.screen == SCR_OPTIONS);
     switch (UI.screen) {
     case SCR_TITLE: rm_draw_title(UI.menu_row); break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
@@ -465,6 +474,38 @@ static void game_tap(int gx, int gy) {
         if (UI.request) { service_request(); return; }
         draw_screen();
         return;
+    }
+    /* open pulldown: pick the tapped VISIBLE row and commit with Enter.
+     * FLAGGED shell divergence from the DOS/JS pointer path (in_click,
+     * game.js:12296), which clamps the clicked row at the MASTER row
+     * count — REPORTS shows 12 rows (separators included) over a master
+     * count of 10, so its last two rows (F8 Foreign Affairs / F9 Indian
+     * Advisor) are unreachable by pointer there.  The keyboard path
+     * (arrows + Enter, run_menu_row over the visible-row model) reaches
+     * every row; this maps the tap onto that path instead. */
+    if (UI.screen == SCR_MAP && UI.open_menu >= 0) {
+        int bx, by, bw, bh;
+        rm_pulldown_box(UI.open_menu, UI.menu_sel, &bx, &by, &bw, &bh);
+        if (gx >= bx && gx < bx + bw && gy >= by && gy < by + bh) {
+            /* walk the rows with the painter's pitch (8 px per row,
+             * 7 px per separator — drawPulldown) to find the tap */
+            rm_mrow rows[64];
+            int n = rm_menu_rows(UI.open_menu, UI.sel, rows);
+            int py = by + 2, r = -1;
+            for (int k = 0; k < n; k++) {
+                int rh = rows[k].sep ? 7 : 8;
+                if (gy >= py && gy < py + rh) { r = k; break; }
+                py += rh;
+            }
+            if (r >= 0 && rows[r].label && !rows[r].sep && !rows[r].dim) {
+                UI.menu_sel = (int8_t)r;
+                in_key("Enter", 0, 0);
+                if (UI.request) { service_request(); return; }
+            }
+            draw_screen();
+            return;
+        }
+        /* off the box falls through to in_click (closes the menu) */
     }
     /* map viewport, no menu open: a tap on a tile ADJACENT to the
      * active unit is that direction's movement key (the click layer
@@ -745,6 +786,7 @@ static void pak_load(void) {
 static void cmd_view(void) {                 /* 'v': render the map view */
     pak_load();
     if (!pak_ready) return;
+    cyc_wanted = 1;                          /* the map palette is up */
     /* centre on the first player unit (centerView semantics) */
     int vx = 0, vy = 0;
     if (CR.n_units_order) {
@@ -931,7 +973,7 @@ void loop() {
         if (UI.screen == SCR_MAP && bl != map_blink) {
             map_blink = bl;
             draw_screen();
-        } else {
+        } else if (cyc_wanted) {
             static int last_phase = 0;
             int ph = cyc_phase();
             if (ph != last_phase) {

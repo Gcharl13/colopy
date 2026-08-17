@@ -791,8 +791,8 @@ void cmd_move(int ui, int dx, int dy) {
                     strcmp(dat_units[u->type].name, "Scouts") == 0) {
                     /* scoutColony (func_05A20E, game.js:11130): mayor's
                      * reception / spy on defences / attack / leave.
-                     * The reveal outcomes are fog presentation (not
-                     * mirrored); the spy roll can LOSE the scout.  The
+                     * Mayor reveals r=3 (6967); a WON spy roll reveals
+                     * r=4 (6976), a lost one LOSES the scout.  The
                      * JS X = target.colonists?.length ?? 3 — rival
                      * colonies carry no colonist list, so X is the
                      * CONSTANT 3 (the JS reading, mirrored). */
@@ -803,6 +803,7 @@ void cmd_move(int ui, int dx, int dy) {
                     if (c2 == 0) {
                         if (CR.woi_flags & WOI_DECLARED)
                             ev_emit("NOMAYORSDURINGREV", 0, 0, 0, 0);
+                        else colopy_reveal(nx, ny, 3);
                     } else if (c2 == 1) {
                         int need = (3 + 6) * 2 + (cs_difficulty() - 2);
                         uint8_t pr = u->profession;
@@ -811,6 +812,7 @@ void cmd_move(int ui, int dx, int dy) {
                             need >>= 1;
                         if (1 + (int)((rng_next() * 36u) >> 15) > need)
                             unit_remove(ui);   /* caught and lost */
+                        else colopy_reveal(nx, ny, 4);
                     }
                     CR.ui_advance = 1;
                     return;
@@ -873,10 +875,12 @@ void cmd_move(int ui, int dx, int dy) {
      * inert headless, and the ship does NOT step (game.js:11153) */
     if (ship && tile_terrain(v) == TERR_SEALANE) return;
     /* step (game.js:10833): one step is always affordable; the budget
-     * floors at zero.  reveal/tutorial/centring are presentation. */
+     * floors at zero.  tutorial/centring are presentation; the fog
+     * reveal (10839) is state — the plane rides in the .SAV. */
     int cost = move_cost(ship, u->map_x, u->map_y, nx, ny);
     u->moves_remaining = (uint8_t)(cost > u->moves_remaining
                                        ? 0 : u->moves_remaining - cost);
     u->map_x = (uint8_t)nx;
     u->map_y = (uint8_t)ny;
+    colopy_reveal(nx, ny, unit_sight_radius(ui));
 }

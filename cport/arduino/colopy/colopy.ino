@@ -127,6 +127,10 @@ static int pak_ready = 0;
  * animates the sea. */
 static int cyc_start = 0, cyc_len = 0;
 static uint32_t cyc_step_ms = 0;
+/* The rotation is only meaningful over the MASTER map palette — a PIK
+ * screen loads its own palette and rotating its band indices corrupts
+ * its colours.  Whoever paints the fb last sets this. */
+static int cyc_wanted = 0;
 
 static void cyc_load(void) {
     static int tried = 0;
@@ -154,7 +158,7 @@ static void build_lut(void) {
                                ((c[1] & 0xFC) << 3) | (c[2] >> 3));
     }
     cyc_load();
-    int phase = cyc_phase();
+    int phase = cyc_wanted ? cyc_phase() : 0;
     if (phase > 0) {
         for (int k = 0; k < cyc_len; k++) {
             int src = cyc_start +
@@ -176,6 +180,7 @@ static void flush_fb(void) {
     }
 }
 static void cmd_view(void) {                 /* 'v': render the map view */
+    cyc_wanted = 1;                          /* the map palette is up */
     if (!pak_ready) {
 #ifdef COLOPY_PAK_FLASH
         if (!rd_init(colopy_pak_blob, colopy_pak_blob_len)) {
@@ -235,6 +240,9 @@ static int ui_colony_cs_index(void) {
 }
 
 static void draw_screen(void) {
+    /* sea animation only where the master map palette is on screen */
+    cyc_wanted = (UI.screen == SCR_MAP || UI.screen == SCR_VILLAGE ||
+                  UI.screen == SCR_OPTIONS);
     switch (UI.screen) {
     case SCR_TITLE: rm_draw_title(UI.menu_row); break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
@@ -545,7 +553,7 @@ void loop() {
         if (UI.screen == SCR_MAP && bl != map_blink) {
             map_blink = bl;
             draw_screen();
-        } else {
+        } else if (cyc_wanted) {
             static int last_phase = 0;
             int ph = cyc_phase();
             if (ph != last_phase) {

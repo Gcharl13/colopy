@@ -1195,6 +1195,7 @@ static void advance_goto(void) {
             if (blocked) continue;
             u->map_x = (uint8_t)nx;
             u->map_y = (uint8_t)ny;
+            colopy_reveal(nx, ny, unit_sight_radius(ui));  /* game.js:2291 */
             moved = 1;
         }
         if (!moved) {

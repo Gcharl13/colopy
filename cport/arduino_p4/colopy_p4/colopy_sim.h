@@ -129,6 +129,11 @@ void turn_step3(void);           /* the native pass (§19.11) + vanish filter */
 void rival_turn(void);           /* rivalTurn (game.js:7514) + checkContact */
 void turn_step5(void);           /* rivalTurn .. retirement — the endTurn tail */
 int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
+/* fog of war (colopy_map.c): reveal (game.js:8584), sightRadius (8576),
+ * revealAll (8594) — the player's 1<<(power+4) bit in CS.fog */
+void colopy_reveal(int x, int y, int r);
+int  unit_sight_radius(int ui);
+void colopy_reveal_all(void);
 
 /* Combat resolution (colopy_resolve.c): resolveAttack (game.js:7219) with
  * applyDefeat (7066) and tryPromote (7185).  Both sides are unit-record
