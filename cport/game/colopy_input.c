@@ -912,7 +912,7 @@ static const char *build_target_name(const ColonyRecord *c) {
 static void open_build_picker(void) {
     int cci = player_colony_rec(UI.colony);
     if (cci < 0) return;
-    const char *names[BUILD_MAX_ROWS];
+    static const char *names[BUILD_MAX_ROWS];
     int n = build_rows(cci, names);
     const char *cur = build_target_name(&CS.colonies[cci]);
     int at = -1;
@@ -1023,7 +1023,7 @@ static void jobs_popup_commit(void) {
     int cci = player_colony_rec(UI.colony);
     if (cci >= 0) {
         ColonyRecord *c = &CS.colonies[cci];
-        const char *names[BUILD_MAX_ROWS];
+        static const char *names[BUILD_MAX_ROWS];
         int n = jobs_rows(cci, names);
         int row = UI.colony_popup_row, k = UI.colonist_sel;
         if (row >= 0 && row < n && k >= 0 && k < c->population && k < 32) {
@@ -1068,7 +1068,7 @@ int ui_colony_popup_model(char labels[][40], char notes[][40],
     int cci = player_colony_rec(UI.colony);
     if (cci < 0 || !UI.colony_popup) return 0;
     const ColonyRecord *c = &CS.colonies[cci];
-    const char *names[BUILD_MAX_ROWS];
+    static const char *names[BUILD_MAX_ROWS];
     if (UI.colony_popup == 3) {
         /* occupationRows (game.js:3883): every OUTDOOR job with THIS
          * cell's yield, then "Return to the fence" */
@@ -1204,7 +1204,7 @@ static void occupation_commit(void) {
 static void build_picker_commit(void) {
     int cci = player_colony_rec(UI.colony);
     if (cci >= 0) {
-        const char *names[BUILD_MAX_ROWS];
+        static const char *names[BUILD_MAX_ROWS];
         int n = build_rows(cci, names);
         if (UI.colony_popup_row >= 0 && UI.colony_popup_row < n) {
             ColonyRecord *c = &CS.colonies[cci];
@@ -1356,7 +1356,7 @@ static void open_trade_menu(int mode) {
 
 /* tradeCommit (game.js:7841) */
 static void trade_commit(void) {
-    char rows[20][64];
+    static char rows[20][64];
     int n = ui_trade_rows(rows, 20);
     int row = UI.trade_row;
     if (row < 0 || row >= n) {
@@ -1900,7 +1900,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
          * menu (kind 3, reached by tapping a working colonist twice). */
         if (UI.colony_popup) {
             int cci = player_colony_rec(UI.colony);
-            const char *names[BUILD_MAX_ROWS];
+            static const char *names[BUILD_MAX_ROWS];
             int n = 1;
             if (cci >= 0)
                 n = UI.colony_popup == 2 ? build_rows(cci, names)
@@ -1966,7 +1966,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
             wc_dismiss();
         break;
     case SCR_TRADE: {
-        char trows[20][64];
+        static char trows[20][64];
         int tn = ui_trade_rows(trows, 20);
         if (tn < 1) tn = 1;
         if (key_is(k, "ArrowUp"))
@@ -2259,7 +2259,7 @@ static void in_click_inner(int mx, int my, int right) {
             /* a row commits; anything else DISMISSES and falls through
              * so the click is not wasted (game.js:12140) */
             static char plabels[64][40], pnotes[64][40], ptitle[64];
-            const char *lp[64], *np[64];
+            static const char *lp[64], *np[64];
             int pn = ui_colony_popup_model(plabels, pnotes, ptitle,
                                            (int)sizeof(ptitle), 64);
             for (int i = 0; i < pn; i++) { lp[i] = plabels[i];
@@ -2368,8 +2368,8 @@ static void in_click_inner(int mx, int my, int right) {
          * JS euroMenuBox — FLAGGED divergence, scripts click only
          * far-outside points. */
         if (UI.euro_menu) {
-            char erows[24][64];
-            const char *erp[24];
+            static char erows[24][64];
+            static const char *erp[24];
             int en = ui_euro_menu_rows(erows, 24);
             for (int i = 0; i < en; i++) erp[i] = erows[i];
             rm_subs subs;

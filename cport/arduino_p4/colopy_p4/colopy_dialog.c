@@ -229,7 +229,7 @@ void rm_draw_event(const char *key, const rm_subs *subs,
                    const char *speaker) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    char lines[16][256];
+    static char lines[16][256];
     int nl, x, y, w, h;
     if (!event_geom(e, subs, speaker, lines, &nl, &x, &y, &w, &h)) return;
     const rd_font *f = dfont(e->small);
@@ -247,7 +247,7 @@ int rm_event_hit(const char *key, const rm_subs *subs,
                  const char *speaker, int mx, int my) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    char lines[16][256];
+    static char lines[16][256];
     int nl, x, y, w, h;
     if (!event_geom(e, subs, speaker, lines, &nl, &x, &y, &w, &h)) return 0;
     return mx >= x && mx < x + w && my >= y && my < y + h;
@@ -304,7 +304,7 @@ void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
                          const char *const *rrows, int nrr) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    char body[16][256], rows[16][256];
+    static char body[16][256], rows[16][256];
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
                      &x, &y, &w, &h, &seed, rrows, nrr))
@@ -417,7 +417,7 @@ static int village_geom(char body[16][256], int *nb_out,
 
 void rm_draw_village(int village_row) {
     dresolve();
-    char body[16][256], rows[12][96];
+    static char body[16][256], rows[12][96];
     int nb, nr, x, y, w, h, seed;
     if (!village_geom(body, &nb, rows, &nr, &x, &y, &w, &h, &seed)) return;
     const rd_font *f = dfont(0);
@@ -467,7 +467,7 @@ void rm_draw_village(int village_row) {
 int rm_village_row_hit(int cur, int mx, int my) {
     (void)cur;
     dresolve();
-    char body[16][256], rows[12][96];
+    static char body[16][256], rows[12][96];
     int nb, nr, x, y, w, h, seed;
     if (!village_geom(body, &nb, rows, &nr, &x, &y, &w, &h, &seed))
         return -2;
@@ -490,7 +490,7 @@ int rm_dialog_rows_hit(const char *key, const rm_subs *subs,
                        const char *const *rrows, int nrr) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
-    char body[16][256], rows[16][256];
+    static char body[16][256], rows[16][256];
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
                      &x, &y, &w, &h, &seed, rrows, nrr))
@@ -644,7 +644,7 @@ static int trade_geom(int mode, int step_no, const char *sofar,
 
 void rm_draw_trade(int mode, int step_no, const char *sofar,
                    const char *const *rows, int n, int sel) {
-    char head[2][256];
+    static char head[2][256];
     int nh, x, y, w, h, seed;
     if (!trade_geom(mode, step_no, sofar, rows, n, head, &nh,
                     &x, &y, &w, &h, &seed))
@@ -663,7 +663,7 @@ void rm_draw_trade(int mode, int step_no, const char *sofar,
 
 int rm_trade_row_hit(int mode, int step_no, const char *sofar,
                      const char *const *rows, int n, int mx, int my) {
-    char head[2][256];
+    static char head[2][256];
     int nh, x, y, w, h, seed;
     if (!trade_geom(mode, step_no, sofar, rows, n, head, &nh,
                     &x, &y, &w, &h, &seed))

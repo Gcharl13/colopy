@@ -523,7 +523,13 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
 
     /* 5x5 scene composited in a corner buffer, then 2->3 upscaled */
     {
-        uint8_t save[80 * RD_W];
+        /* STATIC, not a local: 80*320 = 25,600 bytes is far more stack
+         * than an embedded task has (the ESP32 Arduino loop task is a
+         * few KB), and this was the largest frame in the whole port —
+         * a guaranteed stack smash on the board.  The painter is
+         * single-threaded and never re-entered, so one shared scratch
+         * band is correct.  Found 2026-08-17 chasing a board crash. */
+        static uint8_t save[80 * RD_W];
         memcpy(save, RD.fb, sizeof(save));      /* borrow rows 0..79 */
         for (int ty = 0; ty < 5; ty++)
             for (int tx = 0; tx < 5; tx++) {

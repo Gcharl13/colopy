@@ -1526,6 +1526,20 @@ static void bt_init(void) {
 }
 #endif
 
+/* ---- stack headroom -------------------------------------------------
+ * The UI paints from the Arduino loop task, whose stack is only a few
+ * KB.  A fat painter frame is a CRASH, not a slowdown: the colony
+ * screen once put a 25,600-byte scene band on the stack, which smashed
+ * it (fixed 2026-08-17; the host build now fails on any frame over
+ * 4 KB).  This prints the low-water mark so headroom is observable on
+ * the real board instead of inferred — 'w' over serial, and once at
+ * boot.  A number near zero means the next deep screen will crash. */
+static void stack_report(const char *when) {
+    UBaseType_t left = uxTaskGetStackHighWaterMark(NULL);
+    Serial.printf("stack: %u bytes never used (%s)\n",
+                  (unsigned)(left * sizeof(StackType_t)), when);
+}
+
 /* ---- the serial shell (mirrors the Teensy build) ------------------- */
 static void run_turn(void) {
     turn_step_prefix();
@@ -1795,6 +1809,7 @@ void setup() {
     audio_init();      /* I2S speaker path (Elecrow Lesson12) */
     bt_init();         /* BLE mouse over the C6 (no-op unless enabled) */
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
+    stack_report("boot");
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 
     if (sd_ready && fbuf && g_lcd) {
@@ -1853,6 +1868,7 @@ void loop() {
         switch (line[0]) {
         case 'l': cmd_load(arg); break;
         case 's': cmd_save(arg); break;
+        case 'w': stack_report("now"); break;
         case 'd':
             Serial.printf("digest %08lX\n", (unsigned long)colopy_digest());
             break;
