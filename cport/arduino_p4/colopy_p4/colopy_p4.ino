@@ -65,14 +65,17 @@
  *                   coordinate (menus, colony, Europe, dialogs); on
  *                   the map, a tap on a tile ADJACENT to the active
  *                   unit MOVES it there (the 8-way movement keys)
- *   long-press      Space — skip the active unit (>= 600 ms)
+ *   long-press      Space — skip the active unit (>= 600 ms); on the
+ *                   Europe market bar it BUYS 100 of that good (a tap
+ *                   there sells, as the DOS pointer layer does)
  *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
  * A queued notice: tap dismisses.  A question dialog: tap an option
  * row to answer it, tap outside the box to dismiss.  An entry modal:
  * the on-screen pad types (digits for an amount, letters for a name),
  * OK commits (an empty entry = the full amount / the suggested name),
- * a tap on the entry line clears it, a tap outside = Escape.  Every order is also in the tappable ORDERS
- * pulldown, and the reports in the menu bar.
+ * a tap on the entry line clears it, a tap outside = Escape.  Every
+ * order is also in the tappable ORDERS pulldown, the reports in the
+ * menu bar, and a colony's colonists are tapped in its plaza / fields.
  *
  * The core never does I/O (buffer-only API); this shell owns the SD
  * card, the serial port, the panel and the touch controller. */
@@ -589,6 +592,25 @@ static void game_key(const char *name, int alt, int shift) {
     hof_save_sd();
     if (UI.request) { service_request(); return; }
     draw_screen();
+}
+
+/* a LONG-press in the game loop.  Space (skip the unit) everywhere but
+ * the Europe market bar, where it BUYS: the pointer layer's market
+ * click is sell-only (game.js:12563 routes it to sellFromShip) and
+ * buying is the L/= key or a drag — neither reachable by touch, so a
+ * board player could never stock a ship.  SHELL CHROME: it just sets
+ * the market cursor and sends the core's own buy key. */
+static void game_long(int gx, int gy) {
+    if (!ask_active && !have_pending && !UI.dlg &&
+        UI.screen == SCR_EUROPE && !UI.euro_menu && gy >= 179) {
+        int i = gx / 19;
+        if (i >= 0 && i < 16) {
+            UI.market_sel = (int8_t)i;
+            game_key("l", 0, 0);             /* buyToShip(sel, 100) */
+            return;
+        }
+    }
+    game_key(" ", 0, 0);
 }
 
 /* a tap in the game loop (outside an ask) */
@@ -1171,7 +1193,7 @@ void loop() {
         int gx, gy;
         int ev = touch_poll(&gx, &gy);
         if (ev == TT_ESC) game_key("Escape", 0, 0);
-        else if (ev == TT_LONG) game_key(" ", 0, 0);
+        else if (ev == TT_LONG) game_long(gx, gy);
         else if (ev == TT_TAP) game_tap(gx, gy);
         /* animation: redraw the map when the unit blink flips; re-flush
          * (LUT only, no redraw) when the water cycle steps a phase */

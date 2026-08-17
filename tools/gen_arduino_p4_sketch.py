@@ -134,9 +134,11 @@ tests and typing free-text names.
    (build it with `python3 bin/reconstitute.py` then
    `python3 tools/gen_sd_pack.py`) and a save file, e.g.
    `raw/COLONIZE/COLONY00.SAV`.
-5. Flash.  With the default `COLOPY_AUTOBOOT` config the board loads
-   `COLONY00.SAV` and enters the game by itself — play by touch.  Or
-   open Serial Monitor at 115200 baud:
+5. Flash.  The board comes up on the **title screen** — New Game runs
+   the full difficulty / nation / name / briefing / King / cards flow,
+   Load Game opens an SD picker over the card's `.SAV` files.  To skip
+   straight into a save instead, uncomment `COLOPY_AUTOBOOT` at the
+   top of the sketch.  Serial Monitor at 115200 baud still works:
 
        l COLONY00.SAV      load
        v                   draw the map view once
@@ -144,6 +146,37 @@ tests and typing free-text names.
                            `k Space`, `k ArrowUp`, `k !g` = Alt+G)
        t 100               run 100 turns, one digest line per turn
        d / i / s OUT.SAV   digest / overview / save back to SD
+
+## Playing by touch
+
+The board has no keyboard, so every flow is reachable with three
+gestures:
+
+| gesture | meaning |
+|---|---|
+| tap | click at that point (menus, buttons, rows, map tiles) |
+| long-press (0.6 s) | skip the active unit — **except** on the Europe market bar, where it BUYS 100 of that good |
+| two-finger tap | Escape: close a menu or screen, dismiss a notice |
+
+Per screen:
+
+- **Map** — the menu bar's six titles open their pulldowns; tap a row
+  to run it (every ORDERS command lives there, so no key is needed).
+  Tap a tile NEXT to the active unit to move it; tap your colony to
+  enter it; tap a far tile to centre.  Zoom is VIEW → Zoom In/Out.
+- **Colony** — tap a colonist in the plaza to select, tap again for his
+  jobs menu; tap a field square to send him out (tap a worker twice for
+  his occupation menu, whose last row calls him back).  The right
+  panel's three buttons switch views; in the build view Buy rush-buys
+  and Change opens the construction picker.
+- **Europe** — Recruit / Purchase / Train buttons open their menus; tap
+  a ship to select, again for its menu (sail / unload / move to front);
+  tap a dock unit for its arm-and-board menu; tap a market good to
+  SELL, long-press to BUY.
+- **Dialogs** — tap an option row to answer, outside the box to
+  dismiss.  Entry boxes get an on-screen pad (digits for an amount,
+  letters for a name); OK commits, an empty entry takes the default,
+  and tapping the entry line clears it.
 
 The digests from `t 100` must match a host run
 (`cport/host/smoke --saveout <fixture> 100 out.sav`) turn for turn —
