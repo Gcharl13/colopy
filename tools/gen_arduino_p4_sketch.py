@@ -36,6 +36,7 @@ SOURCES = [
     "cport/data/colopy_data.c", "cport/data/colopy_data.h",
     "cport/data/colopy_text.c", "cport/data/colopy_text.h",
     "cport/data/colopy_ui.c", "cport/data/colopy_ui.h",
+    "cport/data/colopy_sfx.c", "cport/data/colopy_sfx.h",
     "cport/data/colopy_pak.h",
     "cport/render/*.c", "cport/render/*.h",
     "cport/game/*.c", "cport/game/*.h",
@@ -133,7 +134,10 @@ tests and typing free-text names.
 4. microSD (FAT32, files in the card ROOT): copy `cport/pak/COLOPY.PAK`
    (build it with `python3 bin/reconstitute.py` then
    `python3 tools/gen_sd_pack.py`) and a save file, e.g.
-   `raw/COLONIZE/COLONY00.SAV`.
+   `raw/COLONIZE/COLONY00.SAV`.  For sound effects also copy
+   `raw/COLONIZE/COLDIG.BIN` — the game's own 993 KB sample bank; the
+   sketch streams cues straight out of it (see "Sound" below).  It is
+   optional: without it the board is simply silent.
 5. Flash.  The board comes up on the **title screen** — New Game runs
    the full difficulty / nation / name / briefing / King / cards flow,
    Load Game opens an SD picker over the card's `.SAV` files.  To skip
@@ -189,6 +193,46 @@ Per screen:
   dismiss.  Entry boxes get an on-screen pad (digits for an amount,
   letters for a name); OK commits, an empty entry takes the default,
   and tapping the entry line clears it.
+
+## Sound
+
+Copy `COLDIG.BIN` from the game to the SD card root and the board plays
+the game's real recorded effects.  That bank is a headerless run of
+8-bit PCM; the index that carves it into 35 samples lives inside the
+`?SOUND.COL` driver overlays and was decoded from their bytes (see
+`formats/BIN.md`), so `sfx_play()` seeks straight to a sample and
+streams it at that sample's own rate.  Cues are wired only where this
+project has byte-verified the call site — a native raid looting the
+stores, seizing gold or being wiped out, the first colony founded, a
+colony burning.  Everything else stays silent on purpose: the
+remaining cue sites are untraced and no id is guessed.  SOUND EFFECTS
+in the game's own Sound Options switches it off.
+
+**Music is not available.**  The DOS game ships no music files at all —
+the tunes are synthesised inside the driver overlays on AdLib / General
+MIDI / PC speaker / MT-32 hardware, so there is nothing to play back.
+The Pick Music menu still records your choice the way the original did.
+`audio_play_wav()` remains for WAVs you supply yourself, and
+`COLOPY_AUDIO 0` at the top of the sketch disables the audio path
+entirely.
+
+## Bluetooth mouse (optional, unverified)
+
+The board's ESP32-C6 co-processor carries the radio, and arduino-esp32
+can run BLE over it from the P4 (hosted HCI).  Set `COLOPY_BLE_MOUSE`
+to 1 at the top of the sketch and a **Bluetooth mouse...** row appears
+under the title-screen menu: tap it, tap `[Scan]`, tap your mouse in
+the list.  Once connected, moving the mouse moves an on-screen pointer,
+left button clicks and right button is Escape.
+
+Two things are outside the sketch's control and **untested here**: your
+arduino-esp32 core must be new enough to build hosted BT for the P4,
+and the C6's factory firmware must expose Bluetooth over the transport
+(Elecrow ship it for Wi-Fi 6 and publish no Bluetooth example).  Only
+BLE mice can work — the C6 has no Bluetooth Classic radio.  Mouse
+report layouts vary, so every report is also dumped to serial as hex if
+yours moves oddly.  The feature is off by default and the shipped build
+is unaffected.
 
 The digests from `t 100` must match a host run
 (`cport/host/smoke --saveout <fixture> 100 out.sav`) turn for turn —

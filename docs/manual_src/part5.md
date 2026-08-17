@@ -416,3 +416,43 @@ Pumped from the input-idle loops (verb 0x181F:0x470). Per pump:
 - **Clocking**: the timer ISR @0x00C6D9 calls **vector 4 every tick and vector 3 every 5th tick**. The exit path sends stop (id 1), polls id 8 until silent, then calls vector 2.
 - **Command gate** `func_00518E` (AX = id): ids `< 0x10` are driver commands and always pass; **bit 0x20 ids (tunes) are gated on `[0xA0]`** (Event Music); **bit 0x40 ids (SFX 0x40–0x5F) on `[0xA4]`**; the surviving id goes `lcall 0x1059:0xA` into the driver. Command ids seen: **1 = stop**, **8 = query-playing**.
 - **Sound Test cheat** (MENU `@CUP` cmd 0x69 → @0x023D86): numeric-entry dialog from DEBUG.TXT `@SOUND` ("Play what sound #?"), result `[0x9CC8]` → gated play — arbitrary id playback against the live driver.
+
+### 24.6 The digital sample bank (`COLDIG.BIN`) — decoded
+
+Everything above concerns *tunes*, which the driver synthesises. Sound **effects**
+are different: they are recorded audio, concatenated into `COLDIG.BIN` (993,755
+bytes of headerless 8-bit unsigned PCM, mono), and the index that carves that
+file into 35 samples lives **inside each `?SOUND.COL` driver**, byte-identical
+in all four. Decoded 2026-08-17; the full citation set is in `formats/BIN.md`
+and the ruling of that date, and `tools/decode_coldig.py` re-derives it from
+the bytes on every run.
+
+- **Table base** (from the driver's own `lea` operands): ASOUND file `0x0039F`,
+  GSOUND `0x01E7B`, PSOUND `0x021A3`, RSOUND `0x01F01`. Images load at file
+  `0x200`.
+- **Row** = `u32 offset`, `u32 length`, stride 8 (`add si,8` in the walker
+  `FINDWV` @0x00D39; `shl bx,3` in the play-by-index entry @0x00F28). The walker
+  stops on a **zero-length** row, so there are **35 samples** and a terminator.
+- **Self-consistent**: the 35 lengths sum to exactly 993,755, offsets are gapless
+  and start at 0, and the terminator's offset is the end of the file.
+- **Two rates, not one**: the player picks the rate from the index before it
+  fetches the descriptor — `mov cx,0x4A6A` (**19050 Hz**), `cmp bx,5`, `jb`,
+  `mov cx,0x2B11` (**11025 Hz**) @0x00F19. Indices **0..4 are 19050 Hz**, the
+  rest 11025 Hz.
+- **Id → index**: the driver's id dispatcher @0x01C35 bounds-checks
+  `cmp bx,0x5D; ja` and jumps through a word table at file `0x01DB9`; each SFX
+  handler is a literal `mov ax,<index>`. So e.g. the raid cues resolve as
+  **0x4E → sample 6**, **0x4F → 11**, **0x5B → 22**, the first-colony cue
+  **0x54 → 13**, and colony burning **0x53 → 19**. Five ids in the range
+  (`0x46 0x47 0x59 0x5A 0x5D`) are not sample players. Note §24.5's gate speaks
+  of `0x40–0x5F` because it tests bit `0x40`; the driver's table stops at `0x5D`.
+- **Who opens the bank**: not the driver. `COLONIZE.EXE` holds `"#SOUND.COL"`
+  @0x6C3B0 and `"coldig.bin"` @0x6C3EE; the `"coldig.bin"` strings inside the
+  drivers are unreferenced by driver code.
+
+Still TBD: the samples have no names anywhere in the drivers (labelling them
+needs a listen-and-label pass), most VICEROY.EXE cue sites beyond §24.4 are
+untraced, and indices 0..4, 15, 23, 24, 25 and 26 are never referenced by the
+SFX dispatcher at all — real audio whose trigger is unknown. (Indices 0..4 are
+five same-length clips with monotonically falling RMS, which *looks* like a
+volume or distance ramp; that reading is not byte-verified and is not asserted.)

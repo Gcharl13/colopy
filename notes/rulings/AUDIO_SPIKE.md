@@ -1,5 +1,17 @@
 # Audio Spike — findings & go/no-go (plan phase: non-gating)
 
+> **PARTLY SUPERSEDED 2026-08-17.** Entry point 1 below ("disassemble the
+> `*SOUND.COL` MZ overlays to locate the sample/sequence tables") was carried
+> out: the `COLDIG.BIN` index and the SFX id -> sample map are decoded and
+> byte-verified (`notes/rulings/RULINGS.md` 2026-08-17, `formats/BIN.md`,
+> `tools/decode_coldig.py`), and the A/G/P/R device mapping is resolved from
+> the drivers' own ID strings rather than the prefixes. **Digital sound
+> effects are therefore no longer blocked** and the C port plays them on the
+> P4 board. The NO-GO below still stands for **music**, which is synthesised
+> inside the driver overlays and exists as no audio data anywhere in the game.
+> The rest of this document is kept as the original record.
+
+
 **Status: NO-GO for in-scope audio. Audio stays OUT of the "100% identical
 except audio" done-bar (the user's explicit scope decision).**
 

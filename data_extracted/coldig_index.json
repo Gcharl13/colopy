@@ -1,0 +1,261 @@
+{
+  "_source": "tools/decode_coldig.py (re-derived from raw/COLONIZE)",
+  "bank": "COLDIG.BIN",
+  "bank_bytes": 993755,
+  "bank_sha256": "19a10611d8c0e250610c37df7a92b9c28723274b6f3c9ec0d6a225c8bf54b915",
+  "format": "headerless 8-bit unsigned PCM, mono",
+  "table_offsets": {
+    "ASOUND.COL": 927,
+    "GSOUND.COL": 7803,
+    "PSOUND.COL": 8611,
+    "RSOUND.COL": 7937
+  },
+  "entry": "u32 offset, u32 length; stride 8; zero-length terminator",
+  "rate_rule": "index < 5 -> 19050 Hz, else 11025 Hz (cmp bx,5 at ASOUND 0x00F19)",
+  "samples": [
+    {
+      "index": 0,
+      "offset": 0,
+      "length": 4960,
+      "rate": 19050
+    },
+    {
+      "index": 1,
+      "offset": 4960,
+      "length": 4952,
+      "rate": 19050
+    },
+    {
+      "index": 2,
+      "offset": 9912,
+      "length": 4833,
+      "rate": 19050
+    },
+    {
+      "index": 3,
+      "offset": 14745,
+      "length": 4683,
+      "rate": 19050
+    },
+    {
+      "index": 4,
+      "offset": 19428,
+      "length": 4718,
+      "rate": 19050
+    },
+    {
+      "index": 5,
+      "offset": 24146,
+      "length": 46745,
+      "rate": 11025
+    },
+    {
+      "index": 6,
+      "offset": 70891,
+      "length": 39737,
+      "rate": 11025
+    },
+    {
+      "index": 7,
+      "offset": 110628,
+      "length": 51364,
+      "rate": 11025
+    },
+    {
+      "index": 8,
+      "offset": 161992,
+      "length": 61684,
+      "rate": 11025
+    },
+    {
+      "index": 9,
+      "offset": 223676,
+      "length": 45999,
+      "rate": 11025
+    },
+    {
+      "index": 10,
+      "offset": 269675,
+      "length": 42299,
+      "rate": 11025
+    },
+    {
+      "index": 11,
+      "offset": 311974,
+      "length": 39737,
+      "rate": 11025
+    },
+    {
+      "index": 12,
+      "offset": 351711,
+      "length": 38912,
+      "rate": 11025
+    },
+    {
+      "index": 13,
+      "offset": 390623,
+      "length": 60739,
+      "rate": 11025
+    },
+    {
+      "index": 14,
+      "offset": 451362,
+      "length": 61684,
+      "rate": 11025
+    },
+    {
+      "index": 15,
+      "offset": 513046,
+      "length": 57327,
+      "rate": 11025
+    },
+    {
+      "index": 16,
+      "offset": 570373,
+      "length": 46480,
+      "rate": 11025
+    },
+    {
+      "index": 17,
+      "offset": 616853,
+      "length": 12040,
+      "rate": 11025
+    },
+    {
+      "index": 18,
+      "offset": 628893,
+      "length": 12545,
+      "rate": 11025
+    },
+    {
+      "index": 19,
+      "offset": 641438,
+      "length": 59707,
+      "rate": 11025
+    },
+    {
+      "index": 20,
+      "offset": 701145,
+      "length": 22418,
+      "rate": 11025
+    },
+    {
+      "index": 21,
+      "offset": 723563,
+      "length": 8557,
+      "rate": 11025
+    },
+    {
+      "index": 22,
+      "offset": 732120,
+      "length": 42496,
+      "rate": 11025
+    },
+    {
+      "index": 23,
+      "offset": 774616,
+      "length": 5894,
+      "rate": 11025
+    },
+    {
+      "index": 24,
+      "offset": 780510,
+      "length": 7941,
+      "rate": 11025
+    },
+    {
+      "index": 25,
+      "offset": 788451,
+      "length": 20992,
+      "rate": 11025
+    },
+    {
+      "index": 26,
+      "offset": 809443,
+      "length": 34623,
+      "rate": 11025
+    },
+    {
+      "index": 27,
+      "offset": 844066,
+      "length": 19299,
+      "rate": 11025
+    },
+    {
+      "index": 28,
+      "offset": 863365,
+      "length": 30207,
+      "rate": 11025
+    },
+    {
+      "index": 29,
+      "offset": 893572,
+      "length": 11071,
+      "rate": 11025
+    },
+    {
+      "index": 30,
+      "offset": 904643,
+      "length": 13629,
+      "rate": 11025
+    },
+    {
+      "index": 31,
+      "offset": 918272,
+      "length": 5455,
+      "rate": 11025
+    },
+    {
+      "index": 32,
+      "offset": 923727,
+      "length": 9407,
+      "rate": 11025
+    },
+    {
+      "index": 33,
+      "offset": 933134,
+      "length": 36299,
+      "rate": 11025
+    },
+    {
+      "index": 34,
+      "offset": 969433,
+      "length": 24322,
+      "rate": 11025
+    }
+  ],
+  "sfx_id_to_index": {
+    "0x40": 31,
+    "0x41": 32,
+    "0x42": 30,
+    "0x43": 27,
+    "0x44": 18,
+    "0x45": 17,
+    "0x48": 29,
+    "0x49": 34,
+    "0x4A": 28,
+    "0x4B": 33,
+    "0x4C": 14,
+    "0x4D": 10,
+    "0x4E": 6,
+    "0x4F": 11,
+    "0x50": 7,
+    "0x51": 5,
+    "0x52": 12,
+    "0x53": 19,
+    "0x54": 13,
+    "0x55": 20,
+    "0x56": 9,
+    "0x57": 16,
+    "0x58": 21,
+    "0x5B": 22,
+    "0x5C": 8
+  },
+  "sfx_ids_not_samples": [
+    "0x46",
+    "0x47",
+    "0x59",
+    "0x5A",
+    "0x5D"
+  ]
+}

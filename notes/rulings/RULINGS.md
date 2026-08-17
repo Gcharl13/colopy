@@ -9820,3 +9820,82 @@ UnitRecord/PowerRecord layouts `importSav` decodes, and `func_02CFD0`'s
 decompile (writes DGROUP `[0x337]` on a modal result) matches the panel-mode
 model already in `port/src/game.js` — identifications and confidence, not
 behavior changes.
+
+## 2026-08-17 — COLDIG.BIN's sample index is IN the sound drivers, and it is now decoded
+
+**Conflict**: `formats/BIN.md` and `formats/COL.md` described the digital
+sample bank speculatively — "(offset, length) records" of unknown shape at an
+unknown place, one uniform 11025 Hz rate, and an A/G/P/R device mapping guessed
+from the filename prefixes. `notes/rulings/AUDIO_SPIKE.md` recorded audio as a
+NO-GO on the grounds that the sample data "is loaded/produced by driver code"
+and decoding it was open-ended.
+
+**Source A** — the two format docs and the spike said: layout TBD; ~11025 Hz
+throughout; `GSOUND.COL` = GameBlaster/SoundBlaster; index location unknown.
+
+**Source B** — the driver bytes say otherwise. Re-derived independently this
+session from `raw/COLONIZE/` (every number below read out of the files, and
+re-read on every run by `tools/decode_coldig.py`):
+
+- **The index table is inside each `?SOUND.COL` overlay and is byte-identical
+  in all four.** Base taken from the driver's own `lea` operands:
+  `ASOUND.COL` file `0x0039F` (walker `@0x00D39`, player `@0x00F28`),
+  `GSOUND.COL` `0x01E7B` (`@0x02811` / `@0x029FB`),
+  `PSOUND.COL` `0x021A3` (`@0x02B3D` / `@0x02D2F`),
+  `RSOUND.COL` `0x01F01` (`@0x0289B` / `@0x02A8D`). Images load at file
+  `0x200`, so load = file − 0x200 and the operands are the load forms
+  (`0x19F`, `0x1C7B`, `0x1FA3`, `0x1D01`).
+- **Entry = `u32 offset`, `u32 length`, stride 8** — `add si,8` in the walker,
+  `shl bx,3` in the play-by-index entry. The walker terminates on a
+  **zero-length** row (`mov bx,[si+4]; or bx,[si+6]; je`), so the table holds
+  **35 samples** plus a terminator whose offset field is `0x0F29DB`.
+- **Three independent checks pass**: the 35 lengths sum to **exactly 993,755 =
+  `len(COLDIG.BIN)`**; every `offset[i+1] == offset[i] + length[i]` (no gaps);
+  the first offset is 0 and the terminator lands on the end.
+- **The rate is NOT uniform.** The player branches on the index:
+  `B9 6A 4A` = `mov cx,0x4A6A` (**19050 Hz**), `83 FB 05` = `cmp bx,5`,
+  `72 03` = `jb`, `B9 11 2B` = `mov cx,0x2B11` (**11025 Hz**) — i.e. indices
+  **0..4 play at 19050 Hz, 5..34 at 11025 Hz**. Sites: ASOUND `@0x00F19`,
+  GSOUND `@0x029EC`, PSOUND `@0x02D20`, RSOUND `@0x02A7E`.
+- **SFX id → sample index is readable too.** The driver's id dispatcher
+  (`ASOUND.COL @0x01C35`) bounds-checks `83 FB 5D 77` (`cmp bx,0x5D; ja`) and
+  jumps through a word table at file **`0x01DB9`** for ids `0x40..0x5D`; each
+  SFX handler is `mov ax,<index>` before the call into the player, so the
+  index is literal. 25 of the 30 ids play a sample; `0x46 0x47 0x59 0x5A 0x5D`
+  route elsewhere.
+- **Device identity is in the drivers' own ID strings** at file `0x210`:
+  `"ColonizatonA09-14-94"`, `"Coloniz GMID09-12-94"`, `"ColonizatonP 9-13-94"`,
+  `"RLND Colniz 09/13/94"` — so **G is General MIDI**, not GameBlaster/SB.
+  `CONFIG.COL` is 20 bytes, not a driver.
+
+**Ruling**: Source B. Byte-verified driver bytes beat doc speculation
+(`notes/TRUTH_HIERARCHY.md`), and the three arithmetic self-checks make the
+table unfalsifiable-by-accident: a wrong base or stride cannot sum to the exact
+file size while staying contiguous. The **NO-GO in `AUDIO_SPIKE.md` is
+superseded for digital effects only** — it remains correct for music, which is
+synthesised inside the driver overlays and exists as no audio data anywhere.
+
+**Action taken**:
+- New `tools/decode_coldig.py` — re-derives the table and the id map from the
+  bytes on every run, runs the three checks as fatal assertions, and emits
+  `data_extracted/coldig_index.json` plus `cport/data/colopy_sfx.{h,c}`
+  (`--wav` also splits the bank into `extracted/assets/audio/`).
+- `formats/BIN.md`, `formats/COL.md` rewritten to the verified layout;
+  `notes/rulings/AUDIO_SPIKE.md` given a superseded header.
+- `cport/p4/colopy_p4.ino`: `sfx_play(id)` streams the sample straight out of
+  `/sdcard/COLDIG.BIN` at its own rate (8-bit unsigned → signed 16, mono →
+  both slots), wired to the cue sites this project has already byte-verified:
+  sfx `0x4F` `@RAIDSTORES` (`@0x05C3CC`), `0x4E` `@RAIDGOLD`, `0x5B`
+  `@RAIDNOTHING` (`@0x05C637`), `0x54` first colony (`@0x040E00`), `0x53`
+  colony burning (`@0x05DFCB`).
+
+**Follow-up**: three things stay open. (1) **Semantic names** for the 35
+samples — no name strings exist in the drivers; naming them needs a DOSBox
+listen-and-label pass. (2) **The rest of the cue map** — VICEROY.EXE's other
+`0x181F:0x4C0` call sites have not been traced, so most ids are still unwired
+and the port stays silent for them rather than guessing. (3) Indices **0..4,
+15, 23, 24, 25, 26** are never referenced by the SFX dispatcher; they are real
+audio (0..4 are five same-length variants with monotonically falling RMS —
+plausibly a volume/distance ramp) but their trigger is TBD. Also noted: the
+manual's §24.5 line "SFX 0x40–0x5F" is the VICEROY-side gate (bit `0x40`); the
+driver's own table stops at **0x5D**.

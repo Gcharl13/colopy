@@ -77,6 +77,7 @@ extern "C" {
 #include "colopy_render.h"
 #include "colopy_input.h"
 #include "colopy_data.h"
+#include "colopy_sfx.h"
 }
 
 using namespace esp_panel::drivers;
@@ -378,16 +379,20 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
  * here: audio power on GPIO 30 (LOW enables), I2S BCLK 22 / LRCLK 21 /
  * DOUT 23 driven through the core's ESP_I2S I2SClass at 16-bit.
  *
- * WHAT IT PLAYS is the open question, not how.  The DOS game shipped
- * NO music or effect files: the tunes live inside the four driver
- * overlays (ASOUND/GSOUND/PSOUND/RSOUND.COL, MZ executables that
- * synthesise on AdLib/GM/PC-speaker/MT-32) and COLDIG.BIN is a raw
- * 993 KB 8-bit unsigned PCM bank whose per-effect index sits in a
- * driver data section that has never been decoded.  So this backend
- * plays what the SD card can supply — WAV files under /sdcard — and
- * the engine's own cue ids stay unmapped until that index is
- * recovered.  Nothing here invents a mapping (CLAUDE.md prime
- * directive); COLOPY_AUDIO can be switched off entirely. */
+ * WHAT IT PLAYS, for sound effects, is now the GAME'S OWN SAMPLES.
+ * COLDIG.BIN is a headerless 993 KB bank of 8-bit unsigned PCM; its
+ * per-sample index lives inside the four driver overlays and was
+ * decoded 2026-08-17 (notes/rulings/RULINGS.md; the table is
+ * re-derived from the bytes by tools/decode_coldig.py into
+ * cport/data/colopy_sfx.c).  Copy COLDIG.BIN to the SD card next to
+ * COLOPY.PAK and sfx_play() streams straight out of it, at the
+ * sample's own rate.
+ *
+ * MUSIC is still unavailable: the tunes are synthesised inside the
+ * driver overlays (AdLib/GM/PC-speaker/MT-32 register streams), not
+ * stored as audio anywhere, so no music file exists to play.  Nothing
+ * here invents one (CLAUDE.md prime directive).  audio_play_wav()
+ * remains for user-supplied WAVs; COLOPY_AUDIO switches the lot off. */
 #ifndef COLOPY_AUDIO
 #define COLOPY_AUDIO 1
 #endif
@@ -403,14 +408,61 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
 static I2SClass i2s_spk;
 static int audio_ready = 0;
 
+static int audio_rate = 0;               /* the rate I2S is running at */
+
+static int audio_set_rate(int hz) {
+    if (!audio_ready || hz == audio_rate) return audio_ready;
+    if (audio_rate) i2s_spk.end();
+    audio_ready = i2s_spk.begin(I2S_MODE_STD, hz,
+                                I2S_DATA_BIT_WIDTH_16BIT,
+                                I2S_SLOT_MODE_STEREO, I2S_STD_SLOT_BOTH);
+    audio_rate = audio_ready ? hz : 0;
+    return audio_ready;
+}
+
 static void audio_init(void) {
     pinMode(AUDIO_GPIO_CTRL, OUTPUT);
     digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
     i2s_spk.setPins(AUDIO_GPIO_BCLK, AUDIO_GPIO_LRCLK, AUDIO_GPIO_SDATA);
-    audio_ready = i2s_spk.begin(I2S_MODE_STD, 16000,
-                                I2S_DATA_BIT_WIDTH_16BIT,
-                                I2S_SLOT_MODE_STEREO, I2S_STD_SLOT_BOTH);
-    if (!audio_ready) Serial.println("audio: I2S init failed");
+    audio_ready = 1;
+    if (!audio_set_rate(16000)) Serial.println("audio: I2S init failed");
+}
+
+/* play one COLDIG.BIN sample by the ENGINE'S sound id (0x40..0x5D).
+ * colopy_sfx_index() is the driver's own id -> index jump table and
+ * colopy_sfx[] its (offset, length, rate) row, both generated from the
+ * driver bytes.  The bank is 8-bit UNSIGNED mono: (b - 128) << 8 makes
+ * signed 16-bit, written twice for the stereo slot pair.  Blocking —
+ * the longest sample is under 6 s and the DOS game blocked here too.
+ * Silent when SOUND EFFECTS is off in @SOUNDOPTIONS ([0xA4], the bit
+ * the C core keeps in CR.sound_options). */
+static void sfx_play(int id) {
+    int idx = colopy_sfx_index(id);
+    if (idx < 0 || !audio_ready || !sd_ready) return;
+    if (!(CR.sound_options & 0x04)) return;
+    const colopy_sfx_rec *r = &colopy_sfx[idx];
+    FILE *f = fopen("/sdcard/COLDIG.BIN", "rb");
+    if (!f) return;
+    if (fseek(f, (long)r->offset, SEEK_SET) != 0) { fclose(f); return; }
+    if (!audio_set_rate(r->rate)) { fclose(f); return; }
+    static uint8_t src[256];
+    static int16_t dst[512];
+    uint32_t left = r->length;
+    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_ON);
+    while (left) {
+        size_t want = left > sizeof(src) ? sizeof(src) : left;
+        size_t n = fread(src, 1, want, f);
+        if (!n) break;
+        for (size_t i = 0; i < n; i++) {
+            int16_t v = (int16_t)(((int)src[i] - 128) << 8);
+            dst[i * 2] = v;
+            dst[i * 2 + 1] = v;
+        }
+        i2s_spk.write((uint8_t *)dst, n * 2 * sizeof(int16_t));
+        left -= (uint32_t)n;
+    }
+    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
+    fclose(f);
 }
 
 /* play a 16-bit PCM WAV from the SD card (the 44-byte canonical header
@@ -437,6 +489,7 @@ static void audio_play_wav(const char *name) {
 #else
 static void audio_init(void) {}
 static void audio_play_wav(const char *name) { (void)name; }
+static void sfx_play(int id) { (void)id; }
 #endif
 
 
@@ -580,6 +633,37 @@ static void dlg_subs(rm_subs *subs) {
     }
 }
 
+/* ---- the byte-verified sound cues -----------------------------------
+ * VICEROY.EXE calls the driver's gated play (0x181F:0x4C0) with an id;
+ * ids 0x40..0x5D are digital effects out of COLDIG.BIN.  These are the
+ * cue sites this project has byte-verified (spec/systems/natives.md,
+ * spec/ui/woodcuts_and_intro.md, docs/manual_src/part5.md 24.4):
+ *
+ *   sfx 0x4F  raid loots the stores   @0x05C3CC   (@RAIDSTORES)
+ *   sfx 0x4E  raid seizes gold        (@RAIDGOLD)
+ *   sfx 0x5B  raiders wiped out       @0x05C637   (@RAIDNOTHING)
+ *   sfx 0x54  first colony founded    @0x040E00   (woodcut 2)
+ *   sfx 0x53  colony burning          @0x05DFCB   (woodcut 11)
+ *
+ * Everything else is UNMAPPED and stays silent — the remaining cue
+ * sites have not been traced, and no id is guessed here (CLAUDE.md).
+ * A cue is queued rather than played inline so the frame reaches the
+ * panel first; sfx_play() blocks for the length of the sample. */
+static const struct { const char *key; uint8_t id; } EVENT_SFX[] = {
+    { "RAIDSTORES", 0x4F }, { "RAIDGOLD", 0x4E }, { "RAIDNOTHING", 0x5B },
+};
+static const struct { uint8_t woodcut; uint8_t id; } WOODCUT_SFX[] = {
+    { 2, 0x54 }, { 11, 0x53 },
+};
+static int sfx_pending = -1;
+static int sfx_last_woodcut = -1;
+
+static int event_sfx(const char *key) {
+    for (unsigned i = 0; i < sizeof(EVENT_SFX) / sizeof(EVENT_SFX[0]); i++)
+        if (strcmp(key, EVENT_SFX[i].key) == 0) return EVENT_SFX[i].id;
+    return -1;
+}
+
 static void draw_screen(void) {
     /* sea animation only where the master map palette is on screen */
     cyc_wanted = (UI.screen == SCR_MAP || UI.screen == SCR_VILLAGE ||
@@ -642,6 +726,13 @@ static void draw_screen(void) {
         break;
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);
+        if (UI.woodcut != sfx_last_woodcut) {
+            sfx_last_woodcut = UI.woodcut;
+            for (unsigned i = 0;
+                 i < sizeof(WOODCUT_SFX) / sizeof(WOODCUT_SFX[0]); i++)
+                if (WOODCUT_SFX[i].woodcut == UI.woodcut)
+                    sfx_pending = WOODCUT_SFX[i].id;
+        }
         break;
     case SCR_BRIEFING:
         rm_draw_briefing(UI.nation, UI.brief_page);
@@ -678,8 +769,10 @@ static void draw_screen(void) {
             rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
         break;
     }
-    if (!have_pending && colopy_next_event(&pending_ev))
+    if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
+        sfx_pending = event_sfx(pending_ev.key);
+    }
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
                          { pending_ev.p[0], pending_ev.p[1], 0, 0 },
@@ -706,7 +799,10 @@ static void draw_screen(void) {
         else draw_kpad();
     }
     if (bt_mode) bt_ui_draw();
+    if (UI.screen != SCR_WOODCUT) sfx_last_woodcut = -1;
     flush_fb();
+    if (sfx_pending >= 0) { int id = sfx_pending; sfx_pending = -1;
+                            sfx_play(id); }
 }
 
 /* ---- the player-answer layer (colopy_ask_hook) -------------------- */

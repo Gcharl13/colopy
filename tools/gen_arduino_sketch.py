@@ -31,6 +31,7 @@ SOURCES = [
     "cport/data/colopy_data.c", "cport/data/colopy_data.h",
     "cport/data/colopy_text.c", "cport/data/colopy_text.h",
     "cport/data/colopy_ui.c", "cport/data/colopy_ui.h",
+    "cport/data/colopy_sfx.c", "cport/data/colopy_sfx.h",
     "cport/data/colopy_pak.h",
     "cport/render/*.c", "cport/render/*.h",
     "cport/game/*.c", "cport/game/*.h",

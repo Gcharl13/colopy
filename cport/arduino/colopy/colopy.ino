@@ -68,6 +68,7 @@ extern "C" {
 #include "colopy_render.h"
 #include "colopy_input.h"
 #include "colopy_data.h"
+#include "colopy_sfx.h"
 #endif
 }
 
