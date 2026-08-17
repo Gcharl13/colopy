@@ -1,0 +1,14 @@
+{
+  "source_file": "DIFFICUL.PIK",
+  "sha256": "f278d5052cffeb6a00e3b8573690a32c981295186736f15984a08e0d5d0a5b00",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/DIFFICUL",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

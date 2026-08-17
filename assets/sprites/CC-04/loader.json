@@ -1,0 +1,14 @@
+{
+  "source_file": "CC-04.SS",
+  "sha256": "b2d8aa4f7fc597964e52254fe1a38ef46f02760f0c65d866697e229ba0462126",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/CC-04",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

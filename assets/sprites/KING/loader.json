@@ -1,0 +1,14 @@
+{
+  "source_file": "KING.SS",
+  "sha256": "b87dc5ac3746a104b79bbbdb669ff34cbe3af106554ebe11f313128f1636ba2c",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/KING",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

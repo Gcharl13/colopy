@@ -1,0 +1,14 @@
+{
+  "source_file": "OPENING.PIK",
+  "sha256": "80ea1dd4a00a4029052112882305e573bd7e20066eb095ceabe273a217689185",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/OPENING",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

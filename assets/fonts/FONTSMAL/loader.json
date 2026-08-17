@@ -1,0 +1,14 @@
+{
+  "source_file": "FONTSMAL.FF",
+  "sha256": "eff8bb00abf058a2c29cd126775f12ed6223b9f5d789ac1ef39836a5234a154a",
+  "format": "FF",
+  "format_spec": "formats/FF.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/fonts/FONTSMAL",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

@@ -99,6 +99,40 @@ int rd_init(const uint8_t *pak_buf, uint32_t pak_len) {
     return 1;
 }
 
+/* A magenta placeholder — the artists' "nothing authored here" marker.
+ * (255,85,255) is EGA 13; a real VICEROY.PAL entry never lands there. */
+int rd_pal_placeholder(const uint8_t *c) {
+    return c[0] > 240 && c[1] < 110 && c[2] > 240;
+}
+
+/* Fill a backdrop palette's placeholders (game.js:36 usePalette).
+ *
+ * ORDER MATTERS, and getting it wrong is what turned the sea sandy.  A
+ * placeholder falls back to the MASTER first, and to the UI picker
+ * palette ONLY where the master is a placeholder too.  WOODTILE.SS — the
+ * map screen's own sheet — carries no water at all, so it leaves the
+ * whole VGA cycling band 120..127 unauthored, and OPENMENU.PIK's entries
+ * there are the title screen's SAND.  Patching straight from OPENMENU
+ * therefore repainted every sea-lane tile and every coast edge in tan:
+ * that band IS the water (build_assets.py CYCLED_SHEETS), and nothing
+ * else on the map uses it.  The master's own 120..127 is the blue ramp
+ * CYCLE.DAT rotates, and it is capture-verified — build_assets measured
+ * TERRAIN frame 11 (Sea Lane) against docs/screens/06_ingame_map.png at
+ * 3/256 pixels off through the master versus 50/256 through the sheet.
+ * Index 13 is the same story (master orange (255,113,0)); 139..143 and
+ * 252..254 are placeholders in the master TOO, and those are the ones
+ * OPENMENU is genuinely for. */
+void rd_pal_fill_placeholders(uint8_t *pal, const uint8_t *master,
+                              const uint8_t *ui) {
+    for (int i = 0; i < 256; i++) {
+        if (!rd_pal_placeholder(pal + i * 3)) continue;
+        if (!rd_pal_placeholder(master + i * 3))
+            memcpy(pal + i * 3, master + i * 3, 3);
+        else if (ui)
+            memcpy(pal + i * 3, ui + i * 3, 3);
+    }
+}
+
 void rd_use_palette(const char *entry_name) {
     rd_entry pal;
     uint8_t master[768];
@@ -126,12 +160,7 @@ void rd_use_palette(const char *entry_name) {
     if (rd_pak_find(&RD.pak, "OPENMENU.PIK", &om) &&
         om.len == (uint32_t)om.w * om.h + 768)
         op = om.payload + (uint32_t)om.w * om.h;
-    if (op)
-        for (int i = 0; i < 256; i++) {
-            const uint8_t *c = RD.pal + i * 3;
-            if (c[0] > 240 && c[1] < 110 && c[2] > 240)
-                memcpy(RD.pal + i * 3, op + i * 3, 3);
-        }
+    rd_pal_fill_placeholders(RD.pal, master, op);
     static const uint8_t EGA[48] = {
         0,0,0, 0,0,170, 0,170,0, 0,170,170, 170,0,0, 170,0,170,
         170,85,0, 170,170,170, 85,85,85, 85,85,255, 85,255,85,

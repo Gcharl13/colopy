@@ -1,0 +1,14 @@
+{
+  "source_file": "DEC-UPPG.SS",
+  "sha256": "fd03444468b432c391c7feaf6ae0251f018aa8782b7f4f2832bdb375759dc3bc",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/DEC-UPPG",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

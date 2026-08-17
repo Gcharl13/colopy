@@ -1,0 +1,14 @@
+{
+  "source_file": "WIN-FWRK.SS",
+  "sha256": "3e974b13cb87cb515a32e40aeab808231dbec841284706dc780abf0494d5b170",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/WIN-FWRK",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

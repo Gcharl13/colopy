@@ -1,0 +1,14 @@
+{
+  "source_file": "DEC-LOWV.SS",
+  "sha256": "292e53b380133a8f273c5880720b9eb18b85d7dc6441397bce414675ec6c5896",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/DEC-LOWV",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

@@ -1,0 +1,14 @@
+{
+  "source_file": "EUROPE.PIK",
+  "sha256": "05386fef6140252040508bdc56ca0eaeb5d7563f55bb9046f714ba09d74af118",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/EUROPE",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

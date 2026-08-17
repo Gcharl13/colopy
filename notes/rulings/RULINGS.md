@@ -26,6 +26,66 @@ Format:
 
 ---
 
+## 2026-08-17 — Sea lanes and coasts rendered SANDY: the placeholder fallback ran in the wrong order
+
+**Conflict**: on the board every sea-lane tile and every coast edge painted a
+sandy tan instead of blue water (user report, 2026-08-17). Nothing else on the
+map was wrong.
+
+**Source A** — the pixels. `TERRAIN.SS` frame 11 (Sea Lane) is blue and **24% of
+its pixels sit in palette indices 120..127**; no other TERRAIN frame touches that
+band at all, and `PHYS0.SS`'s clean coast edges (150..153) use it too. That band
+is the VGA cycling band `CYCLE.DAT` rotates (`start=120 len=8`), so "the things
+made of the cycled band" is exactly "sea lanes and coasts" — which is precisely
+the set the user reported.
+
+**Source B** — the rendered frame. Dumping the C's framebuffer indices against
+its output RGB showed all eight band entries wrong and nothing else:
+index 120 rendered `(235,186,89)` where the master has `(77,101,174)`. Those tan
+values are `OPENMENU.PIK`'s — the TITLE SCREEN's sand.
+
+**Cause**: `WOODTILE.SS`, the map screen's own backdrop sheet, contains no water,
+so its palette leaves 120..127 (and 13, 139..143, 252..254) as magenta
+placeholders. Both engines then patch placeholders from the UI picker palette
+(`OPENMENU.PIK`) — `game.js:43`, mirrored in `rd_use_palette` and
+`rm_use_map_palette`. The C is single-palette (the DOS DAC model), so that merge
+reaches the SPRITES, and the water band became sand.
+
+**Ruling**: the fallback order was wrong. A magenta placeholder takes the
+**MASTER** palette first, and the UI picker palette **only where the master is a
+placeholder too**. The master's 120..127 is the authored blue ramp the DAC
+rotates, and it is capture-verified: `port/tools/build_assets.py` measured
+TERRAIN frame 11 against `docs/screens/06_ingame_map.png` at **3/256 pixels off
+through the master versus 50/256 through the sheet palette**, the three being the
+capture's own near-duplicate blue. Index 13 is the same class (master orange
+`(255,113,0)`) — and `game.js:25-26` already names that exact failure for the
+Dutch plates. Indices 139..143 and 252..254 ARE placeholders in the master as
+well, and those are the ones the picker palette is genuinely for.
+
+**Action taken**:
+- `cport/render/colopy_render.c` — new `rd_pal_placeholder` /
+  `rd_pal_fill_placeholders` implementing master-first; `rd_use_palette` uses it.
+- `cport/render/colopy_map_render.c` — `rm_use_map_palette` uses it (this is the
+  map screen's own WOODTILE merge, the one that produced the sand).
+- `port/src/game.js` — `usePalette` gets the same order, so both engines share
+  one rule. Latent rather than visible there: JS sprites are pre-baked RGB and
+  `cycAtlas` already resolved the band through the master, so only UI ink was
+  affected.
+
+**Why no oracle caught it**: `tools/render_map_compare.py` accepts a mismatching
+pixel when the C's INDEX re-resolved through the master equals the JS pixel —
+which is exactly what a wrong `RD.pal` produces. The oracle was checking the
+indices, and the indices were right all along. The fix shows up as a collapse in
+that accepted-delta count, which is the real signal: **view(43,30) 2372 -> 3**,
+plus map(20,30) 539 -> 104, event 467 -> 54, colony 200 -> 145. The C now agrees
+with the JS pixel-for-pixel, not merely index-for-index.
+
+**Follow-up**: the accepted-delta counts are now small enough to be worth
+watching as a regression signal in their own right; nothing enforces a ceiling on
+them today. TBD.
+
+---
+
 ## 2026-08-17 — "The fence" is OUT of the colony, so a man there neither draws with the colonists nor eats
 
 **Conflict**: a colonist told "Return to the fence" (or dragged out of the

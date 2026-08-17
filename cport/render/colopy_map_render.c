@@ -569,11 +569,7 @@ static void rm_use_map_palette(void) {
         0,0,0, 0,0,170, 0,170,0, 0,170,170, 170,0,0, 170,0,170,
         170,85,0, 170,170,170, 85,85,85, 85,85,255, 85,255,85,
         85,255,255, 255,85,85, 255,85,255, 255,255,85, 255,255,255 };
-    for (int i = 0; i < 256; i++) {
-        const uint8_t *c = RD.pal + i * 3;
-        if (c[0] > 240 && c[1] < 110 && c[2] > 240 && op)
-            memcpy(RD.pal + i * 3, op + i * 3, 3);
-    }
+    rd_pal_fill_placeholders(RD.pal, master, op);
     if (memcmp(wp, EGA, 48) == 0)
         memcpy(RD.pal, master, 48);
 }

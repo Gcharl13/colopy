@@ -1,0 +1,14 @@
+{
+  "source_file": "IND7A3.SS",
+  "sha256": "19a636c5075b26922ec71eeac815293337c01dbd66908a7ae688b5f8d5b62256",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/IND7A3",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

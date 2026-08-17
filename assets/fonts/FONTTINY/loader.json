@@ -1,0 +1,14 @@
+{
+  "source_file": "FONTTINY.FF",
+  "sha256": "dc91c74a32de326d3b7b4ffa750d03d688ff4027f15ed028268988ee1c6f315e",
+  "format": "FF",
+  "format_spec": "formats/FF.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/fonts/FONTTINY",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

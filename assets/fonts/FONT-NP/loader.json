@@ -1,0 +1,14 @@
+{
+  "source_file": "FONT-NP.FF",
+  "sha256": "51f1a053e373a5b879de2b5955914feff7d4db8d8ed24fafbc8787b98cda8e18",
+  "format": "FF",
+  "format_spec": "formats/FF.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/fonts/FONT-NP",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

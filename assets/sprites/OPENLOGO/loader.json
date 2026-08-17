@@ -1,0 +1,14 @@
+{
+  "source_file": "OPENLOGO.SS",
+  "sha256": "8168d9d749b8a399b8ab545cf341ad79036a09b81bae68a1758285c6bc540e1f",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/OPENLOGO",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

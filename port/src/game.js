@@ -38,9 +38,21 @@ const usePalette = (bg) => {
   const base = DATA.palettes[bg] || DATA.palette;
   const uiPal = DATA.palettes.OPENMENU || DATA.palette;
   // Keep the backdrop's own scene colours, but patch any entry still holding a
-  // magenta placeholder (WOODPANL and the LEVN cards leave 0xFC-0xFE unset)
-  // from the picker palette, which carries the documented UI ink triplet.
-  const out = base.map((c, i) => isPlaceholder(c) ? uiPal[i] : c);
+  // magenta placeholder. ORDER MATTERS: the MASTER first, and the picker
+  // palette only where the master is a placeholder too. A backdrop sheet
+  // leaves unauthored whatever its own art does not use -- WOODTILE.SS, the
+  // map screen's sheet, has no water in it and so leaves the whole VGA
+  // cycling band 120..127 unset, where OPENMENU's entries are the title
+  // screen's SAND. Taking the picker first repainted every sea-lane tile and
+  // coast edge tan in the C port (2026-08-17); the master's 120..127 is the
+  // blue ramp CYCLE.DAT rotates. Index 13 is the same story -- master orange
+  // (255,113,0), the very entry the EGA_STUB note above is about. 139..143
+  // and 252..254 ARE placeholders in the master too, and those are the ones
+  // the picker is genuinely for.
+  const out = base.map((c, i) =>
+    !isPlaceholder(c) ? c
+      : !isPlaceholder(DATA.palette[i]) ? DATA.palette[i]
+      : uiPal[i]);
   // Unauthored EGA low-16 row -> the master palette's own entries.
   if (isEgaStubRow(base))
     for (let i = 0; i < 16; i++) out[i] = DATA.palette[i];

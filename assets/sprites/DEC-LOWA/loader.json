@@ -1,0 +1,14 @@
+{
+  "source_file": "DEC-LOWA.SS",
+  "sha256": "392a3205973fdf44da32258acd2c06576b4667395a83c743ff7a4244e14b7c0b",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/DEC-LOWA",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

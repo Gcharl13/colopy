@@ -1,0 +1,14 @@
+{
+  "source_file": "DECOIND.PIK",
+  "sha256": "5a0c815a921d7219a611a5dcbc669f309102fe3eac07d5adaaa652f9678f43e2",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/DECOIND",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

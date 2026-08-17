@@ -1,0 +1,14 @@
+{
+  "source_file": "WOODTILE.SS",
+  "sha256": "7b689b766b0f9027627b1a731d8e813a38678b21be41e00d294ecb2cd41ec89c",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/WOODTILE",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

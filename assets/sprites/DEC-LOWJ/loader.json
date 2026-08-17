@@ -1,0 +1,14 @@
+{
+  "source_file": "DEC-LOWJ.SS",
+  "sha256": "b48618a03180b3fcaa282e4082a6400d0eeea8b07f432b70354d8bb064f97019",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/DEC-LOWJ",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

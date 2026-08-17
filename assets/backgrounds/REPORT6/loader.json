@@ -1,0 +1,14 @@
+{
+  "source_file": "REPORT6.PIK",
+  "sha256": "c6d59ac693f16f611e86b5884c666082525d5e73e5e63db7f8089b8aa6f903aa",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/REPORT6",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

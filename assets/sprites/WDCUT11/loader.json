@@ -1,0 +1,14 @@
+{
+  "source_file": "WDCUT11.SS",
+  "sha256": "2d78be568a530a06c386bb1d9a0dbf03841c3fef74d11072ebdf6f5248d027be",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/WDCUT11",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

@@ -67,6 +67,9 @@ extern rd_state RD;
 
 /* Open the pak, cache the hot sheets, load VICEROY.PAL, clear the fb. */
 int  rd_init(const uint8_t *pak_buf, uint32_t pak_len);
+int  rd_pal_placeholder(const uint8_t *c);
+void rd_pal_fill_placeholders(uint8_t *pal, const uint8_t *master,
+                              const uint8_t *ui);
 
 /* usePalette (game.js:1563 call sites): the master VICEROY.PAL with a
  * named sheet/PIK palette overriding — pass NULL for the master alone. */

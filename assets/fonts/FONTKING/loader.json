@@ -1,0 +1,14 @@
+{
+  "source_file": "FONTKING.FF",
+  "sha256": "1efbfcd6e44d321d7e0d9b218071e9a15da3e0158068ce54ba6b4b7d42c975dd",
+  "format": "FF",
+  "format_spec": "formats/FF.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/fonts/FONTKING",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}
