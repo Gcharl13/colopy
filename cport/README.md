@@ -83,3 +83,14 @@ Still open, and stated plainly:
   format has no field for either and the `.SAV` is written byte-exact.
 - Cosmetic TBDs remain: the colony dither/speckle pass, a handful of
   unresolved display strings, and no resource model on the map.
+- **Go To moves ONE square a turn**, whatever the unit's allowance.  That
+  is the executor's shape in both engines and predates the sail-for-Europe
+  work; it makes a ship's run out to the sea lane slower than the ship.
+  Recorded as TBD in `notes/rulings/RULINGS.md` (2026-08-17).
+- **No fence hit-rect.**  `@TUTORIAL4` puts the fence "near the water on
+  the colony picture", but no byte-read rectangle for it exists, so
+  leaving a colony rides the two exits that do: the jobs menu's "Return
+  to the fence" row and the drop-out-of-the-fields drag.  TBD.
+- **Taking the LAST colonist out of a colony is refused.**  What the
+  engine does there is unread, and abandonment already has its own
+  command (`@ABANDON`, shift-A), so no second path into it was invented.
