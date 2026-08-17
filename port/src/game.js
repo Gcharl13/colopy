@@ -12329,21 +12329,15 @@ function onClick(mx, my) {
         const ty = G.view.y + Math.floor((my - VP.y) / TILE_PX());
         // A pending "Go to Place" takes the next map click as its destination.
         if (G.goTo) { setGoTo(G.goTo, tx, ty); return; }
-        // Clicking your own colony opens its screen; clicking a stack cycles
-        // through the units standing on that tile.
-        // TODO(user report 2026-08-17): the COLONY should win over the stack
-        // (GAME_MANUAL.md p40 attaches no "unoccupied" condition, and a colony
-        // square nearly always holds units).  PROVEN: the colony index, the
-        // build-picker row model and DATA.buildings all agree with the C port
-        // (dumped for sav1653 colony 10, Vlissingen).  STILL OPEN: dropping
-        // the guard leaves a divergence the new `bld` projection field pins to
-        // event 186, CLICK(224,142): `.bld: JS "" != C "Armory"`.  That is the
-        // BUY button rect, but Armory is build-picker row 1, so the engines
-        // disagree about whether the picker is open by then.  Compare the popup
-        // state across events 182..186 before dropping the guard.
+        // Clicking your own colony opens its screen -- the COLONY WINS over
+        // any unit stack standing on the square.  GAME_MANUAL.md p40 puts no
+        // "unoccupied" condition on it, and a colony square nearly always
+        // holds units, so the old `&& !on.length` guard made the colony
+        // screen almost unreachable by clicking (user report 2026-08-17).
+        // Clicking a stack with no colony still cycles through the units.
         const ci = G.colonies.findIndex(c => c.x === tx && c.y === ty);
         const on = G.units.map((u, i) => i).filter(i => G.units[i].x === tx && G.units[i].y === ty);
-        if (ci >= 0 && !on.length) { G.colony = ci; G.screen = 'colony'; }
+        if (ci >= 0) { G.colony = ci; G.screen = 'colony'; }
         else if (on.length) G.sel = on[(on.indexOf(G.sel) + 1) % on.length];
         else centerOn(tx, ty);
       }

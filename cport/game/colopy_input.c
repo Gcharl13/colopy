@@ -2545,38 +2545,22 @@ static void in_click_inner(int mx, int my, int right) {
                 if (CS.units[u2].map_x == tx && CS.units[u2].map_y == ty)
                     on[non++] = q;
             }
-            /* TODO(user report 2026-08-17): the COLONY should win over
-             * the unit stack — GAME_MANUAL.md p40 puts no "unoccupied"
+            /* The COLONY WINS over the unit stack (user report
+             * 2026-08-17).  GAME_MANUAL.md p40 puts no "unoccupied"
              * condition on clicking a colony, and a colony square nearly
-             * always holds units, so this guard makes the colony screen
-             * almost unreachable by clicking.  Dropping `&& !non` here and
-             * `&& !on.length` in the JS is the whole change.
+             * always holds units, so the old `&& !non` guard made the
+             * colony screen almost unreachable by clicking.  A stack with
+             * no colony still cycles.
              *
-             * PROVEN so far (dumped from both engines, sav1653 colony 10
-             * "Vlissingen"): the colony INDEX agrees (JS G.colonies index
-             * == this own-colony ordinal), the build-picker ROW MODEL is
-             * identical row for row, and dat_buildings == DATA.buildings.
-             * So the earlier "index mismatch" and "row-model ordering"
-             * diagnoses were both WRONG — the first was a stale JS bundle
-             * (now guarded in tools/sim_trace.py).
-             *
-             * STILL OPEN, now pinned to one click.  The projection
-             * carried no build target until 2026-08-17; adding `bld`
-             * moved the first divergence two events EARLIER than the
-             * `.cpr` symptom:
-             *
-             *   event 186  CLICK(224,142)  .bld: JS "" != C "Armory"
-             *
-             * (224,142) is the colony screen's BUY rect (216,137,18,11),
-             * but "Armory" is build-picker ROW 1 — so the C looks to be
-             * committing a picker row there while the JS is not: the two
-             * disagree about whether the picker is open by event 186,
-             * after the 183..185 clicks inside the colony that this guard
-             * used to make unreachable.  Replay 182..186 in both and
-             * compare the popup state, then drop the guard here and the
-             * `&& !on.length` in game.js.  With the guard in place `bld`
-             * agrees on every event of every fixture. */
-            if (ci >= 0 && !non) {
+             * Landing this took three tries.  The first two diagnoses —
+             * a "colony index mismatch" and a "build-picker row-model
+             * ordering" problem — were both WRONG (the first was a stale
+             * JS bundle, now guarded in tools/sim_trace.py; the row models
+             * and dat_buildings == DATA.buildings were dumped and agree).
+             * The third, a real `.bld` divergence at event 186, turned out
+             * to be downstream of the three JS/C divergences the standing-
+             * orders fix unmasked, and vanished when those were fixed. */
+            if (ci >= 0) {
                 UI.colony = (int8_t)ci;
                 UI.screen = SCR_COLONY;
             } else if (non) {
