@@ -405,6 +405,16 @@ void colony_capture_record(int ci, int pop) {
  * cmd_build_colony returns -2: NULL name = the suggested
  * colonynames[nation][count % 66].  The founder stands down like a
  * joiner.  Returns the new colony's player ordinal. */
+/* the name cmd_found_colony would pick — the live front's @COLONY
+ * prefill (nameAndFound, game.js:2123) */
+const char *colony_suggested_name(void) {
+    int nplayer = 0;
+    for (int i = 0; i < CS.n_colonies; i++)
+        if ((CS.colonies[i].owner_power & 3) == (int)cs_nation()) nplayer++;
+    const char *n = dat_colonynames[cs_nation()][nplayer % 66];
+    return n ? n : "Colony";
+}
+
 int cmd_found_colony(int ui, const char *name) {
     if (CS.n_colonies >= COLOPY_MAX_COLONIES) return -1;
     UnitRecord *u = &CS.units[ui];

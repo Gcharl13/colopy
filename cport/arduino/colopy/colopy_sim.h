@@ -251,6 +251,7 @@ int  father_by_name(const char *name);
 void europe_seed_from_load(void);     /* importer 10477: off-map ships dock */
 void advance_crossings(void);         /* advanceCrossings (game.js:3258) */
 void cmd_sail_for_europe(int ui);     /* sailForEurope (game.js:3231) */
+const char *colony_suggested_name(void);  /* the @COLONY prefill */
 void euro_sail_new_world(int ei);     /* sailForNewWorld (game.js:3243) */
 void euro_sell_from_ship(int ei, int good, int32_t qty); /* sellFromShip */
 void euro_buy_to_ship(int ei, int good, int32_t qty);    /* buyToShip */

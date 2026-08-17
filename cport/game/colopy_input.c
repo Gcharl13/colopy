@@ -417,6 +417,27 @@ static int16_t pending_stops[4];
 static int pending_n, pending_sea;
 
 static void dialog_done(int cancel) {
+    if (UI.dlg == 7) {               /* COLONY (nameAndFound 2123): the
+                                      * founding name; empty = suggested */
+        char nm[24];
+        snprintf(nm, sizeof(nm), "%s", UI.dlg_entry);
+        int fu = UI.dlg_unit;
+        UI.dlg = 0;
+        UI.dlg_entry[0] = 0;
+        char *b = nm;
+        while (*b == ' ') b++;
+        char *e4 = b + strlen(b);
+        while (e4 > b && e4[-1] == ' ') *--e4 = 0;
+        if (fu < 0 || fu >= CS.n_units) return;
+        int ord = cmd_found_colony(fu, *b ? b : 0);
+        if (UI.sel >= CR.n_units_order)
+            UI.sel = CR.n_units_order ? (int8_t)(CR.n_units_order - 1) : 0;
+        if (ord >= 0) {
+            UI.colony = (int8_t)ord;
+            UI.screen = SCR_COLONY;
+        }
+        return;
+    }
     if (UI.dlg == 6) {               /* LANDHO (askLandName 10882): the
                                       * discovery plate's naming prompt;
                                       * an empty entry takes @default */
@@ -495,7 +516,12 @@ static void dialog_done(int cancel) {
 }
 static void dialog_key(const char *k) {
     if (key_is(k, "Enter")) { dialog_done(0); return; }
-    if (key_is(k, "Escape")) { dialog_done(1); return; }
+    /* only a NUMERIC dialog closes on Escape (dialogKey, game.js:995):
+     * a text entry has no cancel — it commits, empty = the fallback */
+    if (key_is(k, "Escape")) {
+        if (UI.dlg < 4) dialog_done(1);
+        return;
+    }
     if (key_is(k, "Backspace")) {
         size_t n = strlen(UI.dlg_entry);
         if (n) UI.dlg_entry[n - 1] = 0;
@@ -1487,8 +1513,18 @@ static void in_key_inner(const char *k, int alt, int shift) {
              * dialog */
             if (ui >= 0) {
                 int ord = cmd_build_colony(ui);
-                if (ord == -2)           /* the name dialog: live only */
-                    ord = colopy_front_live ? cmd_found_colony(ui, 0) : -1;
+                if (ord == -2) {
+                    /* the @COLONY name dialog (live front only): the
+                     * founding waits on the entry, prefilled with the
+                     * name cmd_found_colony would pick */
+                    if (colopy_front_live) {
+                        UI.dlg = 7;
+                        UI.dlg_unit = (int16_t)ui;
+                        snprintf(UI.dlg_entry, sizeof(UI.dlg_entry), "%s",
+                                 colony_suggested_name());
+                    }
+                    return;
+                }
                 if (UI.sel >= CR.n_units_order)
                     UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
                 if (ord >= 0) {

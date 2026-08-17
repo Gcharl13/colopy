@@ -310,7 +310,8 @@ static void draw_screen(void) {
                     : UI.dlg == 3 ? "HOWMUCH2"
                     : UI.dlg == 4 ? "RENAMECOLONY"
                     : UI.dlg == 5 ? "TRADENAME"
-                    : UI.dlg == 6 ? "LANDHO" : "HOWMUCH5",
+                    : UI.dlg == 6 ? "LANDHO"
+                    : UI.dlg == 7 ? "COLONY" : "HOWMUCH5",
                       &subs, 0);
     }
     flush_fb();
