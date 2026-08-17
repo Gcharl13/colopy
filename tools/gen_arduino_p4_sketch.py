@@ -158,12 +158,24 @@ gestures:
 | long-press (0.6 s) | skip the active unit — **except** on the Europe market bar, where it BUYS 100 of that good |
 | two-finger tap | Escape: close a menu or screen, dismiss a notice |
 
+**Menus follow your finger.** Press a menu-bar title and it opens
+straight away; keep the finger down and slide across the bar to switch
+menus, or down the rows to move the highlight bar.  Lift on the row you
+want — lift off the box and nothing runs.  You never have to hit a
+small target blind: press anywhere on the bar, look at what is
+highlighted, then slide and lift.
+
 Per screen:
 
 - **Map** — the menu bar's six titles open their pulldowns; tap a row
   to run it (every ORDERS command lives there, so no key is needed).
   Tap a tile NEXT to the active unit to move it; tap your colony to
   enter it; tap a far tile to centre.  Zoom is VIEW → Zoom In/Out.
+- **Ending a turn** — long-press passes on the active unit, so
+  long-pressing your way through the units left to move rolls the turn
+  over on the last one.  With NOTHING active (everyone fortified and
+  spent, or no unit on the map at all — colonists inside colonies, the
+  ship at sea) a long-press ends the turn by itself.
 - **Colony** — tap a colonist in the plaza to select, tap again for his
   jobs menu; tap a field square to send him out (tap a worker twice for
   his occupation menu, whose last row calls him back).  The right

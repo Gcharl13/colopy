@@ -39,6 +39,9 @@
  *                   Europe market bar it BUYS 100 of that good (a tap
  *                   there sells, as the DOS pointer layer does)
  *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
+ * Menus track the finger: press a menu-bar title to open it, slide
+ * across the bar to switch menus or down the rows to move the
+ * highlight, and lift on the row you want (lift off the box = close).
  * A queued notice: tap dismisses.  A question dialog: tap an option
  * row to answer it, tap outside the box to dismiss.  An entry modal:
  * the on-screen pad types (digits for an amount, letters for a name),
@@ -195,6 +198,10 @@ enum { TT_NONE = 0, TT_TAP, TT_LONG, TT_ESC, TT_KEY };
 #define TT_LONG_MS 600
 #endif
 
+/* the live press position while a finger is down — the menu tracker
+ * reads it so the highlight can follow the finger (see menu_track) */
+static int touch_down = 0, touch_hx = 0, touch_hy = 0;
+
 static int touch_poll(int *gx, int *gy) {
     static bool armed = false;            /* a debounced press in flight */
     static bool multi = false;
@@ -217,11 +224,23 @@ static int touch_poll(int *gx, int *gy) {
             armed = true;
             multi = false;
             t_down = now;
-            px = pt[0].x;
-            py = pt[0].y;
         }
+        /* TRACK the finger: the release point is where it ENDED, so a
+         * press can slide onto the row it means to pick */
+        px = pt[0].x;
+        py = pt[0].y;
         if (n >= 2) multi = true;
+        {
+            int lx = px - P4_XOFF, ly = py;
+            if (lx >= 0 && lx < RD_W * P4_SCALE &&
+                ly >= 0 && ly < RD_GAME_H * P4_SCALE) {
+                touch_hx = lx / P4_SCALE;
+                touch_hy = ly / P4_SCALE;
+                touch_down = 1;
+            }
+        }
     } else if (armed && now - t_seen >= TT_RELEASE_MS) {
+        touch_down = 0;
         /* a STABLE release (not a GT911 dropout): classify */
         armed = false;
         t_fired = now;
@@ -237,6 +256,7 @@ static int touch_poll(int *gx, int *gy) {
             }
         }
     }
+    if (n <= 0 && !armed) touch_down = 0;
     return ev;
 }
 
@@ -564,6 +584,65 @@ static void game_key(const char *name, int alt, int shift) {
     draw_screen();
 }
 
+/* LIVE menu tracking (SHELL CHROME, user report 2026-08-17: "the
+ * screen is small, so my fingers don't always hit the right one").
+ * While a finger is DOWN on the map's menu bar or an open pulldown,
+ * the highlight follows it: pressing a bar title opens that menu at
+ * once, sliding across the bar switches menus, sliding down the rows
+ * moves the selection bar (drawPulldown paints UI.menu_sel).  The lift
+ * commits whatever is highlighted — game_tap already reads the release
+ * point, which now tracks the finger.  Redraws only on a CHANGE. */
+static uint8_t *menu_bg = nullptr;     /* the map behind an open menu */
+
+/* Re-compositing the map for every highlight step would crawl (15x12
+ * tiles + the 3x flush), so the map is cached ONCE when the menu opens
+ * and each step just restores it and repaints the pulldown.  Heap, not
+ * .bss — 64 KB of static data overflows this board's internal SRAM. */
+static void menu_cache(void) {
+    if (!menu_bg) menu_bg = (uint8_t *)malloc(RD_W * RD_GAME_H);
+    rm_draw_map_zoom(UI.view_x, UI.view_y, UI.sel, map_blink, UI.zoom);
+    if (menu_bg) memcpy(menu_bg, RD.fb, RD_W * RD_GAME_H);
+}
+static void menu_repaint(void) {
+    if (!menu_bg) { draw_screen(); return; }
+    memcpy(RD.fb, menu_bg, RD_W * RD_GAME_H);
+    if (UI.open_menu >= 0)
+        rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
+    flush_fb();
+}
+
+static void menu_track(int gx, int gy) {
+    if (UI.screen != SCR_MAP || UI.dlg || have_pending) return;
+    int bar = gy < 10 ? rm_menubar_hit(gx) : -1;
+    if (bar >= 0) {                       /* on a bar title */
+        if (bar != UI.open_menu) {
+            int had = UI.open_menu >= 0;
+            in_click(gx, gy < 8 ? gy : 7, 0);   /* openMenu(bar) */
+            if (UI.request) { service_request(); return; }
+            if (!had) menu_cache();             /* snapshot the map once */
+            menu_repaint();
+        }
+        return;
+    }
+    if (UI.open_menu < 0) return;
+    int bx, by, bw, bh;
+    rm_pulldown_box(UI.open_menu, UI.sel, &bx, &by, &bw, &bh);
+    if (gx < bx || gx >= bx + bw || gy < by || gy >= by + bh) return;
+    rm_mrow rows[64];
+    int n = rm_menu_rows(UI.open_menu, UI.sel, rows);
+    int py = by + 2, r = -1;
+    for (int k = 0; k < n; k++) {
+        int rh = rows[k].sep ? 7 : 8;
+        if (gy >= py && gy < py + rh) { r = k; break; }
+        py += rh;
+    }
+    if (r >= 0 && r != UI.menu_sel && rows[r].label && !rows[r].sep &&
+        !rows[r].dim) {
+        UI.menu_sel = (int8_t)r;
+        menu_repaint();
+    }
+}
+
 /* a LONG-press in the game loop.  Space (skip the unit) everywhere but
  * the Europe market bar, where it BUYS: the pointer layer's market
  * click is sell-only (game.js:12563 routes it to sellFromShip) and
@@ -631,7 +710,10 @@ static void game_tap(int gx, int gy) {
      * where the touch panel is least accurate — accept taps a little
      * below it as bar hits (the 2 borrowed px are the first tile row's
      * top edge, never a distinct target) */
-    if (UI.screen == SCR_MAP && UI.open_menu < 0 && gy < 10) {
+    if (UI.screen == SCR_MAP && gy < 10) {
+        /* the tracker opens a menu on PRESS, so a release on the title
+         * it opened must not toggle it shut again */
+        if (UI.open_menu >= 0 && rm_menubar_hit(gx) == UI.open_menu) return;
         in_click(gx, gy < 8 ? gy : 7, 0);
         if (UI.request) { service_request(); return; }
         draw_screen();
@@ -1165,6 +1247,7 @@ void loop() {
         if (ev == TT_ESC) game_key("Escape", 0, 0);
         else if (ev == TT_LONG) game_long(gx, gy);
         else if (ev == TT_TAP) game_tap(gx, gy);
+        else if (touch_down) menu_track(touch_hx, touch_hy);
         /* animation: redraw the map when the unit blink flips; re-flush
          * (LUT only, no redraw) when the water cycle steps a phase */
         int bl = blink_now();

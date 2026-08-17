@@ -1674,6 +1674,19 @@ static void in_key_inner(const char *k, int alt, int shift) {
         int ui = sel_unit();
         if (key_is(k, " ")) {
             if (ui >= 0) { cmd_skip(ui); advance(); }
+            else if (colopy_front_live) {
+                /* NOTHING is active — every unit is spent, or the
+                 * player has no map unit at all (all colonists inside
+                 * colonies, the ship at sea).  skipUnit returns early
+                 * on a missing G.units[G.sel] (game.js:10874), so the
+                 * JS never reaches advance() here and the turn cannot
+                 * end: a live front would sit forever.  Space runs the
+                 * turn itself.  FLAGGED live-front affordance — the
+                 * DOS engine's own turn loop is not unit-driven, so it
+                 * rolls over on its own; the harness keeps the JS
+                 * behaviour (front_live 0) and stays in parity. */
+                advance();
+            }
         } else if (key_is(k, "Tab") || key_is(k, "w") || key_is(k, "W")) {
             next_unit();
         } else if (key_is(k, "a") || key_is(k, "A")) {
