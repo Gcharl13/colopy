@@ -61,7 +61,9 @@ bit-identity.
    pairing by GAME.TXT text, not a traced call site. European first-contact
    fanfare `0x8020+power` and all combat SFX ids: **TBD, not wired** (no
    byte-cited row names them).
-10. **Fanfare bank contents**: pending fanfare captures (V6).
+10. **Fanfare bank**: all 8 ids (0x8020–0x8027) captured and shipped as
+    renders; the per-power CUE (0x8020+power on European first contact)
+    remains unwired in cport (row 9).
 11. **PC-speaker / MT-32 driver variants**: not reproduced (SB stack only).
 12. **OPENING.EXE / CLOSING.EXE cinematic audio**: out of scope.
 13. **Sound Test dialog** and the Pick-Music/Sound-Options UI screens are

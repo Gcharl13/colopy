@@ -106,40 +106,65 @@ listen; ESP32-P4 = I2S DMA (gated on hardware verification); Teensy 4.1 = MQS.
 Mixer: 2 voices (music stream + one SFX one-shot; a new SFX preempts the
 playing SFX — modelled, see Approximations).
 
-## Size budget (estimates; tune lengths are capture-derived)
+## Size budget (measured, 2026-08-17 pack)
 
-| Asset | Codec | Size | Teensy 4.1 | ESP32-P4 |
+| Asset | Codec | Measured | Teensy 4.1 | ESP32-P4 |
 |---|---|---|---|---|
-| SFX bank (≤32 ids) | PCM8 @ 11025 | ≤ 970 KB | SD (or flash blob; ~4.9 MB free) | SD (or 16 MB flash) |
-| ~28 tunes + fanfares | IMA4 @ 22050 ≈ 11 KB/s | est. 20–55 MB | **SD only** | **SD only** |
-| Engine RAM | — | ~25–35 KB static | OCRAM | SRAM/PSRAM |
+| 16 digitized SFX | PCM8 slices @ 11025 | 383 KB | SD stream | SD stream |
+| 51 renders (28 tunes + 15 FM sfx + 8 fanfares) | IMA4 @ 22050 (≈11 KB/s) | 25.5 MB | **SD only** | **SD only** |
+| **COLAUDIO.PAK total** | | **25.9 MB** (67 entries) | | |
+| Engine RAM | — | ~12 KB static (2 voices + TOC) + backend ring/DMA | OCRAM | SRAM |
+
+## Capture results (2026-08-17, the full sweep)
+
+Every id was driven through the Sound Test cheat under the stock-config
+driver (DOSBox 0.74, sb16 at 220/7/1) and recorded:
+
+- **SFX 0x40–0x5F (32 ids):** 29 sounded. 16 matched `COLDIG.BIN`
+  cleanly (chunked cross-correlation, consistent DSP clock ≈ ×0.9966 of
+  11025 across the fleet) and ship as **bit-clean slices**; 13 are
+  FM-rendered by the driver (or partial/layered matches) and ship as
+  renders. **0x46, 0x5E, 0x5F are silent** — unmapped ids in the driver,
+  recorded as data, nothing shipped.
+- **Tunes 0x20–0x3B, 0x3E, 0x3F (30 ids):** all sounded (3.6–166 s
+  trimmed). **0x34 hit the 240 s capture cap** — it likely loops;
+  flagged, shipped at cap length.
+- **Fanfares 0x8020–0x8027 (8 ids):** all sounded (3.7–47 s) — the
+  fanfare bank is real and fully captured (former open item V6).
 
 ## Approximations catalogue (live; mirrored in cport/audio/README.md)
 
-- SFX id→slice mapping: empirical (correlation scores + `"approximate"` flags
-  in `coldig_slices.json`).
-- Tune renders: empirical captures of the real driver under DOSBox's OPL
-  emulation — authentic hardware behaviour, not byte-derived sequences.
-- Tune lengths / loop behaviour: capture-derived.
-- Fanfare banks: TBD until captured.
-- SFX preemption + in-driver stop semantics: modelled.
-- Scheduler PRNG: wall-clock-seeded xorshift standing in for the RTL rand
-  (the original seeds from the tick clock `[0x83A8]` — same class).
-- `[0x5386]` switch-bit mapping: pinned in Phase A, else shipped TBD with
-  default all-on (0x07).
+- SFX id→slice mapping: empirical (per-row scores/flags in
+  `coldig_slices.json`).
+- Tune/fanfare/FM-sfx renders: empirical captures of the real driver under
+  DOSBox's OPL emulation — authentic hardware family, not byte-derived
+  sequences. Lengths/loop behaviour capture-derived (0x34 capped).
+- SFX preemption, stop semantics inside the driver, pending-queue depth 1:
+  modelled.
+- Scheduler PRNG: wall-clock-seeded xorshift standing in for the RTL rand.
+- Cue rows tagged `[inferred]`; European first-contact fanfare
+  (0x8020+power) and combat SFX ids: not wired (no byte-cited row).
 - PC-speaker and MT-32 driver variants: not reproduced.
 - OPENING.EXE / CLOSING.EXE cinematic audio: out of scope.
 
 ## Verification
 
 - `cport/host`: `smoke --audio` (scheduler unit tests with injected PRNG
-  against the pinned algorithm; mixer golden-WAV sha256; ADPCM round-trip
-  vs the Python encoder) and `smoke --audiopak` (TOC sanity; SFX slice
-  byte-identity against `raw/COLONIZE/COLDIG.BIN` when present).
-- `make test` unchanged and green (fidelity oracles untouched).
-- A/B listen checklist per id (capture vs pack render) — § below, filled in
-  Phase G.
+  against the pinned algorithm; exact cross-language IMA round-trip; gate
+  truth table; crossover ratios in binomial bounds) and
+  `smoke --audiopak PAK COLDIG.BIN` (TOC walk + slice byte-identity) —
+  both green; `make test` unchanged and green (fidelity oracles untouched).
+- `tools/audio/verify_pack.py` — objective per-entry report: every slice
+  **bit-clean**, every render decoded and SNR'd against its master
+  (14.1–37.6 dB, median ≈ 26 — IMA's adaptive quantizer dips on
+  transient-dense OPL content; the 12 dB gate is a regression floor, not
+  a quality verdict). 67 entries, 0 failures.
 
-## A/B listen checklist
+## A/B listen pass (human, on hardware — the perceptual gate)
 
-*(Phase G — to be filled after the pack is built.)*
+Not performable in this container. Protocol: enable `COLOPY_AUDIO` on a
+board (or `aplay` the masters on a host), play each id via
+`au_cmd(id)`/Sound-Test order, and compare by ear against
+`tools/audio/captures/` (regenerable). Listen-first candidates: the
+lowest-SNR renders 0x47 (0.5 s FM click, 14 dB), 0x5B, 0x27, 0x26,
+0x8022, and the capped 0x34. Record outcomes here.

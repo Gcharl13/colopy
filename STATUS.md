@@ -231,8 +231,13 @@ A playable HTML/canvas port built from the spec, not from the disassembly.
 **What it does not have** — the full list lives in `port/README.md`; the
 headlines are **AI opponents** (deliberately last: `spec/systems/ai.md` is the
 thinnest area and real opponents would mean inventing behaviour), the **Combat
-Analysis dialog**, byte-exact **advisor-report body layouts**, and **audio**
-(out of scope by user decision).
+Analysis dialog**, and byte-exact **advisor-report body layouts**. **Audio**
+remains out of the JS port's fidelity scope, but as of 2026-08-17 it exists as
+a separately-scoped **cport milestone** (`docs/AUDIO_PORT.md`): the caller-side
+sound layer is byte-pinned and ported (`cport/audio/`), all 67 shippable ids
+are captured/packed (`COLAUDIO.PAK` — 16 bit-clean COLDIG slices + 51 driver
+renders, empirical-capture tier), both board backends are written (P4 I2S,
+Teensy MQS; opt-in `COLOPY_AUDIO`, off until verified by ear on hardware).
 
 ---
 

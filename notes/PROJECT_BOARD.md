@@ -254,6 +254,13 @@ regress the pixel/behaviour fidelity gate.
   `data_extracted/data/AMERICA_MOV.json`).
 - **2026-08-16: commissioned as a separately-scoped pragmatic milestone**
   targeting `cport/` (user directive; ruling in `notes/rulings/RULINGS.md`
-  2026-08-16; design in `docs/AUDIO_PORT.md`). Phases: doc corrections →
-  capture pipeline (`tools/audio/`) → `COLAUDIO.PAK` → `cport/audio/` engine
-  → shell cue wiring → P4/Teensy backends. Still does not pull into P1–P7.
+  2026-08-16; design in `docs/AUDIO_PORT.md`). Still does not pull into P1–P7.
+- **2026-08-17: delivered through the software phases.** Scheduler/gate/class
+  verbs byte-pinned (spec §4/§5) and ported (`cport/audio/`, host tests
+  green); full capture sweep done (all tunes, fanfares, SFX; 3 ids silent =
+  unmapped); `COLAUDIO.PAK` 67 entries (16 bit-clean COLDIG slices + 51
+  renders) validator-clean; cues + pump wired in both shells; P4 I2S and
+  Teensy MQS backends written. **Remaining = hardware:** flip `COLOPY_AUDIO`
+  on a real board, run the A/B listen pass (`docs/AUDIO_PORT.md` §listen),
+  record outcomes. Cue gaps (European-contact fanfare, combat SFX) and the
+  Pick-Music/Sound-Options screens in cport's input layer stay open.

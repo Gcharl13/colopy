@@ -25,7 +25,7 @@ extern "C" {
 #define CAUD_BLOCK        1024  /* samples per IMA block */
 #define CAUD_BLOCK_BYTES  516   /* 4-byte header + 512 nibble bytes */
 
-/* Generation census: 16 entries (16 SFX slices, 0 music renders) */
+/* Generation census: 67 entries (16 SFX slices, 51 music renders) */
 
 #ifdef __cplusplus
 }

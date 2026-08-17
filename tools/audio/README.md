@@ -48,6 +48,7 @@ and this directory's manifests, which make the regeneration auditable.
 | `map_coldig.py` | cross-correlate SFX captures against `COLDIG.BIN` → slice table |
 | `trim_masters.py` | tune/fanfare captures → trimmed 22050 mono masters |
 | `ima_adpcm.py` | the pack's music codec (self-contained 1024-sample blocks); `python3 ima_adpcm.py` self-tests |
+| `verify_pack.py` | objective pack report: slice bit-identity + per-render SNR vs master (12 dB regression floor) |
 | `captures_manifest.json` | per-id capture log (duration, first-signal, provenance) |
 | `masters_manifest.json` | per-master trim log |
 

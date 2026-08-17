@@ -234,6 +234,8 @@ Builder verb `0x181f:0x3fe` → wrapper @0x06F594: hardwires file "GAME"
 4. 16×8-byte table at DGROUP 0x26F0 (id→byte[+6] @0x0129FF) — writer TBD.
 5. `[0x828]` flag — its window override is byte-pinned (§4: `(1,24)`, all
    indices); its *writer/meaning* is still TBD.
-6. Play far-call target `0x2D8:0xE` (@0x50B5) — same-DGROUP thunk cluster;
-   relationship to gate `func_00518E` (`0x1059:0xA` via `0x181f:0x4c0`)
-   not traced.
+6. Play far-call target `0x2D8:0xE` — carries AX=id at every caller
+   (@0x50B5 the scheduler's pick; @0x50E5/@0x5134 stop issued as AX=1,
+   matching the gate's command-1 semantics), so it behaves as the gated
+   play entry; its thunk identity vs `0x181f:0x4c0`/`func_00518E` is
+   still untraced.
