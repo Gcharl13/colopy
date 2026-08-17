@@ -247,6 +247,60 @@ void colonist_add(ColonyRecord *c) {
     c->profession[c->population] = 0;
     c->population++;
 }
+static int unit_type_for_profession(uint8_t prof);
+
+/* colonistToFence (game.js, next to unitToColonist): a colonist LEAVES the
+ * colony and waits at the fence — which is to say he becomes an ordinary
+ * unit standing on the colony square.  Two GAME.TXT keys pin what "the
+ * fence" is: @TUTORIAL4 ("To take a colonist OUT OF A COLONY, drag him to
+ * the fence (near the water on the colony picture)") and @TUTORIAL15 (new
+ * arrivals wait at the "fence" until dragged "to a field or building").
+ * So the fence holds people who are ON the square but NOT members, which
+ * is exactly the second group of the byte-verified plaza row: its count is
+ * `colony+0x1F` (members) + `[0x8D72]` (units on the tile), separated by
+ * the 4px break (spec/ui/colony_screen.md §3.3, func_0270D0).
+ *
+ * Leaving therefore drops the colony's population, and food is
+ * `eaten = 2 * pop` over the MEMBERS (BYTE_VERIFIED @0xA5F2, restated by
+ * @TUTORIAL16) — so the man at the fence stops eating, which is what the
+ * user reported (2026-08-17).
+ *
+ * Refuses to empty a colony: the engine's behaviour when the LAST colonist
+ * leaves is unread, and abandonment has its own command (@ABANDON), so
+ * this does not invent a second path to it.  FLAGGED. */
+int colonist_to_fence(int ci, int k) {
+    ColonyRecord *c = &CS.colonies[ci];
+    if (k < 0 || k >= c->population || c->population <= 1) return -1;
+    uint8_t prof = c->profession[k];
+    /* the record's colonist arrays are index-packed, so removing one in the
+     * middle shifts the tail and every tiles[] reference past it */
+    for (int i = k; i + 1 < c->population; i++) {
+        c->occupation[i] = c->occupation[i + 1];
+        c->profession[i] = c->profession[i + 1];
+        CR.col[ci].taught[i] = CR.col[ci].taught[i + 1];
+    }
+    c->population--;
+    c->occupation[c->population] = 0xFF;
+    c->profession[c->population] = 0xFF;
+    CR.col[ci].taught[c->population] = 0;
+    for (int q = 0; q < 8; q++) {
+        if ((uint8_t)c->tiles[q] == (uint8_t)k) c->tiles[q] = (int8_t)0xFF;
+        else if ((uint8_t)c->tiles[q] != 0xFF && (uint8_t)c->tiles[q] > (uint8_t)k)
+            c->tiles[q] = (int8_t)((uint8_t)c->tiles[q] - 1);
+    }
+    /* mkUnit(p.profession || p.type || 'Colonists'): a specialty maps to its
+     * carrier unit type, a plain colonist to Colonists */
+    int type = unit_type_for_profession(prof);
+    int ui = unit_append(type, (int)cs_nation(), c->map_x, c->map_y);
+    /* only a REAL specialty rides along.  SAV_PROFESSION (game.js:10299)
+     * accepts 1..DAT_JOBEXPERT_COUNT-1 and reads everything else as null,
+     * and the record's "no specialty" value is out of that range — storing
+     * it verbatim would hand the unit a profession index nothing decodes. */
+    if (ui >= 0 && prof >= 1 && prof < DAT_JOBEXPERT_COUNT)
+        CS.units[ui].profession = prof;
+    return ui;
+}
+
 void colonist_remove_last(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
     if (!c->population) return;
@@ -331,6 +385,30 @@ static int unit_row_named(const char *name) {
     for (int i = 0; i < DAT_UNITS_COUNT; i++)
         if (strcmp(dat_units[i].name, name) == 0) return i;
     return -1;
+}
+
+/* mkUnit's profession branch (game.js:645/650): a @JOB expert name that is
+ * NOT itself a @UNIT row makes a plain Colonists unit CARRYING that
+ * profession, except for the five armed/equipped trades, which map to the
+ * @UNIT row that shares them (PROFESSION_UNIT).  0xFF = no specialty. */
+static int unit_type_for_profession(uint8_t prof) {
+    static const char *PU[][2] = {
+        { "Veteran Soldiers", "Soldiers" }, { "Veteran Dragoons", "Dragoons" },
+        { "Hardy Pioneers", "Pioneers" },   { "Seasoned Scouts", "Scouts" },
+        { "Jesuit Missionaries", "Missionaries" },
+    };
+    int fallback = unit_row_named("Colonists");
+    if (prof == 0xFF || prof < 1 || prof >= DAT_JOBEXPERT_COUNT)
+        return fallback < 0 ? 0 : fallback;
+    const char *name = dat_jobexpert[prof];
+    int u = unit_row_named(name);            /* SAV_PROFESSION -> unit(name) */
+    if (u >= 0) return u;
+    for (unsigned i = 0; i < sizeof(PU) / sizeof(PU[0]); i++)
+        if (strcmp(name, PU[i][0]) == 0) {
+            int t = unit_row_named(PU[i][1]);
+            if (t >= 0) return t;
+        }
+    return fallback < 0 ? 0 : fallback;
 }
 
 static void advance_construction(int ci, int hammers) {

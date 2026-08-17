@@ -246,6 +246,18 @@ static void script_commands(int t) {
             cmd_skip(ui);
         }
     }
+    /* --- the fence (2026-08-17): now and then a colonist steps OUT of the
+     * first colony that can spare him, so the oracle covers
+     * colonist_to_fence — the member leaving, the unit appearing on the
+     * square, and the food count dropping with the population. */
+    if (t % 13 == 0 && t > 0) {
+        for (int ci = 0; ci < CS.n_colonies; ci++) {
+            if ((CS.colonies[ci].owner_power & 3) != cs_nation()) continue;
+            if (CS.colonies[ci].population <= 1) continue;
+            colonist_to_fence(ci, (t / 13) % CS.colonies[ci].population);
+            break;
+        }
+    }
     /* --- the Europe phase (slice 3), fixed order.  portIdx tracks the
      * LIVE shipsInPort index (activeShip's coordinate); seen is the
      * stable action selector. */

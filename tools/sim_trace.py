@@ -560,6 +560,14 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
         }
       } else { G.sel = k; skipUnit(); }
     }
+    // --- the fence (2026-08-17): now and then a colonist steps OUT of the
+    // first colony that can spare him, so the oracle covers colonistToFence
+    // -- the member leaving, the unit appearing on the square, and the food
+    // count dropping with the population.
+    if (t % 13 === 0 && t > 0) {
+      const fc = G.colonies.find(x => x.colonists.length > 1);
+      if (fc) colonistToFence(fc, Math.floor(t / 13) % fc.colonists.length);
+    }
     // --- the Europe phase (slice 3), fixed order.  portIdx tracks the
     // LIVE shipsInPort index (activeShip's coordinate); seen is the
     // stable action selector.

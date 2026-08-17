@@ -2051,6 +2051,36 @@ function unitToColonist(u, c) {
   return { type: outfit.includes(u.type) ? 'Colonists' : u.type,
            profession: u.profession || null, job: null, cell: null };
 }
+// The reverse of unitToColonist: a colonist LEAVES the colony and waits at the
+// fence, which is to say he becomes an ordinary unit standing on the colony
+// square. Two GAME.TXT keys pin what "the fence" is:
+//   @TUTORIAL4  "To take a colonist OUT OF A COLONY, drag him to the fence
+//               (near the water on the colony picture)."
+//   @TUTORIAL15 new arrivals wait at the "fence" until dragged "to a field or
+//               building" to become citizens.
+// So the fence holds people who are ON the colony square but NOT members of it,
+// and that is exactly the second group of the byte-verified plaza row: its
+// count is `colony+0x1F` (members) + `[0x8D72]` (units on the tile), with the
+// 4px break between them (spec/ui/colony_screen.md §3.3, func_0270D0).
+//
+// Two consequences the user reported as bugs (2026-08-17) and this fixes:
+// he stops being drawn among the colonists, and he stops eating -- food is
+// `eaten = 2 * pop` over the colony's MEMBERS, BYTE_VERIFIED @0xA5F2 and
+// restated by @TUTORIAL16 ("Each colonist eats two units of food per turn").
+// Until now an unassigned man stayed in c.colonists, so he drew in the members
+// group and went on eating from a job he no longer had.
+//
+// Refuses to empty a colony: the engine's own behaviour when the LAST colonist
+// leaves is unread, and abandonment has its own explicit command (@ABANDON,
+// shift-A on the map), so this does not invent a second path to it. FLAGGED.
+function colonistToFence(c, i) {
+  const p = c.colonists[i];
+  if (!p || c.colonists.length <= 1) return null;
+  c.colonists.splice(i, 1);
+  const u = mkUnit(p.profession || p.type || 'Colonists', c.x, c.y);
+  G.units.push(u);
+  return u;
+}
 function buildColony() {
   const u = G.units[G.sel];
   if (!u) return;
@@ -4060,7 +4090,12 @@ function colonyPopupCommit() {
   } else if (G.colonyPopup === 'occupation') {
     const p = c.colonists[G.colonistSel];
     if (p) {
-      if (r.job === null) { p.cell = null; p.job = null; }
+      // "Return to the fence" is not a job, it is OUT of the colony.
+      if (r.job === null) {
+        colonistToFence(c, G.colonistSel);
+        G.colonistSel = Math.max(0, Math.min(G.colonistSel,
+                                             c.colonists.length - 1));
+      }
       else if (r.job === 'Teacher' && teacherGuard(c, p)) {
         G.colonyPopup = null;
         return;
@@ -11960,7 +11995,9 @@ function colonyDrop(d, target, mx, my) {
       // not an unassignment: only a drop FROM THE FIELDS clears his work.
       // (Port's own reading; the engine's drop-action bodies are unread.)
       if (d.from === 'plaza') return;
-      p.cell = null; p.job = null;
+      // Dropped out of the fields with no new job: same as the menu's
+      // "Return to the fence" -- he leaves the colony and waits outside.
+      colonistToFence(c, c.colonists.indexOf(p));
       return;
     }
     if (target === 2) {

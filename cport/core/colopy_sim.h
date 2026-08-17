@@ -178,6 +178,7 @@ void score_parts(score_parts_t *s);  /* firstTribeContact's woodcut callback
 extern int colopy_front_live;
 int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
 void colonist_remove_last(int ci);
+int  colonist_to_fence(int ci, int k);  /* colonistToFence; unit idx or -1 */
 void colonist_add(ColonyRecord *c);   /* the record-slot push */
 void ev_emit(const char *key, int32_t p0, int32_t p1,
              const char *s0, const char *s1);

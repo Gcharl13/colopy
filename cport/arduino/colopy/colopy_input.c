@@ -1228,11 +1228,14 @@ static void occupation_commit(void) {
     ColonyRecord *c = &CS.colonies[cci];
     int k = UI.colonist_sel, row = UI.colony_popup_row;
     if (k >= 0 && k < c->population) {
-        if (row == 9) {                       /* Return to the fence */
-            for (int q = 0; q < 8; q++)
-                if ((uint8_t)c->tiles[q] == (uint8_t)k)
-                    c->tiles[q] = (int8_t)0xFF;
-            c->occupation[k] = 0xFF;
+        if (row == 9) {
+            /* "Return to the fence" is not a job, it is OUT of the colony:
+             * the man stops being a member and stands on the square, where
+             * the plaza row draws him in the garrison group and the food
+             * count no longer feeds him (colonist_to_fence). */
+            colonist_to_fence(cci, k);
+            if (UI.colonist_sel >= c->population)
+                UI.colonist_sel = (int8_t)(c->population ? c->population - 1 : 0);
         } else if (row >= 0 && row <= 8) {
             int job = row;
             if (job < DAT_JOBS_COUNT &&

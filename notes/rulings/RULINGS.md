@@ -26,6 +26,70 @@ Format:
 
 ---
 
+## 2026-08-17 — "The fence" is OUT of the colony, so a man there neither draws with the colonists nor eats
+
+**Conflict**: a colonist told "Return to the fence" (or dragged out of the
+fields) kept his seat in the colony: he stayed in `c.colonists` / the record's
+population, drew among the COLONISTS in the plaza row's first group, and went on
+eating two food a turn for a job he no longer had (user report, 2026-08-17).
+
+**Source A** — GAME.TXT, two keys, both unambiguous about what the fence is:
+- `@TUTORIAL4`: "To take a colonist **out of a colony**, drag him to the fence
+  (near the water on the colony picture)."
+- `@TUTORIAL15`: new arrivals wait at the "fence" until you drag "the colonists
+  **from the 'fence' to a field or building**" to make them citizens.
+So the fence holds people who are ON the colony square but are NOT members of
+it — arrivals not yet hired, workers taken off the job.
+
+**Source B** — `spec/ui/colony_screen.md` §3.3 (`func_0270D0`, byte-verified):
+the plaza row's count is `colony+0x1F` (members) **plus** `[0x8D72]` (units on
+the tile), with a 4px break between the two groups. Two groups, one row — and
+the second group is exactly Source A's fence.
+
+**Source C** — food, byte-verified `@0xA5F2`: `eaten = 2 * pop` over the
+colony's POPULATION, restated in plain English by `@TUTORIAL16` ("Each colonist
+eats two units of food per turn").
+
+**Ruling**: all three agree and the port disagreed with all three. Leaving for
+the fence is a MEMBERSHIP change, not a job change: the man is removed from the
+colony's colonist list and appended to the unit pool standing on the colony
+square. Everything the user asked for then follows from machinery that was
+already correct — he draws in the plaza row's garrison group (after the break)
+because that group is "units on the tile", and he stops eating because `eaten`
+counts members. No new render geometry and no new food rule were invented.
+
+**Action taken**:
+- `port/src/game.js` — new `colonistToFence(c, i)`, the mirror of the existing
+  `unitToColonist`; the jobs menu's "Return to the fence" row and the
+  drop-out-of-the-fields drag both call it.
+- `cport/core/colopy_turn.c` — `colonist_to_fence(ci, k)`. The record's colonist
+  arrays are index-packed, so removing one in the middle shifts `occupation[]`,
+  `profession[]` and `taught[]` and re-bases every `tiles[]` reference past it.
+  Also `unit_type_for_profession`, mirroring `mkUnit`'s profession branch.
+- `cport/game/colopy_input.c` — the C's row-9 handler calls it instead of just
+  blanking the occupation byte.
+- `tools/sim_trace.py` + `cport/host/main.c` — the `script` harness sends a
+  colonist to the fence every 13th turn, so the path is oracle-covered. Verified
+  live: Jamestown 10 -> 9 at t=13 and 9 -> 8 at t=26, both engines agreeing on
+  every projected field for 100 turns on all three fixtures.
+
+**Refused to guess, twice**:
+- **Emptying a colony.** `colonist_to_fence` refuses when it would take the LAST
+  member. The engine's behaviour there is unread, and abandonment already has
+  its own explicit command (`@ABANDON`, shift-A), so this does not invent a
+  second path into it. FLAGGED.
+- **A fence hit-rect.** `@TUTORIAL4` places the fence "near the water on the
+  colony picture", but no byte-read rect for it exists, so no fence drop-zone
+  was added to the pointer layer. The change rides on the two existing exits —
+  the named menu row and the drop-out-of-fields drag. TBD.
+
+**Follow-up**: `importSav` can still produce a member with no job (game.js:10455
+clears a field job whose cell is missing). That is load-time normalisation
+against the save's own population byte, which drives `eaten`, so it is left
+alone — but it means "member with no job" is still a representable state.
+
+---
+
 ## 2026-08-17 — A ship ordered home sails to the sea lane; it does not vanish where it stands
 
 **Conflict**: choosing "Return to Europe" (the ORDERS row / `e` key, or the Go To
