@@ -12,7 +12,7 @@ extern "C" {
 enum {
     SCR_TITLE = 0, SCR_DIFFICULTY, SCR_NATION, SCR_NAME, SCR_BRIEFING,
     SCR_HOF, SCR_MAP, SCR_REPORT, SCR_COLONY, SCR_EUROPE, SCR_WOODCUT,
-    SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA, SCR_OPTIONS
+    SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA, SCR_OPTIONS, SCR_TRADE
 };
 
 typedef struct {
@@ -50,6 +50,11 @@ typedef struct {
     int8_t  pedia_mode;              /* G.pediaMode: 0 index, 1 entry */
     int8_t  options_which;           /* 0 game / 1 colony / 2 sound */
     int8_t  options_row;
+    int8_t  trade_mode;              /* G.trade.mode: 1 create / 2 assign
+                                      * / 3 delete (0 = closed) */
+    int8_t  trade_row;               /* G.trade.row */
+    int8_t  trade_n_stops;           /* picked stops so far (create) */
+    int16_t trade_stops[4];          /* player-colony ordinals / 999 */
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
                                       *                2 build */
     int8_t  colonist_sel;            /* G.colonistSel (game.js:566) */
@@ -78,6 +83,11 @@ extern uint32_t colopy_front_seed;   /* New Game seed (default 1653; a live
                                       * clock at start) */
 
 void ui_init(void);
+/* the trade screen's row model (tradeRows, game.js:7835) — shared with
+ * the board shells' painter/hit-test; returns the row count.  sofar =
+ * the create mode's running stop summary (may be empty). */
+int  ui_trade_rows(char out[][64], int cap);
+void ui_trade_sofar(char *out, int cap);
 void in_key(const char *key, int alt, int shift);
 void in_click(int mx, int my, int right);
 

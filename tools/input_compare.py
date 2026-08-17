@@ -96,6 +96,20 @@ def map_script():
     K("X")                          # accel: the Zoom Out row
     K("v", 1)
     K("Z")                          # accel: the Zoom In row — home
+    # trade routes: assign with none (@TRADENONE), then the create flow
+    # (stops picked by row; Done -> @TRADETYPE ask; the @TRADENAME
+    # openDialog is inert here, so no route survives — mirrored)
+    K("t")                          # assign, no routes -> @TRADENONE
+    K("t", 1)                       # Alt+T opens TRADE
+    K("ArrowDown")                  # row 1 = Create Trade Route
+    K("Enter")                      # -> the trade screen
+    K("Enter")                      # add stop: first colony
+    K("ArrowDown")
+    K("Enter")                      # add a second stop
+    K("ArrowUp")
+    K("ArrowUp")                    # wrap to the Done row
+    K("Enter")                      # @TRADETYPE ask -> back on the map
+    K("t")                          # still no routes -> @TRADENONE
     # unit cycle: centre view, next, skip, orders — several turns' worth,
     # with movement bursts so DIFFERENT units step (village entries,
     # rumour squares and the attack arm all get live chances)

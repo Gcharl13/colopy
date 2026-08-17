@@ -242,7 +242,7 @@ static int ui_colony_cs_index(void) {
 static void draw_screen(void) {
     /* sea animation only where the master map palette is on screen */
     cyc_wanted = (UI.screen == SCR_MAP || UI.screen == SCR_VILLAGE ||
-                  UI.screen == SCR_OPTIONS);
+                  UI.screen == SCR_OPTIONS || UI.screen == SCR_TRADE);
     switch (UI.screen) {
     case SCR_TITLE: rm_draw_title(UI.menu_row); break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
@@ -286,6 +286,18 @@ static void draw_screen(void) {
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);
         break;
+    case SCR_TRADE: {
+        rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
+        static char trows[20][64];
+        static const char *trp[20];
+        int tn = ui_trade_rows(trows, 20);
+        for (int i = 0; i < tn; i++) trp[i] = trows[i];
+        char sofar[128];
+        ui_trade_sofar(sofar, (int)sizeof(sofar));
+        rm_draw_trade(UI.trade_mode, UI.trade_n_stops + 1, sofar,
+                      trp, tn, UI.trade_row);
+        break;
+    }
     default:                                 /* map + everything else */
         /* 4th arg = the BLINK flag (unit drawn while truthy), NOT
          * show_hidden — passing 0 there kept the active unit hidden */

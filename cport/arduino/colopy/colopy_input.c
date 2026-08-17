@@ -239,6 +239,7 @@ static void open_pedia(int cat) {
     UI.screen = SCR_PEDIA;
 }
 
+static void open_trade_menu(int mode);
 static void run_menu_row(void) {
     if (UI.open_menu < 0) return;
     rm_mrow rows[64];
@@ -292,6 +293,14 @@ static void run_menu_row(void) {
         set_zoom(2);
     } else if (strcmp(l, "Zoom Level 120 x 96") == 0) {
         set_zoom(3);
+    /* TRADE (game.js:11386-11389) */
+    } else if (strcmp(l, "Create Trade Route") == 0) {
+        open_trade_menu(1);
+    } else if (strcmp(l, "Edit Trade Route") == 0 ||
+               strcmp(l, "Begin Trade Route") == 0) {
+        open_trade_menu(2);
+    } else if (strcmp(l, "Delete Trade Route") == 0) {
+        open_trade_menu(3);
     /* ORDERS rows — the JS dispatch table (game.js:11350) binds these
      * to the SAME functions the map keys run, so each row re-enters
      * in_key with its key (the menu is already closed at this point) */
@@ -401,7 +410,28 @@ static int key_is(const char *k, const char *want) {
  * takes the FULL amount, the port's flagged convenience reading),
  * Escape cancels a numeric dialog to 0.  A click commits like Enter
  * (dialogClick's non-opts arm, game.js:12410). */
+/* the create flow's pending stops survive the TRADETYPE ask + the
+ * @TRADENAME entry dialog (kind 5) */
+static int16_t pending_stops[4];
+static int pending_n, pending_sea;
+
 static void dialog_done(int cancel) {
+    if (UI.dlg == 5) {               /* TRADENAME (game.js:7849): the
+                                      * trimmed entry names the route;
+                                      * empty falls back to routeName */
+        char nm[26];
+        snprintf(nm, sizeof(nm), "%s", UI.dlg_entry);
+        UI.dlg = 0;
+        UI.dlg_entry[0] = 0;
+        if (cancel) return;
+        char *b = nm;
+        while (*b == ' ') b++;
+        char *e2 = b + strlen(b);
+        while (e2 > b && e2[-1] == ' ') *--e2 = 0;
+        route_create(pending_stops, pending_n, pending_sea,
+                     *b ? b : 0);
+        return;
+    }
     if (UI.dlg == 4) {               /* RENAMECOLONY (game.js:2198):
                                       * a TRIMMED nonempty entry renames,
                                       * anything else leaves the name */
@@ -455,7 +485,7 @@ static void dialog_key(const char *k) {
         if (n) UI.dlg_entry[n - 1] = 0;
         return;
     }
-    int printable = UI.dlg == 4 ? (k[0] >= ' ' && k[0] <= '~')
+    int printable = UI.dlg >= 4 ? (k[0] >= ' ' && k[0] <= '~')
                                 : (k[0] >= '0' && k[0] <= '9');
     if (k[0] && !k[1] && printable) {
         size_t n = strlen(UI.dlg_entry);
@@ -915,6 +945,158 @@ static void wc_dismiss(void) {
     }
 }
 
+
+/* ---- the trade-route screen (openTradeMenu, game.js:7822) -----------
+ * G.trade -> UI.trade_*: mode 1 create / 2 assign / 3 delete. */
+static int player_colony_count2(void) {
+    int n = 0;
+    for (int i = 0; i < CS.n_colonies; i++)
+        if ((CS.colonies[i].owner_power & 3) == cs_nation()) n++;
+    return n;
+}
+
+int ui_trade_rows(char out[][64], int cap) {
+    int n = 0;
+    if (UI.trade_mode == 1) {                /* create: stop choices */
+        int pc = player_colony_count2(), o = -1;
+        for (int i = 0; i < CS.n_colonies && n < cap; i++) {
+            if ((CS.colonies[i].owner_power & 3) != cs_nation()) continue;
+            o++;
+            snprintf(out[n++], 64, "%.24s", CS.colonies[i].name);
+        }
+        (void)pc;
+        if (n < cap)
+            snprintf(out[n++], 64, "%s",
+                     dat_nations[cs_nation()].homeport);
+        if (UI.trade_n_stops >= 2 && n < cap)
+            snprintf(out[n++], 64, "Done -- create the route");
+        return n;
+    }
+    for (int i = 0; i < CR.n_routes && n < cap; i++) {
+        char stops[40];
+        int sp = 0;
+        stops[0] = 0;
+        for (int k = 0; k < CR.routes[i].n_stops; k++) {
+            char sn[26];
+            route_stop_name(CR.routes[i].stops[k], sn, (int)sizeof(sn));
+            sp += snprintf(stops + sp, sizeof(stops) - (size_t)sp,
+                           "%s%s", k ? " - " : "", sn);
+            if (sp >= (int)sizeof(stops)) break;
+        }
+        snprintf(out[n++], 64, "%s (%s)", CR.routes[i].name, stops);
+    }
+    return n;
+}
+
+void ui_trade_sofar(char *out, int cap) {
+    out[0] = 0;
+    if (UI.trade_mode != 1 || !UI.trade_n_stops) return;
+    int sp = snprintf(out, (size_t)cap, "So far: ");
+    for (int k = 0; k < UI.trade_n_stops && sp < cap; k++) {
+        char sn[26];
+        route_stop_name(UI.trade_stops[k], sn, (int)sizeof(sn));
+        sp += snprintf(out + sp, (size_t)(cap - sp), "%s%s",
+                       k ? " - " : "", sn);
+    }
+}
+
+static void open_trade_menu(int mode) {
+    if (mode != 1 && !CR.n_routes) {         /* @TRADENONE */
+        ev_emit("TRADENONE", 0, 0, 0, 0);
+        return;
+    }
+    if (mode == 1 && !player_colony_count2()) return;  /* msg only */
+    UI.trade_mode = (int8_t)mode;
+    UI.trade_row = 0;
+    UI.trade_n_stops = 0;
+    UI.screen = SCR_TRADE;
+}
+
+/* tradeCommit (game.js:7841) */
+static void trade_commit(void) {
+    char rows[20][64];
+    int n = ui_trade_rows(rows, 20);
+    int row = UI.trade_row;
+    if (row < 0 || row >= n) {
+        UI.screen = SCR_MAP;
+        UI.trade_mode = 0;
+        return;
+    }
+    if (UI.trade_mode == 1) {
+        int pc = player_colony_count2();
+        int done_row = pc + 1;               /* after colonies + Europe */
+        if (UI.trade_n_stops >= 2 && row == done_row) {
+            for (int k = 0; k < UI.trade_n_stops; k++)
+                pending_stops[k] = UI.trade_stops[k];
+            pending_n = UI.trade_n_stops;
+            UI.screen = SCR_MAP;
+            UI.trade_mode = 0;
+            /* @TRADETYPE: Sea route / Land route, then the @TRADENAME
+             * entry dialog — openDialog is inert under the harness, so
+             * the name modal (and the route) is front-live only */
+            ev_emit("TRADETYPE", 0, 0, 0, 0);
+            int choice = ask_choice();
+            if (choice < 0) return;
+            pending_sea = choice == 0;
+            if (colopy_front_live) {
+                UI.dlg = 5;
+                route_auto_name(pending_stops, pending_n, UI.dlg_entry,
+                                (int)sizeof(UI.dlg_entry));
+            }
+            return;
+        }
+        int16_t id = row < pc ? (int16_t)row : COLOPY_STOP_EUROPE;
+        if (row >= done_row) return;         /* Done while < 2 stops */
+        int dup = 0;
+        for (int k = 0; k < UI.trade_n_stops; k++)
+            if (UI.trade_stops[k] == id) dup = 1;
+        if (UI.trade_n_stops < COLOPY_MAX_STOPS && !dup)
+            UI.trade_stops[UI.trade_n_stops++] = id;
+        return;
+    }
+    if (UI.trade_mode == 3) {                /* delete: @SUREDELETE */
+        UI.screen = SCR_MAP;
+        UI.trade_mode = 0;
+        ev_emit("SUREDELETE", 0, 0, CR.routes[row].name, 0);
+        if (ask_choice() != 0) return;
+        for (int i = row; i + 1 < CR.n_routes; i++)
+            CR.routes[i] = CR.routes[i + 1];
+        CR.n_routes--;
+        /* the JS clears only route === idx — later indices stay
+         * UNSHIFTED (mirrored verbatim, FLAGGED quirk) */
+        for (int i = 0; i < CS.n_units; i++)
+            if (CR.unit_route[i] == row) {
+                CR.unit_route[i] = -1;
+                if (unit_on_map_player(i)) CS.units[i].orders = 0;
+            }
+        return;
+    }
+    /* assign (7878) */
+    int ui = sel_unit();
+    UI.screen = SCR_MAP;
+    UI.trade_mode = 0;
+    int ship = ui >= 0 && dat_units[CS.units[ui].type].hull > 0;
+    int wagon = ui >= 0 &&
+                strcmp(dat_units[CS.units[ui].type].name,
+                       "Wagon Train") == 0;
+    if (ui >= 0 && (ship || wagon)) {
+        int have = 0;
+        for (int i = 0; i < CR.n_routes; i++)
+            if (!!CR.routes[i].sea == ship) have = 1;
+        if (!have) {                         /* @TRADENONE2 */
+            ev_emit("TRADENONE2", 0, 0, ship ? "sea" : "land", 0);
+            return;
+        }
+    }
+    if (ui < 0 || (!ship && !wagon)) return; /* msg only */
+    CR.unit_route[ui] = (int16_t)row;
+    CR.unit_stop_index[ui] = 0;
+    CS.units[ui].orders = 2;                 /* ORDER_TRADE */
+    CS.units[ui].moves_remaining = 0;
+    CR.unit_moves_undef[ui] = 0;
+    advance();
+}
+
 /* customHouseMenu (game.js:3196): the per-good export toggle loop.
  * '*' marks an exported good ('customOff' is the JS map; the record's
  * custom_house_flags stores the inverse — bit SET = export on, the
@@ -1096,6 +1278,8 @@ static void in_key_inner(const char *k, int alt, int shift) {
             }
             return;
         }
+        /* the trade menu key (game.js:12604): assign */
+        if (key_is(k, "t") || key_is(k, "T")) { open_trade_menu(2); return; }
         /* §26.7 zoom keys (game.js:12608): z in, x out */
         if (key_is(k, "z") || key_is(k, "Z")) { set_zoom(UI.zoom - 1); return; }
         if (key_is(k, "x") || key_is(k, "X")) { set_zoom(UI.zoom + 1); return; }
@@ -1364,6 +1548,21 @@ static void in_key_inner(const char *k, int alt, int shift) {
         if (key_is(k, "Enter") || key_is(k, " ") || key_is(k, "Escape"))
             wc_dismiss();
         break;
+    case SCR_TRADE: {
+        char trows[20][64];
+        int tn = ui_trade_rows(trows, 20);
+        if (tn < 1) tn = 1;
+        if (key_is(k, "ArrowUp"))
+            UI.trade_row = (int8_t)((UI.trade_row + tn - 1) % tn);
+        if (key_is(k, "ArrowDown"))
+            UI.trade_row = (int8_t)((UI.trade_row + 1) % tn);
+        if (key_is(k, "Enter") || key_is(k, " ")) trade_commit();
+        if (key_is(k, "Escape") || key_is(k, "x")) {
+            UI.screen = SCR_MAP;
+            UI.trade_mode = 0;
+        }
+        break;
+    }
     case SCR_OPTIONS: {
         /* onKey options (game.js:12446): arrows walk, Enter toggles,
          * Escape/x leaves */

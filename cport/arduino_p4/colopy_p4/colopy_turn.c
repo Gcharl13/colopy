@@ -91,6 +91,7 @@ int rt_sol(int ci) { return CR.col[ci].sol; }
 
 void cr_reset_from_load(void) {
     memset(&CR, 0, sizeof(CR));
+    memset(CR.unit_route, 0xFF, sizeof(CR.unit_route));   /* -1 = none */
     CR.zoom_colony = -1;
     CR.father_in_progress = -1;
     CR.king_war_rival = -1;
@@ -737,6 +738,8 @@ int unit_append(int type, int owner, int x, int y) {
     CR.native_heading[i] = 0xFF;
     CR.native_home[i] = -1;
     CR.goal_x[i] = CR.goal_y[i] = -1;
+    CR.unit_route[i] = -1;
+    CR.unit_stop_index[i] = 0;
     CR.unit_rival_born[i] =
         (uint8_t)((owner & 0x0F) < 4 && (owner & 0x0F) != (int)cs_nation());
     CR.unit_no_moves[i] = CR.unit_rival_born[i];
@@ -762,6 +765,8 @@ void unit_remove(int ui) {
     memmove(&CR.runit_x[ui], &CR.runit_x[ui + 1], n * sizeof(int16_t));
     memmove(&CR.runit_y[ui], &CR.runit_y[ui + 1], n * sizeof(int16_t));
     memmove(&CR.goal_x[ui], &CR.goal_x[ui + 1], n * sizeof(int16_t));
+    memmove(&CR.unit_route[ui], &CR.unit_route[ui + 1], n * sizeof(int16_t));
+    memmove(&CR.unit_stop_index[ui], &CR.unit_stop_index[ui + 1], n);
     memmove(&CR.goal_y[ui], &CR.goal_y[ui + 1], n * sizeof(int16_t));
     memmove(&CR.unit_rival_born[ui], &CR.unit_rival_born[ui + 1], n);
     memmove(&CR.unit_no_moves[ui], &CR.unit_no_moves[ui + 1], n);

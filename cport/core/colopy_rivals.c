@@ -1158,6 +1158,166 @@ static void retirement_check(void) {
  * the diagonal then each axis; a blocked turn cancels the order.  The
  * element test bars a land unit from water unless a (player) colony
  * sits there, and a ship from land outright; natives block. */
+
+/* ---- trade routes (game.js:7713-7815) -------------------------------
+ * Session-runtime automation: a route is a stop list (player-colony
+ * ordinals + the 999 Europe id); a ship/wagon with orders 2 and a
+ * route steps toward its current stop each turn, loading at the FIRST
+ * stop and unloading at every other (the port's documented default).
+ * Under the parity harness no route can exist (@TRADENAME's openDialog
+ * is inert there), so the step never draws RNG and the turn chain is
+ * untouched. */
+static int pcol_rec(int ord) {
+    int o = -1;
+    for (int i = 0; i < CS.n_colonies; i++)
+        if ((CS.colonies[i].owner_power & 3) == cs_nation() && ++o == ord)
+            return i;
+    return -1;
+}
+
+void route_stop_name(int16_t stop, char *out, int cap) {
+    if (stop == COLOPY_STOP_EUROPE) {
+        snprintf(out, (size_t)cap, "%s", dat_nations[cs_nation()].homeport);
+        return;
+    }
+    int ci = pcol_rec(stop);
+    if (ci >= 0)
+        snprintf(out, (size_t)cap, "%.24s", CS.colonies[ci].name);
+    else
+        snprintf(out, (size_t)cap, "?");
+}
+
+/* routeName (7723): @TRADENAMES noun — Run/Ferry/Cargo by route count,
+ * Triangle from three stops up */
+void route_auto_name(const int16_t *stops, int n, char *out, int cap) {
+    const char *noun = n >= 3 ? dat_tradenames[4]
+                              : dat_tradenames[CR.n_routes % 3];
+    char sn[26];
+    route_stop_name(n ? stops[0] : 0, sn, (int)sizeof(sn));
+    snprintf(out, (size_t)cap, "%s %s", sn, noun);
+}
+
+int route_create(const int16_t *stops, int n, int sea, const char *name) {
+    if (CR.n_routes >= COLOPY_MAX_ROUTES) {
+        ev_emit("TRADEMANY", COLOPY_MAX_ROUTES, 0, 0, 0);
+        return -1;
+    }
+    struct colopy_route *r = &CR.routes[CR.n_routes];
+    if (name && name[0])
+        snprintf(r->name, sizeof(r->name), "%s", name);
+    else
+        route_auto_name(stops, n, r->name, (int)sizeof(r->name));
+    r->sea = (int8_t)(sea ? 1 : 0);
+    r->n_stops = (int8_t)(n > COLOPY_MAX_STOPS ? COLOPY_MAX_STOPS : n);
+    for (int i = 0; i < r->n_stops; i++) r->stops[i] = stops[i];
+    return CR.n_routes++;
+}
+
+/* runTradeRoute (7739) */
+static void run_trade_route(int ui) {
+    UnitRecord *u = &CS.units[ui];
+    if (CR.unit_route[ui] < 0 || CR.unit_route[ui] >= CR.n_routes) {
+        u->orders = 0;
+        return;
+    }
+    struct colopy_route *r = &CR.routes[CR.unit_route[ui]];
+    if (r->n_stops < 2) {                    /* @ROUTELOOP */
+        ev_emit("ROUTELOOP", 0, 0, r->name, 0);
+        CR.unit_route[ui] = -1;
+        u->orders = 0;
+        return;
+    }
+    int ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
+    /* @KILLWAGONS/@LOOTWAGONS: a wagon within 2 of a war-band village
+     * (1/40; loss vs loot at evens).  The JS %STRING3 nearest-colony
+     * substitution has no slot on the two-string event bus — FLAGGED
+     * blank on the board. */
+    if (strcmp(dat_units[u->type].name, "Wagon Train") == 0) {
+        int hv = -1;
+        for (int v = 0; v < CS.n_villages && hv < 0; v++) {
+            int dx = CS.villages[v].map_x - u->map_x;
+            int dy = CS.villages[v].map_y - u->map_y;
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+            if (CR.alarm[v] >= 0x80 && dx <= 2 && dy <= 2) hv = v;
+        }
+        if (hv >= 0 && (int)((rng_next() * 40u) >> 15) == 0) {
+            int ti = CS.villages[hv].owner_tribe - 4;
+            const char *tn = ti >= 0 && ti < 8 ? dat_tribes[ti].name : "";
+            if (rng_next() < 16384) {        /* random < 0.5 */
+                ev_emit("KILLWAGONS", 0, 0, tn, 0);
+                unit_remove(ui);             /* the JS G.sel clamp is the
+                                              * front layer's advance */
+                return;
+            }
+            ev_emit("LOOTWAGONS", 0, 0, tn, 0);
+            CR.unit_n_hold[ui] = 0;          /* u.hold = [] */
+        }
+    }
+    int stop = r->stops[CR.unit_stop_index[ui] % r->n_stops];
+    if (stop == COLOPY_STOP_EUROPE) {
+        if (!ship) { u->orders = 0; return; }
+        cmd_sail_for_europe(ui);
+        return;
+    }
+    int ci = pcol_rec(stop);
+    if (ci < 0) { u->orders = 0; return; }
+    ColonyRecord *c = &CS.colonies[ci];
+    if (u->map_x == c->map_x && u->map_y == c->map_y) {
+        /* first stop loads, every other unloads (the flagged default) */
+        if (CR.unit_stop_index[ui] % r->n_stops == 0) {
+            int cap = dat_units[u->type].cargo;
+            for (int i = 0; i < 16 && CR.unit_n_hold[ui] < cap; i++) {
+                if (i == FOOD || c->stock[i] < 50) continue;
+                int take = c->stock[i] < 100 ? c->stock[i] : 100;
+                c->stock[i] = (uint16_t)(c->stock[i] - take);
+                hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui], i, take);
+            }
+        } else {
+            for (int h = CR.unit_n_hold[ui] - 1; h >= 0; h--) {
+                hold_slot hs = CR.unit_hold[ui][h];
+                c->stock[hs.good] = (uint16_t)(c->stock[hs.good] + hs.qty);
+                hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui],
+                         hs.good, -hs.qty);
+            }
+        }
+        CR.unit_stop_index[ui] =
+            (uint8_t)((CR.unit_stop_index[ui] + 1) % r->n_stops);
+        return;
+    }
+    /* one step toward the stop, element-respecting (7809) */
+    int dx = c->map_x > u->map_x ? 1 : c->map_x < u->map_x ? -1 : 0;
+    int dy = c->map_y > u->map_y ? 1 : c->map_y < u->map_y ? -1 : 0;
+    int tries[3][2] = { { dx, dy }, { dx, 0 }, { 0, dy } };
+    for (int t = 0; t < 3; t++) {
+        int mx = tries[t][0], my = tries[t][1];
+        if (!mx && !my) continue;
+        int nx = u->map_x + mx, ny = u->map_y + my;
+        if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H)
+            continue;
+        int water = tile_water(map_at(nx, ny));
+        int own_col = 0;
+        for (int k = 0; k < CS.n_colonies; k++)
+            if ((CS.colonies[k].owner_power & 3) == cs_nation() &&
+                CS.colonies[k].map_x == nx && CS.colonies[k].map_y == ny)
+                own_col = 1;
+        if ((ship != water) && !(own_col && !ship)) continue;
+        u->map_x = (uint8_t)nx;
+        u->map_y = (uint8_t)ny;
+        colopy_reveal(nx, ny, unit_sight_radius(ui));
+        return;
+    }
+}
+
+/* advanceTradeRoutes (7813) */
+void advance_trade_routes(void) {
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int ui = CR.units_order[k];
+        if (CS.units[ui].orders == 2 && CR.unit_route[ui] >= 0)
+            run_trade_route(ui);
+    }
+}
+
 static void advance_goto(void) {
     for (int k = 0; k < CR.n_units_order; k++) {
         int ui = CR.units_order[k];
@@ -1207,8 +1367,8 @@ static void advance_goto(void) {
 
 /* The full endTurn tail, in engine order (endTurn:10781-10821).  Steps
  * that are structural no-ops headless are named in place:
- *   advanceTradeRoutes — no unit carries runtime trade orders (the
- *     importer starts every unit at orders 0; routes: slice 3+);
+ *   advanceTradeRoutes — live under the harness too, but no route can
+ *     exist there (@TRADENAME's openDialog is inert), so it never acts;
  *   runWar/toryUprising/offerMercenaries/checkIntervention — WoI-gated
  *     (G.flags stays 0: the declaration is an ask the stub never answers);
  */
@@ -1217,7 +1377,7 @@ void turn_step5(void) {
     news_tick();           step_rng("newsTick");
     king_war_cycle();      step_rng("kingWarCycle");
     king_tax_demand();     step_rng("kingTaxDemand");
-    /* advanceTradeRoutes(); — no-op (above) */
+    advance_trade_routes(); step_rng("advanceTradeRoutes");
     advance_goto();        step_rng("advanceGoTo");
     run_war();             step_rng("runWar");
     tory_uprising();       step_rng("toryUprising");

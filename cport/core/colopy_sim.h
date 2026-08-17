@@ -129,6 +129,12 @@ void turn_step3(void);           /* the native pass (§19.11) + vanish filter */
 void rival_turn(void);           /* rivalTurn (game.js:7514) + checkContact */
 void turn_step5(void);           /* rivalTurn .. retirement — the endTurn tail */
 int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
+/* trade routes (colopy_rivals.c): routeStopName/routeName/createRoute/
+ * runTradeRoute/advanceTradeRoutes (game.js:7715-7815) */
+void route_stop_name(int16_t stop, char *out, int cap);
+void route_auto_name(const int16_t *stops, int n, char *out, int cap);
+int  route_create(const int16_t *stops, int n, int sea, const char *name);
+void advance_trade_routes(void);
 /* fog of war (colopy_map.c): reveal (game.js:8584), sightRadius (8576),
  * revealAll (8594) — the player's 1<<(power+4) bit in CS.fog */
 void colopy_reveal(int x, int y, int r);
@@ -536,7 +542,23 @@ typedef struct {
      * ask policy never reads them. */
     char ask_rows[18][26];
     int8_t n_ask_rows;
+    /* trade routes (game.js:7713: MAX_ROUTES 12, MAX_STOPS 4, Europe
+     * stop id 999).  Session-runtime like the JS G.routes — never in
+     * the .SAV; stops are PLAYER-colony ordinals (G.colonies index). */
+    struct colopy_route {
+        char    name[26];
+        int8_t  sea;
+        int8_t  n_stops;
+        int16_t stops[4];
+    } routes[12];
+    int8_t  n_routes;
+    int16_t unit_route[COLOPY_MAX_UNITS];       /* u.route, -1 none */
+    uint8_t unit_stop_index[COLOPY_MAX_UNITS];  /* u.stopIndex */
 } colopy_runtime;
+
+#define COLOPY_MAX_ROUTES 12
+#define COLOPY_MAX_STOPS  4
+#define COLOPY_STOP_EUROPE 999
 extern colopy_runtime CR;
 
 void roll_immigrant(immigrant *out);

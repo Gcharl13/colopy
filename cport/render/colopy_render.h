@@ -186,6 +186,12 @@ void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
 int  rm_dialog_rows_hit(const char *key, const rm_subs *subs,
                         const char *speaker, int mx, int my,
                         const char *const *rrows, int nrr);
+/* the trade-route screen (drawTrade game.js:7896): mode 1 create /
+ * 2 assign / 3 delete over the caller's runtime rows */
+void rm_draw_trade(int mode, int step_no, const char *sofar,
+                   const char *const *rows, int n, int sel);
+int  rm_trade_row_hit(int mode, int step_no, const char *sofar,
+                      const char *const *rows, int n, int mx, int my);
 /* the village screen (drawVillage game.js:6746) over the OPEN village
  * (CR.cur_village); the row hit-test shares its geometry */
 void rm_draw_village(int village_row);

@@ -495,6 +495,86 @@ int rm_dialog_row_hit(const char *key, const rm_subs *subs,
     return rm_dialog_rows_hit(key, subs, speaker, mx, my, 0, 0);
 }
 
+
+/* ---- the trade-route screen (drawTrade, game.js:7896) ---------------
+ * Over the map: a WOODTILE plaque with the mode's GAME.TXT head
+ * (@TRADESTART with NUMBER0 = the next stop number / @TRADEDELETE /
+ * @TRADESELECT), the create mode's running "So far" line, and the
+ * caller's runtime rows at the tiny 8px pitch. */
+static int trade_geom(int mode, int step_no, const char *sofar,
+                      const char *const *rows, int n,
+                      char head[2][256], int *nh_out,
+                      int *x, int *y, int *w, int *h, int *seed) {
+    dresolve();
+    const dat_events_entry_t *e =
+        event_by_key(mode == 1 ? "TRADESTART"
+                   : mode == 3 ? "TRADEDELETE" : "TRADESELECT");
+    if (!e || !e->n_body) return 0;
+    rm_subs subs;
+    memset(&subs, 0, sizeof(subs));
+    subs.num[0] = step_no;
+    subs.num_set[0] = 1;
+    int nh = 0;
+    fill_template(e->body[0], &subs, head[nh++], 256);
+    if (mode == 1 && sofar && sofar[0])
+        snprintf(head[nh++], 256, "%s", sofar);
+    int cw = 190;
+    for (int i = 0; i < nh; i++) {
+        int lw = stripped_width(&D_TINY, head[i]);
+        if (lw > cw) cw = lw;
+    }
+    for (int i = 0; i < n; i++) {
+        int lw = rd_text_width(&D_TINY, rows[i]) + 20;
+        if (lw > cw) cw = lw;
+    }
+    *w = cw + 6;
+    int text_h = nh * 6;
+    *h = 6 + text_h + 3 + n * 8 + 3;
+    *x = round_half(320 - *w);
+    /* y = max(10, round(100 - h/2)) (game.js:7911) */
+    {
+        int yy = round_half(200 - *h);
+        *y = yy < 10 ? 10 : yy;
+    }
+    *seed = *y + 6 + text_h + 3;
+    *nh_out = nh;
+    return 1;
+}
+
+void rm_draw_trade(int mode, int step_no, const char *sofar,
+                   const char *const *rows, int n, int sel) {
+    char head[2][256];
+    int nh, x, y, w, h, seed;
+    if (!trade_geom(mode, step_no, sofar, rows, n, head, &nh,
+                    &x, &y, &w, &h, &seed))
+        return;
+    rm_plaque(x, y, w, h);
+    for (int i = 0; i < nh; i++)
+        span_text(&D_TINY, head[i], x + 5, y + 6 + i * 6, 0xFE, 0xFC);
+    for (int k = 0; k < n; k++) {
+        int ry = seed + k * 8;
+        if (k == sel) rd_fill(x + 3, ry, w - 6, 8, SELECT_GAME);
+        const uint8_t ink[4] = { 0xFF, (uint8_t)(k == sel ? 0xFC : 0xFE),
+                                 0, 0 };
+        rd_text(&D_TINY, rows[k], x + 9, ry + 1, ink);
+    }
+}
+
+int rm_trade_row_hit(int mode, int step_no, const char *sofar,
+                     const char *const *rows, int n, int mx, int my) {
+    char head[2][256];
+    int nh, x, y, w, h, seed;
+    if (!trade_geom(mode, step_no, sofar, rows, n, head, &nh,
+                    &x, &y, &w, &h, &seed))
+        return -1;
+    if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
+    if (mx >= x + 3 && mx < x + w - 3 && my >= seed) {
+        int k = (my - seed) / 8;
+        if (k >= 0 && k < n) return k;
+    }
+    return -2;
+}
+
 /* ---- the options dialogs (drawOptions game.js:7969) -----------------
  * @GAMEOPTIONS/@COLONYOPTIONS/@SOUNDOPTIONS: body[0] is the title, the
  * rest are rows, each wearing a ROUND radio mark (ring; orange 0x0E

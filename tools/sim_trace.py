@@ -130,7 +130,8 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
 INPUT = """([save, events]) => {
   const SCR = { title: 0, difficulty: 1, nation: 2, name: 3, briefing: 4,
                 hof: 5, map: 6, report: 7, colony: 8, europe: 9, woodcut: 10,
-                village: 11 };
+                village: 11, king: 12, cards: 13, pedia: 14, options: 15,
+                trade: 16 };
   if (save) {
     importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
                               savnewcolony: 'savNewColony' }[save]]));
