@@ -1327,10 +1327,18 @@ void advance_trade_routes(void) {
 }
 
 static void advance_goto(void) {
-    /* Ships that reached their sea lane this turn.  Collected, not sailed
+    /* Ships that reached their sea lane this turn are MARKED, not sailed
      * in place: cmd_sail_for_europe calls unit_remove, which compacts the
-     * very arrays this loop is walking. */
-    int arrived[COLOPY_MAX_UNITS], n_arrived = 0;
+     * very arrays this loop is walking.
+     *
+     * The mark rides in CR.unit_sail_home itself (2 = "arrived, pending
+     * departure") rather than a local array.  An `int arrived[256]` here
+     * put 1,216 bytes on the stack of a function deep in the end-turn
+     * chain, and founding a colony — which removes the founder and so
+     * runs that whole chain from inside the key dispatcher's own 3 KB
+     * frame — overflowed the board's task stack and crashed it (user
+     * report 2026-08-17).  CR is static, already compacted by
+     * unit_remove, and the mark never outlives this call. */
     for (int k = 0; k < CR.n_units_order; k++) {
         int ui = CR.units_order[k];
         UnitRecord *u = &CS.units[ui];
@@ -1339,7 +1347,7 @@ static void advance_goto(void) {
         if (u->map_x == gx && u->map_y == gy) {
             u->orders = 0;
             CR.goal_x[ui] = CR.goal_y[ui] = -1;
-            if (CR.unit_sail_home[ui]) arrived[n_arrived++] = ui;
+            if (CR.unit_sail_home[ui]) CR.unit_sail_home[ui] = 2;
             continue;
         }
         int dx = gx > u->map_x ? 1 : gx < u->map_x ? -1 : 0;
@@ -1374,7 +1382,7 @@ static void advance_goto(void) {
         if (moved && u->map_x == gx && u->map_y == gy) {
             u->orders = 0;
             CR.goal_x[ui] = CR.goal_y[ui] = -1;
-            if (CR.unit_sail_home[ui]) arrived[n_arrived++] = ui;
+            if (CR.unit_sail_home[ui]) CR.unit_sail_home[ui] = 2;
         }
         if (!moved) {
             u->orders = 0;
@@ -1383,20 +1391,25 @@ static void advance_goto(void) {
         }
     }
     /* Arrival on the lane IS the departure — no @SAILHOME ask, the player
-     * already gave the order that sent the ship here.  Each removal
-     * compacts the unit records, so re-base the indices still queued. */
-    for (int a = 0; a < n_arrived; a++) {
-        int ui = arrived[a];
+     * already gave the order that sent the ship here.  Re-scanning from
+     * the front after each removal keeps this in G.units order (the JS
+     * departs its `arrived` list in collection order) without holding
+     * indices across the compaction unit_remove performs. */
+    for (;;) {
+        int ui = -1;
+        for (int k = 0; k < CR.n_units_order; k++)
+            if (CR.unit_sail_home[CR.units_order[k]] == 2) {
+                ui = CR.units_order[k];
+                break;
+            }
+        if (ui < 0) break;
         CR.unit_sail_home[ui] = 0;
         int is_ship = CS.units[ui].type < DAT_UNITS_COUNT &&
                       dat_units[CS.units[ui].type].hull > 0;
-        if (!is_ship ||
-            tile_terrain(map_at(CS.units[ui].map_x, CS.units[ui].map_y)) !=
+        if (is_ship &&
+            tile_terrain(map_at(CS.units[ui].map_x, CS.units[ui].map_y)) ==
                 TERR_SEALANE)
-            continue;
-        cmd_sail_for_europe(ui);
-        for (int b = a + 1; b < n_arrived; b++)
-            if (arrived[b] > ui) arrived[b]--;
+            cmd_sail_for_europe(ui);
     }
 }
 

@@ -26,6 +26,46 @@ Format:
 
 ---
 
+## 2026-08-17 — Founding a colony crashed the board: a 1 KB stack array in the end-turn chain
+
+**Conflict**: on the P4, Build Colony crashed the board (user report). Nothing
+in the host build or any oracle showed a fault — founding is byte-parity clean
+in both engines.
+
+**Cause**: the same-day sail-for-Europe work put
+`int arrived[COLOPY_MAX_UNITS]` — 256 ints — on `advance_goto`'s stack to
+collect ships that had reached their lane. `-fstack-usage` measured the frame
+at **1,216 bytes**, and `advance_goto` sits deep in the end-turn chain.
+`cmd_found_colony` calls `unit_remove` on the founder, so founding runs
+`advance()` → `end_turn()` → the whole chain — from inside the key
+dispatcher's own 3,216-byte frame, under the board's dialog/ask nesting. The
+board's task stack could not absorb it. `-Wframe-larger-than=4096` never
+fired because no single frame was oversized; the depth was.
+
+**Ruling**: the collection does not need a stack array at all. The mark rides
+in `CR.unit_sail_home` itself (value 2 = "arrived, pending departure") — CR is
+static, is already compacted by `unit_remove`, and the mark never outlives the
+call. The departure pass then re-scans from the front after each removal,
+which keeps departures in `G.units` order (matching the JS, which departs its
+`arrived` list in collection order) without holding indices across the
+compaction. Behaviour is unchanged: all five input oracles, 100 turns x 3
+fixtures plain and `agitate script`, and every render oracle are identical
+before and after.
+
+**Verified**: `turn_step5`'s frame is back to **304 bytes — its exact
+session-start value**; `advance_goto` no longer appears in the `-fstack-usage`
+report at all.
+
+**Follow-up**: this is the THIRD board crash this project has had from stack
+depth (the 25,600-byte colony scene band, the static-vs-heap link failure, and
+now this), and the first that a per-frame ceiling could not have caught. The
+gate that would have caught it is a WORST-CASE PATH budget — summing frames
+along `in_key_inner -> run_menu_row -> cmd_* -> advance -> end_turn -> ...` —
+not a per-function limit. Nothing computes that today. TBD, and worth building
+before the next board feature lands.
+
+---
+
 ## 2026-08-17 — Sea lanes and coasts rendered SANDY: the placeholder fallback ran in the wrong order
 
 **Conflict**: on the board every sea-lane tile and every coast edge painted a
