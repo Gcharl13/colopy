@@ -543,6 +543,8 @@ typedef struct {
      * @CUSTOM export toggles).  A live front draws them in place of
      * the event's static tail rows and clears the count; the harness
      * ask policy never reads them. */
+    char new_land[24];               /* G.newLand — what the player
+                                      * named the New World (@LANDHO) */
     char ask_rows[18][26];
     int8_t n_ask_rows;
     /* trade routes (game.js:7713: MAX_ROUTES 12, MAX_STOPS 4, Europe

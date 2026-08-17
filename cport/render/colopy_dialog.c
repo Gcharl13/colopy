@@ -64,6 +64,13 @@ int rm_event_rows(const char *key) {
     return e ? (int)e->n_tail : 0;
 }
 
+/* an entry dialog's @default (the prefill text — @LANDHO "America"),
+ * or "" when the section carries none */
+const char *rm_event_default(const char *key) {
+    const dat_events_entry_t *e = event_by_key(key);
+    return e && e->dflt ? e->dflt : "";
+}
+
 /* fillTemplate (game.js:6257) */
 static void fill_template(const char *line, const rm_subs *subs,
                           char *out, size_t cap) {

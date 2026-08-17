@@ -417,6 +417,21 @@ static int16_t pending_stops[4];
 static int pending_n, pending_sea;
 
 static void dialog_done(int cancel) {
+    if (UI.dlg == 6) {               /* LANDHO (askLandName 10882): the
+                                      * discovery plate's naming prompt;
+                                      * an empty entry takes @default */
+        char nm[24];
+        snprintf(nm, sizeof(nm), "%s", UI.dlg_entry);
+        UI.dlg = 0;
+        UI.dlg_entry[0] = 0;
+        char *b = nm;
+        while (*b == ' ') b++;
+        char *e3 = b + strlen(b);
+        while (e3 > b && e3[-1] == ' ') *--e3 = 0;
+        snprintf(CR.new_land, sizeof(CR.new_land), "%s",
+                 (!cancel && *b) ? b : rm_event_default("LANDHO"));
+        return;
+    }
     if (UI.dlg == 5) {               /* TRADENAME (game.js:7849): the
                                       * trimmed entry names the route;
                                       * empty falls back to routeName */
@@ -1042,9 +1057,15 @@ static void wc_dismiss(void) {
         UI.village_row = 0;
         UI.screen = SCR_VILLAGE;
     } else {
-        UI.screen = SCR_MAP;         /* plate 1: map (the land-naming
-                                      * entry dialog is a FLAGGED
-                                      * follow-up, askLandName) */
+        UI.screen = SCR_MAP;
+        /* plate 1 hands over to the naming prompt (game.js:12092):
+         * "Land Ho!  What shall we call this new land?" — an entry
+         * dialog, so live-front only (openDialog is inert here) */
+        if (plate == 1 && colopy_front_live) {
+            UI.dlg = 6;
+            snprintf(UI.dlg_entry, sizeof(UI.dlg_entry), "%s",
+                     rm_event_default("LANDHO"));
+        }
     }
 }
 

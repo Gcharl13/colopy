@@ -306,7 +306,11 @@ static void draw_screen(void) {
         rm_subs subs = { { dat_cargo[UI.dlg_good].name, UI.dlg_entry, 0, 0 },
                          { UI.dlg_max, 0, 0, 0 },
                          { 1, 0, 0, 0 } };
-        rm_draw_event(UI.dlg == 4 ? "RENAMECOLONY" : "HOWMUCH5",
+        rm_draw_event(UI.dlg == 2 ? "HOWMUCH1"
+                    : UI.dlg == 3 ? "HOWMUCH2"
+                    : UI.dlg == 4 ? "RENAMECOLONY"
+                    : UI.dlg == 5 ? "TRADENAME"
+                    : UI.dlg == 6 ? "LANDHO" : "HOWMUCH5",
                       &subs, 0);
     }
     flush_fb();

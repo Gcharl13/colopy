@@ -38,10 +38,11 @@
  *   long-press      Space — skip the active unit (>= 600 ms)
  *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
  * A queued notice: tap dismisses.  A question dialog: tap an option
- * row to answer it, tap outside the box to dismiss.  An amount modal:
- * tap the box = Enter (empty entry = the full amount), outside =
- * Escape (typed digits come over serial).  Every order is also in the
- * tappable ORDERS pulldown, and the reports in the menu bar.
+ * row to answer it, tap outside the box to dismiss.  An entry modal:
+ * the on-screen pad types (digits for an amount, letters for a name),
+ * OK commits (an empty entry = the full amount / the suggested name),
+ * a tap on the entry line clears it, a tap outside = Escape.  Every order is also in the tappable ORDERS
+ * pulldown, and the reports in the menu bar.
  *
  * The core never does I/O (buffer-only API); this shell owns the SD
  * card, the serial port, the panel and the touch controller. */
@@ -332,12 +333,83 @@ static char kbd_hit(int gx, int gy) {
     return KBD_ROWS[r][c];
 }
 
+/* the AMOUNT modals' numeric keypad (SHELL CHROME): the board has no
+ * keyboard, so without this a touch player could only ever take the
+ * dialog's full amount (Enter on an empty entry).  Same tap/OK/back
+ * rhythm as the alpha keyboard above. */
+static const char *const KPAD_ROWS[4] = { "123", "456", "789", "0<#" };
+#define KPAD_Y 138
+#define KPAD_KW 46
+#define KPAD_KH 13
+#define KPAD_X0 (160 - (3 * KPAD_KW) / 2)
+
+static void draw_kpad(void) {
+    static rd_font pf;
+    if (!pf.payload && !rd_font_open(&RD.pak, "FONTTINY.FF", &pf)) return;
+    const uint8_t ink[4] = { 0xFF, 68, 67, 0 };
+    for (int r = 0; r < 4; r++)
+        for (int c = 0; c < 3; c++) {
+            char ch = KPAD_ROWS[r][c];
+            int x = KPAD_X0 + c * KPAD_KW, y = KPAD_Y + r * (KPAD_KH + 2);
+            rm_plaque(x, y, KPAD_KW - 2, KPAD_KH);
+            char lab[3] = { ch, 0, 0 };
+            if (ch == '<') { lab[0] = '<'; lab[1] = '-'; }
+            if (ch == '#') { lab[0] = 'O'; lab[1] = 'K'; }
+            rd_text(&pf, lab, x + (KPAD_KW - 2) / 2 - 4, y + 3, ink);
+        }
+}
+
+static char kpad_hit(int gx, int gy) {
+    if (gy < KPAD_Y || gx < KPAD_X0 || gx >= KPAD_X0 + 3 * KPAD_KW) return 0;
+    int r = (gy - KPAD_Y) / (KPAD_KH + 2);
+    int c = (gx - KPAD_X0) / KPAD_KW;
+    if (r < 0 || r > 3 || c < 0 || c > 2) return 0;
+    return KPAD_ROWS[r][c];
+}
+
+/* UI.dlg kinds -> their GAME.TXT sections (colopy_input.h): 1 Europe
+ * sell, 2 colony load, 3 colony unload, 4 colony rename, 5 trade-route
+ * name, 6 the new land's name.  Kinds >= 4 take TEXT (the alpha
+ * keyboard), 1-3 an AMOUNT (the keypad).  Every kind but 1 used to
+ * draw @HOWMUCH5's sell prompt. */
+static const char *dlg_key(void) {
+    switch (UI.dlg) {
+    case 2: return "HOWMUCH1";
+    case 3: return "HOWMUCH2";
+    case 4: return "RENAMECOLONY";
+    case 5: return "TRADENAME";
+    case 6: return "LANDHO";
+    }
+    return "HOWMUCH5";
+}
+static int dlg_is_text(void) { return UI.dlg >= 4; }
+
+/* the JS askAmount substitutions: HOWMUCH1 {cargo, ship}, HOWMUCH2
+ * {cargo, ship, colony}, HOWMUCH5 {cargo, price, homeport} — all with
+ * NUMBER0 = the bound (game.js:4820/11247/11268). */
 static void dlg_subs(rm_subs *subs) {
+    static char shipn[24], coln[26];
     memset(subs, 0, sizeof(*subs));
+    if (dlg_is_text()) return;               /* body has no %fields */
     subs->str[0] = dat_cargo[UI.dlg_good].name;
-    subs->str[1] = UI.dlg_entry;
     subs->num[0] = UI.dlg_max;
     subs->num_set[0] = 1;
+    if (UI.dlg == 1) {
+        subs->num[1] = market_bid(UI.dlg_good);
+        subs->num_set[1] = 1;
+        subs->str[2] = dat_nations[cs_nation()].homeport;
+        return;
+    }
+    if (UI.dlg_unit >= 0 && UI.dlg_unit < CS.n_units)
+        snprintf(shipn, sizeof(shipn), "%s",
+                 dat_units[CS.units[UI.dlg_unit].type].name);
+    else
+        shipn[0] = 0;
+    subs->str[1] = shipn;
+    if (UI.dlg == 3 && UI.dlg_port >= 0 && UI.dlg_port < CS.n_colonies) {
+        snprintf(coln, sizeof(coln), "%.24s", CS.colonies[UI.dlg_port].name);
+        subs->str[2] = coln;
+    }
 }
 
 static void draw_screen(void) {
@@ -440,18 +512,18 @@ static void draw_screen(void) {
     if (UI.dlg) {
         rm_subs subs;
         dlg_subs(&subs);
-        rm_draw_event(UI.dlg == 4 ? "RENAMECOLONY" : "HOWMUCH5",
-                      &subs, 0);
-        if (UI.dlg == 4) {           /* rename: live entry line + the
-                                      * shell's touch keyboard */
-            static rd_font ef;
-            if (ef.payload || rd_font_open(&RD.pak, "FONTTINY.FF", &ef)) {
-                const uint8_t ink[4] = { 0xFF, 68, 67, 0 };
-                rd_fill(8, KBD_Y - 13, 304, 11, 0x2E);
-                rd_text(&ef, UI.dlg_entry, 12, KBD_Y - 11, ink);
-            }
-            draw_kbd();
+        rm_draw_event(dlg_key(), &subs, 0);
+        /* the live entry line + the kind's pad (text = letters,
+         * amount = digits) — the JS draws a caret in the box itself */
+        int py = dlg_is_text() ? KBD_Y : KPAD_Y;
+        static rd_font ef;
+        if (ef.payload || rd_font_open(&RD.pak, "FONTTINY.FF", &ef)) {
+            const uint8_t ink[4] = { 0xFF, 68, 67, 0 };
+            rd_fill(8, py - 13, 304, 11, 0x2E);
+            rd_text(&ef, UI.dlg_entry, 12, py - 11, ink);
         }
+        if (dlg_is_text()) draw_kbd();
+        else draw_kpad();
     }
     flush_fb();
 }
@@ -484,24 +556,29 @@ static void game_tap(int gx, int gy) {
         draw_screen();
         return;
     }
-    if (UI.dlg) {                            /* amount modal: box = Enter */
+    if (UI.dlg) {                 /* entry modal: pad types, box = Enter */
         rm_subs subs;
         dlg_subs(&subs);
-        if (UI.dlg == 4) {                   /* rename: keyboard first */
-            char ch = kbd_hit(gx, gy);
-            if (ch == '<') in_key("Backspace", 0, 0);
-            else if (ch == '#') in_key("Enter", 0, 0);
-            else if (ch) {
-                char one[2] = { ch, 0 };
-                in_key(one, 0, 0);
-            } else
-                in_key(rm_event_hit("RENAMECOLONY", &subs, 0, gx, gy)
-                           ? "Enter" : "Escape", 0, 0);
+        int epy = (dlg_is_text() ? KBD_Y : KPAD_Y) - 13;
+        if (gy >= epy && gy < epy + 11 && gx >= 8 && gx < 312) {
+            /* tap the entry line to CLEAR it: typing APPENDS to the
+             * prefill (dialogKey, game.js:988), so a rename would
+             * otherwise need one tap back per prefilled letter.
+             * Shell chrome — the core keeps the JS key semantics. */
+            while (UI.dlg_entry[0]) in_key("Backspace", 0, 0);
             draw_screen();
             return;
         }
-        in_key(rm_event_hit("HOWMUCH5", &subs, 0, gx, gy) ? "Enter"
-                                                          : "Escape", 0, 0);
+        char ch = dlg_is_text() ? kbd_hit(gx, gy) : kpad_hit(gx, gy);
+        if (ch == '<') in_key("Backspace", 0, 0);
+        else if (ch == '#') in_key("Enter", 0, 0);
+        else if (ch) {
+            char one[2] = { ch, 0 };
+            in_key(one, 0, 0);
+        } else
+            in_key(rm_event_hit(dlg_key(), &subs, 0, gx, gy) ? "Enter"
+                                                             : "Escape",
+                   0, 0);
         draw_screen();
         return;
     }
