@@ -1487,6 +1487,46 @@ static void run_turn(void) {
     turn_step5();
 }
 
+/* ---- the .SAV sidecar -----------------------------------------------
+ * The .SAV is written byte-exact, so a colony's UNIT build target (the
+ * port's own 0xC0+u marker, stripped by the writer) and the trade-route
+ * table have nowhere to live in it.  They go in a companion file with
+ * the same stem and a .CPX extension; colopy_extras_read() validates it
+ * against the loaded save and drops itself if it does not belong, so a
+ * missing or stale sidecar simply means the old behaviour. */
+static void sidecar_path(const char *name, char *out, size_t cap) {
+    snprintf(out, cap, "/sdcard/%s", name);
+    size_t l = strlen(out);
+    if (l > 4 && strcasecmp(out + l - 4, ".SAV") == 0)
+        snprintf(out + l - 4, cap - (l - 4), ".CPX");
+    else
+        snprintf(out + l, cap - l, ".CPX");
+}
+
+static void sidecar_save(const char *name) {
+    static uint8_t side[8192];
+    size_t sn = colopy_extras_write(side, sizeof(side));
+    if (!sn) return;
+    char path[112];
+    sidecar_path(name, path, sizeof(path));
+    FILE *f = fopen(path, "wb");
+    if (!f) return;
+    fwrite(side, 1, sn, f);
+    fclose(f);
+}
+
+static void sidecar_load(const char *name) {
+    char path[112];
+    sidecar_path(name, path, sizeof(path));
+    FILE *f = fopen(path, "rb");
+    if (!f) return;
+    static uint8_t side[8192];
+    size_t sn = fread(side, 1, sizeof(side), f);
+    fclose(f);
+    if (sn && colopy_extras_read(side, sn))
+        Serial.println("sidecar applied (build targets + trade routes)");
+}
+
 static void cmd_load(const char *name) {
     if (!sd_ready) { Serial.println("no SD card"); return; }
     size_t n = sd_read_file(name, savbuf, SAVBUF_CAP);
@@ -1494,6 +1534,7 @@ static void cmd_load(const char *name) {
     colopy_status st = colopy_load_sav(savbuf, n);
     if (st != COLOPY_OK) { Serial.printf("load failed: %d\n", (int)st); return; }
     colopy_init(1653);              /* the shared parity seed */
+    sidecar_load(name);             /* build targets + trade routes */
     units_session_seed();           /* importer runtime setup: full moves,
                                      * orders 0 — without it the first
                                      * digest diverges from the host */
@@ -1516,6 +1557,7 @@ static void cmd_save(const char *name) {
         return;
     }
     fclose(f);
+    sidecar_save(name);
     Serial.printf("wrote %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }

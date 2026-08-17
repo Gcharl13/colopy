@@ -701,6 +701,59 @@ int main(int argc, char **argv) {
                ov.n_colonies, ov.n_settlements, ov.tax_rate, colopy_digest());
     }
 
+    /* the .SAV sidecar (colopy_extras.c): the unit-build target and the
+     * trade-route table cannot ride in the fixed DOS save (the writer
+     * strips the 0xC0+u marker so the file stays legal), so the shells
+     * write a companion file.  Round-trip it here: plant both kinds of
+     * state, serialise, wipe, reload, compare.  The .SAV itself is
+     * untouched by any of this — the byte-exact check above still runs
+     * on the same fixtures. */
+    {
+        colopy_load_sav(savraleigh, sizeof(savraleigh));
+        CHECK(CS.n_colonies > 0, "sidecar: fixture has colonies");
+        CS.colonies[0].building_in_production = 0xC2;   /* Caravel */
+        CR.n_routes = 2;
+        memcpy(CR.routes[0].name, "Sugar Run", 10);
+        CR.routes[0].sea = 1;
+        CR.routes[0].n_stops = 2;
+        CR.routes[0].stops[0] = 0;
+        CR.routes[0].stops[1] = 999;                    /* Europe */
+        memcpy(CR.routes[1].name, "Ore Loop", 9);
+        CR.routes[1].sea = 0;
+        CR.routes[1].n_stops = 1;
+        CR.routes[1].stops[0] = 1;
+        CR.unit_route[0] = 1;
+        CR.unit_stop_index[0] = 0;
+
+        static uint8_t side[4096];
+        size_t sn = colopy_extras_write(side, sizeof(side));
+        CHECK(sn > 0, "sidecar: write produced bytes");
+
+        colopy_load_sav(savraleigh, sizeof(savraleigh));  /* wipe */
+        CHECK(CS.colonies[0].building_in_production != 0xC2,
+              "sidecar: reload cleared the build marker");
+        CHECK(CR.n_routes == 0, "sidecar: reload cleared the routes");
+
+        CHECK(colopy_extras_read(side, sn) == 1, "sidecar: applied");
+        CHECK(CS.colonies[0].building_in_production == 0xC2,
+              "sidecar: build target restored");
+        CHECK(CR.n_routes == 2, "sidecar: route count restored");
+        CHECK(strcmp(CR.routes[0].name, "Sugar Run") == 0,
+              "sidecar: route 0 name restored");
+        CHECK(CR.routes[0].stops[1] == 999,
+              "sidecar: the Europe stop survived");
+        CHECK(CR.routes[1].sea == 0 && CR.routes[1].n_stops == 1,
+              "sidecar: route 1 restored");
+        CHECK(CR.unit_route[0] == 1, "sidecar: unit assignment restored");
+
+        /* it must REFUSE a sidecar written beside a different save */
+        colopy_load_sav(sav1653, sizeof(sav1653));
+        CHECK(colopy_extras_read(side, sn) == 0,
+              "sidecar: refused against a different save");
+        /* and refuse junk */
+        CHECK(colopy_extras_read(side, 4) == 0, "sidecar: refused a stub");
+    }
+
     /* Phase 2 slice 1: colony production. The full oracle is
      * tools/sim_compare.py (17 colonies, JS vs C, exact); this in-harness
      * check pins one value so `make test` alone catches a regression:

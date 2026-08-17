@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "colopy_state.h"
@@ -575,6 +576,13 @@ typedef struct {
     int16_t unit_route[COLOPY_MAX_UNITS];       /* u.route, -1 none */
     uint8_t unit_stop_index[COLOPY_MAX_UNITS];  /* u.stopIndex */
 } colopy_runtime;
+
+/* the .SAV sidecar (colopy_extras.c): the two things the port models
+ * that the fixed DOS save has no room for — a colony's UNIT build
+ * target and the trade-route table.  Shell-only; the parity harness
+ * never calls these. */
+size_t colopy_extras_write(unsigned char *buf, size_t cap);
+int    colopy_extras_read(const unsigned char *buf, size_t len);
 
 #define COLOPY_MAX_ROUTES 12
 #define COLOPY_MAX_STOPS  4

@@ -45,7 +45,11 @@ tests and typing free-text names.
 4. microSD (FAT32, files in the card ROOT): copy `cport/pak/COLOPY.PAK`
    (build it with `python3 bin/reconstitute.py` then
    `python3 tools/gen_sd_pack.py`) and a save file, e.g.
-   `raw/COLONIZE/COLONY00.SAV`.  For sound effects also copy
+   `raw/COLONIZE/COLONY00.SAV`.  (Saving writes a small companion
+   `.CPX` file beside the `.SAV`: the DOS save format is fixed and has
+   no room for a colony's unit build target or your trade routes, so
+   those go there.  It is optional — a `.SAV` without one loads fine.)
+   For sound effects also copy
    `raw/COLONIZE/COLDIG.BIN` — the game's own 993 KB sample bank; the
    sketch streams cues straight out of it (see "Sound" below).  It is
    optional: without it the board is simply silent.
