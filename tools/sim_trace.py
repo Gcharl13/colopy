@@ -635,6 +635,23 @@ def main():
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
+    # ---- STALE-BUNDLE GUARD ------------------------------------------
+    # Every oracle drives port/dist/colonization.html, which is BUILT from
+    # port/src/*.js by port/tools/bundle.py.  Editing the source without
+    # rebuilding makes the JS side silently run old code, so a real C-vs-JS
+    # difference reads as agreement — or, worse, an intended JS change looks
+    # like a C regression and gets "diagnosed" as something it is not.
+    # (Burned 2026-08-17: a dist two days older than game.js sent a colony
+    # fix chase down a wrong path.)  Fail loudly instead.
+    _srcs = sorted((ROOT / "port" / "src").glob("*.js"))
+    _newest = max((p.stat().st_mtime for p in _srcs), default=0)
+    if _srcs and DIST.exists() and _newest > DIST.stat().st_mtime + 1:
+        raise SystemExit(
+            "STALE BUNDLE: port/src is newer than port/dist/colonization.html.\n"
+            "  Run: python3 port/tools/bundle.py\n"
+            "  (the oracles compare the C port against the BUILT bundle, so a\n"
+            "   stale dist silently invalidates every result)")
+
     with sync_playwright() as pw:
         browser = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium")
         page = browser.new_page()
