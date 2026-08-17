@@ -365,7 +365,10 @@ static void run_menu_row(void) {
         UI.options_which = 2;
         UI.options_row = 0;
         UI.screen = SCR_OPTIONS;
-    /* Pick Music: the board has no audio backend — left unbound */
+    } else if (strcmp(l, "Pick Music") == 0) {
+        /* the picker is byte-verified and the tune id is real state;
+         * PLAYBACK is the undecoded driver overlay (see pick_music) */
+        pick_music();
     /* the COLONIZOPEDIA rows + F1 (the JS dispatch, 11393-11416) */
     } else if (strcmp(l, "Cargo Types") == 0) {
         open_pedia(0);
@@ -1434,6 +1437,56 @@ static void trade_commit(void) {
     CS.units[ui].moves_remaining = 0;
     CR.unit_moves_undef[ui] = 0;
     advance();
+}
+
+
+/* ---- GAME "Pick Music" (func_023344 @0x023344, game.js:8016) --------
+ * spec/ui/options_dialogs.md §3.  Both jump tables are byte-read: the
+ * row->id table at file 0x02353A gives rows 1-12, whose late four are
+ * NOT contiguous (Hornpipe/Bonny Morn/Hole In The Wall/Nightingale =
+ * 0x39/0x38/0x3A/0x3B); rows 13-15 open a class sub-picker and bias
+ * its 1-based answer, the Indian one skipping event-only id 0x34
+ * (cmp ax,2; jle +4; inc ax @0x02351A).  The reverse table at file
+ * 0x0233E4 preselects the row the current tune sits on — a tune from a
+ * sub-picker highlights its SUBMENU row, and ids 0x34/0x37 none.
+ *
+ * Selecting is all the port can do: the sound itself is the external
+ * "$sound$" driver overlay (§5), whose tune data lives inside
+ * ASOUND/GSOUND/PSOUND/RSOUND.COL and has never been decoded.  The id
+ * is real state ([0x96]), so the round trip is honest. */
+static const uint8_t MUSIC_ROW_ID[12] = {
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+    0x39, 0x38, 0x3A, 0x3B,
+};
+static const struct { const char *key; uint8_t bias; int8_t skip_after; }
+MUSIC_SUBMENU[3] = {
+    { "PICKINDEPENDENCE", 0x28, 0 },
+    { "PICKMILITARY",     0x2D, 0 },
+    { "PICKINDIAN",       0x31, 2 },
+};
+static int music_row(int id) {
+    for (int i = 0; i < 12; i++) if (MUSIC_ROW_ID[i] == id) return i;
+    if (id >= 0x28 && id <= 0x2D) return 12;
+    if (id >= 0x2E && id <= 0x31) return 13;
+    if (id == 0x32 || id == 0x33 || id == 0x35 || id == 0x36) return 14;
+    return 0;                    /* 0x34 / 0x37 / unset: no row */
+}
+void pick_music(void) {
+    CR.ask_sel = (int8_t)music_row(CR.tune);   /* G.dialog.sel */
+    ev_emit("PICKMUSIC", 0, 0, 0, 0);
+    int choice = ask_choice();
+    CR.ask_sel = 0;
+    if (choice < 0) return;
+    if (choice < 12) { CR.tune = MUSIC_ROW_ID[choice]; return; }
+    if (choice >= 15) return;
+    int sub = choice - 12;
+    ev_emit(MUSIC_SUBMENU[sub].key, 0, 0, 0, 0);
+    int pick = ask_choice();
+    if (pick < 0) return;
+    int row = pick + 1;                        /* the picker is 1-based */
+    if (MUSIC_SUBMENU[sub].skip_after && row > MUSIC_SUBMENU[sub].skip_after)
+        row++;
+    CR.tune = (uint8_t)(row + MUSIC_SUBMENU[sub].bias);
 }
 
 /* customHouseMenu (game.js:3196): the per-good export toggle loop.

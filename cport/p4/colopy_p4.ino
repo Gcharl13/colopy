@@ -298,6 +298,74 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
     return n;
 }
 
+/* ---- audio (Elecrow Lesson12, cport/p4/PROVENANCE.md) ---------------
+ * The board carries an I2S speaker path and a PDM mic array; Lesson12
+ * "Playing Local Music from SD Card" is the citation for every number
+ * here: audio power on GPIO 30 (LOW enables), I2S BCLK 22 / LRCLK 21 /
+ * DOUT 23 driven through the core's ESP_I2S I2SClass at 16-bit.
+ *
+ * WHAT IT PLAYS is the open question, not how.  The DOS game shipped
+ * NO music or effect files: the tunes live inside the four driver
+ * overlays (ASOUND/GSOUND/PSOUND/RSOUND.COL, MZ executables that
+ * synthesise on AdLib/GM/PC-speaker/MT-32) and COLDIG.BIN is a raw
+ * 993 KB 8-bit unsigned PCM bank whose per-effect index sits in a
+ * driver data section that has never been decoded.  So this backend
+ * plays what the SD card can supply — WAV files under /sdcard — and
+ * the engine's own cue ids stay unmapped until that index is
+ * recovered.  Nothing here invents a mapping (CLAUDE.md prime
+ * directive); COLOPY_AUDIO can be switched off entirely. */
+#ifndef COLOPY_AUDIO
+#define COLOPY_AUDIO 1
+#endif
+#define AUDIO_GPIO_CTRL   30          /* audio power, LOW = enabled */
+#define AUDIO_POWER_ON    LOW
+#define AUDIO_POWER_OFF   HIGH
+#define AUDIO_GPIO_LRCLK  21
+#define AUDIO_GPIO_BCLK   22
+#define AUDIO_GPIO_SDATA  23
+
+#if COLOPY_AUDIO
+#include <ESP_I2S.h>
+static I2SClass i2s_spk;
+static int audio_ready = 0;
+
+static void audio_init(void) {
+    pinMode(AUDIO_GPIO_CTRL, OUTPUT);
+    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
+    i2s_spk.setPins(AUDIO_GPIO_BCLK, AUDIO_GPIO_LRCLK, AUDIO_GPIO_SDATA);
+    audio_ready = i2s_spk.begin(I2S_MODE_STD, 16000,
+                                I2S_DATA_BIT_WIDTH_16BIT,
+                                I2S_SLOT_MODE_STEREO, I2S_STD_SLOT_BOTH);
+    if (!audio_ready) Serial.println("audio: I2S init failed");
+}
+
+/* play a 16-bit PCM WAV from the SD card (the 44-byte canonical header
+ * is skipped, exactly as Lesson12 does).  Blocking, so it is used for
+ * short cues only; SOUND EFFECTS off in @SOUNDOPTIONS silences it. */
+static void audio_play_wav(const char *name) {
+    if (!audio_ready || !sd_ready) return;
+    if (!(CR.sound_options & 0x04)) return;   /* Sound Effects switch */
+    char path[64];
+    snprintf(path, sizeof(path), "/sdcard/%s", name);
+    FILE *f = fopen(path, "rb");
+    if (!f) return;
+    if (fseek(f, 44, SEEK_SET) != 0) { fclose(f); return; }
+    static int16_t buf[512];
+    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_ON);
+    for (;;) {
+        size_t n = fread(buf, sizeof(int16_t), 512, f);
+        if (!n) break;
+        i2s_spk.write((uint8_t *)buf, n * sizeof(int16_t));
+    }
+    digitalWrite(AUDIO_GPIO_CTRL, AUDIO_POWER_OFF);
+    fclose(f);
+}
+#else
+static void audio_init(void) {}
+static void audio_play_wav(const char *name) { (void)name; }
+#endif
+
+
 /* ---- Phase 7/8: the screens + the game loop (mirrors the Teensy
  * shell — cport/teensy/colopy_teensy.ino) ---------------------------- */
 static int game_mode = 0;
@@ -965,7 +1033,9 @@ static int board_ask(void) {
     if (n > 0 && rm_event_exists(q[n - 1].key)) {
         int rows = nrr > 0 ? nrr : rm_event_rows(q[n - 1].key);
         if (rows < 1) rows = 1;
-        int sel = 0;
+        /* the ask may open HIGHLIGHTED on a row (the JS G.dialog.sel —
+         * Pick Music preselects the current tune's row) */
+        int sel = CR.ask_sel > 0 && CR.ask_sel < rows ? CR.ask_sel : 0;
         for (;;) {
             rm_subs subs = { { q[n - 1].s[0], q[n - 1].s[1], 0, 0 },
                              { q[n - 1].p[0], q[n - 1].p[1], 0, 0 },
@@ -1223,6 +1293,8 @@ void setup() {
     }
 
     sd_mount();
+
+    audio_init();      /* I2S speaker path (Elecrow Lesson12) */
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 

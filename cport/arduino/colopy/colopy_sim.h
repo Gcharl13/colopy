@@ -141,6 +141,7 @@ void route_stop_name(int16_t stop, char *out, int cap);
 void route_auto_name(const int16_t *stops, int n, char *out, int cap);
 int  route_create(const int16_t *stops, int n, int sea, const char *name);
 void advance_trade_routes(void);
+void pick_music(void);           /* GAME "Pick Music" (func_023344) */
 /* fog of war (colopy_map.c): reveal (game.js:8584), sightRadius (8576),
  * revealAll (8594) — the player's 1<<(power+4) bit in CS.fog */
 void colopy_reveal(int x, int y, int r);
@@ -550,6 +551,13 @@ typedef struct {
      * @CUSTOM export toggles).  A live front draws them in place of
      * the event's static tail rows and clears the count; the harness
      * ask policy never reads them. */
+    uint8_t tune;                    /* G.tune = the engine's [0x96]:
+                                      * the tune id Pick Music selects
+                                      * (0x20-0x3E, spec/ui/
+                                      * options_dialogs.md §3) */
+    int8_t  ask_sel;                 /* LIVE FRONT: the row an ask opens
+                                      * HIGHLIGHTED on (the JS sets
+                                      * G.dialog.sel); 0 unless set */
     char new_land[24];               /* G.newLand — what the player
                                       * named the New World (@LANDHO) */
     char ask_rows[18][26];

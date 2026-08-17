@@ -471,7 +471,9 @@ static int board_ask(void) {
     if (n > 0 && rm_event_exists(q[n - 1].key)) {
         int rows = nrr > 0 ? nrr : rm_event_rows(q[n - 1].key);
         if (rows < 1) rows = 1;
-        int sel = 0;
+        /* the ask may open HIGHLIGHTED on a row (the JS G.dialog.sel —
+         * Pick Music preselects the current tune's row) */
+        int sel = CR.ask_sel > 0 && CR.ask_sel < rows ? CR.ask_sel : 0;
         for (;;) {
             rm_subs subs = { { q[n - 1].s[0], q[n - 1].s[1], 0, 0 },
                              { q[n - 1].p[0], q[n - 1].p[1], 0, 0 },
