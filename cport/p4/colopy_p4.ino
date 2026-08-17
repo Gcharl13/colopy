@@ -62,6 +62,9 @@
 #include "esp_panel_drivers_conf.h"
 #include "esp_panel_board_custom_conf.h"
 #include "ESP_Panel_Library.h"
+#ifdef COLOPY_AUDIO
+#include <ESP_I2S.h>                // speaker I2S (Elecrow Lesson12 path)
+#endif
 
 extern "C" {
 #include "colopy_core.h"
@@ -282,6 +285,25 @@ static int audio_rd(void *ctx, uint32_t off, void *dst, uint32_t len) {
     return audio_f && fseek(audio_f, (long)off, SEEK_SET) == 0 &&
            fread(dst, 1, len, audio_f) == len;
 }
+/* Speaker backend — every hardware number traces to Elecrow's Lesson12
+ * for this exact board (cport/p4/elecrow_ref/lesson12_audio.ino +
+ * lesson12_board_config.h, PROVENANCE.md): plain I2S std mode into the
+ * on-board amplifier (no codec chip), pins LRCLK 21 / BCLK 22 / SDATA 23,
+ * audio power gate GPIO 30 (LOW = on). The fill task paces itself on the
+ * blocking i2s.write() exactly like the vendor playback loop. */
+#define AUDIO_GPIO_CTRL  30
+#define AUDIO_GPIO_LRCLK 21
+#define AUDIO_GPIO_BCLK  22
+#define AUDIO_GPIO_SDATA 23
+static I2SClass i2s_spk;
+static void audio_task(void *arg) {
+    (void)arg;
+    static int16_t abuf[512];
+    for (;;) {
+        au_render(abuf, 512);                /* task context: SD reads OK */
+        i2s_spk.write((uint8_t *)abuf, sizeof abuf);
+    }
+}
 static void audio_init(void) {
     audio_f = fopen("/sdcard/COLAUDIO.PAK", "rb");
     if (!audio_f) { Serial.println("no COLAUDIO.PAK -- audio silent"); return; }
@@ -294,7 +316,20 @@ static void audio_init(void) {
         return;
     }
     au_seed((uint32_t)esp_random());
-    Serial.printf("audio pak up (%ld bytes)\n", sz);
+    pinMode(AUDIO_GPIO_CTRL, OUTPUT);
+    digitalWrite(AUDIO_GPIO_CTRL, LOW);      /* amp power on (Lesson12) */
+    i2s_spk.setPins(AUDIO_GPIO_BCLK, AUDIO_GPIO_LRCLK, AUDIO_GPIO_SDATA);
+    if (!i2s_spk.begin(I2S_MODE_STD, AU_MIX_RATE, I2S_DATA_BIT_WIDTH_16BIT,
+                       I2S_SLOT_MODE_MONO, I2S_STD_SLOT_LEFT)) {
+        Serial.println("I2S init failed -- audio silent");
+        digitalWrite(AUDIO_GPIO_CTRL, HIGH);
+        fclose(audio_f);
+        audio_f = nullptr;
+        return;
+    }
+    xTaskCreate(audio_task, "colopy_audio", 4096, nullptr, 3, nullptr);
+    Serial.printf("audio up: COLAUDIO.PAK %ld bytes, I2S %d Hz\n",
+                  sz, AU_MIX_RATE);
 }
 /* scheduler tick: the war flag + the func_004EE6 pump */
 static void audio_tick(void) {

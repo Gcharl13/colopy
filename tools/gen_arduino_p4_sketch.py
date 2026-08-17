@@ -88,6 +88,14 @@ CONFIG = """\
 #define TT_RELEASE_MS 80
 #define TT_LONG_MS 600
 
+/* AUDIO (docs/AUDIO_PORT.md): uncomment to enable the cport/audio
+ * engine + the on-board speaker path (I2S BCLK 22 / LRCLK 21 / SDATA
+ * 23, amp gate GPIO 30 — Elecrow Lesson12).  Needs COLAUDIO.PAK on
+ * the SD card (python3 tools/gen_audio_pack.py after the tools/audio
+ * capture pipeline).  Default OFF until verified on hardware — flip
+ * it, listen, and record the outcome in docs/AUDIO_PORT.md. */
+/* #define COLOPY_AUDIO */
+
 """
 
 README = """\
@@ -138,7 +146,9 @@ tests and typing free-text names.
 4. microSD (FAT32, files in the card ROOT): copy `cport/pak/COLOPY.PAK`
    (build it with `python3 bin/reconstitute.py` then
    `python3 tools/gen_sd_pack.py`) and a save file, e.g.
-   `raw/COLONIZE/COLONY00.SAV`.
+   `raw/COLONIZE/COLONY00.SAV`.  With `COLOPY_AUDIO` enabled, also copy
+   `cport/pak/COLAUDIO.PAK` (the tools/audio capture pipeline, then
+   `python3 tools/gen_audio_pack.py` — see docs/AUDIO_PORT.md).
 5. Flash.  With the default `COLOPY_AUTOBOOT` config the board loads
    `COLONY00.SAV` and enters the game by itself — play by touch.  Or
    open Serial Monitor at 115200 baud:

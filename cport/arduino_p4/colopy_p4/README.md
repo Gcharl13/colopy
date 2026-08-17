@@ -45,7 +45,9 @@ tests and typing free-text names.
 4. microSD (FAT32, files in the card ROOT): copy `cport/pak/COLOPY.PAK`
    (build it with `python3 bin/reconstitute.py` then
    `python3 tools/gen_sd_pack.py`) and a save file, e.g.
-   `raw/COLONIZE/COLONY00.SAV`.
+   `raw/COLONIZE/COLONY00.SAV`.  With `COLOPY_AUDIO` enabled, also copy
+   `cport/pak/COLAUDIO.PAK` (the tools/audio capture pipeline, then
+   `python3 tools/gen_audio_pack.py` — see docs/AUDIO_PORT.md).
 5. Flash.  With the default `COLOPY_AUTOBOOT` config the board loads
    `COLONY00.SAV` and enters the game by itself — play by touch.  Or
    open Serial Monitor at 115200 baud:

@@ -37,7 +37,11 @@ static const int8_t INDEX_TABLE[16] = {
 #define DEC_BUF   1024             /* decoded samples per refill (IMA block) */
 
 typedef struct {
-    int active;
+    /* volatile: on boards the backend renders from a task/ISR while the
+     * game loop starts/stops voices. voice_start() clears `active` first
+     * (memset) and sets it last, so a mid-fill render sees an inactive
+     * voice and emits silence — single-word flag, no locks (catalogued). */
+    volatile int active;
     uint8_t codec;
     uint32_t off, len, pos;        /* payload window + read cursor */
     int16_t buf[DEC_BUF];

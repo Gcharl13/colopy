@@ -20,6 +20,8 @@ files — none of it is guessed.
 | `lesson06_usb.ino` | Lesson06 | reference only: the board's USB 2.0 example is DEVICE HID (mouse) — no USB host keyboard path exists in Elecrow's Arduino examples, hence touch+serial input on P4 |
 | `lesson08_sd.ino` | Lesson08 | SDMMC mount: `SDMMC_HOST_SLOT_0`, 10 MHz, 1-bit, internal pull-ups, `esp_vfs_fat_sdmmc_mount("/sdcard", ...)` |
 | `lesson08_board_config.h` | Lesson08 | SD pins: CLK 43 / CMD 44 / D0 39 |
+| `lesson12_audio.ino` | Lesson12 (fetched 2026-08-17) | speaker path: plain I2S std mode via `ESP_I2S.h` `I2SClass` (`setPins(BCLK, LRCLK, SDATA)` then `begin(I2S_MODE_STD, rate, 16-bit, ...)`), no codec chip in the playback chain; audio **power gate** `AUDIO_GPIO_CTRL` LOW=enable; blocking `i2s_spk.write()` paces on DMA |
+| `lesson12_board_config.h` | Lesson12 | audio pins: **LRCLK 21 / BCLK 22 / SDATA 23**, power gate **GPIO 30** (LOW = on); mic PDM CLK 24 / SDIN 26 (unused by Colopy) |
 
 Bundled library versions (the repo's `example/V1.2/Arduino_Code/libraries/`,
 which ship PRE-CONFIGURED for this panel — install THOSE, not the

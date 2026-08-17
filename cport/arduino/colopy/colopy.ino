@@ -28,6 +28,17 @@
 #define COLOPY_PAK_FLASH 1
 #define COLOPY_TFT_RST 0
 
+/* AUDIO (docs/AUDIO_PORT.md): define COLOPY_AUDIO to enable the
+ * cport/audio engine on MQS output (zero extra audio hardware, but
+ * NOTE THE PIN CONFLICT: MQS claims pins 10 = MQSR and 12 = MQSL,
+ * which are the default TFT CS and SPI MISO.  Move the chip select --
+ * e.g. #define COLOPY_TFT_CS 37 and rewire -- and leave the TFT MISO
+ * line unwired; the display path is write-only).  Feed a small
+ * amp/RC filter from pin 12 per PJRC's MQS guidance.  COLAUDIO.PAK
+ * goes on the SD card (tools/gen_audio_pack.py).  Default OFF until
+ * verified on hardware. */
+/* #define COLOPY_AUDIO */
+
 /* Colopy on Teensy 4.1 — the serial digest shell + the Phase-8 game
  * loop.
  *
@@ -76,10 +87,55 @@ extern "C" {
 
 /* ---- audio (opt-in COLOPY_AUDIO — cport/audio/, docs/AUDIO_PORT.md).
  * COLAUDIO.PAK streams from the built-in SD (music never fits the 8 MB
- * flash — MEMORY_BUDGET.md). Until the MQS backend lands this block is
- * engine-only: cues and scheduler state advance, nothing sounds. ----- */
+ * flash — MEMORY_BUDGET.md). Output = MQS on pin 12 (MQSL) + pin 10
+ * (MQSR) — MQS claims BOTH pins, so the TFT chip-select must move off
+ * pin 10 (COLOPY_TFT_CS) and the TFT MISO line stays unwired (the
+ * display path is write-only). The Audio library pulls 44100 Hz blocks
+ * in ISR context, so a lock-free ring decouples it from au_render()'s
+ * SD reads (which happen in loop context via audio_tick()). UNTESTED ON
+ * HARDWARE — same checklist gate as the panel path. ------------------ */
 #ifdef COLOPY_AUDIO
+#include <Audio.h>
 static File audio_f;
+#define AU_RING 4096                       /* samples; power of two */
+static int16_t au_ring[AU_RING];
+static volatile uint16_t au_rh = 0, au_rt = 0;   /* SPSC head/tail */
+class ColopyAudioSource : public AudioStream {
+public:
+    ColopyAudioSource() : AudioStream(0, nullptr) {}
+    virtual void update(void) {
+        audio_block_t *b = allocate();
+        if (!b) return;
+        uint16_t used = (uint16_t)(au_rt - au_rh);
+        /* 128 frames @44100 = 64 ring samples @22050, zero-order held x2;
+         * underrun pads silence */
+        for (int i = 0; i < 64; i++) {
+            int16_t s = (i < used)
+                        ? au_ring[(uint16_t)(au_rh + i) & (AU_RING - 1)]
+                        : (int16_t)0;
+            b->data[2 * i] = s;
+            b->data[2 * i + 1] = s;
+        }
+        au_rh += (used < 64) ? used : 64;
+        transmit(b);
+        release(b);
+    }
+};
+static ColopyAudioSource au_src;
+static AudioOutputMQS au_mqs;
+static AudioConnection au_cord1(au_src, 0, au_mqs, 0);
+static AudioConnection au_cord2(au_src, 0, au_mqs, 1);
+static void audio_ring_fill(void) {        /* loop context: SD reads OK */
+    static int16_t tmp[256];
+    for (;;) {
+        uint16_t used = (uint16_t)(au_rt - au_rh);
+        if (used > AU_RING - 260) break;
+        au_render(tmp, 256);
+        for (int i = 0; i < 256; i++)
+            au_ring[(uint16_t)(au_rt + i) & (AU_RING - 1)] = tmp[i];
+        au_rt += 256;
+    }
+}
 static int audio_rd(void *ctx, uint32_t off, void *dst, uint32_t len) {
     (void)ctx;
     if (!audio_f) return 0;
@@ -95,13 +151,15 @@ static void audio_init(void) {
         return;
     }
     au_seed(micros());
-    Serial.printf("audio pak up (%lu bytes)\n",
+    AudioMemory(8);                          /* MQS + source blocks */
+    Serial.printf("audio up: COLAUDIO.PAK %lu bytes, MQS pins 10/12\n",
                   (unsigned long)audio_f.size());
 }
-/* scheduler tick: the war flag + the func_004EE6 pump */
+/* scheduler tick: the war flag + the func_004EE6 pump + ring refill */
 static void audio_tick(void) {
     au_set_war(colopy_power(cs_nation())->declared);
     au_pump();
+    audio_ring_fill();
 }
 #endif
 

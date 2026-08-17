@@ -74,6 +74,17 @@ CONFIG = """\
 #define COLOPY_PAK_FLASH 1
 #define COLOPY_TFT_RST 0
 
+/* AUDIO (docs/AUDIO_PORT.md): define COLOPY_AUDIO to enable the
+ * cport/audio engine on MQS output (zero extra audio hardware, but
+ * NOTE THE PIN CONFLICT: MQS claims pins 10 = MQSR and 12 = MQSL,
+ * which are the default TFT CS and SPI MISO.  Move the chip select --
+ * e.g. #define COLOPY_TFT_CS 37 and rewire -- and leave the TFT MISO
+ * line unwired; the display path is write-only).  Feed a small
+ * amp/RC filter from pin 12 per PJRC's MQS guidance.  COLAUDIO.PAK
+ * goes on the SD card (tools/gen_audio_pack.py).  Default OFF until
+ * verified on hardware. */
+/* #define COLOPY_AUDIO */
+
 """
 
 README = """\

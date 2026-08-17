@@ -28,7 +28,9 @@ static uint8_t class_next = 0;/* [0x98] queued-next class request */
 static uint8_t class_play = 0;/* [0x9C] class of what is playing */
 static int oneshot = 0;       /* [0x9E] pump once despite BG off */
 static int war = 0;           /* [0x5382]&1 (shell-provided) */
-static int32_t pending = -1;  /* modelled: depth-1 driver queue (observed) */
+/* volatile: consumed by au_engine_music_ended() from the backend's render
+ * context on boards; single-word handoff, no locks (catalogued). */
+static volatile int32_t pending = -1;
 
 static uint32_t rng = 0x1234567;
 
