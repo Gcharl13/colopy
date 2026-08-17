@@ -149,7 +149,12 @@ static uint16_t *fbuf = nullptr;      /* 1024x600 RGB565, in PSRAM */
 static uint8_t *pakbuf = nullptr;     /* COLOPY.PAK from SD, in PSRAM */
 static uint8_t *savbuf = nullptr;     /* .SAV image buffer (~80 KB) */
 static uint8_t *sidebuf = nullptr;    /* the .SAV sidecar, in PSRAM */
-#define PAKBUF_CAP 3500000
+/* COLOPY.PAK is 3,148,409 B today. The old 3,500,000 cap left 10% headroom
+ * and every asset still to ship (Part E of docs/REMAINING_WORK.md: 139 .SS
+ * and 7 .PIK sheets) grows it. 8 MB of the P4's 32 MB PSRAM is cheap —
+ * fbuf is 1.2 MB, savbuf 80 KB, sidebuf 8 KB — and sd_read_file() now
+ * refuses an oversize file outright rather than loading a prefix. */
+#define PAKBUF_CAP 8000000
 #define SAVBUF_CAP 80000
 #define SIDEBUF_CAP 8192
 static uint16_t lut565[256];
@@ -435,6 +440,23 @@ static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
     snprintf(path, sizeof(path), "/sdcard/%s", name);
     FILE *f = fopen(path, "rb");
     if (!f) return 0;
+    /* Size it first. A plain fread(cap) on an oversize file returns a
+     * truncated PREFIX, and rd_init() accepts a prefix whose header still
+     * parses — the pack would come up quietly missing its tail assets with
+     * no error anywhere. Refuse instead, and say what the numbers are. */
+    size_t sz = 0;
+    if (fseek(f, 0, SEEK_END) == 0) {
+        long end = ftell(f);
+        if (end > 0) sz = (size_t)end;
+        rewind(f);
+    }
+    if (sz > cap) {
+        Serial.printf("%s is %u B but the buffer is %u B — refusing to load "
+                      "a truncated file; raise the cap and reflash\n",
+                      name, (unsigned)sz, (unsigned)cap);
+        fclose(f);
+        return 0;
+    }
     size_t n = fread(buf, 1, cap, f);
     fclose(f);
     return n;
@@ -1674,6 +1696,28 @@ static void stack_report(const char *when) {
                   (unsigned)(left * sizeof(StackType_t)), when);
 }
 
+/* 'm': the memory census, measured on the board rather than asserted.
+ * cport/MEMORY_BUDGET.md records the host-measured static sizes (they are
+ * platform-independent), but how much internal SRAM this core actually
+ * leaves after the IDF, the DPI driver and the Arduino runtime have taken
+ * their share is a hardware fact — so read it, do not quote it. */
+static void mem_report(void) {
+    Serial.printf("internal SRAM: %u free of %u, largest block %u, "
+                  "min ever free %u\n",
+                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                  (unsigned)heap_caps_get_total_size(MALLOC_CAP_INTERNAL),
+                  (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+                  (unsigned)heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL));
+    Serial.printf("PSRAM:         %u free of %u, largest block %u\n",
+                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+                  (unsigned)heap_caps_get_total_size(MALLOC_CAP_SPIRAM),
+                  (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
+    Serial.printf("our PSRAM:     fbuf %u, pakbuf %u, savbuf %u, sidebuf %u\n",
+                  (unsigned)((size_t)P4_W * P4_H * 2), (unsigned)PAKBUF_CAP,
+                  (unsigned)SAVBUF_CAP, (unsigned)SIDEBUF_CAP);
+    stack_report("now");
+}
+
 /* ---- the serial shell (mirrors the Teensy build) ------------------- */
 static void run_turn(void) {
     turn_step_prefix();
@@ -1699,8 +1743,9 @@ static void sidecar_path(const char *name, char *out, size_t cap) {
 }
 
 static void sidecar_save(const char *name) {
-    if (!sidebuf) return;            /* PSRAM, not a static: internal
-                                      * SRAM is only 320 KB and full */
+    if (!sidebuf) return;            /* PSRAM, not a static: the core's
+                                      * own statics already crowd internal
+                                      * SRAM — 'm' prints what is left */
     size_t sn = colopy_extras_write(sidebuf, SIDEBUF_CAP);
     if (!sn) return;
     char path[112];
@@ -2011,6 +2056,7 @@ void loop() {
         case 'l': cmd_load(arg); break;
         case 's': cmd_save(arg); break;
         case 'w': stack_report("now"); break;
+        case 'm': mem_report(); break;
         case 'd':
             Serial.printf("digest %08lX\n", (unsigned long)colopy_digest());
             break;
@@ -2033,8 +2079,17 @@ void loop() {
             break;
         }
         default:
-            Serial.println("commands: l <f> / t [n] / d / i / s <f>"
-                           " / v / g / k <key>");
+            Serial.println("commands:");
+            Serial.println("  l <file>  load a .SAV from the SD card");
+            Serial.println("  s <file>  save the current game to the card");
+            Serial.println("  g         start a new game");
+            Serial.println("  t [n]     run n turns headless, digest each");
+            Serial.println("  d         print the state digest");
+            Serial.println("  i         one-line overview (year/units/...)");
+            Serial.println("  v         render the map view");
+            Serial.println("  k <key>   inject a key as if typed on the board");
+            Serial.println("  w         loop-task stack high-water mark");
+            Serial.println("  m         memory census (SRAM/PSRAM, measured)");
         }
     }
     delay(2);

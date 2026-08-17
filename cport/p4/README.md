@@ -9,7 +9,7 @@ hardware number traces to.
 
 | file | what |
 |---|---|
-| `colopy_p4.ino` | the shell: panel/touch/SD init (verbatim from Elecrow's examples), 3x-scale flush, touch pointer layer + dialog row taps, the serial shell (`l/t/d/i/s/v/g/k`), autoboot |
+| `colopy_p4.ino` | the shell: panel/touch/SD init (verbatim from Elecrow's examples), 3x-scale flush, touch pointer layer + dialog row taps, the serial shell (`l/s/g/t/d/i/v/k/w/m`), autoboot |
 | `elecrow_ref/` | Elecrow's working V1.2 Arduino example files, byte-exact — the citations (see `PROVENANCE.md`) |
 | `PROVENANCE.md` | which file certifies which pin/timing/API, bundled library versions |
 
@@ -50,8 +50,21 @@ choice — the DOS game is 200 rows) is not shown here.
   - Every unit order (fortify, sentry, plow, road, build...) is also
     a row in the tappable ORDERS pulldown, and the reports live in
     the menu bar — so the key vocabulary is reachable by touch.
-- **Serial** (USB-C CDC, 115200): the whole Teensy shell vocabulary,
-  including `k <name>` key injection.
+- **Serial** (USB-C CDC, 115200): the whole Teensy shell vocabulary.
+  Any unrecognised line prints the list; in full:
+
+  | cmd | does |
+  |---|---|
+  | `l <file>` | load a `.SAV` from the card |
+  | `s <file>` | save the current game to the card |
+  | `g` | start a new game |
+  | `t [n]` | run n turns headless, printing each turn's digest |
+  | `d` | print the state digest |
+  | `i` | one-line overview (year / season / units / colonies / tax) |
+  | `v` | render the map view |
+  | `k <name>` | inject a key as if typed on the board |
+  | `w` | loop-task stack high-water mark — the diagnostic that caught the landing-ashore crash (`stack_report`) |
+  | `m` | memory census: internal SRAM and PSRAM free/total/largest block, our four PSRAM buffers, and the stack mark. Measured on the board, never quoted — see `cport/MEMORY_BUDGET.md` |
 - **No USB keyboard**: Elecrow's Arduino USB example is device-mode
   HID only (`elecrow_ref/lesson06_usb.ino`) — the P4 Arduino core has
   no host-keyboard path today, hence touch + serial.

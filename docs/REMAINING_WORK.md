@@ -28,7 +28,7 @@ population growth from surplus food, natives burning a colony, the per-unit
 orders menu, the per-ship orders menu, the Docks prerequisite for fishing,
 boycott relief, and rival AI colonies growing or building anything at all.
 
-**Totals.** `tools/churn_metric.py` counts **564 open TBDs** repo-wide (docs +
+**Totals.** `tools/churn_metric.py` counts **581 open TBDs** repo-wide (docs +
 code). Engine-side, the two ports carry **138 flagged sites + 23 TBD + 60
 "unread"** in `port/src/game.js` and **73 flagged + 13 TBD** across
 `cport/core|game|render`. This ledger organises those into ~350 actionable rows;
@@ -38,14 +38,16 @@ the remainder are documentation TBDs belonging to Part H's out-of-scope tracks.
 
 ## Part A — Blocking or broken right now
 
+**Status 2026-08-17: A2–A6 closed. A1 is not a code fault** — it is the Arduino Tools ▸ PSRAM setting, and it reverts every time the sketch folder is unzipped fresh, so it stays listed. Nothing in this part blocks play any more; what remains blocking is Part B.
+
 | # | Item | Cite | Blocked on |
 |---|---|---|---|
 | A1 | **Black screen on boot** is a Tools setting, not a code fault. The MIPI DPI driver fails to allocate its 1024x600x2 (~1.2 MB) frame buffer *before* the sketch allocates anything: `esp_lcd_new_panel_dpi(239): no memory for frame buffer` -> `board=nullptr` -> the `if (sd_ready && fbuf && g_lcd)` gate skips `boot_title()`. Fix: **Tools > PSRAM: Enabled** (+ Flash 16MB, a Huge-APP partition, USB CDC On Boot). Arduino stores board settings per sketch-folder path, so a fresh unzip reverts them to defaults. | `cport/p4/colopy_p4.ino` `setup()` ~1752-1792 | You (IDE) |
-| A2 | **`PAKBUF_CAP` is a hard 3,500,000 bytes with no error path.** `pak_load()` reads at most the cap and only checks `rd_init`; a pak that outgrows it loads **silently truncated** rather than failing loudly. The pack is ~3.0 MB today, so this is close. | `.ino:101`, `.ino:1605-1615` | — |
-| A3 | **No P4 memory-budget document.** `cport/MEMORY_BUDGET.md` is titled for the Teensy and covers ITCM/DTCM/OCRAM/8 MB flash only — no ESP32-P4 row (32 MB PSRAM / 16 MB flash), and its "what changes in the interface phase" section is still future-tense though Phases 6/7/9 shipped. | `cport/MEMORY_BUDGET.md` | — |
-| A4 | The **`w` serial command** (stack high-water mark) is not in the sketch banner or either README, despite being the diagnostic that caught the landing-ashore crash. | `.ino` banner vs `stack_report` | — |
+| A2 | ~~**`PAKBUF_CAP` is a hard 3,500,000 bytes with no error path**: a pak that outgrew it loaded **silently truncated**, because `fread(cap)` returns a prefix and `rd_init()` accepts a prefix whose header still parses.~~ **RESOLVED 2026-08-17** — `sd_read_file()` now sizes the file first and refuses one that will not fit, printing both numbers; the cap is 8,000,000 against a 3,148,409-byte pack, which Part E's 146 unshipped assets will eat into. | `cport/p4/colopy_p4.ino` `sd_read_file()`, `PAKBUF_CAP` | closed |
+| A3 | ~~**No P4 memory-budget document.**~~ **RESOLVED 2026-08-17** — `cport/MEMORY_BUDGET.md` rewritten to cover both boards: the board-independent static census re-measured after the audio merge (BSS 219,304 B; `CR` has grown 11,892 -> 39,364 since Phase 3), the P4's PSRAM/flash/SD split, the PSRAM-Enabled requirement, and why nothing may be added to internal SRAM. Free-space figures are deliberately **not** filled in from a datasheet — the sketch's new `m` command reads them off the hardware. | `cport/MEMORY_BUDGET.md` | a live `m` run (D) |
+| A4 | ~~The **`w` serial command** is not in the sketch banner or either README.~~ **RESOLVED 2026-08-17** — the banner now prints one line per command instead of a bare list, `cport/p4/README.md` carries the full table, and `m` (memory census) was added alongside. | `.ino` default case, `cport/p4/README.md` | closed |
 | A5 | ~~Stale comment: `colopy_map_render.c:8` claimed zoom 1/2 unported.~~ **RESOLVED 2026-08-17** — `rm_draw_map_zoom` exists and `set_zoom` clamps 0..3 on z/x; the comment was true of the original ILI9341 target and stale since the P4 work. Comment corrected. | `cport/render/colopy_map_render.c:8` | closed |
-| A6 | **Stale doc:** `cport/p4/README.md` still says typed digits need serial and lists "on-screen keyboard for naming dialogs" as an open follow-up; `cport/README.md` says the numeric keypad + alpha keyboard shipped. | `cport/p4/README.md` vs `cport/README.md` | — |
+| A6 | ~~**Stale doc:** `cport/p4/README.md` still says typed digits need serial and lists the on-screen keyboard as an open follow-up.~~ **RESOLVED 2026-08-17** — both corrected; the numeric keypad and alpha keyboard shipped 2026-08 and the README now says so. | `cport/p4/README.md` | closed |
 
 ---
 
@@ -267,7 +269,7 @@ diplomacy matrices **load empty / at peace** (`:10310`).
 | D6 | **BLE mouse end-to-end untested**; needs a core with hosted BT for the P4 *and* C6 firmware exposing BT (Elecrow ship it for Wi-Fi 6 and publish no BT example). Only BLE can ever work — the C6 has no Classic radio. | `.ino:186-214` |
 | D7 | **BLE HID report parsing is a guess for non-boot mice** — the Report Map is not parsed; reports hex-dump to serial so a real device can be characterised. | `.ino:210-214` |
 | D8 | **The whole I2S audio path is unverified on hardware.** | `.ino:381-412` |
-| D9 | **Audio pin provenance does not resolve** — the block cites "Elecrow Lesson12, PROVENANCE.md" but `elecrow_ref/` has only lessons 05/06/07/08 and PROVENANCE.md has no Lesson12 row. The one broken citation chain in the sketch. | `.ino:381-390` |
+| D9 | ~~**Audio pin provenance does not resolve** — the block cites "Elecrow Lesson12, PROVENANCE.md" but `elecrow_ref/` has no Lesson12.~~ **RESOLVED 2026-08-17** — the audio merge brought `cport/p4/elecrow_ref/lesson12_audio.ino` and `cport/p4/elecrow_ref/lesson12_board_config.h` into the tree with both `PROVENANCE.md` rows. All five values in the sketch match the reference byte for byte: LRCLK 21, BCLK 22, SDATA 23, power gate GPIO 30 with LOW = enabled. | `cport/p4/PROVENANCE.md`, `cport/p4/colopy_p4.ino:452-457` | closed |
 | D10 | **No USB host keyboard path** — Elecrow's only USB example is device-mode HID; the P4 Arduino core has no host-keyboard driver. | `cport/p4/README.md` |
 | D11 | **Long-press -> right-click is not implemented** — every tap is a left-click. | `cport/p4/README.md` |
 
@@ -409,8 +411,8 @@ Recorded so nothing looks forgotten. Each is a separate track.
 
 ## Counts
 
-`tools/churn_metric.py` (2026-08-17): **564 open TBDs** repo-wide, 250 RULINGS
-entries, 82,066 doc lines across 162 files. Engine-side: `port/src/game.js`
+`tools/churn_metric.py` (2026-08-17, after the audio merge): **581 open TBDs** repo-wide, 252 RULINGS
+entries, 82,834 doc lines across 164 files. Engine-side: `port/src/game.js`
 carries 138 flagged / 23 TBD / 60 "unread"; `cport/core|game|render` carries 73
-flagged / 13 TBD. The difference between 564 and this ledger's ~350 rows is
+flagged / 13 TBD. The difference between 581 and this ledger's ~350 rows is
 documentation TBDs belonging to Part H.
