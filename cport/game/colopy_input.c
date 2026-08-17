@@ -913,6 +913,17 @@ static const char *build_target_name(const ColonyRecord *c) {
     if (bip >= 0xC0 && bip < 0xC7) return BUILD_UNITS[bip - 0xC0];
     return bip < DAT_BUILDINGS_COUNT ? dat_buildings[bip].name : NULL;
 }
+/* test-only probe: the CURRENT colony's build-target name, exported so
+ * the input oracle can watch it.  The projection carried no build target
+ * at all, which is why a target divergence stayed invisible until the
+ * build picker made it visible as a row number (2026-08-17). */
+const char *ui_build_target_probe(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci < 0) return "";
+    const char *n = build_target_name(&CS.colonies[cci]);
+    return n ? n : "";
+}
+
 /* openBuildPicker (game.js:3989): the picker opens ON the current
  * target's row, "(No Production)" when none */
 static void open_build_picker(void) {
@@ -2501,12 +2512,22 @@ static void in_click_inner(int mx, int my, int right) {
              * diagnoses were both WRONG — the first was a stale JS bundle
              * (now guarded in tools/sim_trace.py).
              *
-             * STILL OPEN: with the guard dropped, input_compare sav1653
-             * reports `.cpr: JS 0 != C 1` on 16 events beginning at event
-             * 188, the 'c' key on the newly-reachable colony screen.  The
-             * colony's build target at THAT point in the script (not at
-             * load) is the thing to dump next — ui_build_rows_probe()
-             * below exists for exactly that. */
+             * STILL OPEN, now pinned to one click.  The projection
+             * carried no build target until 2026-08-17; adding `bld`
+             * moved the first divergence two events EARLIER than the
+             * `.cpr` symptom:
+             *
+             *   event 186  CLICK(224,142)  .bld: JS "" != C "Armory"
+             *
+             * (224,142) is the colony screen's BUY rect (216,137,18,11),
+             * but "Armory" is build-picker ROW 1 — so the C looks to be
+             * committing a picker row there while the JS is not: the two
+             * disagree about whether the picker is open by event 186,
+             * after the 183..185 clicks inside the colony that this guard
+             * used to make unreachable.  Replay 182..186 in both and
+             * compare the popup state, then drop the guard here and the
+             * `&& !on.length` in game.js.  With the guard in place `bld`
+             * agrees on every event of every fixture. */
             if (ci >= 0 && !non) {
                 UI.colony = (int8_t)ci;
                 UI.screen = SCR_COLONY;

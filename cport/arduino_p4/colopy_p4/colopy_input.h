@@ -104,3 +104,6 @@ void in_click(int mx, int my, int right);
 }
 #endif
 #endif /* COLOPY_INPUT_H */
+
+int ui_build_rows_probe(int cci, const char **names);
+const char *ui_build_target_probe(void);

@@ -182,6 +182,10 @@ INPUT = """([save, events]) => {
       emr: G.euroMenuRow || 0,
       dg: G.dialog ? (G.dialog.opts ? 2 : 1) : 0,
       dge: G.dialog ? (G.dialog.entry || '') : '',
+      // The current colony's BUILD TARGET.  Absent until 2026-08-17, which
+      // let a target divergence hide from the oracle until the build picker
+      // surfaced it as a row number.
+      bld: (G.colonies[G.colony] && G.colonies[G.colony].building) || '',
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };
