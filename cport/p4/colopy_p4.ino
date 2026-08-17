@@ -369,7 +369,8 @@ static char kpad_hit(int gx, int gy) {
 
 /* UI.dlg kinds -> their GAME.TXT sections (colopy_input.h): 1 Europe
  * sell, 2 colony load, 3 colony unload, 4 colony rename, 5 trade-route
- * name, 6 the new land's name, 7 a founding.  Kinds >= 4 take TEXT (alpha
+ * name, 6 the new land, 7 a founding, 8 Find Colony.  Kinds >= 4
+ * take TEXT (alpha
  * keyboard), 1-3 an AMOUNT (the keypad).  Every kind but 1 used to
  * draw @HOWMUCH5's sell prompt. */
 static const char *dlg_key(void) {
@@ -380,6 +381,7 @@ static const char *dlg_key(void) {
     case 5: return "TRADENAME";
     case 6: return "LANDHO";
     case 7: return "COLONY";
+    case 8: return "FINDCITY";
     }
     return "HOWMUCH5";
 }

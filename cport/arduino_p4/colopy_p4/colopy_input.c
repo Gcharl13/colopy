@@ -276,6 +276,13 @@ static void run_menu_row(void) {
             UI.screen = SCR_EUROPE;
     } else if (strcmp(l, "Center View") == 0) {
         if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
+    } else if (strcmp(l, "Find Colony") == 0) {
+        /* findColony (game.js:11326): the @FINDCITY entry dialog —
+         * live-front only (openDialog is inert under the harness) */
+        if (colopy_front_live) {
+            UI.dlg = 8;
+            UI.dlg_entry[0] = 0;
+        }
     } else if (strcmp(l, "Show Hidden Terrain") == 0) {
         UI.show_hidden = (int8_t)!UI.show_hidden;
     /* the zoom rows (game.js:11375-11383; MENU.TXT spells the accels
@@ -417,6 +424,40 @@ static int16_t pending_stops[4];
 static int pending_n, pending_sea;
 
 static void dialog_done(int cancel) {
+    if (UI.dlg == 8) {               /* FINDCITY (findColony 11326): the
+                                      * name-PREFIX search; a miss says
+                                      * @NOCITY with what was typed */
+        char q[24];
+        snprintf(q, sizeof(q), "%s", UI.dlg_entry);
+        UI.dlg = 0;
+        UI.dlg_entry[0] = 0;
+        if (cancel) return;
+        char *b = q;
+        while (*b == ' ') b++;
+        char *e5 = b + strlen(b);
+        while (e5 > b && e5[-1] == ' ') *--e5 = 0;
+        if (!*b) return;
+        size_t qn = strlen(b);
+        for (int i = 0; i < CS.n_colonies; i++) {
+            if ((CS.colonies[i].owner_power & 3) != cs_nation()) continue;
+            char nm[25];
+            memcpy(nm, CS.colonies[i].name, 24);
+            nm[24] = 0;
+            size_t j = 0;
+            for (; j < qn && nm[j]; j++) {
+                char a = nm[j], bb = b[j];
+                if (a >= 'A' && a <= 'Z') a = (char)(a + 32);
+                if (bb >= 'A' && bb <= 'Z') bb = (char)(bb + 32);
+                if (a != bb) break;
+            }
+            if (j == qn) {
+                center_on(CS.colonies[i].map_x, CS.colonies[i].map_y);
+                return;
+            }
+        }
+        ev_emit("NOCITY", 0, 0, b, 0);
+        return;
+    }
     if (UI.dlg == 7) {               /* COLONY (nameAndFound 2123): the
                                       * founding name; empty = suggested */
         char nm[24];
