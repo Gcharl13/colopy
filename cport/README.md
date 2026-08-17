@@ -50,9 +50,36 @@ landfall + the woodcut plates + the staying village screen + the
 row bound (ORDERS delegating to the key handlers, the @SAILPORT/
 @TRAVELPLACE Go To picker, DECLARE INDEPENDENCE, Retire, Exit to DOS,
 Save/Load through the shell SD pickers); the Hall of Fame written at
-retirement and persisted as HOF.DAT.  Open follow-ups, all
-presentation-side: the pedia/options browse screens, map zoom levels,
-trade-route dialogs (advanceTradeRoutes is a documented no-op), the
-drag layer, the Custom House ask-loop, and free-text naming for
-LANDS/colonies (founding uses the suggested names; the leader name
-has the touch keyboard).
+retirement and persisted as HOF.DAT.
+
+The Phase-9 follow-up list is now CLOSED except where noted.  Since
+shipped: the Colonizopedia browser and entry pages, the options
+dialogs, the village screen, woodcuts on the board, map zoom 0-3, the
+trade-route dialogs with a working advance_trade_routes, the Custom
+House, Find Colony, colony unit builds (Wagon Train / Artillery /
+ships), the entry modals with an on-screen numeric keypad and alpha
+keyboard (so @LANDHO, colony founding and renaming, and Europe/colony
+amounts are all free-text on the board), menu bars that track the
+finger with the selection highlighted under it, ending a turn with no
+active unit, and the Pick Music binding.
+
+Still open, and stated plainly:
+
+- **Drag and drop** is absent by design — every drag in the JS port has
+  a tap-driven equivalent on the board (menus, the plaza/field taps,
+  the Europe dock and market rows).
+- **Music cannot be played at all.**  The DOS game ships no music
+  files; the tunes are synthesised inside the `?SOUND.COL` driver
+  overlays.  **Sound effects DO play**: `COLDIG.BIN`'s sample index was
+  decoded from those drivers (`formats/BIN.md`), and the board plays
+  the cues whose call sites are byte-verified — the rest stay silent
+  rather than guessed.
+- **Bluetooth mouse** support exists but is opt-in and **untested
+  against hardware** (`COLOPY_BLE_MOUSE`); it needs a core with hosted
+  BT for the P4 and C6 firmware that exposes Bluetooth, neither of
+  which can be verified from this repo.
+- **Sidecar-only state.**  A colony's unit build target and the trade
+  routes ride in a companion `.CPX` file, not the `.SAV` — the DOS
+  format has no field for either and the `.SAV` is written byte-exact.
+- Cosmetic TBDs remain: the colony dither/speckle pass, a handful of
+  unresolved display strings, and no resource model on the map.

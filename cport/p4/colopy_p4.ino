@@ -1179,13 +1179,23 @@ static void service_request(void) {
     char r = (char)UI.request;
     UI.request = 0;
     if (sd_ready && r == 'S') {
-        static char names[10][16];
+        /* ten numbered slots, as the DOS game had.  SHELL CHROME: each
+         * row says whether the slot is already taken so a save cannot
+         * silently land on top of another game. */
+        static char names[10][16], rows[10][32];
         for (int i = 0; i < 10; i++) {
             snprintf(names[i], sizeof(names[i]), "COLONY0%d.SAV", i);
-            pick_rows[i] = names[i];
+            char path[64];
+            snprintf(path, sizeof(path), "/sdcard/%s", names[i]);
+            FILE *pf = fopen(path, "rb");
+            int used = pf != NULL;
+            if (pf) fclose(pf);
+            snprintf(rows[i], sizeof(rows[i]), "%s  %s", names[i],
+                     used ? "(in use)" : "(empty)");
+            pick_rows[i] = rows[i];
         }
         int k = shell_pick("SAVE GAME - pick a slot", 10);
-        if (k >= 0) cmd_save(pick_rows[k]);
+        if (k >= 0) cmd_save(names[k]);
     } else if (sd_ready && r == 'L') {
         static char names[10][32];
         int n = 0;
