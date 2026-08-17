@@ -38,13 +38,23 @@ load = file - 0x200):
     #2) bounds-checks `cmp bx,0x5D; ja` and jumps through a word table
     of handler addresses; each SFX handler is `mov ax,<index>` followed
     by a call into the play-by-index entry.  ASOUND's SFX jump table is
-    at file 0x1DB9 (ids 0x40..0x5D).  Six ids in that range are not
+    at file 0x1DB9 (ids 0x40..0x5D).  Five ids in that range are not
     sample players (they route elsewhere) and are omitted.
 
 Three independent self-checks run on every decode and are fatal:
   1. the 35 lengths sum to exactly len(COLDIG.BIN) = 993,755;
   2. offsets are fully contiguous — offset[i+1] == offset[i]+length[i];
   3. all four drivers carry a byte-identical table.
+
+It also inventories VICEROY.EXE's cue sites.  The game plays a sound by
+pushing an id in AX and calling the gate thunk `lcall 0x181F:0x4C0`
+(`9A C0 04 1F 18`), so every call site is findable, and the id is a
+literal `mov ax,imm16` (`B8 xx xx`) immediately before it at all but
+four sites.  Where the cue is part of a message emit the key string is
+pushed a few bytes later (`6A nn 68 <dgroup ptr>`), which names the
+event outright: the DGROUP->file delta is pinned by the raid block
+(push `0x1B94` == `"RAIDSTORES"` at file `0x1F534`) and cross-checks
+against the whole 6-key raid sequence.
 
 Outputs:
   data_extracted/coldig_index.json   committed decoded data
@@ -74,6 +84,11 @@ DRIVERS = {
 }
 LOAD_BIAS = 0x200          # image starts at file 0x200 in all four
 SFX_LO, SFX_HI = 0x40, 0x5D
+# VICEROY.EXE side: the gate thunk call, and the DGROUP -> file delta
+GATE_CALL = bytes([0x9A, 0xC0, 0x04, 0x1F, 0x18])   # lcall 0x181F:0x4C0
+DGROUP_DELTA = 0x1F534 - 0x1B94   # push 0x1B94 == "RAIDSTORES" @0x1F534
+# only a push this close to the call belongs to the same emit block
+KEY_WINDOW = 16
 RATE_FAST, RATE_SLOW, RATE_SPLIT = 19050, 11025, 5
 
 
@@ -98,6 +113,47 @@ def decode_sfx_map(data: bytes, jt: int):
     return out
 
 
+def scan_cue_sites(exe: bytes):
+    """Every `mov ax,id` + `lcall 0x181F:0x4C0` in VICEROY.EXE, with the
+    message key when the cue is part of an emit."""
+
+    def key_at(dg: int):
+        f = dg + DGROUP_DELTA
+        if not 0 <= f < len(exe):
+            return None
+        e = exe.find(b"\0", f, f + 40)
+        if e < 0 or e - f < 4:
+            return None
+        raw = exe[f:e]
+        ok = all(65 <= c <= 90 or 48 <= c <= 57 for c in raw)
+        return raw.decode("ascii") if ok else None
+
+    out = []
+    for i in range(len(exe) - len(GATE_CALL)):
+        if not exe.startswith(GATE_CALL, i):
+            continue
+        rec = {"call": "0x%05X" % i}
+        if exe[i - 3] == 0xB8:                     # mov ax,imm16
+            sid = struct.unpack_from("<H", exe, i - 2)[0]
+            rec["id"] = "0x%04X" % sid
+            rec["mov"] = "0x%05X" % (i - 3)
+            rec["kind"] = ("command" if sid < 0x10 else
+                           "tune" if 0x20 <= sid <= 0x3F else
+                           "sfx" if SFX_LO <= sid <= 0x5F else
+                           "fanfare" if sid >= 0x8000 else "?")
+        else:
+            rec["id"] = None                       # computed at runtime
+            rec["kind"] = "runtime"
+        for j in range(i + 5, i + 5 + KEY_WINDOW):
+            if exe[j] == 0x68:
+                k = key_at(struct.unpack_from("<H", exe, j + 1)[0])
+                if k:
+                    rec["key"] = k
+                    break
+        out.append(rec)
+    return out
+
+
 def wav(pcm: bytes, rate: int) -> bytes:
     """8-bit unsigned mono WAV — the bank's native sample format."""
     return (b"RIFF" + struct.pack("<I", 36 + len(pcm)) + b"WAVEfmt "
@@ -114,6 +170,7 @@ def main():
     if not COLONIZE.is_dir():
         sys.exit("raw/COLONIZE missing — run bin/reconstitute.py first")
     bank = (COLONIZE / "COLDIG.BIN").read_bytes()
+    cues = scan_cue_sites((COLONIZE / "VICEROY.EXE").read_bytes())
 
     tables, sfx_map = {}, {}
     for name, (toff, jt) in DRIVERS.items():
@@ -165,6 +222,13 @@ def main():
         "sfx_ids_not_samples": ["0x%02X" % i
                                 for i in range(SFX_LO, SFX_HI + 1)
                                 if i not in sfx_map],
+        "cue_sites": cues,
+        "cue_sites_note":
+            "VICEROY.EXE `mov ax,id` + `lcall 0x181F:0x4C0` sites. `key` is "
+            "present only when a message key is pushed inside "
+            f"{KEY_WINDOW} bytes of the call — that is the emit block, so "
+            "the attribution is the EXE's own, not an inference. Sites "
+            "with no key are real cues whose event is still TBD.",
     }
     out_json = ROOT / "data_extracted" / "coldig_index.json"
     out_json.write_text(json.dumps(doc, indent=2) + "\n")
@@ -241,7 +305,11 @@ int colopy_sfx_index(int id);
             (d / f"sfx_{i:02d}.wav").write_bytes(wav(bank[o:o + ln], r))
         print(f"wrote {n} WAVs to {d.relative_to(ROOT)}")
 
+    named = sum(1 for c in cues if "key" in c)
+    imm = sum(1 for c in cues if c["id"])
     print(f"COLDIG.BIN: {n} samples, {total} bytes, contiguous — checks pass")
+    print(f"VICEROY.EXE cue sites: {len(cues)} "
+          f"({imm} with a literal id, {named} naming their message key)")
     print(f"SFX ids 0x{SFX_LO:02X}..0x{SFX_HI:02X}: "
           f"{len(sfx_map)} play samples, "
           f"{SFX_HI - SFX_LO + 1 - len(sfx_map)} route elsewhere")

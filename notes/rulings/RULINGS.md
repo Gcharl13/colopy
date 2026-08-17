@@ -9899,3 +9899,59 @@ audio (0..4 are five same-length variants with monotonically falling RMS —
 plausibly a volume/distance ramp) but their trigger is TBD. Also noted: the
 manual's §24.5 line "SFX 0x40–0x5F" is the VICEROY-side gate (bit `0x40`); the
 driver's own table stops at **0x5D**.
+
+### 2026-08-17 addendum — the cue sites are enumerable, and the EXE names 12 of them
+
+Follow-up item (2) of the ruling above ("the rest of the cue map") is now
+partly closed, again from bytes only.
+
+VICEROY.EXE plays a sound by loading the id in AX and calling the gated-play
+thunk, `lcall 0x181F:0x4C0` = `9A C0 04 1F 18`. That byte string occurs
+**exactly 40 times**; at **36** of them the id is a literal `mov ax,imm16`
+(`B8 xx xx`) in the three bytes immediately before the call, so the whole cue
+inventory is readable without a decompiler. The four remaining sites
+(`@0x23564`, `@0x23DA0`, `@0x2D09E`, `@0x5D205`) compute the id at runtime —
+one of them is the Sound Test cheat, which plays whatever the player typed.
+
+Better, where a cue belongs to a message emit the key string is pushed inside
+the same block (`6A nn 68 <dgroup ptr>`), so **the EXE names the event
+itself**. The DGROUP→file delta is pinned by the raid block — the push
+`0x1B94` resolves to `"RAIDSTORES"` at file `0x1F534` — and the pin
+cross-checks against the whole 6-key raid sequence, whose push deltas
+(11, 9, 9, 9) match the string spacing exactly and whose three
+already-documented ids (`0x4F` stores, `0x4E` gold, `0x5B` wiped out) land on
+the right keys. That makes the delta a verified constant, not a fitted one.
+
+**12 sites name their event** (`tools/decode_coldig.py` emits the whole
+inventory to `data_extracted/coldig_index.json`):
+
+| id | kind | key | site |
+|---|---|---|---|
+| `0x54` | sfx | `REFIT` | `@0x2F1CD` |
+| `0x56` | sfx | `TEAPARTY` | `@0x346F6` |
+| `0x3F` | tune | `INTERVENE` | `@0x3D7B1` |
+| `0x8024` | fanfare | `HERESY0` | `@0x48EB7` |
+| `0x53` | sfx | `HERESY1` | `@0x48EE6` |
+| `0x55` | sfx | `CHIEFKILL` | `@0x4AB9E` |
+| `0x4F` | sfx | `RAIDSTORES` | `@0x5C3C2` |
+| `0x53` | sfx | `RAIDBURN` | `@0x5C501` |
+| `0x4B` | sfx | `RAIDSHIP` | `@0x5C569` |
+| `0x4D` | sfx | `RAIDSHIP` | `@0x5C571` |
+| `0x4E` | sfx | `RAIDGOLD` | `@0x5C5ED` |
+| `0x5B` | sfx | `RAIDNOTHING` | `@0x5C62D` |
+
+Note **`RAIDSHIP` fires a PAIR** — `0x4B` then `0x4D`, back to back at
+consecutive sites. The `0x3F` at `@0x3D7B1` corroborates the manual's
+"unnamed id 0x3F at the intervention-force arrival" and gives it its key.
+
+**Action taken**: `tools/decode_coldig.py` gained the site scan; the P4 board
+now plays all ten of the named *digital* cues (the tune and fanfare ids have
+no sample), keyed off the event key the port already emits, plus the two
+woodcut cues traced earlier. The other 24 sites stay silent.
+
+**Still open**: those 24 unattributed sites — `0x40 @0x5D314/@0x5D50C`,
+`0x4A @0x5D5C4/@0x5D5FD/@0x5D6BC`, `0x45 @0x5D83A`, `0x4D @0x5B775`,
+`0x57 @0x5BCCF`, `0x52 @0x3F5E0`, `0x5C @0x34129`, `0x58 @0x2B273/@0x3405A`,
+`0x54 @0x2C65D`, and the tune/fanfare sites. They emit no key within the
+block, so naming them needs the enclosing routine identified — not guessed
+here.

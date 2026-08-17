@@ -450,6 +450,22 @@ the bytes on every run.
   @0x6C3B0 and `"coldig.bin"` @0x6C3EE; the `"coldig.bin"` strings inside the
   drivers are unreferenced by driver code.
 
+**The cue inventory is enumerable.** `lcall 0x181F:0x4C0` (`9A C0 04 1F 18`)
+occurs exactly **40** times in VICEROY.EXE; **36** carry the id as a literal
+`mov ax,imm16` immediately before the call, and 4 compute it at runtime (one is
+the §24.5 Sound Test cheat). Where a cue belongs to a message emit the key
+string is pushed inside the same block, so the EXE names the event outright —
+the DGROUP→file delta is pinned by push `0x1B94` = `"RAIDSTORES"` @0x1F534 and
+cross-checks against the whole 6-key raid sequence. Twelve sites are named this
+way: **0x54 `REFIT`** @0x2F1CD, **0x56 `TEAPARTY`** @0x346F6, **0x3F (tune)
+`INTERVENE`** @0x3D7B1 (this names §24.1's "unmapped" 0x3F), **0x8024 (fanfare)
+`HERESY0`** @0x48EB7, **0x53 `HERESY1`** @0x48EE6, **0x55 `CHIEFKILL`**
+@0x4AB9E, **0x4F `RAIDSTORES`** @0x5C3C2, **0x53 `RAIDBURN`** @0x5C501,
+**0x4B then 0x4D `RAIDSHIP`** @0x5C569/@0x5C571 — the ship branch fires a
+**pair** — **0x4E `RAIDGOLD`** @0x5C5ED, **0x5B `RAIDNOTHING`** @0x5C62D. The
+other 24 sites emit no key in the block; naming them needs the enclosing
+routine identified and is TBD.
+
 Still TBD: the samples have no names anywhere in the drivers (labelling them
 needs a listen-and-label pass), most VICEROY.EXE cue sites beyond §24.4 are
 untraced, and indices 0..4, 15, 23, 24, 25 and 26 are never referenced by the

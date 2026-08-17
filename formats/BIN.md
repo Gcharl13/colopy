@@ -99,13 +99,34 @@ speaks of `0x40–0x5F`) while the driver's own table stops at `0x5D`.
 
 ---
 
+## Cue sites in VICEROY.EXE
+
+The game plays a sound with `mov ax,<id>` + `lcall 0x181F:0x4C0`
+(`9A C0 04 1F 18`). That call occurs **exactly 40 times**; **36** carry a
+literal id in the three bytes before it, and **4** compute it at runtime (one
+is the Sound Test cheat). Where the cue belongs to a message emit the key
+string is pushed inside the same block, so the EXE names the event — the
+DGROUP→file delta is pinned by push `0x1B94` == `"RAIDSTORES"` @`0x1F534`.
+
+Twelve sites name their event: `0x54` `REFIT` @`0x2F1CD`, `0x56` `TEAPARTY`
+@`0x346F6`, `0x3F` (tune) `INTERVENE` @`0x3D7B1`, `0x8024` (fanfare)
+`HERESY0` @`0x48EB7`, `0x53` `HERESY1` @`0x48EE6`, `0x55` `CHIEFKILL`
+@`0x4AB9E`, `0x4F` `RAIDSTORES` @`0x5C3C2`, `0x53` `RAIDBURN` @`0x5C501`,
+**`0x4B` then `0x4D`** `RAIDSHIP` @`0x5C569`/@`0x5C571` (a pair), `0x4E`
+`RAIDGOLD` @`0x5C5ED`, `0x5B` `RAIDNOTHING` @`0x5C62D`.
+
+`tools/decode_coldig.py` writes the whole 40-site inventory to
+`data_extracted/coldig_index.json` under `cue_sites`.
+
+---
+
 ## Still open
 
 - **Names.** No name strings for the samples exist in the drivers; labelling
   them needs a DOSBox listen-and-label pass. TBD.
-- **The rest of the cue map.** Only some VICEROY.EXE `0x181F:0x4C0` call sites
-  have been traced (manual §24.4) — the rest of the id→event wiring is TBD and
-  is NOT guessed.
+- **The rest of the cue map.** All 40 call sites are enumerated above, but only
+  12 name their event; the other 28 emit no key in the block, so naming them
+  needs the enclosing routine identified. TBD, and NOT guessed.
 - **Indices 0..4, 15, 23, 24, 25, 26** are never referenced by the SFX
   dispatcher. They contain real audio (0..4 are five same-length clips with
   monotonically falling RMS — plausibly a volume/distance ramp) but their

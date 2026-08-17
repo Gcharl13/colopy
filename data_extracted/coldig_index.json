@@ -257,5 +257,256 @@
     "0x59",
     "0x5A",
     "0x5D"
-  ]
+  ],
+  "cue_sites": [
+    {
+      "call": "0x220FC",
+      "id": "0x0058",
+      "mov": "0x220F9",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x23564",
+      "id": null,
+      "kind": "runtime"
+    },
+    {
+      "call": "0x23DA0",
+      "id": null,
+      "kind": "runtime"
+    },
+    {
+      "call": "0x28CF8",
+      "id": "0x8024",
+      "mov": "0x28CF5",
+      "kind": "fanfare"
+    },
+    {
+      "call": "0x2B276",
+      "id": "0x0058",
+      "mov": "0x2B273",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x2C660",
+      "id": "0x0054",
+      "mov": "0x2C65D",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x2D09E",
+      "id": null,
+      "kind": "runtime"
+    },
+    {
+      "call": "0x2F1D0",
+      "id": "0x0054",
+      "mov": "0x2F1CD",
+      "kind": "sfx",
+      "key": "REFIT"
+    },
+    {
+      "call": "0x3405D",
+      "id": "0x0058",
+      "mov": "0x3405A",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x3412C",
+      "id": "0x005C",
+      "mov": "0x34129",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x34188",
+      "id": "0x8024",
+      "mov": "0x34185",
+      "kind": "fanfare"
+    },
+    {
+      "call": "0x34575",
+      "id": "0x003E",
+      "mov": "0x34572",
+      "kind": "tune"
+    },
+    {
+      "call": "0x3464C",
+      "id": "0x003E",
+      "mov": "0x34649",
+      "kind": "tune"
+    },
+    {
+      "call": "0x346F9",
+      "id": "0x0056",
+      "mov": "0x346F6",
+      "kind": "sfx",
+      "key": "TEAPARTY"
+    },
+    {
+      "call": "0x3AD6D",
+      "id": "0x0021",
+      "mov": "0x3AD6A",
+      "kind": "tune"
+    },
+    {
+      "call": "0x3D7B4",
+      "id": "0x003F",
+      "mov": "0x3D7B1",
+      "kind": "tune",
+      "key": "INTERVENE"
+    },
+    {
+      "call": "0x3F5E3",
+      "id": "0x0052",
+      "mov": "0x3F5E0",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x40DF9",
+      "id": "0x0054",
+      "mov": "0x40DF6",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x48C44",
+      "id": "0x8024",
+      "mov": "0x48C41",
+      "kind": "fanfare"
+    },
+    {
+      "call": "0x48EBA",
+      "id": "0x8024",
+      "mov": "0x48EB7",
+      "kind": "fanfare",
+      "key": "HERESY0"
+    },
+    {
+      "call": "0x48EE9",
+      "id": "0x0053",
+      "mov": "0x48EE6",
+      "kind": "sfx",
+      "key": "HERESY1"
+    },
+    {
+      "call": "0x4ABA1",
+      "id": "0x0055",
+      "mov": "0x4AB9E",
+      "kind": "sfx",
+      "key": "CHIEFKILL"
+    },
+    {
+      "call": "0x58043",
+      "id": "0x8020",
+      "mov": "0x58040",
+      "kind": "fanfare"
+    },
+    {
+      "call": "0x5B778",
+      "id": "0x004D",
+      "mov": "0x5B775",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5BCD2",
+      "id": "0x0057",
+      "mov": "0x5BCCF",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5C3C5",
+      "id": "0x004F",
+      "mov": "0x5C3C2",
+      "kind": "sfx",
+      "key": "RAIDSTORES"
+    },
+    {
+      "call": "0x5C504",
+      "id": "0x0053",
+      "mov": "0x5C501",
+      "kind": "sfx",
+      "key": "RAIDBURN"
+    },
+    {
+      "call": "0x5C56C",
+      "id": "0x004B",
+      "mov": "0x5C569",
+      "kind": "sfx",
+      "key": "RAIDSHIP"
+    },
+    {
+      "call": "0x5C574",
+      "id": "0x004D",
+      "mov": "0x5C571",
+      "kind": "sfx",
+      "key": "RAIDSHIP"
+    },
+    {
+      "call": "0x5C5F0",
+      "id": "0x004E",
+      "mov": "0x5C5ED",
+      "kind": "sfx",
+      "key": "RAIDGOLD"
+    },
+    {
+      "call": "0x5C630",
+      "id": "0x005B",
+      "mov": "0x5C62D",
+      "kind": "sfx",
+      "key": "RAIDNOTHING"
+    },
+    {
+      "call": "0x5D205",
+      "id": null,
+      "kind": "runtime"
+    },
+    {
+      "call": "0x5D317",
+      "id": "0x0040",
+      "mov": "0x5D314",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5D50F",
+      "id": "0x0040",
+      "mov": "0x5D50C",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5D5C7",
+      "id": "0x004A",
+      "mov": "0x5D5C4",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5D600",
+      "id": "0x004A",
+      "mov": "0x5D5FD",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5D6BF",
+      "id": "0x004A",
+      "mov": "0x5D6BC",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5D83D",
+      "id": "0x0045",
+      "mov": "0x5D83A",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x5DFBA",
+      "id": "0x0053",
+      "mov": "0x5DFB7",
+      "kind": "sfx"
+    },
+    {
+      "call": "0x756E7",
+      "id": "0x0039",
+      "mov": "0x756E4",
+      "kind": "tune"
+    }
+  ],
+  "cue_sites_note": "VICEROY.EXE `mov ax,id` + `lcall 0x181F:0x4C0` sites. `key` is present only when a message key is pushed inside 16 bytes of the call \u2014 that is the emit block, so the attribution is the EXE's own, not an inference. Sites with no key are real cues whose event is still TBD."
 }

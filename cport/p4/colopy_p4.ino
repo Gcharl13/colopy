@@ -634,33 +634,58 @@ static void dlg_subs(rm_subs *subs) {
 }
 
 /* ---- the byte-verified sound cues -----------------------------------
- * VICEROY.EXE calls the driver's gated play (0x181F:0x4C0) with an id;
- * ids 0x40..0x5D are digital effects out of COLDIG.BIN.  These are the
- * cue sites this project has byte-verified (spec/systems/natives.md,
- * spec/ui/woodcuts_and_intro.md, docs/manual_src/part5.md 24.4):
+ * VICEROY.EXE plays a sound by `mov ax,<id>` + `lcall 0x181F:0x4C0`
+ * (the gated play thunk).  Every one of those 40 call sites is
+ * inventoried by tools/decode_coldig.py into
+ * data_extracted/coldig_index.json; where the cue belongs to a message
+ * emit, the key string is pushed within the same block, so the EXE
+ * names the event itself.  The table below is exactly those named
+ * sites whose id is a digital effect (0x40..0x5D) — no inference:
  *
- *   sfx 0x4F  raid loots the stores   @0x05C3CC   (@RAIDSTORES)
- *   sfx 0x4E  raid seizes gold        (@RAIDGOLD)
- *   sfx 0x5B  raiders wiped out       @0x05C637   (@RAIDNOTHING)
- *   sfx 0x54  first colony founded    @0x040E00   (woodcut 2)
- *   sfx 0x53  colony burning          @0x05DFCB   (woodcut 11)
+ *   0x54 REFIT       @0x2F1CD   0x56 TEAPARTY    @0x346F6
+ *   0x53 HERESY1     @0x48EE6   0x55 CHIEFKILL   @0x4AB9E
+ *   0x4F RAIDSTORES  @0x5C3C2   0x53 RAIDBURN    @0x5C501
+ *   0x4B RAIDSHIP    @0x5C569   0x4D RAIDSHIP    @0x5C571 (a PAIR:
+ *        the ship branch fires both, in that order)
+ *   0x4E RAIDGOLD    @0x5C5ED   0x5B RAIDNOTHING @0x5C62D
  *
- * Everything else is UNMAPPED and stays silent — the remaining cue
- * sites have not been traced, and no id is guessed here (CLAUDE.md).
+ * Plus two cues this project traced earlier, cited to their own sites
+ * rather than to a pushed key: sfx 0x54 when the first colony is built
+ * (@0x040DF6, woodcut 2) and sfx 0x53 when a colony burns (@0x05DFB7,
+ * woodcut 11 — the same site also pushes INDIANBURNCOLONY).
+ *
+ * The other 24 call sites are real cues whose event is still TBD (four
+ * of them compute the id at runtime).  They stay SILENT: nothing here
+ * guesses an id or an event (CLAUDE.md prime directive).
+ *
  * A cue is queued rather than played inline so the frame reaches the
  * panel first; sfx_play() blocks for the length of the sample. */
-static const struct { const char *key; uint8_t id; } EVENT_SFX[] = {
-    { "RAIDSTORES", 0x4F }, { "RAIDGOLD", 0x4E }, { "RAIDNOTHING", 0x5B },
+static const struct { const char *key; uint8_t id; uint8_t id2; }
+EVENT_SFX[] = {
+    { "REFIT",            0x54, 0 },
+    { "TEAPARTY",         0x56, 0 },
+    { "HERESY1",          0x53, 0 },
+    { "CHIEFKILL",        0x55, 0 },
+    { "RAIDSTORES",       0x4F, 0 },
+    { "RAIDBURN",         0x53, 0 },
+    { "RAIDSHIP",         0x4B, 0x4D },
+    { "RAIDGOLD",         0x4E, 0 },
+    { "RAIDNOTHING",      0x5B, 0 },
+    { "INDIANBURNCOLONY", 0x53, 0 },
 };
 static const struct { uint8_t woodcut; uint8_t id; } WOODCUT_SFX[] = {
     { 2, 0x54 }, { 11, 0x53 },
 };
-static int sfx_pending = -1;
+static int sfx_pending = -1, sfx_pending2 = -1;
 static int sfx_last_woodcut = -1;
 
-static int event_sfx(const char *key) {
+static int event_sfx(const char *key, int *second) {
+    *second = -1;
     for (unsigned i = 0; i < sizeof(EVENT_SFX) / sizeof(EVENT_SFX[0]); i++)
-        if (strcmp(key, EVENT_SFX[i].key) == 0) return EVENT_SFX[i].id;
+        if (strcmp(key, EVENT_SFX[i].key) == 0) {
+            if (EVENT_SFX[i].id2) *second = EVENT_SFX[i].id2;
+            return EVENT_SFX[i].id;
+        }
     return -1;
 }
 
@@ -771,7 +796,7 @@ static void draw_screen(void) {
     }
     if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
-        sfx_pending = event_sfx(pending_ev.key);
+        sfx_pending = event_sfx(pending_ev.key, &sfx_pending2);
     }
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
@@ -801,8 +826,12 @@ static void draw_screen(void) {
     if (bt_mode) bt_ui_draw();
     if (UI.screen != SCR_WOODCUT) sfx_last_woodcut = -1;
     flush_fb();
-    if (sfx_pending >= 0) { int id = sfx_pending; sfx_pending = -1;
-                            sfx_play(id); }
+    if (sfx_pending >= 0) {
+        int id = sfx_pending, id2 = sfx_pending2;
+        sfx_pending = sfx_pending2 = -1;
+        sfx_play(id);
+        if (id2 >= 0) sfx_play(id2);     /* RAIDSHIP fires a pair */
+    }
 }
 
 /* ---- the player-answer layer (colopy_ask_hook) -------------------- */
