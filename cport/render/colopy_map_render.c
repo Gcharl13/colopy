@@ -799,13 +799,30 @@ static int orders_rows(int sel, rm_mrow *out) {
 #define PUSH(l, d) out[n++] = (rm_mrow){ (l), orders_accel(l), (d) ? 1 : 0, 0 }
 #define SEP() out[n++] = (rm_mrow){ 0, 0, 0, 1 }
     if (sel < 0 || sel >= CR.n_units_order) {
-        /* no unit: every master row, dimmed (game.js:1782) */
+        /* no unit: every master row, dimmed (game.js:1782) — EXCEPT, on a
+         * LIVE front end, "Wait for next unit".
+         *
+         * Once next_unit learned to skip a unit under a standing order
+         * (2026-08-17), "nothing is active" became an ordinary state:
+         * fortify or sentry everything and the cycle offers nobody.  The
+         * JS reaches advance() only through a selected unit, so with all
+         * 20 rows dim the pulldown opened DEAD and the turn could not be
+         * ended from it at all — the board's long-press was the only exit,
+         * and an undiscoverable one (user report 2026-08-17).
+         *
+         * "Wait for next unit" is a SHIPPED @ORDERS row (no End-of-Turn
+         * row exists in the DOS menu, so none is invented here); with
+         * nobody to wait for, run_menu_row rolls the turn instead.
+         * front_live gates it, like the Space affordance in colopy_input.c,
+         * so the harness and the JS are untouched and stay in parity. */
         for (int mi = 0; mi < DAT_MENUS_COUNT; mi++) {
             if (strcmp(dat_menus[mi].title, "ORDERS") != 0) continue;
             for (int k = 0; k < dat_menus[mi].row_count; k++) {
                 const dat_menu_rows_t *r =
                     &dat_menu_rows[dat_menus[mi].row_start + k];
-                out[n++] = (rm_mrow){ r->label, r->accel, 1, 0 };
+                int dim = !(colopy_front_live && r->label &&
+                            strcmp(r->label, "Wait for next unit") == 0);
+                out[n++] = (rm_mrow){ r->label, r->accel, (int8_t)dim, 0 };
             }
         }
         return n;

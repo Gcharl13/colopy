@@ -291,7 +291,9 @@ static void run_menu_row(void) {
     if (strcmp(l, "Activate unit") == 0) {
         if (ui >= 0) cmd_activate(ui);
     } else if (strcmp(l, "Wait for next unit") == 0) {
-        next_unit();
+        /* nobody left to wait for = end the turn.  The only ORDERS route
+         * out of an all-ordered board (see the row builder's note). */
+        if (!next_unit() && colopy_front_live) advance();
     } else if (strcmp(l, "Fortify") == 0) {
         if (ui >= 0) { cmd_set_order(ui, 5); advance(); }
     } else if (strcmp(l, "Sentry") == 0) {
