@@ -12,6 +12,7 @@
  *   entryType (4595) with PROFESSION_UNIT (645), bandFor (4282),
  *   importer Europe seeding (10477: off-map ships dock, reverse order).
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -411,6 +412,9 @@ PURCHASE[6] = {
     { "Merchantman", 2000, 0 }, { "Galleon", 3000, 0 },
     { "Privateer", 2000, 0 },  { "Frigate", 5000, 0 },
 };
+const char *euro_purchase_unit(int row) {
+    return row >= 0 && row < 6 ? PURCHASE[row].unit : "";
+}
 int32_t euro_purchase_price(int row) {
     if (row < 0 || row >= 6) return 0;
     return PURCHASE[row].price +
@@ -466,6 +470,23 @@ static int arm_target(int verb, int type_row) {
 }
 /* dockUnitRows' 'arm' subset (game.js:4633): the applicable verbs for
  * the entry's current type, in table order.  Returns the count. */
+/* the sorted-row expert name (the TRAIN list order) */
+const char *euro_train_expert(int sorted_row) {
+    if (sorted_row < 0 || sorted_row >= DAT_JOBTRAIN_COUNT) return "";
+    int order[DAT_JOBTRAIN_COUNT];
+    euro_train_order(order);
+    return dat_jobtrain[order[sorted_row]].expert;
+}
+/* an @ARMOPTIONS row label for the board menus: the target type plus
+ * the goods leg (FLAGGED stand-in — the engine's row text is unread) */
+void euro_arm_verb_label(int verb, const immigrant *e, char *out, int cap) {
+    int t = entry_unit_type(e);
+    int to = t >= 0 ? arm_target(verb, t) : -1;
+    snprintf(out, (size_t)cap, "%s (%s %d %s)",
+             to >= 0 ? dat_units[to].name : "?",
+             ARM[verb].buy ? "buy" : "sell",
+             ARM[verb].qty, dat_cargo[ARM[verb].good].name);
+}
 int euro_arm_rows(int k, uint8_t *verbs_out) {
     if (k < 0 || k >= CR.n_dock_units) return 0;
     int t = entry_unit_type(&CR.dock_units[k]);

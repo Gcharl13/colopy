@@ -88,6 +88,10 @@ void ui_init(void);
  * the create mode's running stop summary (may be empty). */
 int  ui_trade_rows(char out[][64], int cap);
 void ui_trade_sofar(char *out, int cap);
+/* the Europe sub-menu row model (euroMenuRows, game.js:4662) + the
+ * GAME.TXT caption its box quotes — for the shells' painter */
+int  ui_euro_menu_rows(char out[][64], int cap);
+const char *ui_euro_menu_caption(void);
 void in_key(const char *key, int alt, int shift);
 void in_click(int mx, int my, int right);
 

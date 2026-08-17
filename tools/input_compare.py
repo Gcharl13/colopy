@@ -257,6 +257,15 @@ def map_script():
     C(240, 145)                     # reopen
     K("Escape")                     # close
     C(100, 190)                     # market bar: select + sell mirror
+    # the recruit/purchase/train buttons (281, 89+11k, 37, 9) open the
+    # euro menus; a far-outside click closes them (both geometries)
+    C(285, 92)                      # RECRUIT button
+    K("Escape")
+    C(285, 103)                     # PURCHASE button
+    C(20, 20)                       # outside the box: closes it
+    C(285, 114)                     # TRAIN button
+    K("ArrowDown")
+    K("Escape")
     C(310, 185)                     # exit box -> map
     return ev
 

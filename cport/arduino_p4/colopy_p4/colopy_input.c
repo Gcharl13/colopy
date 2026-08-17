@@ -16,6 +16,7 @@
 #include "colopy_core.h"
 #include "colopy_sim.h"
 #include "colopy_data.h"
+#include "colopy_text.h"
 #include "colopy_ui.h"
 #include "colopy_render.h"
 #include "colopy_input.h"
@@ -632,6 +633,108 @@ static void euro_context_commit(void) {
     }
     default:
         break;                           /* close */
+    }
+}
+
+/* euroMenuRows (game.js:4662) as board-facing labels — shared with the
+ * shells' euro-menu painter and the pointer layer's row hit-test.  The
+ * exact engine row text is unread; prices ride the labels where the JS
+ * shows them (TRAIN "(Cost: N)"; RECRUIT hides its per-row price). */
+int ui_euro_menu_rows(char out[][64], int cap) {
+    int n = 0;
+    switch (UI.euro_menu) {
+    case 1:                              /* recruit: (None) + 3 dock */
+        snprintf(out[n++], 64, "(None)");
+        for (int i = 0; i < 3 && n < cap; i++)
+            snprintf(out[n++], 64, "%s", immigrant_name(&CR.dock[i]));
+        break;
+    case 2:                              /* the purchase catalog */
+        for (int r = 0; r < 6 && n < cap; r++)
+            snprintf(out[n++], 64, "%s (Cost: %ld)", euro_purchase_unit(r),
+                     (long)euro_purchase_price(r));
+        break;
+    case 3:                              /* train, sorted by cost */
+        snprintf(out[n++], 64, "%s", dat_text_misc[3]);      /* None */
+        for (int r = 0; r < DAT_JOBTRAIN_COUNT && n < cap; r++)
+            snprintf(out[n++], 64, "%s (Cost: %ld)", euro_train_expert(r),
+                     (long)euro_train_cost(r));
+        break;
+    case 4:                              /* euroShipRows (4651) */
+        snprintf(out[n++], 64, "Move to front.");
+        snprintf(out[n++], 64, "Set sail for the New World.");
+        snprintf(out[n++], 64, "Unload all cargo.");
+        snprintf(out[n++], 64, "No changes.");
+        break;
+    case 5: {                            /* dockUnitRows (4622) */
+        int acts[16], verbs[16];
+        int m = dock_menu_rows(UI.euro_dock_sel, acts, verbs);
+        const immigrant *e = UI.euro_dock_sel >= 0 &&
+                             UI.euro_dock_sel < CR.n_dock_units
+                                 ? &CR.dock_units[UI.euro_dock_sel] : 0;
+        for (int r = 0; r < m && n < cap; r++) {
+            switch (acts[r]) {
+            case 0:
+                snprintf(out[n++], 64, "%s",
+                         e && e->no_board ? "Board next ship."
+                                          : "Don't get on next ship.");
+                break;
+            case 1:
+                snprintf(out[n++], 64, "Move to front of dock.");
+                break;
+            case 2:
+                if (e) euro_arm_verb_label(verbs[r], e, out[n++], 64);
+                break;
+            case 3:
+                snprintf(out[n++], 64, "Bless as Missionaries.");
+                break;
+            case 4:
+                snprintf(out[n++], 64, "Return to colonist status.");
+                break;
+            default:
+                snprintf(out[n++], 64, "No changes.");
+                break;
+            }
+        }
+        break;
+    }
+    }
+    return n;
+}
+
+/* the caption section each menu quotes (EURO_MENU_KEY, game.js:4684 +
+ * the euroMenuBox caption picks) */
+const char *ui_euro_menu_caption(void) {
+    switch (UI.euro_menu) {
+    case 1: return "RECRUIT";
+    case 2: return "PURCHASE";
+    case 3: return "KINGRECRUIT";
+    case 4: return "EUROPESHIPCLICK";
+    case 5: return "EUROPEARM";
+    }
+    return 0;
+}
+
+/* euroMenuCommit (game.js:4919) — shared by the Enter key and a row
+ * click (the JS runs the same function from both) */
+static void euro_menu_commit_row(void) {
+    int row = UI.euro_menu_row;
+    if (UI.euro_menu >= 4) {
+        euro_context_commit();
+        return;
+    }
+    if ((UI.euro_menu == 1 || UI.euro_menu == 3) && row == 0) {
+        UI.euro_menu = 0;                /* the "(None)" head */
+        return;
+    }
+    int32_t gold = CS.powers[cs_nation()].gold;
+    int32_t cost = UI.euro_menu == 1 ? euro_recruit_cost(row - 1)
+                 : UI.euro_menu == 2 ? euro_purchase_price(row)
+                                     : euro_train_cost(row - 1);
+    if (cost <= gold) {                  /* fail = euroMsg only */
+        if (UI.euro_menu == 1) euro_recruit(row - 1);
+        else if (UI.euro_menu == 2) euro_purchase(row);
+        else euro_train(row - 1);
+        UI.euro_menu = 0;
     }
 }
 
@@ -1655,26 +1758,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 UI.euro_menu_row = (int8_t)((UI.euro_menu_row + n - 1) % n);
             if (key_is(k, "ArrowDown"))
                 UI.euro_menu_row = (int8_t)((UI.euro_menu_row + 1) % n);
-            if (key_is(k, "Enter") || key_is(k, " ")) {
-                int row = UI.euro_menu_row;
-                if (UI.euro_menu >= 4) {
-                    euro_context_commit();
-                } else if ((UI.euro_menu == 1 || UI.euro_menu == 3) && row == 0) {
-                    UI.euro_menu = 0;            /* the "(None)" head */
-                } else {
-                    int32_t gold = CS.powers[cs_nation()].gold;
-                    int32_t cost =
-                        UI.euro_menu == 1 ? euro_recruit_cost(row - 1)
-                      : UI.euro_menu == 2 ? euro_purchase_price(row)
-                                          : euro_train_cost(row - 1);
-                    if (cost <= gold) {          /* fail = euroMsg only */
-                        if (UI.euro_menu == 1) euro_recruit(row - 1);
-                        else if (UI.euro_menu == 2) euro_purchase(row);
-                        else euro_train(row - 1);
-                        UI.euro_menu = 0;
-                    }
-                }
-            }
+            if (key_is(k, "Enter") || key_is(k, " ")) euro_menu_commit_row();
             if (key_is(k, "Escape")) UI.euro_menu = 0;
             break;
         }
@@ -1700,6 +1784,15 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 }
                 if (port >= 0)
                     euro_buy_to_ship(port, UI.market_sel, qty);
+            }
+        }
+        if (key_is(k, "s") || key_is(k, "S")) {
+            /* confirmSailAway (game.js:4904): @SAILAWAY openDialog —
+             * inert under the harness; live: choice 0 sets sail */
+            int sport = euro_port_of(UI.euro_ship);
+            if (sport >= 0 && colopy_front_live) {
+                ev_emit("SAILAWAY", 0, 0, 0, 0);
+                if (ask_choice() == 0) euro_sail_new_world(sport);
             }
         }
         if (key_is(k, "r") || key_is(k, "R") || key_is(k, "1")) {
@@ -1872,12 +1965,40 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     }
     case SCR_EUROPE: {
+        /* an open euro menu owns the pointer (onClick europe,
+         * game.js:12519): a row click commits, anything else closes.
+         * The row geometry here is the C dialog framework's, not the
+         * JS euroMenuBox — FLAGGED divergence, scripts click only
+         * far-outside points. */
+        if (UI.euro_menu) {
+            char erows[24][64];
+            const char *erp[24];
+            int en = ui_euro_menu_rows(erows, 24);
+            for (int i = 0; i < en; i++) erp[i] = erows[i];
+            rm_subs subs;
+            memset(&subs, 0, sizeof(subs));
+            int r = rm_dialog_rows_hit(ui_euro_menu_caption(), &subs, 0,
+                                       mx, my, erp, en);
+            if (r >= 0) {
+                UI.euro_menu_row = (int8_t)r;
+                euro_menu_commit_row();
+            } else
+                UI.euro_menu = 0;
+            return;
+        }
         if (hit(mx, my, 305, 179, 15, 21)) {
             UI.screen = SCR_MAP;
             return;
         }
-        /* the recruit/purchase/train buttons open the euro sub-menus —
-         * a later slice; the script does not click (281, 89+11k) */
+        /* the recruit/purchase/train buttons (game.js:12538): the
+         * @EUROLABEL boxes at (281, 89+11k, 37, 9) open the menus */
+        for (int k = 0; k < 3; k++)
+            if (hit(mx, my, 281, 89 + 11 * k, 37, 9)) {
+                UI.euro_row = (int8_t)k;
+                UI.euro_menu = (int8_t)(k + 1);
+                UI.euro_menu_row = 0;
+                return;
+            }
         int nport = 0;
         for (int q = 0; q < CR.n_europe; q++)
             if (CR.europe[q].state == 0) nport++;

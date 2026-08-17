@@ -264,6 +264,8 @@ int32_t euro_hold_qty(int ei, int good); /* holdQty over a port ship */
 void king_petition(void);             /* petitionLowerTaxes (game.js:8898) */
 void euro_arm_dock(int k, int verb_row); /* euroContextCommit 'arm' */
 int  euro_arm_rows(int k, uint8_t *verbs_out); /* dockUnitRows arm subset */
+const char *euro_purchase_unit(int row);       /* PURCHASE[row].unit */
+const char *euro_train_expert(int sorted_row); /* the TRAIN list order */
 /* entry_unit_type / hold_add are declared below the immigrant and
  * hold_slot typedefs. */
 
@@ -320,6 +322,7 @@ typedef struct {
 } euro_crossing;
 
 int  entry_unit_type(const immigrant *e);      /* entryType (game.js:4595) */
+void euro_arm_verb_label(int verb, const immigrant *e, char *out, int cap);
 void hold_add(hold_slot *hold, uint8_t *n, int good, int qty); /* holdAdd */
 
 /* A rival power's colony (JS r.colonies member): a runtime OBJECT, not a

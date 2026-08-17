@@ -403,6 +403,20 @@ static void draw_screen(void) {
     case SCR_EUROPE:
         rm_draw_europe(UI.euro_ship, UI.euro_dock_sel, UI.euro_row,
                        UI.market_sel);
+        /* an open recruit/purchase/train/ship/dock menu: the dialog
+         * framework over the shared row model (the economic adviser
+         * fronts the two menus that quote his GAME.TXT captions) */
+        if (UI.euro_menu) {
+            static char er[24][64];
+            static const char *erp[24];
+            int en = ui_euro_menu_rows(er, 24);
+            for (int i = 0; i < en; i++) erp[i] = er[i];
+            rm_subs subs;
+            memset(&subs, 0, sizeof(subs));
+            rm_draw_dialog_rows(ui_euro_menu_caption(), &subs,
+                                UI.euro_menu <= 2 ? "MSS2" : 0,
+                                UI.euro_menu_row, erp, en);
+        }
         break;
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);

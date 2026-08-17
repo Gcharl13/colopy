@@ -45,16 +45,23 @@ static const dat_events_entry_t *event_by_key(const char *key) {
     for (int i = 0; i < DAT_EVENTS_INDEX_COUNT; i++)
         if (strcmp(dat_events_index[i].key, key) == 0)
             return &dat_events_index[i];
+    /* GAME.TXT entries with entry/choice directives generate into their
+     * own dat_dialogs_index (@LANDFALL, @SAILHOME, @RENAMECOLONY, the
+     * @HOWMUCH family, ...).  The two entry types are field-identical,
+     * so the framework serves both through one lookup — without this
+     * every ask on a dialogs key was INVISIBLE on the board and
+     * silently answered 0 (user report 2026-08-17: no landfall). */
+    for (int i = 0; i < DAT_DIALOGS_INDEX_COUNT; i++)
+        if (strcmp(dat_dialogs_index[i].key, key) == 0)
+            return (const dat_events_entry_t *)&dat_dialogs_index[i];
     return 0;
 }
 
 /* the option-row count of an event key (its GAME.TXT tail lines) —
  * exported for the live front end's ask picker */
 int rm_event_rows(const char *key) {
-    for (int i = 0; i < DAT_EVENTS_INDEX_COUNT; i++)
-        if (strcmp(dat_events_index[i].key, key) == 0)
-            return (int)dat_events_index[i].n_tail;
-    return 0;
+    const dat_events_entry_t *e = event_by_key(key);
+    return e ? (int)e->n_tail : 0;
 }
 
 /* fillTemplate (game.js:6257) */

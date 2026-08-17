@@ -871,9 +871,21 @@ void cmd_move(int ui, int dx, int dy) {
     /* a rumour square triggers the exploration event; one outcome
      * destroys the unit before it ever arrives (game.js:11162) */
     if (rumour_at(nx, ny) && !enter_rumour(ui, nx, ny)) return;
-    /* the right-edge sea lane asks @SAILHOME via openDialog — stubbed
-     * inert headless, and the ship does NOT step (game.js:11153) */
-    if (ship && tile_terrain(v) == TERR_SEALANE) return;
+    /* the right-edge sea lane asks @SAILHOME via openDialog — inert
+     * under the harness, and the ship does NOT step (game.js:11153).
+     * A live front puts the ask to the player: WoI closes the crossing
+     * (@EUROPENOTLEAVE, 11156); choice 0 sails for Europe (11157). */
+    if (ship && tile_terrain(v) == TERR_SEALANE) {
+        if (colopy_front_live) {
+            if ((CR.woi_flags & WOI_DECLARED) && !(CR.woi_flags & WOI_WON)) {
+                ev_emit("EUROPENOTLEAVE", 0, 0, 0, 0);
+                return;
+            }
+            ev_emit("SAILHOME", 0, 0, 0, 0);
+            if (ask_choice() == 0) cmd_sail_for_europe(ui);
+        }
+        return;
+    }
     /* step (game.js:10833): one step is always affordable; the budget
      * floors at zero.  tutorial/centring are presentation; the fog
      * reveal (10839) is state — the plane rides in the .SAV. */
