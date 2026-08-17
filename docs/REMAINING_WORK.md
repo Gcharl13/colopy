@@ -18,15 +18,32 @@
 ## The headline
 
 The recent cadence has been user-reported bug fixes, which makes the build feel
-close. It is not. `docs/MESSAGE_STATUS.md` reports **0 missing / 0 unwired**
-message keys, and that reads as "the game is text-complete" — but the message
-text being wired is not the same as the *mechanic behind it* existing. The popup
-audit still carries **14 HIGH and 74 MEDIUM** rows where the mechanic is absent.
+close. It is closer than the first draft of this ledger said, and still not done.
 
-Concretely, none of these work today: colonists starving, food-shortage warnings,
-population growth from surplus food, natives burning a colony, the per-unit
-orders menu, the per-ship orders menu, the Docks prerequisite for fishing,
-boycott relief, and rival AI colonies growing or building anything at all.
+**Correction, 2026-08-17.** This section originally announced that "none of these
+work today: colonists starving, food-shortage warnings, population growth from
+surplus food, natives burning a colony, the Docks prerequisite for fishing,
+boycott relief…", on the authority of `docs/POPUP_AUDIT_2026-08-08.md`'s 14 HIGH
+and 74 MEDIUM open rows. That was wrong. The audit is a point-in-time snapshot,
+sweeps landed after it, and its rows were never updated.
+`tools/popup_census.py` — written to settle it — checks each audited row against
+both engines as they stand:
+
+> **196 key mentions across the 149 still-open audit rows: 177 wired in both
+> engines, 6 in one engine only, 13 absent from both.**
+
+Every item in that sentence except the two orders menus emits in both engines
+today. What is genuinely missing is listed in B.1, and it is four context menus,
+a handful of sub-keys, and the engine gaps in B.3 — of which **rival AI colony
+development** (no growth, no construction, no unit production) is far the
+largest.
+
+The deeper point stands, though: a key emitting is not the mechanic being right.
+`docs/MESSAGE_STATUS.md`'s **0 missing / 0 unwired** reads as "text-complete" and
+is not evidence about behaviour, and neither is the census. Both only bound the
+problem from one side. The audit's per-row verdicts on *trigger* and
+*substitution* for those 177 wired keys are simply **unverified** — that is Part C
+work, and it is why Part C is the biggest part of this document.
 
 **Totals.** `tools/churn_metric.py` counts **581 open TBDs** repo-wide (docs +
 code). Engine-side, the two ports carry **138 flagged sites + 23 TBD + 60
@@ -53,31 +70,60 @@ the remainder are documentation TBDs belonging to Part H's out-of-scope tracks.
 
 ## Part B — Missing features: the game is incomplete without these
 
-### B.1 The 14 HIGH popup rows (mechanic absent, not just text)
+### B.1 The HIGH popup rows — **re-censused 2026-08-17, and much smaller than it looked**
 
-Source: `docs/POPUP_AUDIT_2026-08-08.md`, rows not marked RESOLVED.
+The first version of this section copied `docs/POPUP_AUDIT_2026-08-08.md`'s open
+rows verbatim. That audit is a point-in-time snapshot; sweeps landed after it and
+its rows were never updated, so this part read as a to-do list that badly overstated
+what is missing. `tools/popup_census.py` now checks each audited row against the two
+engines as they stand:
+
+> **196 key mentions across the 149 still-open audit rows: 177 wired in both
+> engines, 6 in one engine only, 13 absent from both.**
+
+Emission is not correctness — a WIRED key still has to be judged on its
+substitutions and trigger — but a row the audit calls MISSING whose key both
+engines emit is a row to **re-audit before implementing anything**. Run
+`python3 tools/popup_census.py --absent` for the current list; it is the honest
+starting point, not the table below.
+
+**What is genuinely absent from both engines** (the real B.1 work):
 
 | Key | What is missing |
 |---|---|
-| `@INDIANBURNCOLONY` / `2` | Natives burning a colony is entirely absent |
-| `@FOODLOW` | Low-food warning never fires |
-| `@FOOD1` | Depletion warning never posted |
-| `@STARVE1` | Popup, winter band and the multi-colonist removal loop all absent |
-| `@WAREHOUSEFULL` | Capacity rule at unload (the confirm gate landed 2026-08-17; the rule did not) |
-| `@NEEDTOOLS` | Construction stalls with zero feedback |
+| `@UNITOPTIONS` | The colony land-unit orders menu: Move to front / Clear orders / Sentry-Board ship / Fortify / No changes |
+| `@SHIPOPTIONS` | The colony-harbour ship menu: Move to front / Clear orders / Sentry / Anchor in harbor / Unload all cargo / No changes |
+| `@EUROPESHIPOPTIONS` | The Europe ship menu: Move to front / Set sail for the New World / Unload all cargo / No changes (`@EUROPESHIPCLICK`, its caption, is C-only) |
+| `@ARMOPTIONS` | The 12-row Europe dock-unit menu: board/don't-board, move to front, buy-or-sell Muskets/Tools/Horses at the live price, bless or cancel Missionary |
+| `@KINGRECRUIT` | C-only; the JS never emits it |
+| `@TOONEARBUILD`, `@RECRUIT2`, `@CLASS`, `@FRIEND` | sub-keys of rows whose main mechanic is wired |
+| `@MISSION0` / `@MISSION3` | wired keys, but the 0..3 band selection runs on invented cutoffs, so the outer two are never chosen |
+
+Everything else the old table listed here — `@FOODLOW`, `@FOOD1`, `@STARVE1`,
+`@WAREHOUSEFULL`, `@NEEDTOOLS`, `@NEWCOLONIST`, `@REBELUP50`, `@TRAINPROFESSION`,
+`@NODOCKS`, `@INDIANBURNCOLONY`, `@KISSUP`/`@SOMEBOYCOTT` — **emits in both engines
+today**. Spot-checked while censusing: `@TRAINPROFESSION`'s slots are NOT transposed
+(both engines pass `STRING0` = colony, `STRING1` = profession, matching the
+template); `@NODOCKS` gates both water-tile assignment paths; `@NEEDTOOLS`/
+`@NEEDTOOLS0` fire with the byte-derived `tools_x10 * 10` requirement. The
+`@NEWCOLONIST` row is corrected below. The remaining audit verdicts on these keys
+(trigger cadence, exact substitutions) are **unverified either way** and belong in
+Part C, not here.
+
+
+**Two more that the census cannot see**, because their key is wired but the
+mechanic behind it is not:
+
+| Key | What is missing |
+|---|---|
 | `@NEWCOLONIST` | Fires as a popup and the population cap (32, `@0x009432`) is enforced by `colonist_add`; the **200-food threshold is still tier R (manual), not byte-located** — flagged in both engines. The "25/50 evidence mis-attributed to horses" claim was itself wrong and is **withdrawn 2026-08-17**: that pair belongs to horse breeding, byte-proved (RULINGS 2026-08-17). The real per-turn food-growth store is unlocated. |
-| `@REBELUP50` | Announcement and the rebel-power-designation state write both absent |
-| `@TRAINPROFESSION` | STRING0/STRING1 transposed in every graduation popup; option gating absent |
-| `@NODOCKS` | Docks prerequisite and refusal popup both absent |
-| `@UNITOPTIONS` | The entire per-unit orders menu and its five actions |
-| `@SHIPOPTIONS` | The colony/harbour ship orders menu and all six row actions |
-| `@KINGRECRUIT` (TRAIN) | Chooser drops the byte-verified body/smallfont; key misappropriated for the mercenary event (real key `@MERCENARIES`) |
-| `@KISSUP` / `@SOMEBOYCOTT` | Boycott back-tax lift absent, so **boycotts are permanent** unless Fugger appears |
-| REF growth cadence | `func_03E162`: accrual timing opposite the bytes; tax->REF-fund loop unwired; ratio ladder approximated |
+| REF growth cadence | `func_03E162`: accrual timing opposite the bytes; tax->REF-fund loop unwired; ratio ladder approximated. `@KINGBUY`/`@KINGMOBILIZE` both emit, so the census reads this row as wired. |
 
 ### B.2 The 74 MEDIUM popup rows, by family
 
 Full row detail in `docs/POPUP_AUDIT_2026-08-08.md`; grouped here so nothing is lost.
+
+**Same caveat as B.1, and it bites harder here:** the census finds all but a handful of these keys emitting in both engines today. The families below are the audit's 2026-08-08 reading, kept for its per-row detail — treat every entry as *needs re-auditing*, not *needs building*. `python3 tools/popup_census.py --sev MEDIUM --absent` lists the ones that really are not there: `@EUROPESHIPOPTIONS`, `@ARMOPTIONS`, and the `@CLASS`/`@FRIEND` sub-keys.
 
 - **Colony per-turn (23, all MISSING):** `@FOOD2 @STARVE2 @VANISH @SPOIL1 @SPOIL2 @CARGOREADY0 @LUMBER @COTTON @TOBACCO @CANESUGAR @FURS @ORE @TOOLS @NEEDTOOLS0 @SONSUP @SONSDOWN @REBELUP @REBELDOWN @TRAINCRIMINAL @TRAININDENTURED @NOTEACHER @NEEDCOLLEGE @NEEDUNIVERSITY`
 - **Colony partial (9):** `@BUILT` (status string not popup), `@REBELMAJORITY` (empty %/nation slots), `@REBELUNANIMOUS` (missing sub + education-speed effect), `@TORYMINORITY` `@TORYMAJORITY` (incomplete substitutions), `@TORYUPRISING` (cadence/target/spawn diverge), `@TRAINFAIL`, `@UPKEEP` (trigger unread), COLONYOPTIONS report gating (settings persisted, zero consumers)
