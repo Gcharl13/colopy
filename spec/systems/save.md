@@ -209,6 +209,26 @@ asserts the 1653 game's figures field by field.
   not "three steps pre-shown"), **`g+0x5A..0x60` = `[0x53DA/DC/DE/E0]`** REF
   Regulars/Cavalry/Man-O-War/Artillery, **`g+0x8A` = `[0x540A]`** the woodcut shown-bitmask.
   The port's importer restores all three verbatim (2026-08-07).
+
+  **Three more globals fields identified 2026-08-17** by transcribing the
+  new-game initialiser `func_0755CC` (`viceroy_source/src/boot/page1A_boot_newgame.c`),
+  which writes the whole block from scratch and so names each field by how it is
+  seeded:
+
+  | Field | Seeded at new game | Reading |
+  |---|---|---|
+  | **`g+0x29..0x41`** (25 bytes) | `memset(0x53A9, 0xFF, 0x19)` `@0x757CB` | **Founding-Father owner array** — one byte per father, `0xFF` = unelected. 25 == `DAT_FATHERS_COUNT`, and the fixtures settle it: `savstart` is 25x`0xFF`, while `sav1653` and `savraleigh` carry a mix of `00/01/02/03` (the owning power) and `0xFF`. |
+  | **`g+0x6A..0x89`** (16 words) | `random_int(600, 1000)` per entry `@0x7564B` | **the market's per-good price pool.** `0x53EA` has only three references in the binary — this seed, a read `@0x305B8` and a subtract `@0x30639`, both inside the market module. Per pass `func_0305A8` computes `total = pool[i] + Σ_p clamp0(PowerRecord[p]+0xFC+4i)` and does `pool[i] -= total >> 7`, i.e. the pool decays toward −Σ at 1/128 per pass; a second phase `@0x3070D` maps it onto `price_level` (+0x4C) for goods 0..12. See the 2026-08-17b ruling. |
+  | **`g+0x27` / `g+0x28`** | `0` `@0x757D3` / `random_int(1, 8)` `@0x757E4` | the king-anger pair already documented in `spec/systems/scoring.md` — this adds their **initial conditions**. Anger starts at 0; its companion counter starts at a random 1..8 (fixtures: 5, 3, 8), which reads more like a scheduled countdown than a plain tally. Does not overturn the existing phase-multiplexed reading. |
+
+  The same function independently confirms the block base and four known
+  offsets: `[0x5386]` -> `g+0x06` (written `0x0E` `@0x755EB`), `[0x53DA/DC/DE/E0]`
+  -> `g+0x5A..0x60` (the REF counts), `[0x540A]` -> `g+0x8A` (cleared with a
+  4-byte `memset` `@0x75688`). It also pins the start of play — year **1492**
+  (`0x5D4` `@0x757E7`), turn 0 — and the REF sizing from difficulty *d*:
+  **Regulars 8d+15, Cavalry 5(d+1), Artillery 6d+2, Man-O-War 3d+2**
+  (`@0x7569B..0x756D0`), which match `cport/core/colopy_newgame.c` exactly —
+  an independent confirmation of numbers the port reached through the JS.
 - Any compression on the save: **RESOLVED — none.** The loader `func_073BB0` is a 1:1
   mirror of the writer: it makes exactly **43× raw `fread`** (`0xD1D:0x528`), one per DGROUP
   block, with no decompression/transform pass (the only other stream calls are a single

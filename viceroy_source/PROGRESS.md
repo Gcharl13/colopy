@@ -198,3 +198,33 @@ loading still require multiple sessions. The infrastructure built this
 session (RNG byte-verified, message API decoded for the load-image part,
 12 system anchors identified) makes the per-system work much faster than
 before — but it's still 1-2 sessions per major formula.
+
+## 2026-08-17 — page 0x1A: func_0755CC transcribed (new-game state init)
+
+`src/boot/page1A_boot_newgame.c` gains the full `func_0755CC` body (file
+0x755CC..0x759C7, 1020 B), the initialiser the @BEGINMENU dispatcher calls once
+a start row is chosen.  Every write is `@asm`-cited.
+
+What it settled, fed up into the spec layer as ROLE.md asks:
+
+- The globals block base is **DGROUP 0x5380** — confirmed by four writes that
+  land on fields the port already restores (`g+0x06`, `g+0x5A..0x60`, `g+0x8A`).
+- **`g+0x29..0x41` = the 25-byte Founding-Father owner array** (0xFF = unelected),
+  seeded by `memset(0x53A9, 0xFF, 0x19)` @0x757CB and confirmed against three
+  fixtures.
+- **`g+0x6A..0x89` = the market's per-good price pool**, seeded
+  `random_int(600, 1000)` @0x7564B.  Following its only two other references led
+  to the drift pass `func_0305A8` and to naming PowerRecord `+0xFC` — see
+  RULINGS 2026-08-17b.
+- `g+0x27`/`g+0x28` initial conditions (0 and `random_int(1,8)`).
+- REF sizing from difficulty *d*: Regulars 8d+15, Cavalry 5(d+1), Artillery
+  6d+2, Man-O-War 3d+2 — matching `cport/core/colopy_newgame.c` exactly, which
+  reached them through the JS port.  An independent confirmation, not a new claim.
+- Start of play year **1492** (0x5D4 @0x757E7), turn 0; generated maps get the
+  built-in **58 x 72** dimensions @0x75702.
+
+Honest TBDs left in the body: the render/alloc thunks (0x1A1F:0xC80/0xC8E/
+0x976/0x7EA/0x7F8/0x87C, 0x191F:0xB6C/0xAAC, 0x1A1F:0xA5C, 0x181F:0x4E8/0x4F2),
+the world builder `0x1A1F:0x83E`, and the two `0x181F:0xBA` calls whose
+arguments read as Arctic (terrain 0x18) fill of the top and bottom map rows —
+flagged in the source as a reading, since the callee body is undecoded.

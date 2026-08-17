@@ -9955,3 +9955,84 @@ woodcut cues traced earlier. The other 24 sites stay silent.
 `0x54 @0x2C65D`, and the tune/fanfare sites. They emit no key within the
 block, so naming them needs the enclosing routine identified — not guessed
 here.
+
+## 2026-08-17b — The market's price pool is globals g+0x6A, driven by PowerRecord +0xFC
+
+**Conflict**: `cport/core/colopy_market.c` carries an explicit FLAG — "the traffic
+ACCUMULATOR lives in runtime state zeroed at load, mirroring the JS port (whose
+importer never reads the record's +0x5C traffic words). Reconciling the engine's
+own accumulator into the save flow is a later pass — FLAGGED, not silently
+decided." The port knew it was not reading the engine's own running value, and
+had it looking in the wrong place — PowerRecord **`+0x5C`**.
+
+**Source A** — the port's note: the accumulator is (or might be) the
+PowerRecord `+0x5C` traffic words, unread by the importer.
+
+**Source B** — the bytes. Transcribing the new-game initialiser `func_0755CC`
+this session turned up a 16-iteration loop at `@0x75645..0x75663` seeding
+`word [bx + 0x53EA]`, `bx = i*2` — **globals `g+0x6A..0x89`, sixteen words, one
+per cargo**, each `random_int(600, 1000)`. `0x53EA` has exactly **three**
+references in the whole binary (capstone scan over `raw/COLONIZE/VICEROY.EXE`):
+the seed above, a read `@0x305B8`, and a subtract `@0x30639` — both inside the
+market module (the price ask/bid/recompute band already documented at
+`func_030566`/`func_030590`/`@0x306F3`). So the field is not merely located,
+its whole write set is known.
+
+**The mechanism, byte-exact** (`func_0305A8`, `enter 0x66,0`), per pass, for
+each good `i` in 0..15:
+
+```
+total = (int32)pool[i]                          ; @0x305B8 cdq, sign-extended
+for p in 0..3:                                  ; @0x305CE..0x305FD
+    v = *(int32*)(PowerRecord[p] + 0xFC + 4*i)  ; @0x305D8  bx = p*0x13C + i*4
+    if (v < 0) v = 0                            ; @0x305E0 or dx,dx / jg / jge
+    total += v
+pool[i] -= total >> 7                           ; @0x30612 seven sar/rcr pairs,
+                                                ;  arithmetic; @0x30639 sub
+```
+
+`pool -= (pool + S) >> 7` is a first-order lag: **the pool decays toward −S at
+1/128 per pass**, where S is the world's clamped per-good trade total. A second
+phase `@0x3070D` then maps the pool onto `price_level` (PowerRecord `+0x4C`,
+byte, read `@0x3076D` through the live power pointer `[0x84FC]`) — that phase
+covers goods **0..12 only** (`cmp [bp-0x5E],0xC; jg` `@0x3070D`), and its exact
+price formula is a separate pass, **[TBD]**.
+
+**This also names a previously-unmapped field.** `cport/core/colopy_records.h`
+carried `uint8_t _pad_FC[0x13C - 0xFC]` — 64 bytes of PowerRecord tail with no
+identification. It is **16 × int32, the per-power per-good trade total** the
+loop above reads, and it fills the record exactly to its 0x13C stride.
+
+**Ruling**: Source B, on arithmetic rather than interpretation. The fixtures
+close it:
+
+| | `savstart` | `sav1653` (Dutch) | `savraleigh` |
+|---|---|---|---|
+| `+0xFC` good 1 | 0 | 1031 | 176 |
+| `g+0x6A` good 1 | 621 | **−1037** | 378 |
+| `+0xFC` good 4 | 0 | 2835 | 0 |
+| `g+0x6A` good 4 | 761 | **−2871** | 430 |
+
+A fresh game has all sixteen pools inside the `[600, 1000]` seed window and no
+trade; a long game has the heavily-traded goods sitting at almost exactly minus
+their trade total, which is where `pool → −S` converges; and a lightly-traded
+game sits in between, its pools drifting down under the *rivals'* trade even
+though the player's own totals are near zero. Nothing but this mechanism
+produces that pattern.
+
+**Action taken**: recorded in `spec/systems/save.md` §3 (alongside two further
+fields the same initialiser names — the 25-byte Founding-Father owner array at
+`g+0x29` and the initial conditions of the king-anger pair `g+0x27`/`g+0x28`);
+`_pad_FC` renamed to `trade_total[16]` in `cport/core/colopy_records.h`, a pure
+naming change that leaves the struct size and every `.SAV` byte identical.
+
+**No port behaviour was changed.** The C port's market is oracle-locked to the
+JS port, whose accumulator starts at zero and lives per-session; adopting the
+engine's pool would break `sim_compare turns` on all three fixtures. The
+`.SAV` roundtrip already preserves these bytes verbatim, so nothing is lost
+while the change waits.
+
+**Follow-up**: decode phase 2's price formula `@0x3070D..0x3078E` (the
+`0xD1D:0xEC6` 32-bit divide by `3 * [bp-0xA]`, and why goods 13..15 are
+excluded), then port pool + `trade_total` into the JS first and the C second,
+so both oracles move together.

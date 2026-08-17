@@ -130,7 +130,14 @@ typedef struct COLOPY_PACKED {
     uint16_t traffic[16];           /* +0x5C  per-good traffic accumulator */
     int32_t  trade_gold[16];        /* +0x7C  F5 net trade value */
     int32_t  trade_tons[16];        /* +0xBC  F5 net trade units */
-    uint8_t  _pad_FC[0x13C - 0xFC];
+    /* +0xFC  per-good running trade total, 16 x int32.  IDENTIFIED
+     * 2026-08-17 (RULINGS 2026-08-17b): the market drift pass
+     * func_0305A8 reads these four records at bx = p*0x13C + i*4
+     * (@0x305D8), clamps negatives to 0, and decays the global price
+     * pool at globals g+0x6A toward minus their sum.  Preserved
+     * verbatim by the roundtrip; the port's own market does not read
+     * it yet (it is oracle-locked to the JS, which starts at zero). */
+    int32_t  trade_total[16];       /* +0xFC */
 } PowerRecord;
 
 /* AIPersonality — stride 0x34; only +0x31 controller is mapped (0 = human). */
