@@ -701,8 +701,9 @@ const G = {
   market: [],             // per-good bid price
   euroRow: 0,             // recruit-menu row
   colonyView: 0,          // right-panel mode: production / units / build
-  colonyPopup: null,      // 'build' | 'jobs'
+  colonyPopup: null,      // 'build' | 'jobs' | 'occupation' | 'unitopts'
   colonyPopupRow: 0,
+  colonyPopupUnit: -1,    // @UNITOPTIONS: which G.units entry the menu is for
   colonistSel: 0,
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
   crosses: 0,             // immigration accumulator
@@ -4039,18 +4040,22 @@ const SOL_FLAG = 123, SOL_CROWN = 124, SOL_CROWN_RIGHT = 117;
 // lands on the sprite it looks like it landed on.
 function plazaRow(c) {
   const people = c.colonists.map(p => colonistFigure(p));
-  const garrison = G.units.filter(u => u.x === c.x && u.y === c.y).map(u => u.icon);
-  const icons = people.concat(garrison);
+  // Which G.units entry each garrison figure IS, not just its icon: clicking
+  // one opens @UNITOPTIONS, so the row has to be able to name the unit.
+  const garrisonIdx = G.units.map((u, i) => [u, i])
+    .filter(([u]) => u.x === c.x && u.y === c.y).map(([, i]) => i);
+  const icons = people.concat(garrisonIdx.map(i => G.units[i].icon));
   if (!icons.length) return [];
   const totalW = icons.reduce((a, i) => a + frameSize('ICONS', i)[0], 0);
-  const extra = garrison.length ? PLAZA_GARRISON_GAP : 0;
+  const extra = garrisonIdx.length ? PLAZA_GARRISON_GAP : 0;
   let gap = 2;
   while (gap * (icons.length - 1) + extra + totalW >= PLAZA_ROW_BUDGET) gap -= 1;
   const out = [];
   let x = PLAZA_ROW_X;
   icons.forEach((icon, i) => {
     const [w, h] = frameSize('ICONS', icon);
-    out.push({ icon, x, w, h, colonist: i < people.length ? i : -1 });
+    out.push({ icon, x, w, h, colonist: i < people.length ? i : -1,
+               unit: i < people.length ? -1 : garrisonIdx[i - people.length] });
     x += Math.max(1, w + gap);
     if (i === people.length - 1) x += PLAZA_GARRISON_GAP;
   });
@@ -4179,6 +4184,15 @@ function colonyPopupRows() {
     const p = c.colonists[G.colonistSel];
     return p && p.cell ? occupationRows(c, p) : [];
   }
+  // @UNITOPTIONS / @SHIPOPTIONS -- the two colony context menus, read verbatim
+  // from GAME.TXT (spec/ui/context_dialogs.md §4, `directives={}` bare lists).
+  // @UNITOPTIONS: "Move to front. / Clear orders. / Sentry / Board ship. /
+  // Fortify. / No changes."  Every row's effect is an @ORDERS value the sim
+  // already has (BYTE_VERIFIED: 0 No Orders, 1 Sentry, 5 Fortify), so nothing
+  // here invents a mechanic -- the menu is a second way to reach them.
+  if (G.colonyPopup === 'unitopts')
+    return ((DATA.events.UNITOPTIONS || { body: [] }).body)
+      .map(l => ({ label: l, note: '' }));
   // Jobs: the colony's buildings are the workplaces, plus a way back to the
   // plaza. Working a FIELD is done by clicking a cell in the scene panel.
   // Only buildings that actually employ a colonist are offered, and each one
@@ -4223,8 +4237,14 @@ function drawColonyPopup(ctx) {
   // census3_build_picker: the title is the bare @CTITLE 4 string (no
   // hammers/tools tally) in the base green, like every framework body line.
   const who = c.colonists[G.colonistSel];
+  // @UNITOPTIONS has no caption section of its own (bare list, `directives={}`),
+  // so the port titles it with the unit it is acting on -- the same shape the
+  // Europe dock menu uses for its own unit. FLAGGED: the engine's caption for
+  // this menu, if any, is unread.
+  const uu = G.colonyPopup === 'unitopts' ? G.units[G.colonyPopupUnit] : null;
   const title = G.colonyPopup === 'build'
     ? (DATA.text.ctitle || [])[4] || 'Select An Item To Build'
+    : G.colonyPopup === 'unitopts' ? (uu ? uu.type : '')
     : `${(DATA.text.ctitle || [])[8] || 'Select a Profession for'} ${who ? (who.profession || who.type) : ''}`;
   mf.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFE));
   const seed = b.y + 6 + dText(small) + 3;
@@ -4255,9 +4275,38 @@ function openBuildPicker() {
   const k = rows.findIndex(r => r.stop ? !c.building : r.name === c.building);
   G.colonyPopupRow = Math.max(0, k);
 }
+// The garrison-unit menu's five rows (@UNITOPTIONS). "Move to front" reorders
+// the unit cycle exactly the way the Europe dock's own front row reorders
+// G.dockUnits -- splice out, unshift, select. The three order rows write
+// @ORDERS values (BYTE_VERIFIED: 0 No Orders / 1 Sentry / 5 Fortify).
+// "Sentry / Board ship" is ONE row in the section: the engine folds boarding
+// into sentry, and a unit in a colony with a ship in port boards it by being
+// dragged, which the port already does -- so this row sets Sentry and the
+// board leg is left to the drag. FLAGGED: whether the engine's row boards
+// when a ship is present is unread.
+function unitOptionsCommit(k) {
+  const u = G.units[G.colonyPopupUnit];
+  if (!u) return;
+  switch (k) {
+    case 0:
+      G.units.splice(G.colonyPopupUnit, 1);
+      G.units.unshift(u);
+      G.sel = 0;
+      return;
+    case 1: u.orders = 0; return;
+    case 2: u.orders = 1; return;
+    case 3: u.orders = 5; return;
+    default: return;                       // "No changes."
+  }
+}
 function colonyPopupCommit() {
   const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
   if (!r) { G.colonyPopup = null; return; }
+  if (G.colonyPopup === 'unitopts') {
+    unitOptionsCommit(G.colonyPopupRow);
+    G.colonyPopup = null;
+    return;
+  }
   if (G.colonyPopup === 'build') {
     // The construction panel itself shows the new target; the engine raises no
     // message here.
@@ -11866,6 +11915,19 @@ function colonyCellAt(mx, my) {
 }
 // Which plaza-row colonist is under the cursor, or -1. Same solved pack the
 // painter uses, so the sprites are hit-tested where they actually sit.
+// The garrison half of the plaza row: which G.units index is under the cursor,
+// or -1. Members are `colonist >= 0` and keep the drag-arm; units are the
+// figures past the byte-verified 4px break (func_0270D0 counts colony+0x1F
+// members then [0x8D72] units on the tile) and open @UNITOPTIONS instead.
+function plazaUnitAt(c, mx, my) {
+  for (const e of plazaRow(c)) {
+    if (e.unit < 0) continue;
+    if (mx < e.x || mx >= e.x + e.w) continue;
+    if (my < PLAZA_ROW_Y || my >= PLAZA_ROW_Y + e.h) continue;
+    return e.unit;
+  }
+  return -1;
+}
 function plazaColonistAt(c, mx, my) {
   for (const e of plazaRow(c)) {
     if (e.colonist < 0) continue;
@@ -11982,6 +12044,9 @@ function colonyPointerDown(mx, my, shift) {
   // let onPointerMove/frame promote it once the deadline passes -- a quick
   // press and release stays a click, which is what selects him.
   if (region === 0) {
+    // A GARRISON figure is a unit, not a member: it arms no drag. The
+    // @UNITOPTIONS menu opens on the CLICK path, not this pointer-down one.
+    if (plazaUnitAt(c, mx, my) >= 0) return;
     const i = plazaColonistAt(c, mx, my);
     if (i >= 0) G.dragArm = { at: G.wallClock, kind: 'unit', colonist: i, from: 'plaza' };
     return;
@@ -12496,6 +12561,16 @@ function onClick(mx, my) {
       }
       // Plaza: click a colonist to select, click again for the jobs menu.
       if (c && hit(mx, my, { x: 0, y: 130, w: 120, h: 48 })) {
+        // A GARRISON figure -- one of the entries past the byte-verified 4px
+        // break (func_0270D0 counts colony+0x1F members, then [0x8D72] units
+        // on the tile) -- is a unit, and opens @UNITOPTIONS.
+        const gu = plazaUnitAt(c, mx, my);
+        if (gu >= 0) {
+          G.colonyPopup = 'unitopts';
+          G.colonyPopupUnit = gu;
+          G.colonyPopupRow = 0;
+          return;
+        }
         // The row is the solved pack, so hit-test the sprites themselves. The
         // garrison entries are units, not colonists, and have no jobs menu.
         for (const e of plazaRow(c)) {

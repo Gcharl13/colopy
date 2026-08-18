@@ -1200,6 +1200,20 @@ int ui_colony_popup_model(char labels[][40], char notes[][40],
         }
         return n2;
     }
+    if (UI.colony_popup == 4) {              /* @UNITOPTIONS, 5 bare rows */
+        const UnitRecord *gu = UI.colony_popup_unit >= 0 &&
+                               UI.colony_popup_unit < CR.n_units_order
+            ? &CS.units[CR.units_order[UI.colony_popup_unit]] : 0;
+        snprintf(title, (size_t)tcap, "%s",
+                 gu ? dat_units[gu->type].name : "");
+        int n4 = 0;
+        for (int i = 0; i < 5 && n4 < cap; i++) {
+            snprintf(labels[n4], 40, "%s", dat_events_unitoptions_body[i]);
+            notes[n4][0] = 0;
+            n4++;
+        }
+        return n4;
+    }
     int n = UI.colony_popup == 2 ? build_rows(cci, names)
                                  : jobs_rows(cci, names);
     if (n > cap) n = cap;
@@ -1593,6 +1607,28 @@ void pick_music(void) {
     if (MUSIC_SUBMENU[sub].skip_after && row > MUSIC_SUBMENU[sub].skip_after)
         row++;
     CR.tune = (uint8_t)(row + MUSIC_SUBMENU[sub].bias);
+}
+
+/* @UNITOPTIONS rows (unitOptionsCommit, game.js): 0 move to front,
+ * 1 clear orders, 2 sentry/board, 3 fortify, 4 no changes.  The three
+ * order rows write BYTE_VERIFIED @ORDERS values; "move to front"
+ * reorders CR.units_order the way the JS reorders G.units. */
+static void unit_options_commit(void) {
+    int q = UI.colony_popup_unit;
+    if (q < 0 || q >= CR.n_units_order) { UI.colony_popup = 0; return; }
+    int ui = CR.units_order[q];
+    switch (UI.colony_popup_row) {
+    case 0:
+        for (int i = q; i > 0; i--) CR.units_order[i] = CR.units_order[i - 1];
+        CR.units_order[0] = (int16_t)ui;
+        UI.sel = 0;
+        break;
+    case 1: CS.units[ui].orders = 0; break;
+    case 2: CS.units[ui].orders = 1; break;
+    case 3: CS.units[ui].orders = 5; break;
+    default: break;                              /* "No changes." */
+    }
+    UI.colony_popup = 0;
 }
 
 /* customHouseMenu (game.js:3196): the per-good export toggle loop.
@@ -2042,6 +2078,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
             if (cci >= 0)
                 n = UI.colony_popup == 2 ? build_rows(cci, names)
                   : UI.colony_popup == 3 ? 10      /* 9 jobs + the fence */
+                  : UI.colony_popup == 4 ? 5       /* @UNITOPTIONS */
                                          : jobs_rows(cci, names);
             if (key_is(k, "ArrowUp"))
                 UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
@@ -2050,6 +2087,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
             if (key_is(k, "Enter") || key_is(k, " ")) {
                 if (UI.colony_popup == 2) build_picker_commit();
                 else if (UI.colony_popup == 3) occupation_commit();
+                else if (UI.colony_popup == 4) unit_options_commit();
                 else jobs_popup_commit();
             }
             if (key_is(k, "Escape")) UI.colony_popup = 0;
@@ -2407,6 +2445,7 @@ static void in_click_inner(int mx, int my, int right) {
                 UI.colony_popup_row = (int8_t)r;
                 if (UI.colony_popup == 2) build_picker_commit();
                 else if (UI.colony_popup == 3) occupation_commit();
+                else if (UI.colony_popup == 4) unit_options_commit();
                 else jobs_popup_commit();
                 return;
             }
@@ -2453,6 +2492,15 @@ static void in_click_inner(int mx, int my, int right) {
         /* the plaza row (0,130,120,48): select, re-click = the jobs
          * menu.  Garrison units carry no menu (game.js:12193) */
         if (c && hit(mx, my, 0, 130, 120, 48)) {
+            /* a GARRISON figure -- past the 4-px break -- is a unit, and
+             * opens @UNITOPTIONS (game.js plazaUnitAt) */
+            int gq = rm_plaza_unit_hit(cci, mx, my);
+            if (gq >= 0) {
+                UI.colony_popup = 4;
+                UI.colony_popup_unit = (int8_t)gq;
+                UI.colony_popup_row = 0;
+                return;
+            }
             int k = rm_plaza_hit(cci, mx, my);
             if (k >= 0) {
                 if (UI.colonist_sel == k) {

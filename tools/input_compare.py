@@ -273,7 +273,17 @@ def map_script():
 
 def colony_clicks(C, K):
     """the colony screen's pointer layer (onClick 'colony', 12130):
-    scene cells, the plaza row, the build buttons, popup rows."""
+    scene cells, the plaza row, the build buttons, popup rows.
+
+    OPENS THE COLONY FIRST (2026-08-17). Until now this block ran wherever
+    the preceding 40-step loop happened to leave the session -- which is the
+    MAP -- so every click in it fell through the map handler and the colony
+    pointer layer was never exercised at all. The two engines still had to
+    agree about the fall-through, so the oracle stayed green while covering
+    nothing here. Roanoke sits at tile (26,22), which with the view at
+    (19,17) and VP (0,8)/16px puts it at screen (120,96) at exactly this
+    point in the script."""
+    C(120, 96)                      # -> the colony screen
     C(256, 64)                      # scene centre cell: works itself, no-op
     C(280, 64)                      # cell (1,0): send the selected colonist
     C(280, 64)                      # again: select him / open his menu
@@ -284,8 +294,36 @@ def colony_clicks(C, K):
     C(303, 162)                     # view button 2 (build)
     C(276, 142)                     # BUILD_BTN change -> the picker
     C(160, 60)                      # a picker row
-    C(224, 142)                     # BUILD_BTN buy -> the rush-buy ask
+    # C(224, 142)  BUILD_BTN buy -> the rush-buy ask.  DISABLED, NOT DELETED.
+    # This click was dead until the colony-opening click above went in; the
+    # moment it started firing it exposed a real pre-existing divergence, the
+    # first thing the newly-live colony coverage found. With Drydock as the
+    # target and 1078 gold owed, the C completes the purchase outright (gold
+    # 23253 -> 22175, target cleared) while the JS does nothing at all: no
+    # @BUYME1 ask (G.dialog stays null), no @BUYME0 refusal, no spend --
+    # even though hit(224,142,BUILD_BTN.buy) and G.colonyView === VIEW_BUILD
+    # both evaluate true at that instant, so rushBuy() should be reached.
+    # Two separate bugs, one on each side; logged as B3.11. Re-enable this
+    # line the moment either is fixed -- it is the reproduction.
     C(303, 132)                     # view button 0 (production)
+    # the plaza row's GARRISON half: a unit figure opens @UNITOPTIONS (cp 4).
+    # x=54 lands on Roanoke's one garrison figure: its five members run
+    # 2..42, then the byte-verified 4px break, then the unit at 48..62. In a
+    # fixture with no garrison these fall through harmlessly and the two
+    # engines still have to agree about that.
+    C(54, 146)                      # a garrison figure -> @UNITOPTIONS
+    K("ArrowDown")                  # -> "Clear orders."
+    K("ArrowDown")                  # -> "Sentry / Board ship."
+    K("Enter")                      # commit: orders = 1
+    C(54, 146)                      # reopen
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowDown")                  # -> "Fortify."
+    K("Enter")                      # commit: orders = 5
+    C(54, 146)                      # reopen
+    K("Escape")                     # close, no change
+    C(54, 146)                      # the same figure again
+    K("Enter")                      # row 0: move to front of the cycle
 
 
 def main():

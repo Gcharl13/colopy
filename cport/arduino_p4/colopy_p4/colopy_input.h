@@ -69,6 +69,7 @@ typedef struct {
                                       * kinds 2/3: the colony record */
     int16_t dlg_unit;                /* kinds 2/3: the ship record */
     int8_t  colony_popup_row;
+    int8_t  colony_popup_unit;   /* @UNITOPTIONS: units_order index */
 } colopy_ui;
 
 extern colopy_ui UI;

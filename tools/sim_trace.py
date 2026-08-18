@@ -175,6 +175,7 @@ INPUT = """([save, events]) => {
       mks: G.marketSel, sh: G.showHidden ? 1 : 0,
       cn: G.colonyNumbers ? 1 : 0, vr: G.villageRow,
       cp: G.colonyPopup === 'build' ? 2 : G.colonyPopup === 'occupation' ? 3
+          : G.colonyPopup === 'unitopts' ? 4
           : G.colonyPopup ? 1 : 0, cpr: G.colonyPopupRow || 0,
       cs: G.colonistSel || 0,
       em: G.euroMenu ? ({ recruit: 1, purchase: 2, train: 3, ship: 4,

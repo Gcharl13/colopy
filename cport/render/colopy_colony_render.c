@@ -419,6 +419,46 @@ int rm_plaza_hit(int ci, int mx, int my) {
     return -1;
 }
 
+/* the GARRISON half of the same pack: which CR.units_order index is under
+ * (mx,my), or -1.  rm_plaza_hit answers only for the members before the 4-px
+ * break; a figure past it is a unit, and clicking one opens @UNITOPTIONS
+ * (game.js plazaUnitAt).  The order index is returned, not the record index,
+ * because CR.units_order mirrors the JS G.units order the menu reorders. */
+int rm_plaza_unit_hit(int ci, int mx, int my) {
+    if (ci < 0 || ci >= CS.n_colonies) return -1;
+    const ColonyRecord *c = &CS.colonies[ci];
+    int icons[64], order[64], nicons = 0, npeople;
+    for (int k = 0; k < c->population && k < 32; k++) {
+        icons[nicons] = colonist_figure(c->profession[k]);
+        order[nicons++] = -1;
+    }
+    npeople = nicons;
+    for (int q = 0; q < CR.n_units_order && nicons < 64; q++) {
+        int ui = CR.units_order[q];
+        if (CS.units[ui].map_x == c->map_x && CS.units[ui].map_y == c->map_y) {
+            icons[nicons] = (int)dat_units[CS.units[ui].type].icon - 1;
+            order[nicons++] = q;
+        }
+    }
+    if (!nicons) return -1;
+    int total_w = 0;
+    for (int i = 0; i < nicons; i++) total_w += icon_w(icons[i]);
+    int extra = nicons > npeople ? 4 : 0;
+    int gap = 2;
+    while (gap * (nicons - 1) + extra + total_w >= 96) gap--;
+    int x = 2;
+    for (int i = 0; i < nicons; i++) {
+        int w = icon_w(icons[i]), h = icon_h(icons[i]);
+        if (order[i] >= 0 && mx >= x && mx < x + w &&
+            my >= 142 && my < 142 + h)
+            return order[i];
+        int adv = w + gap;
+        x += adv > 1 ? adv : 1;
+        if (i == npeople - 1) x += 4;
+    }
+    return -1;
+}
+
 void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                     int ship_sel, int view, int numbers);
 
