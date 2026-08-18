@@ -1200,6 +1200,20 @@ int ui_colony_popup_model(char labels[][40], char notes[][40],
         }
         return n2;
     }
+    if (UI.colony_popup == 5) {              /* @SHIPOPTIONS, 6 bare rows */
+        const UnitRecord *gu = UI.colony_popup_unit >= 0 &&
+                               UI.colony_popup_unit < CR.n_units_order
+            ? &CS.units[CR.units_order[UI.colony_popup_unit]] : 0;
+        snprintf(title, (size_t)tcap, "%s",
+                 gu ? dat_units[gu->type].name : "");
+        int n5 = 0;
+        for (int i = 0; i < 6 && n5 < cap; i++) {
+            snprintf(labels[n5], 40, "%s", dat_events_shipoptions_body[i]);
+            notes[n5][0] = 0;
+            n5++;
+        }
+        return n5;
+    }
     if (UI.colony_popup == 4) {              /* @UNITOPTIONS, 5 bare rows */
         const UnitRecord *gu = UI.colony_popup_unit >= 0 &&
                                UI.colony_popup_unit < CR.n_units_order
@@ -1607,6 +1621,60 @@ void pick_music(void) {
     if (MUSIC_SUBMENU[sub].skip_after && row > MUSIC_SUBMENU[sub].skip_after)
         row++;
     CR.tune = (uint8_t)(row + MUSIC_SUBMENU[sub].bias);
+}
+
+/* "Unload all cargo" (@SHIPOPTIONS row 4, unloadAllCargo in game.js): the
+ * WHOLE hold into the warehouse in one step, unlike the 'u' key's per-slot
+ * @CARGOUNLOAD/@HOWMUCH2 pair.  Same @WAREHOUSEFULL gate, asked once for the
+ * first good that would cross the byte-read 100-ton threshold (the engine's
+ * per-good behaviour is unread — flagged at the 'u' site too). */
+static void unload_all_cargo(int ui, int ci) {
+    ColonyRecord *c = &CS.colonies[ci];
+    int full = -1;
+    for (int s = 0; s < CR.unit_n_hold[ui]; s++) {
+        const hold_slot *h = &CR.unit_hold[ui][s];
+        if (c->stock[h->good] + h->qty > 100) { full = s; break; }
+    }
+    if (full >= 0) {
+        const hold_slot *h = &CR.unit_hold[ui][full];
+        ev_emit("WAREHOUSEFULL", c->stock[h->good], 100, c->name,
+                dat_cargo[h->good].name);
+        if (ask_choice() != 1) return;
+    }
+    for (int s = CR.unit_n_hold[ui] - 1; s >= 0; s--) {
+        hold_slot *h = &CR.unit_hold[ui][s];
+        if (h->qty <= 0) continue;
+        int32_t v = (int32_t)c->stock[h->good] + h->qty;
+        c->stock[h->good] = (uint16_t)(v > 0xFFFF ? 0xFFFF : v);
+        hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui], h->good, -h->qty);
+    }
+}
+
+/* @SHIPOPTIONS rows (shipOptionsCommit, game.js): 0 move to front,
+ * 1 clear orders, 2 sentry, 3 anchor in harbor (= Fortify), 4 unload all
+ * cargo, 5 no changes.  Rows 0..3 are @UNITOPTIONS' shape over a ship. */
+static void ship_options_commit(void) {
+    int q = UI.colony_popup_unit;
+    if (q < 0 || q >= CR.n_units_order) { UI.colony_popup = 0; return; }
+    int ui = CR.units_order[q];
+    int row = UI.colony_popup_row;
+    UI.colony_popup = 0;                     /* close BEFORE the unload ask */
+    switch (row) {
+    case 0:
+        for (int i = q; i > 0; i--) CR.units_order[i] = CR.units_order[i - 1];
+        CR.units_order[0] = (int16_t)ui;
+        UI.sel = 0;
+        break;
+    case 1: CS.units[ui].orders = 0; break;
+    case 2: CS.units[ui].orders = 1; break;
+    case 3: CS.units[ui].orders = 5; break;
+    case 4: {
+        int ci = colony_rec_at_xy(CS.units[ui].map_x, CS.units[ui].map_y);
+        if (ci >= 0) unload_all_cargo(ui, ci);
+        break;
+    }
+    default: break;                          /* "No changes." */
+    }
 }
 
 /* @UNITOPTIONS rows (unitOptionsCommit, game.js): 0 move to front,
@@ -2079,6 +2147,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 n = UI.colony_popup == 2 ? build_rows(cci, names)
                   : UI.colony_popup == 3 ? 10      /* 9 jobs + the fence */
                   : UI.colony_popup == 4 ? 5       /* @UNITOPTIONS */
+                  : UI.colony_popup == 5 ? 6       /* @SHIPOPTIONS */
                                          : jobs_rows(cci, names);
             if (key_is(k, "ArrowUp"))
                 UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
@@ -2088,6 +2157,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 if (UI.colony_popup == 2) build_picker_commit();
                 else if (UI.colony_popup == 3) occupation_commit();
                 else if (UI.colony_popup == 4) unit_options_commit();
+                else if (UI.colony_popup == 5) ship_options_commit();
                 else jobs_popup_commit();
             }
             if (key_is(k, "Escape")) UI.colony_popup = 0;
@@ -2446,6 +2516,7 @@ static void in_click_inner(int mx, int my, int right) {
                 if (UI.colony_popup == 2) build_picker_commit();
                 else if (UI.colony_popup == 3) occupation_commit();
                 else if (UI.colony_popup == 4) unit_options_commit();
+                else if (UI.colony_popup == 5) ship_options_commit();
                 else jobs_popup_commit();
                 return;
             }
@@ -2512,16 +2583,27 @@ static void in_click_inner(int mx, int my, int right) {
             return;
         }
         if (c) {
-            int nships = 0;
+            int nships = 0, ship_q[8];
             for (int q = 0; q < CR.n_units_order; q++) {
                 int u2 = CR.units_order[q];
                 if (dat_units[CS.units[u2].type].hull > 0 &&
                     CS.units[u2].map_x == c->map_x &&
-                    CS.units[u2].map_y == c->map_y) nships++;
+                    CS.units[u2].map_y == c->map_y) {
+                    if (nships < 8) ship_q[nships] = q;
+                    nships++;
+                }
             }
             for (int k = 0; k < (nships < 4 ? nships : 4); k++)
                 if (hit(mx, my, 130 + 18 * k, 147, 16, 16)) {
-                    UI.colony_ship_sel = (int8_t)k;
+                    /* select, then the SAME box again for @SHIPOPTIONS —
+                     * the select-then-menu rhythm the plaza row and the
+                     * Europe harbour ship box both use */
+                    if (UI.colony_ship_sel == k) {
+                        UI.colony_popup = 5;
+                        UI.colony_popup_unit = (int8_t)ship_q[k];
+                        UI.colony_popup_row = 0;
+                    } else
+                        UI.colony_ship_sel = (int8_t)k;
                     return;
                 }
         }

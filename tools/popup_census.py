@@ -36,9 +36,25 @@ KEY = re.compile(r"@([A-Z][A-Z0-9]*)")
 
 
 def engine_keys(text: str) -> set[str]:
-    """Keys the engine can actually emit: quoted string literals. Both engines
-    name a key exactly once at its emit site, as 'KEY' / "KEY"."""
-    return set(re.findall(r"""['"]([A-Z][A-Z0-9]{2,})['"]""", text))
+    """Keys the engine actually references.
+
+    Three forms, because there are three ways a key reaches the engine:
+
+    1. A quoted literal at an emit site -- `showEvent('STARVE1')`,
+       `ev_emit("STARVE1", ...)`. The common case.
+    2. A property read of the bundled section -- `DATA.events.ARMOPTIONS`,
+       `DATA.dialogs.BUYME1`. Used where the port takes the section's ROWS
+       rather than posting it as a popup: the four context menus do this.
+    3. The C's generated section symbols -- `dat_events_armoptions_body`.
+
+    Form 1 alone was the whole test until 2026-08-17, and it made the four
+    context menus read ABSENT on the day they were wired, because reading a
+    section's rows never mentions its key in quotes."""
+    keys = set(re.findall(r"""['"]([A-Z][A-Z0-9]{2,})['"]""", text))
+    keys |= set(re.findall(r"DATA\.(?:events|dialogs)\.([A-Z][A-Z0-9]{2,})", text))
+    keys |= {m.upper() for m in
+             re.findall(r"dat_events_([a-z][a-z0-9]{2,})_body", text)}
+    return keys
 
 
 def main() -> int:

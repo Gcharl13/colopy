@@ -324,6 +324,44 @@ def colony_clicks(C, K):
     K("Escape")                     # close, no change
     C(54, 146)                      # the same figure again
     K("Enter")                      # row 0: move to front of the cycle
+    # The ships-in-port dock needs a colony that HAS one: Roanoke has none,
+    # so leave it and open Vlissingen (25,34), which holds a player ship at
+    # this point. It is off the bottom of the viewport (VP 0,8,240,192 shows
+    # rows 17..28 at view (19,17)), so pan first: a click on an empty tile
+    # centres on it, view := (tx-7, ty-6). Two clicks at the bottom row walk
+    # the view (19,17) -> (19,22) -> (19,27), which puts (25,34) at screen
+    # (96,120); +8 lands mid-tile.
+    K("Escape")                     # -> map
+    C(112, 184)                     # centre (26,28) -> view (19,22)
+    C(112, 184)                     # centre (26,33) -> view (19,27)
+    C(104, 128)                     # -> Vlissingen's colony screen
+    # the dock: click a ship box to select, again for @SHIPOPTIONS (cp 5).
+    # Boxes are the byte-cited 16x16 cells at x = 130 + 18k, y = 147
+    # (drawColonyDock @0x27EAB).
+    #
+    # HONEST LIMIT: these do NOT fire today. Vlissingen holds a player ship at
+    # LOAD, but this block runs after ~30 end-turns and by then it has sailed;
+    # no fixture parks a ship in a colony at this point in the script. So
+    # @SHIPOPTIONS is implemented in both engines and NOT exercised by the
+    # oracle -- the clicks are left in, agreeing on the fall-through, and will
+    # start covering the menu the moment a fixture does park one. This is the
+    # concrete case for the coverage assertion logged as G2a.
+    C(136, 152)                     # ship box 0: select
+    C(136, 152)                     # same box: @SHIPOPTIONS
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowDown")                  # -> 'Anchor in harbor ("Fortify").'
+    K("Enter")                      # commit: orders = 5
+    C(136, 152)                     # reselect
+    C(136, 152)                     # reopen
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowDown")                  # -> "Unload all cargo."
+    K("Enter")                      # commit: the whole hold into the warehouse
+    C(136, 152)
+    C(136, 152)
+    K("Escape")                     # close, no change
 
 
 def main():

@@ -4193,6 +4193,14 @@ function colonyPopupRows() {
   if (G.colonyPopup === 'unitopts')
     return ((DATA.events.UNITOPTIONS || { body: [] }).body)
       .map(l => ({ label: l, note: '' }));
+  // @SHIPOPTIONS: "Move to front. / Clear orders. / Sentry. / Anchor in
+  // harbor (\"Fortify\"). / Unload all cargo. / No changes."  The row that
+  // is not just an @ORDERS write is "Unload all cargo", which empties the
+  // whole hold into the warehouse behind the same @WAREHOUSEFULL gate the
+  // per-slot 'u' path uses.
+  if (G.colonyPopup === 'shipopts')
+    return ((DATA.events.SHIPOPTIONS || { body: [] }).body)
+      .map(l => ({ label: l, note: '' }));
   // Jobs: the colony's buildings are the workplaces, plus a way back to the
   // plaza. Working a FIELD is done by clicking a cell in the scene panel.
   // Only buildings that actually employ a colonist are offered, and each one
@@ -4241,10 +4249,12 @@ function drawColonyPopup(ctx) {
   // so the port titles it with the unit it is acting on -- the same shape the
   // Europe dock menu uses for its own unit. FLAGGED: the engine's caption for
   // this menu, if any, is unread.
-  const uu = G.colonyPopup === 'unitopts' ? G.units[G.colonyPopupUnit] : null;
+  const uu = G.colonyPopup === 'unitopts' || G.colonyPopup === 'shipopts'
+    ? G.units[G.colonyPopupUnit] : null;
   const title = G.colonyPopup === 'build'
     ? (DATA.text.ctitle || [])[4] || 'Select An Item To Build'
-    : G.colonyPopup === 'unitopts' ? (uu ? uu.type : '')
+    : G.colonyPopup === 'unitopts' || G.colonyPopup === 'shipopts'
+      ? (uu ? uu.type : '')
     : `${(DATA.text.ctitle || [])[8] || 'Select a Profession for'} ${who ? (who.profession || who.type) : ''}`;
   mf.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFE));
   const seed = b.y + 6 + dText(small) + 3;
@@ -4299,9 +4309,58 @@ function unitOptionsCommit(k) {
     default: return;                       // "No changes."
   }
 }
+// "Unload all cargo" (@SHIPOPTIONS row 4): the WHOLE hold into the warehouse
+// in one step, unlike the 'u' key's per-slot @CARGOUNLOAD/@HOWMUCH2 pair. The
+// @WAREHOUSEFULL confirm is the same gate, asked once for the first good that
+// would cross the byte-read 100-ton threshold (the engine's per-good behaviour
+// is unread -- flagged there and here).
+function unloadAllCargo(u, c) {
+  const doIt = () => {
+    for (const h of (u.hold || []).slice()) {
+      if (h.qty <= 0) continue;
+      c.stock[h.good] += h.qty;
+      holdAdd(u, h.good, -h.qty);
+    }
+  };
+  const full = (u.hold || []).find(h => c.stock[h.good] + h.qty > 100);
+  if (full) {
+    askEvent('WAREHOUSEFULL',
+             { STRING0: c.name, STRING1: DATA.cargo[full.good].name,
+               NUMBER0: c.stock[full.good], NUMBER1: 100, NUMBER2: full.qty },
+             (choice) => { if (choice === 1) doIt(); });
+    return;
+  }
+  doIt();
+}
+// The colony harbour ship menu's six rows (@SHIPOPTIONS). Rows 0-3 are the
+// same shape as @UNITOPTIONS -- reorder, then the byte-verified @ORDERS
+// values 0 / 1 / 5 -- with "Anchor in harbor" spelling out that Fortify is
+// what a ship in port does.
+function shipOptionsCommit(k, c) {
+  const u = G.units[G.colonyPopupUnit];
+  if (!u) return;
+  switch (k) {
+    case 0:
+      G.units.splice(G.colonyPopupUnit, 1);
+      G.units.unshift(u);
+      G.sel = 0;
+      return;
+    case 1: u.orders = 0; return;
+    case 2: u.orders = 1; return;
+    case 3: u.orders = 5; return;
+    case 4: unloadAllCargo(u, c); return;
+    default: return;                       // "No changes."
+  }
+}
 function colonyPopupCommit() {
   const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
   if (!r) { G.colonyPopup = null; return; }
+  if (G.colonyPopup === 'shipopts') {
+    const k = G.colonyPopupRow;
+    G.colonyPopup = null;                  // close BEFORE the unload ask
+    shipOptionsCommit(k, c);
+    return;
+  }
   if (G.colonyPopup === 'unitopts') {
     unitOptionsCommit(G.colonyPopupRow);
     G.colonyPopup = null;
@@ -12591,7 +12650,15 @@ function onClick(mx, my) {
         for (let k = 0; k < Math.min(ships.length, 4); k++) {
           if (hit(mx, my, { x: COLONY_DOCK.shipX + k * COLONY_DOCK.shipPitch,
                             y: COLONY_DOCK.shipY, w: 16, h: 16 })) {
-            G.colonyShipSel = k; return;
+            // Select, then click the SAME box again for @SHIPOPTIONS -- the
+            // select-then-menu rhythm the plaza row and the Europe harbour
+            // ship box both use.
+            if (G.colonyShipSel === k) {
+              G.colonyPopup = 'shipopts';
+              G.colonyPopupUnit = G.units.indexOf(ships[k]);
+              G.colonyPopupRow = 0;
+            } else G.colonyShipSel = k;
+            return;
           }
         }
       }

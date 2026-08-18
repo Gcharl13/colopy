@@ -29,8 +29,11 @@ sweeps landed after it, and its rows were never updated.
 `tools/popup_census.py` — written to settle it — checks each audited row against
 both engines as they stand:
 
-> **196 key mentions across the 149 still-open audit rows: 177 wired in both
-> engines, 6 in one engine only, 13 absent from both.**
+> **196 key mentions across the 149 still-open audit rows: 186 wired in both
+> engines, 2 in one engine only, 8 absent from both.**
+> *(177/6/13 when this ledger was written; the four context menus below closed
+> the gap, and the tool learned to see two reference forms it had been blind
+> to — see G2b.)*
 
 Every item in that sentence except the two orders menus emits in both engines
 today. What is genuinely missing is listed in B.1, and it is four context menus,
@@ -78,8 +81,11 @@ its rows were never updated, so this part read as a to-do list that badly overst
 what is missing. `tools/popup_census.py` now checks each audited row against the two
 engines as they stand:
 
-> **196 key mentions across the 149 still-open audit rows: 177 wired in both
-> engines, 6 in one engine only, 13 absent from both.**
+> **196 key mentions across the 149 still-open audit rows: 186 wired in both
+> engines, 2 in one engine only, 8 absent from both.**
+> *(177/6/13 when this ledger was written; the four context menus below closed
+> the gap, and the tool learned to see two reference forms it had been blind
+> to — see G2b.)*
 
 Emission is not correctness — a WIRED key still has to be judged on its
 substitutions and trigger — but a row the audit calls MISSING whose key both
@@ -87,14 +93,20 @@ engines emit is a row to **re-audit before implementing anything**. Run
 `python3 tools/popup_census.py --absent` for the current list; it is the honest
 starting point, not the table below.
 
-**What is genuinely absent from both engines** (the real B.1 work):
+**The four context menus — DONE 2026-08-17.** All four now read their rows
+from GAME.TXT and are wired in both engines:
+
+| Key | State |
+|---|---|
+| `@ARMOPTIONS` | The 12-row Europe dock-unit menu. The mechanic was never missing — every action was wired — but both engines retyped the row text, differently, losing the `{brace}` highlight markup and the section's `%NUMBER` price slots. Now read from the section. **FLAGGED:** the section gives each good ONE number for both its buy and sell row; the buy price goes in, so a sell row displays the ask while paying the bid less tax. |
+| `@EUROPESHIPOPTIONS` | Same story, four rows, 1:1 swap. `@EUROPESHIPCLICK` (its caption) now wired both sides. |
+| `@UNITOPTIONS` | **New.** The colony garrison-unit menu: a click on a figure past the byte-verified 4px break opens it. Rows write the byte-verified `@ORDERS` values 0/1/5; "Move to front" reorders the unit cycle. Oracle-exercised (9 openings, orders 5→1→5). **FLAGGED:** "Sentry / Board ship" is one row; it sets Sentry and leaves boarding to the drag — whether the engine's row boards when a ship is in port is unread. No caption section exists, so the port titles it with the unit. |
+| `@SHIPOPTIONS` | **New.** The colony-harbour ship menu, on a second click of a ship box in the (already byte-cited) dock. Rows 0–3 mirror `@UNITOPTIONS` over a ship; "Unload all cargo" empties the whole hold behind the same `@WAREHOUSEFULL` gate the per-slot `u` path uses. **NOT oracle-exercised** — no fixture parks a ship in a colony at that point in the script; the clicks are in place and will cover it when one does. See G2a. |
+
+**What is still absent from both engines:**
 
 | Key | What is missing |
 |---|---|
-| `@UNITOPTIONS` | The colony land-unit orders menu: Move to front / Clear orders / Sentry-Board ship / Fortify / No changes |
-| `@SHIPOPTIONS` | The colony-harbour ship menu: Move to front / Clear orders / Sentry / Anchor in harbor / Unload all cargo / No changes |
-| `@EUROPESHIPOPTIONS` | The Europe ship menu: Move to front / Set sail for the New World / Unload all cargo / No changes (`@EUROPESHIPCLICK`, its caption, is C-only) |
-| `@ARMOPTIONS` | The 12-row Europe dock-unit menu: board/don't-board, move to front, buy-or-sell Muskets/Tools/Horses at the live price, bless or cancel Missionary |
 | `@KINGRECRUIT` | C-only; the JS never emits it |
 | `@TOONEARBUILD`, `@RECRUIT2`, `@CLASS`, `@FRIEND` | sub-keys of rows whose main mechanic is wired |
 | `@MISSION0` / `@MISSION3` | wired keys, but the 0..3 band selection runs on invented cutoffs, so the outer two are never chosen |
@@ -415,6 +427,7 @@ mixing.
 | G1 | **No worst-case stack-path budget.** `-Wframe-larger-than=4096` is per-function; the build-colony crash was *depth* — a 1,216-byte frame under a 3,216-byte dispatcher. The gate that would catch it sums frames along `in_key_inner -> run_menu_row -> cmd_* -> advance -> end_turn`. Nothing computes that. | Third board crash from stack depth |
 | G2 | **No ceiling on the render oracles' palette-delta counts.** `render_map_compare` accepts a pixel when the C index re-resolved through the master matches the JS — exactly what a wrong runtime palette produces. That is how the sandy sea hid. Counts are now low (3 / 104 / 54 / 145); freeze them as a ceiling. | Silent visual regressions |
 | G2a | **Scenario coverage is not measured, so a whole screen's pointer layer was dead and the oracle read green.** `colony_clicks` ran wherever the preceding 40-step loop happened to leave the session — the MAP — so every colony click fell through the map handler for months. The two engines agreed about the fall-through, which is all the oracle asks. Fixed 2026-08-17 by opening the colony deliberately first (3 -> 46 colony-screen events), and it found B3.11 immediately. **What is missing is the check**: nothing asserts that a scenario reaches the screens it claims to cover. A per-scenario census of screens and popup kinds visited, compared against a declared expectation, would have caught this the day it started. | A dead scenario reads exactly like a passing one |
+| G2b | **`tools/popup_census.py` saw only one of the three ways a key reaches an engine.** It matched quoted literals (`showEvent('STARVE1')`), which is how a popup is POSTED, but not `DATA.events.ARMOPTIONS` property reads or the C's `dat_events_armoptions_body` symbols — which is how a section's ROWS are read. So the four context menus read ABSENT on the day they were wired. Fixed 2026-08-17; the open-row census moved 177/6/13 -> 186/2/8. The general lesson is the tool's own: a key showing absent has at least three causes, and only one of them is "the mechanic is missing". | A green tool that measures the wrong thing |
 | G3 | **`cport/PORT_LEDGER.md` is stale enough to mislead** — all 10 MIXED hoist rows and dozens of SIM rows still read `todo` though shipped. | Not usable as an open-item list |
 | G4 | **`docs/COMPLETION_PLAN.md` records no phase as complete** though most of Phases 0-2 landed. | Contradicts MESSAGE_STATUS |
 | G5 | Asset loader functions/offsets are TBD in `extract_pal.py`, `extract_visuals.py`, `extract_mp.py`. | Phase D |
