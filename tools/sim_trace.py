@@ -180,6 +180,22 @@ INPUT = """([save, events]) => {
       em: G.euroMenu ? ({ recruit: 1, purchase: 2, train: 3, ship: 4,
                           dockunit: 5 })[G.euroMenu] || 0 : 0,
       emr: G.euroMenuRow || 0,
+      // What the open HARBOUR menu's rows SAY, not just which one is open.
+      // Added 2026-08-17: `em`/`emr` pinned the menu and the row index but
+      // never the text, so the C served "Soldiers (buy 50 Muskets)" against
+      // this engine's "Arm with Muskets (costs 600$)." with the oracle
+      // green. Both now read @ARMOPTIONS / @EUROPESHIPOPTIONS, and this
+      // field is what keeps them there.
+      //
+      // Scoped to em 4/5 (ship, dockunit). The three SHOP menus carry their
+      // price as a separate right-aligned column here (census_euro_train
+      // shows it right-aligned) while the C bakes "(Cost: N)" into the row
+      // string, because the board's row painter has no second column. Same
+      // information, different layout — a real board divergence this field
+      // surfaced on the day it was added, logged in docs/REMAINING_WORK.md
+      // rather than papered over by widening the comparison to swallow it.
+      emrows: G.euroMenu === 'ship' || G.euroMenu === 'dockunit'
+        ? euroMenuRows().map(r => r.label) : [],
       // The dialog KIND, matching the C's UI.dlg enum (colopy_input.h):
       // 0 none, 1 @HOWMUCH5 (Europe sell), 2 @HOWMUCH1 (colony load),
       // 3 @HOWMUCH2 (colony unload), 4 any other openDialog.  This read

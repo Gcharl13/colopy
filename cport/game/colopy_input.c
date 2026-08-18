@@ -779,11 +779,9 @@ int ui_euro_menu_rows(char out[][64], int cap) {
             snprintf(out[n++], 64, "%s (Cost: %ld)", euro_train_expert(r),
                      (long)euro_train_cost(r));
         break;
-    case 4:                              /* euroShipRows (4651) */
-        snprintf(out[n++], 64, "Move to front.");
-        snprintf(out[n++], 64, "Set sail for the New World.");
-        snprintf(out[n++], 64, "Unload all cargo.");
-        snprintf(out[n++], 64, "No changes.");
+    case 4:                              /* euroShipRows — @EUROPESHIPOPTIONS */
+        for (int r = 0; r < 4 && n < cap; r++)
+            snprintf(out[n++], 64, "%s", dat_events_europeshipoptions_body[r]);
         break;
     case 5: {                            /* dockUnitRows (4622) */
         int acts[16], verbs[16];
@@ -793,25 +791,28 @@ int ui_euro_menu_rows(char out[][64], int cap) {
                                  ? &CR.dock_units[UI.euro_dock_sel] : 0;
         for (int r = 0; r < m && n < cap; r++) {
             switch (acts[r]) {
+            /* the twelve @ARMOPTIONS rows, read from the section
+             * (spec/ui/context_dialogs.md §4): 0 don't-board / 1 board /
+             * 2 move to front / 3..8 the equip verbs / 9 bless /
+             * 10 cancel Missionary / 11 no changes. */
             case 0:
                 snprintf(out[n++], 64, "%s",
-                         e && e->no_board ? "Board next ship."
-                                          : "Don't get on next ship.");
+                         dat_events_armoptions_body[e && e->no_board ? 1 : 0]);
                 break;
             case 1:
-                snprintf(out[n++], 64, "Move to front of dock.");
+                snprintf(out[n++], 64, "%s", dat_events_armoptions_body[2]);
                 break;
             case 2:
                 if (e) euro_arm_verb_label(verbs[r], e, out[n++], 64);
                 break;
             case 3:
-                snprintf(out[n++], 64, "Bless as Missionaries.");
+                snprintf(out[n++], 64, "%s", dat_events_armoptions_body[9]);
                 break;
             case 4:
-                snprintf(out[n++], 64, "Return to colonist status.");
+                snprintf(out[n++], 64, "%s", dat_events_armoptions_body[10]);
                 break;
             default:
-                snprintf(out[n++], 64, "No changes.");
+                snprintf(out[n++], 64, "%s", dat_events_armoptions_body[11]);
                 break;
             }
         }

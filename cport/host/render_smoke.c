@@ -328,6 +328,26 @@ static void in_project(void) {
     /* the whole unit cycle's orders+moves, mirroring sim_trace's
      * `ord` — the projection field that pins WHICH units next_unit
      * is allowed to skip. */
+    /* the OPEN Europe menu's row text, mirroring sim_trace's `emrows`.
+     * Added 2026-08-17: `em`/`emr` pinned WHICH menu and WHICH row but
+     * never what the rows SAID, so the C could serve
+     * "Soldiers (buy 50 Muskets)" against the JS's "Arm with Muskets
+     * (costs 600$)." for months with the oracle green. Both now read the
+     * GAME.TXT sections, and this field is what keeps them there. */
+    printf("\"emrows\":[");
+    if (UI.euro_menu == 4 || UI.euro_menu == 5) {   /* ship / dockunit */
+        char rows[24][64];
+        int nr = ui_euro_menu_rows(rows, 24);
+        for (int i = 0; i < nr; i++) {
+            printf("%s\"", i ? "," : "");
+            for (const char *q = rows[i]; *q; q++) {
+                if (*q == '"' || *q == '\\') putchar('\\');
+                putchar(*q);
+            }
+            putchar('"');
+        }
+    }
+    printf("],");
     printf("\"ord\":[");
     for (int i = 0; i < CR.n_units_order; i++) {
         int uu = CR.units_order[i];

@@ -318,6 +318,7 @@ diplomacy matrices **load empty / at peace** (`:10310`).
 | D9 | ~~**Audio pin provenance does not resolve** — the block cites "Elecrow Lesson12, PROVENANCE.md" but `elecrow_ref/` has no Lesson12.~~ **RESOLVED 2026-08-17** — the audio merge brought `cport/p4/elecrow_ref/lesson12_audio.ino` and `cport/p4/elecrow_ref/lesson12_board_config.h` into the tree with both `PROVENANCE.md` rows. All five values in the sketch match the reference byte for byte: LRCLK 21, BCLK 22, SDATA 23, power gate GPIO 30 with LOW = enabled. | `cport/p4/PROVENANCE.md`, `cport/p4/colopy_p4.ino:452-457` | closed |
 | D10 | **No USB host keyboard path** — Elecrow's only USB example is device-mode HID; the P4 Arduino core has no host-keyboard driver. | `cport/p4/README.md` |
 | D11 | **Long-press -> right-click is not implemented** — every tap is a left-click. | `cport/p4/README.md` |
+| D12 | **The three Europe SHOP menus lay their price out differently on the board than in the reference port.** The JS carries each row's cost as a separate right-aligned column, matching the live TRAIN frame (`census_euro_train`); the C bakes `"(Cost: N)"` into the row string, because `rm_draw_dialog_rows` has no second column. Same information, wrong layout on the handheld. Surfaced 2026-08-17 by the new `emrows` oracle field the moment it was added; the field is scoped to the two harbour context menus so it does not swallow this. Fix = a right-aligned second column in the C row painter. | `cport/game/colopy_input.c:773,779`, `cport/render/colopy_dialog.c` | — |
 
 ---
 

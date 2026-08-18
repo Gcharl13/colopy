@@ -4736,64 +4736,96 @@ const entryType = (e) => typeof e === 'object' ? e.type
 
 // ---- the Europe dock-unit menu: GAME @EUROPEARM + @ARMOPTIONS -------------
 // The 12 @ARMOPTIONS rows are grep-verified GAME.TXT (spec/ui/context_dialogs.md
-// §4); the quantities are the manual's (GAME_MANUAL.md 1962-1971: 50 muskets,
-// 50 horses, 50+50 for a dragoon; tools cap 100 = the Pioneer's UnitRecord
-// +0x15 start). Which rows the engine SHOWS per unit state is unread, so the
-// port offers the applicable ones -- its own gating, flagged as such. Prices
-// are the live market: buying charges the ask (buyGoods), selling returns the
-// bid less tax (sellGoods), both moving the price like any other trade.
+// §4, `directives={}` bare list) and are now READ FROM THE SECTION rather than
+// retyped -- the port used to hand-write English approximations of them, which
+// dropped both the {brace} highlight markup every option row carries and the
+// section's own %NUMBER price slots. Section row order:
+//   0 don't board   1 board next ship   2 move to front of dock
+//   3 arm Muskets   4 sell Muskets      5 equip Tools
+//   6 sell Tools    7 equip Horses      8 sell Horses
+//   9 bless        10 cancel Missionary status   11 no changes
+// so ARM_VERBS lines up 1:1 with section rows 3..8.
+//
+// The quantities are the manual's (GAME_MANUAL.md 1962-1971: 50 muskets, 50
+// horses, 50+50 for a dragoon; tools cap 100 = the Pioneer's UnitRecord +0x15
+// start). Which rows the engine SHOWS per unit state is unread, so the port
+// offers the applicable ones -- its own gating, flagged as such. Prices are the
+// live market: buying charges the ask (buyGoods), selling returns the bid less
+// tax (sellGoods), both moving the price like any other trade.
+//
+// FLAGGED -- the section gives each good ONE number, used by both its buy row
+// ("costs {%NUMBER0$}") and its sell row ("save {%NUMBER0$}"), while the two
+// transactions are worth different amounts here. Which figure the engine puts
+// in that slot is unread. The buy price goes in, because that is the one the
+// player is being asked to commit to; the sell rows therefore DISPLAY the ask
+// while PAYING the bid less tax. Do not "fix" this by making them agree --
+// that would be inventing a rule.
 const EQUIP_MUSKETS = 50, EQUIP_HORSES = 50, EQUIP_TOOLS = 100;
-// type -> type under each equip/unequip verb.
+const ARMOPT_ROWS = () => (DATA.events.ARMOPTIONS || { body: [] }).body;
+// type -> type under each equip/unequip verb; `row` is its @ARMOPTIONS index.
 const ARM_VERBS = [
-  { rowFmt: 'Arm with Muskets (costs %N$).', good: GOOD.MUSKETS, qty: EQUIP_MUSKETS,
+  { row: 3, good: GOOD.MUSKETS, qty: EQUIP_MUSKETS,
     buy: true, map: { Colonists: 'Soldiers', Scouts: 'Dragoons' } },
-  { rowFmt: 'Sell Muskets (save %N$).', good: GOOD.MUSKETS, qty: EQUIP_MUSKETS,
+  { row: 4, good: GOOD.MUSKETS, qty: EQUIP_MUSKETS,
     buy: false, map: { Soldiers: 'Colonists', Dragoons: 'Scouts' } },
-  { rowFmt: 'Equip with Tools (costs %N$).', good: GOOD.TOOLS, qty: EQUIP_TOOLS,
+  { row: 5, good: GOOD.TOOLS, qty: EQUIP_TOOLS,
     buy: true, map: { Colonists: 'Pioneers' } },
-  { rowFmt: 'Sell Tools (save %N$).', good: GOOD.TOOLS, qty: EQUIP_TOOLS,
+  { row: 6, good: GOOD.TOOLS, qty: EQUIP_TOOLS,
     buy: false, map: { Pioneers: 'Colonists' } },
-  { rowFmt: 'Equip with Horses (costs %N$).', good: GOOD.HORSES, qty: EQUIP_HORSES,
+  { row: 7, good: GOOD.HORSES, qty: EQUIP_HORSES,
     buy: true, map: { Colonists: 'Scouts', Soldiers: 'Dragoons' } },
-  { rowFmt: 'Sell Horses (save %N$).', good: GOOD.HORSES, qty: EQUIP_HORSES,
+  { row: 8, good: GOOD.HORSES, qty: EQUIP_HORSES,
     buy: false, map: { Scouts: 'Colonists', Dragoons: 'Soldiers' } },
 ];
+// NUMBER0/1/2 = the BUY price of Muskets / Tools / Horses at this turn's ask.
+function armOptionSubs() {
+  return { NUMBER0: askPrice(GOOD.MUSKETS) * EQUIP_MUSKETS,
+           NUMBER1: askPrice(GOOD.TOOLS) * EQUIP_TOOLS,
+           NUMBER2: askPrice(GOOD.HORSES) * EQUIP_HORSES };
+}
 function dockUnitRows() {
   const e = G.dockUnits[G.euroDockSel];
   if (e === undefined) return [];
   const t = entryType(e);
+  const src = ARMOPT_ROWS(), subs = armOptionSubs();
+  const row = (i, fallback) =>
+    src[i] === undefined ? fallback : fillTemplate(src[i], subs);
   const rows = [];
   // @ARMOPTIONS row 0/1: the auto-board flag. A dock unit boards the next
   // ship that sails UNLESS it is held back; both rows always show so you can
   // set either state (the engine offers the pair -- func_04B308 family).
-  if (e && e.noBoard) rows.push({ label: 'Board next ship.', act: 'board' });
-  else rows.push({ label: "Don't get on next ship.", act: 'noboard' });
-  rows.push({ label: 'Move to front of dock.', act: 'front' });
+  if (e && e.noBoard) rows.push({ label: row(1, 'Board next ship.'), act: 'board' });
+  else rows.push({ label: row(0, "Don't get on next ship."), act: 'noboard' });
+  rows.push({ label: row(2, 'Move to front of dock.'), act: 'front' });
   for (const v of ARM_VERBS) {
     const to = v.map[t];
     if (!to) continue;
+    // What the transaction actually pays -- NOT what the row displays. See the
+    // FLAGGED note on armOptionSubs: the section carries one number per good.
     const price = v.buy ? askPrice(v.good) * v.qty
                 : Math.floor(G.market[v.good] * v.qty * (100 - G.tax) / 100);
-    rows.push({ label: v.rowFmt.replace('%N', String(price)),
-                act: 'arm', verb: v, to,
+    rows.push({ label: row(v.row, ''), act: 'arm', verb: v, to,
                 dim: v.buy && (price > G.gold || isBoycotted(v.good)) });
   }
-  if (t === 'Colonists') rows.push({ label: 'Bless as Missionaries.', act: 'bless' });
-  if (t === 'Missionaries') rows.push({ label: 'Cancel Missionary Status.', act: 'unbless' });
-  rows.push({ label: 'No changes.', act: 'close' });
+  if (t === 'Colonists')
+    rows.push({ label: row(9, 'Bless as {Missionaries}.'), act: 'bless' });
+  if (t === 'Missionaries')
+    rows.push({ label: row(10, 'Cancel {Missionary} Status.'), act: 'unbless' });
+  rows.push({ label: row(11, 'No changes.'), act: 'close' });
   return rows;
 }
-// The Europe harbour ship menu: GAME @EUROPESHIPCLICK + @EUROPESHIPOPTIONS
-// ("Move to front. / Set sail for the New World. / Unload all cargo. / No
-// changes.") -- both grep-verified (spec/ui/context_dialogs.md §4). "Unload"
-// in Europe means selling: the market is the only place cargo can go.
+// The Europe harbour ship menu: GAME @EUROPESHIPCLICK + @EUROPESHIPOPTIONS,
+// both grep-verified (spec/ui/context_dialogs.md §4). The four rows are read
+// from the section rather than retyped -- see the @ARMOPTIONS note above.
+// "Unload" in Europe means selling: the market is the only place cargo can go.
+const EUROSHIP_ACTS = ['shipfront', 'sail', 'sellall', 'close'];
+const EUROSHIP_FALLBACK = ['Move to front.', 'Set sail for the New World.',
+                           'Unload all cargo.', 'No changes.'];
 function euroShipRows() {
-  return [
-    { label: 'Move to front.', act: 'shipfront' },
-    { label: 'Set sail for the New World.', act: 'sail' },
-    { label: 'Unload all cargo.', act: 'sellall' },
-    { label: 'No changes.', act: 'close' },
-  ];
+  const src = (DATA.events.EUROPESHIPOPTIONS || { body: [] }).body;
+  return EUROSHIP_ACTS.map((act, i) => ({
+    label: src[i] === undefined ? EUROSHIP_FALLBACK[i] : src[i], act,
+  }));
 }
 
 // The three sub-menus. Each is a plaque list: rows of "<label> <price>" with
@@ -4860,7 +4892,7 @@ function euroMenuBox() {
   const mf = dFont(G.euroMenu === 'train');
   for (const l of body) cw = Math.max(cw, mf.width(l));
   for (const r of rows)
-    cw = Math.max(cw, mf.width(r.label) +
+    cw = Math.max(cw, mf.width(r.label.replace(/[{}]/g, '')) +
                       (r.cost === undefined ? 0 : mf.width(`(Cost: ${r.cost})`)) + 20);
   const small = G.euroMenu === 'train';       // @KINGRECRUIT is @SMALLFONT
   const w = cw + 6;
@@ -4893,7 +4925,12 @@ function drawEuroMenu(ctx) {
     // their own `dim` flag instead.
     const afford = r.cost === undefined || r.none ? !r.dim : r.cost <= G.gold;
     const inkIdx = !afford ? 0x5D : (sel ? 0xFC : 0xFE);
-    mf.draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
+    // Option rows span-paint like every other dialog row: the hilite ink is
+    // gated on the {brace} flag (func_06C346 @0x06C365), never on selection.
+    // The GAME.TXT harbour rows carry those braces around Muskets / Tools /
+    // Horses / Missionaries; a dimmed row paints flat, since an unaffordable
+    // row highlighting its own good would read as available.
+    spanText(ctx, r.label, b.x + 9, y + 1, inkIdx, afford ? 0xFC : inkIdx, mf);
     if (r.cost !== undefined && !r.hideCost) {
       // "(Cost: N)" -- @MISC 13/14, the census TRAIN frame's own format.
       const c = `${(DATA.text.misc || [])[13] || '(Cost:'} ${r.cost}${(DATA.text.misc || [])[14] || ')'}`;

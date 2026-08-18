@@ -17,6 +17,7 @@
 
 #include "colopy_sim.h"
 #include "../data/colopy_data.h"
+#include "../data/colopy_text.h"
 
 #define SAIL_TURNS 3
 enum { EURO_PORT = 0, EURO_TO_EUROPE = 1, EURO_TO_NEWWORLD = 2 };
@@ -522,15 +523,48 @@ const char *euro_train_expert(int sorted_row) {
     euro_train_order(order);
     return dat_jobtrain[order[sorted_row]].expert;
 }
-/* an @ARMOPTIONS row label for the board menus: the target type plus
- * the goods leg (FLAGGED stand-in — the engine's row text is unread) */
+/* The @ARMOPTIONS price slots: NUMBER0 = Muskets, NUMBER1 = Tools,
+ * NUMBER2 = Horses, each the BUY price of one full equip lot at this turn's
+ * ask.  Mirrors armOptionSubs (game.js) exactly, including the flagged part:
+ * the section carries ONE number per good, shown by both the buy row
+ * ("costs") and the sell row ("save"), while the two transactions are worth
+ * different amounts.  Which the engine puts there is unread; the buy price
+ * goes in.  Do not make them agree — that would be inventing a rule. */
+static int32_t armopt_number(int slot) {
+    switch (slot) {
+    case 0: return market_ask(MUSKETS) * 50;
+    case 1: return market_ask(TOOLS) * 100;
+    case 2: return market_ask(HORSES) * 50;
+    default: return 0;
+    }
+}
+
+/* The numeric half of fill_template (colopy_dialog.c) — @ARMOPTIONS rows carry
+ * %NUMBERn and nothing else, and the core must not reach up into the render
+ * layer for a four-line substitution. */
+static void armopt_fill(const char *line, char *out, int cap) {
+    int o = 0;
+    for (const char *q = line; *q && o + 1 < cap;) {
+        if (strncmp(q, "%NUMBER", 7) == 0 && q[7] >= '0' && q[7] <= '9') {
+            char nb[16];
+            snprintf(nb, sizeof(nb), "%ld", (long)armopt_number(q[7] - '0'));
+            for (const char *c = nb; *c && o + 1 < cap;) out[o++] = *c++;
+            q += 8;
+            continue;
+        }
+        out[o++] = *q++;
+    }
+    out[o] = 0;
+}
+
+/* an @ARMOPTIONS equip row, read from the section itself (rows 3..8 line up
+ * 1:1 with ARM[0..5] — spec/ui/context_dialogs.md §4).  This used to be a
+ * hand-built "Soldiers (buy 50 Muskets)" stand-in, which was neither the
+ * engine's wording nor the JS port's. */
 void euro_arm_verb_label(int verb, const immigrant *e, char *out, int cap) {
-    int t = entry_unit_type(e);
-    int to = t >= 0 ? arm_target(verb, t) : -1;
-    snprintf(out, (size_t)cap, "%s (%s %d %s)",
-             to >= 0 ? dat_units[to].name : "?",
-             ARM[verb].buy ? "buy" : "sell",
-             ARM[verb].qty, dat_cargo[ARM[verb].good].name);
+    (void)e;
+    if (verb < 0 || verb >= 6) { if (cap) out[0] = 0; return; }
+    armopt_fill(dat_events_armoptions_body[3 + verb], out, cap);
 }
 int euro_arm_rows(int k, uint8_t *verbs_out) {
     if (k < 0 || k >= CR.n_dock_units) return 0;
