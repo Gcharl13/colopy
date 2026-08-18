@@ -334,6 +334,15 @@ static void in_project(void) {
      * "Soldiers (buy 50 Muskets)" against the JS's "Arm with Muskets
      * (costs 600$)." for months with the oracle green. Both now read the
      * GAME.TXT sections, and this field is what keeps them there. */
+    /* how many times each prompt has been asked — compared on the
+     * INTERSECTION by input_compare, so a key only one engine asks (B4.6)
+     * is reported rather than failed, while a shared key with different
+     * counts is the real drift (G2c). */
+    printf("\"askmap\":{");
+    for (int i = 0; i < ask_key_count(); i++)
+        printf("%s\"%s\":%u", i ? "," : "", ask_key_name(i),
+               (unsigned)ask_key_hits(i));
+    printf("},");
     printf("\"emrows\":[");
     if (UI.euro_menu == 4 || UI.euro_menu == 5) {   /* ship / dockunit */
         char rows[24][64];

@@ -294,33 +294,7 @@ def colony_clicks(C, K):
     C(303, 162)                     # view button 2 (build)
     C(276, 142)                     # BUILD_BTN change -> the picker
     C(160, 60)                      # a picker row
-    # C(224, 142)  BUILD_BTN buy -> the @BUYME1 rush-buy ask. DISABLED, NOT
-    # DELETED, and NOT for the reason first written here.
-    #
-    # First reading (wrong): "two bugs, one on each side" -- the C rush-buys
-    # outright while the JS does nothing. Instrumenting the JS showed both
-    # engines DO run rushBuy and DO ask @BUYME1. Only the ANSWER differs.
-    #
-    # Real cause: the harnesses answer every scripted ask with `seq++ % 2` on
-    # ONE GLOBAL counter, and the counters have drifted. The C does not reach
-    # the European meeting flow (B4.6), so during the 30-Space block the JS
-    # asks @PEACEMEEK and the C does not -- JS 16 asks, C 15. From there every
-    # later ask gets the opposite answer in the two engines. @BUYME1 lands on
-    # 16 (even -> "Never mind.") in the JS and 15 (odd -> "Complete it.") in
-    # the C, hence one spend and one no-op.
-    #
-    # So this is ONE known gap, B4.6, whose real cost is far worse than
-    # "meetings do not execute": it silently desynchronises every ask
-    # downstream of it, in both the input and turn oracles.
-    #
-    # Attempted fix (reverted): key the counters per ask, so a question one
-    # engine skips stays local to its own key. That fixes the input oracle --
-    # this click passes with it -- but turns the turn oracle red with 13 field
-    # disagreements, because the two engines do not key questions identically
-    # (the C keys on the last emitted event, the JS on the askEvent key, and
-    # they differ somewhere in the turn path). Landing a half-working change
-    # to the oracle's own foundation is worse than the drift, so it is out.
-    # See G2c for what a correct fix has to do.
+    C(224, 142)                     # BUILD_BTN buy -> the @BUYME1 rush-buy ask
     C(303, 132)                     # view button 0 (production)
     # the plaza row's GARRISON half: a unit figure opens @UNITOPTIONS (cp 4).
     # x=54 lands on Roanoke's one garrison figure: its five members run
@@ -404,11 +378,30 @@ def main():
         args, cwd=ROOT / "cport/host", input=feed, capture_output=True,
         text=True, check=True).stdout.splitlines()]
 
+    # `askmap` is compared on the INTERSECTION, not whole-value. A prompt only
+    # one engine ever raises is B4.6 -- this build's C never reaches the
+    # European meeting flow -- and is reported at the end, not failed. A prompt
+    # BOTH raise a different number of times is the real fault: the scripted
+    # `n % 2` answer then differs, and the two engines answer the SAME question
+    # differently. That is what made the colony BUY button look like two
+    # separate bugs when it was one desync (G2c).
+    one_sided = {}
     bad = 0
     for i, (j, c) in enumerate(zip(js, cc)):
         for f in j:
             if f in ("gold", "year") and scen in ("boot", "bootclick"):
                 continue            # boot runs no sim
+            if f == "askmap":
+                jm, cm = j[f] or {}, c.get(f) or {}
+                for k in set(jm) | set(cm):
+                    if k in jm and k in cm:
+                        if jm[k] != cm[k]:
+                            print("event %d %s .askmap[%s]: JS %s != C %s"
+                                  % (i, events[i], k, jm[k], cm[k]))
+                            bad += 1
+                    else:
+                        one_sided[k] = "JS only" if k in jm else "C only"
+                continue
             if j[f] != c.get(f):
                 print("event %d %s .%s: JS %s != C %s"
                       % (i, events[i], f, j[f], c.get(f)))
@@ -419,6 +412,9 @@ def main():
     if len(js) != len(cc):
         print("length mismatch: JS %d C %d" % (len(js), len(cc)))
         bad += 1
+    if one_sided:
+        print("  (asks raised by one engine only, B4.6: %s)"
+              % ", ".join("%s %s" % (k, v) for k, v in sorted(one_sided.items())))
     print("input %s: %d events compared, %d disagreement(s)"
           % (scen, len(events), bad))
     sys.exit(1 if bad else 0)

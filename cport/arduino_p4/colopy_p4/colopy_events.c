@@ -37,6 +37,19 @@ void ev_emit(const char *key, int32_t p0, int32_t p1,
     evq_len++;
 }
 
+/* The key of the event emitted most recently — the PROMPT for the ask that
+ * follows it (the core's invariant pattern, see ask_choice).  The A0/A1
+ * answer markers ask_choice emits itself are skipped, so two asks with no
+ * prompt between them still see the real prompt.  "" if nothing qualifies. */
+const char *ev_last_key(void) {
+    for (int i = evq_len - 1; i >= 0; i--) {
+        const char *k = evq[(evq_head + i) % EVQ_CAP].key;
+        if (k[0] == 'A' && (k[1] == '0' || k[1] == '1') && !k[2]) continue;
+        return k;
+    }
+    return "";
+}
+
 int colopy_next_event(colopy_event *out) {
     if (!evq_len) return 0;
     *out = evq[evq_head];

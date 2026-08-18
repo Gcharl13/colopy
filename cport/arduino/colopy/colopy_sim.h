@@ -197,6 +197,10 @@ void runits_drop(int rn, int ui);      /* JS r.units.splice (record kept) */
  * counter on every ask, answered or not), emits an "A<choice>" marker
  * event, and applies the ported callback body under the same choice. */
 int ask_choice(void);
+const char *ev_last_key(void);
+int ask_key_count(void);
+const char *ask_key_name(int i);
+uint32_t ask_key_hits(int i);
 extern int (*colopy_ask_hook)(void);  /* live front end's answer path */
 
 /* ---- player commands (colopy_cmd.c) — Phase 5 slice 2 ------------------ */

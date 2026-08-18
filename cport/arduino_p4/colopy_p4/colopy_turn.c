@@ -16,6 +16,7 @@
  *   - unit BUILD targets: the importer nulls them (bip >= 42), so the
  *     completion path handles buildings only.  TBD with the unit pipeline.
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -981,9 +982,50 @@ void unit_remove(int ui) {
  * core's invariant pattern), its GAME.TXT tail rows are the options,
  * and the hook blocks until a row is chosen (-1 = dismissed). */
 int (*colopy_ask_hook)(void) = 0;
+/* Scripted answers alternate PER KEY, not on one global counter.
+ *
+ * A global counter made the policy fragile: if either engine skipped a
+ * question the other asked, every LATER answer flipped.  This engine does not
+ * reach the European meeting flow (B4.6), so from the input oracle's 30-Space
+ * block on, the JS had asked @PEACEMEEK and this one had not — 16 asks
+ * against 15 — and the two answered the same questions differently from
+ * there.  It surfaced as the colony BUY button looking like two separate
+ * bugs when both engines were in fact running rushBuy and asking @BUYME1,
+ * and only the ANSWER differed.
+ *
+ * Keying the counters makes a skipped question local to its own key.  The key
+ * is the event emitted immediately before the ask — the core's invariant
+ * prompt pattern, which is also what a live front end reads.  All three JS
+ * harnesses in tools/sim_trace.py carry the same policy; changing one alone
+ * is what made the first attempt at this look broken. */
+#define ASK_KEYS 64
+static struct { char key[24]; uint32_t n; } ask_keys[ASK_KEYS];
+static int n_ask_keys;
+/* read-only view of the table for the oracle's askmap projection (G2c) */
+int ask_key_count(void) { return n_ask_keys; }
+const char *ask_key_name(int i) {
+    return (i >= 0 && i < n_ask_keys) ? ask_keys[i].key : "";
+}
+uint32_t ask_key_hits(int i) {
+    return (i >= 0 && i < n_ask_keys) ? ask_keys[i].n : 0u;
+}
+void ask_reset(void) { n_ask_keys = 0; }
 int ask_choice(void) {
     if (colopy_ask_hook) return colopy_ask_hook();
-    int c = (int)(CR.ask_seq++ % 2u);
+    const char *k = ev_last_key();
+    int slot = -1;
+    for (int i = 0; i < n_ask_keys; i++)
+        if (strcmp(ask_keys[i].key, k) == 0) { slot = i; break; }
+    if (slot < 0 && n_ask_keys < ASK_KEYS) {
+        slot = n_ask_keys++;
+        snprintf(ask_keys[slot].key, sizeof(ask_keys[slot].key), "%s", k);
+        ask_keys[slot].n = 0;
+    }
+    /* the table is a test convention, not engine state; past ASK_KEYS
+     * distinct prompts fall back to the old global counter rather than
+     * silently sharing someone else's slot */
+    uint32_t n = slot >= 0 ? ask_keys[slot].n++ : CR.ask_seq++;
+    int c = (int)(n % 2u);
     ev_emit(c ? "A1" : "A0", 0, 0, 0, 0);
     return c;
 }

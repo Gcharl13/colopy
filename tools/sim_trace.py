@@ -157,8 +157,26 @@ INPUT = """([save, events]) => {
   // the shared trace conventions (TURNS block): asks answered by the
   // seq%2 policy, popups record-only (no modal queue), dialogs inert,
   // woodcuts dismissed at once
-  let _askSeq = 0;
-  askEvent = (k, subs, cb) => { const c = _askSeq++ % 2; if (cb) cb(c); };
+  // Scripted answers alternate PER KEY, not on one global counter.
+  //
+  // A global counter made the policy fragile: if either engine skipped a
+  // question the other asked, every LATER answer flipped. The C does not
+  // reach the European meeting flow (B4.6), so from the input oracle's
+  // 30-Space block on, the JS had asked @PEACEMEEK and the C had not -- 16
+  // asks against 15 -- and the two answered the same questions differently
+  // from there. It surfaced as the colony BUY button looking like two
+  // separate bugs when both engines were in fact running rushBuy and asking
+  // @BUYME1, and only the ANSWER differed.
+  //
+  // Keyed counters make a skipped question local to its own key. The
+  // alternation is kept so both branches of each ask still get exercised.
+  // ALL THREE harnesses below and the C's ask_choice must use the same
+  // policy -- changing one alone is what made the first attempt look broken.
+  const _askBy = Object.create(null);
+  askEvent = (k, subs, cb) => {
+    const c = ((_askBy[k] = (_askBy[k] || 0) + 1) - 1) % 2;
+    if (cb) cb(c);
+  };
   showEvent = () => {};
   openDialog = () => {};
   const _wc = woodcutOnce;
@@ -198,6 +216,13 @@ INPUT = """([save, events]) => {
       // rather than papered over by widening the comparison to swallow it.
       emrows: G.euroMenu === 'ship' || G.euroMenu === 'dockunit'
         ? euroMenuRows().map(r => r.label) : [],
+      // How many times each prompt has been asked. input_compare compares
+      // this on the INTERSECTION only: a key just one engine asks is B4.6
+      // (this one reaches the European meeting flow and the C does not) and
+      // is reported, not failed. A key BOTH ask a different number of times
+      // means the two are answering the same question differently, which is
+      // the drift that made the BUY button look like two bugs (G2c).
+      askmap: Object.assign({}, _askBy),
       // The dialog KIND, matching the C's UI.dlg enum (colopy_input.h):
       // 0 none, 1 @HOWMUCH5 (Europe sell), 2 @HOWMUCH1 (colony load),
       // 3 @HOWMUCH2 (colony unload), 4 any other openDialog.  This read
@@ -402,10 +427,11 @@ NEWGAME = """([nation, diff, n]) => {
   const evs = [];
   const _show = showEvent, _ask = askEvent;
   showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
-  let _askSeq = 0;
+  // per-KEY alternation — see the note in the INPUT harness above
+  const _askBy = Object.create(null);
   askEvent = (k, subs, cb, opts) => {
     evs.push(k);
-    const choice = _askSeq++ % 2;
+    const choice = ((_askBy[k] = (_askBy[k] || 0) + 1) - 1) % 2;
     evs.push('A' + choice);
     if (cb) cb(choice);
     G.dialog = null;
@@ -478,11 +504,12 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
   // lands in the parity diff.  OFF until the C ask sites carry their
   // ported callback bodies (task #88 slice 1) — flip with the C flag.
   const ANSWER_ASKS = true;
-  let _askSeq = 0;
+  // per-KEY alternation — see the note in the INPUT harness above
+  const _askBy = Object.create(null);
   askEvent = (k, subs, cb, opts) => {
     evs.push(k);
     if (ANSWER_ASKS) {
-      const choice = _askSeq++ % 2;
+      const choice = ((_askBy[k] = (_askBy[k] || 0) + 1) - 1) % 2;
       evs.push('A' + choice);
       if (cb) cb(choice);
     }
