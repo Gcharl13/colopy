@@ -2933,6 +2933,20 @@ extern const char *const dat_events_europeshipoptions_body[4];
 extern const int32_t dat_events_europeshipoptions_width;
 extern const char *const dat_events_europeshipoptions_default;
 extern const uint8_t dat_events_europeshipoptions_small;
+#define DAT_EVENTS_UNITOPTIONS_BODY_COUNT 5
+extern const char *const dat_events_unitoptions_body[5];
+#define DAT_EVENTS_UNITOPTIONS_TAIL_COUNT 0
+#define dat_events_unitoptions_tail NULL
+extern const int32_t dat_events_unitoptions_width;
+extern const char *const dat_events_unitoptions_default;
+extern const uint8_t dat_events_unitoptions_small;
+#define DAT_EVENTS_SHIPOPTIONS_BODY_COUNT 6
+extern const char *const dat_events_shipoptions_body[6];
+#define DAT_EVENTS_SHIPOPTIONS_TAIL_COUNT 0
+#define dat_events_shipoptions_tail NULL
+extern const int32_t dat_events_shipoptions_width;
+extern const char *const dat_events_shipoptions_default;
+extern const uint8_t dat_events_shipoptions_small;
 #define DAT_EVENTS_SHIPCOMBAT_BODY_COUNT 1
 extern const char *const dat_events_shipcombat_body[1];
 #define DAT_EVENTS_SHIPCOMBAT_TAIL_COUNT 0
@@ -3055,8 +3069,8 @@ typedef struct {
   const char *dflt;
   uint8_t small;
 } dat_events_entry_t;
-#define DAT_EVENTS_INDEX_COUNT 415
-extern const dat_events_entry_t dat_events_index[415];
+#define DAT_EVENTS_INDEX_COUNT 417
+extern const dat_events_entry_t dat_events_index[417];
 #define DAT_TEXT_BEGINMENU_COUNT 6
 extern const char *const dat_text_beginmenu[6];
 extern const char dat_text_leadername[];

@@ -1521,787 +1521,794 @@ static const char tx_s1506[] COLOPY_TXMEM = "No changes.";
 static const char tx_s1507[] COLOPY_TXMEM = "Move to front.";
 static const char tx_s1508[] COLOPY_TXMEM = "Set sail for the New World.";
 static const char tx_s1509[] COLOPY_TXMEM = "Unload all cargo.";
-static const char tx_s1510[] COLOPY_TXMEM = "Only {Privateers} and {Frigates} can attack enemy ships.";
-static const char tx_s1511[] COLOPY_TXMEM = "{%STRING0} at {%STRING1} opens fire on {%STRING2 %STRING3}!";
-static const char tx_s1512[] COLOPY_TXMEM = "{%STRING0} cargo of {%NUMBER0 %STRING1} captured by {%STRING2 %STRING3}!";
-static const char tx_s1513[] COLOPY_TXMEM = "{%STRING0 %STRING1} evades {%STRING2 %STRING3}.";
-static const char tx_s1514[] COLOPY_TXMEM = "Our {scouts} have reached the outskirts of {%STRING0},";
-static const char tx_s1515[] COLOPY_TXMEM = "Your Excellency.  What shall they do\?";
-static const char tx_s1516[] COLOPY_TXMEM = "Meet With Mayor";
-static const char tx_s1517[] COLOPY_TXMEM = "Infiltrate Colony";
-static const char tx_s1518[] COLOPY_TXMEM = "Attack Colony";
-static const char tx_s1519[] COLOPY_TXMEM = "Nothing";
-static const char tx_s1520[] COLOPY_TXMEM = "Scouts cannot meet with mayors during the {War of Independence}.";
-static const char tx_s1521[] COLOPY_TXMEM = "War of the Spanish Succession ends in Europe!";
-static const char tx_s1522[] COLOPY_TXMEM = "{%STRING0}, ravaged by war, agrees to cede %STRING1";
-static const char tx_s1523[] COLOPY_TXMEM = "to the {%STRING2}.  Treaty of Utrecht specifies that all";
-static const char tx_s1524[] COLOPY_TXMEM = "{%STRING3} possessions in the New World now fall under {%STRING2} rule.";
-static const char tx_s1525[] COLOPY_TXMEM = "Set Game Options";
-static const char tx_s1526[] COLOPY_TXMEM = "Show ~Indian Moves";
-static const char tx_s1527[] COLOPY_TXMEM = "Show ~Foreign Moves";
-static const char tx_s1528[] COLOPY_TXMEM = "Fast Piece ~Slide";
-static const char tx_s1529[] COLOPY_TXMEM = "~End of Turn";
-static const char tx_s1530[] COLOPY_TXMEM = "~Autosave";
-static const char tx_s1531[] COLOPY_TXMEM = "~Combat Analysis";
-static const char tx_s1532[] COLOPY_TXMEM = "Water Color C~ycling";
-static const char tx_s1533[] COLOPY_TXMEM = "~Tutorial Hints";
-static const char tx_s1534[] COLOPY_TXMEM = "Set Colony Report Options";
-static const char tx_s1535[] COLOPY_TXMEM = "Labels on {buildings}";
-static const char tx_s1536[] COLOPY_TXMEM = "Labels on {cargo} and {terrain}";
-static const char tx_s1537[] COLOPY_TXMEM = "Report when colonists {trained}";
-static const char tx_s1538[] COLOPY_TXMEM = "Report {food} shortages";
-static const char tx_s1539[] COLOPY_TXMEM = "Report {raw materials} shortages";
-static const char tx_s1540[] COLOPY_TXMEM = "Report {tools} needed for production";
-static const char tx_s1541[] COLOPY_TXMEM = "Report {inefficient} government";
-static const char tx_s1542[] COLOPY_TXMEM = "Report {new cargos} available";
-static const char tx_s1543[] COLOPY_TXMEM = "Report {Sons of Liberty} membership";
-static const char tx_s1544[] COLOPY_TXMEM = "Report {rebel} majorities";
-static const char tx_s1545[] COLOPY_TXMEM = "Set Sound Options";
-static const char tx_s1546[] COLOPY_TXMEM = "~Background Music";
-static const char tx_s1547[] COLOPY_TXMEM = "~Event Music";
-static const char tx_s1548[] COLOPY_TXMEM = "~Sound Effects";
-static const char tx_s1549[] COLOPY_TXMEM = "Do you really want to quit\?";
-static const char tx_s1550[] COLOPY_TXMEM = "Select a piece of music:";
-static const char tx_s1551[] COLOPY_TXMEM = "\"Bird Song\"";
-static const char tx_s1552[] COLOPY_TXMEM = "\"Smoky Tune\"";
-static const char tx_s1553[] COLOPY_TXMEM = "\"Cornwall\"";
-static const char tx_s1554[] COLOPY_TXMEM = "\"Shady Grove\"";
-static const char tx_s1555[] COLOPY_TXMEM = "\"Fiddler's Dance\"";
-static const char tx_s1556[] COLOPY_TXMEM = "\"Jine the Cavalry\"";
-static const char tx_s1557[] COLOPY_TXMEM = "\"Joe Clark\"";
-static const char tx_s1558[] COLOPY_TXMEM = "\"Little Fiddle\"";
-static const char tx_s1559[] COLOPY_TXMEM = "\"Hornpipe\"";
-static const char tx_s1560[] COLOPY_TXMEM = "\"Bonny Morn\"";
-static const char tx_s1561[] COLOPY_TXMEM = "\"Hole In The Wall\"";
-static const char tx_s1562[] COLOPY_TXMEM = "\"Nightingale\"";
-static const char tx_s1563[] COLOPY_TXMEM = "Independence Tunes";
-static const char tx_s1564[] COLOPY_TXMEM = "Military Tunes";
-static const char tx_s1565[] COLOPY_TXMEM = "Indian Tunes";
-static const char tx_s1566[] COLOPY_TXMEM = "Select an independence tune:";
-static const char tx_s1567[] COLOPY_TXMEM = "\"Love Forever\"";
-static const char tx_s1568[] COLOPY_TXMEM = "\"York Fusiliers\"";
-static const char tx_s1569[] COLOPY_TXMEM = "\"Washington Artillery March\"";
-static const char tx_s1570[] COLOPY_TXMEM = "\"Road to Boston\"";
-static const char tx_s1571[] COLOPY_TXMEM = "\"Independence Way\"";
-static const char tx_s1572[] COLOPY_TXMEM = "Select a military tune:";
-static const char tx_s1573[] COLOPY_TXMEM = "\"The Reveille\"";
-static const char tx_s1574[] COLOPY_TXMEM = "\"Successful Campaign\"";
-static const char tx_s1575[] COLOPY_TXMEM = "\"Morelli's Lesson\"";
-static const char tx_s1576[] COLOPY_TXMEM = "\"To Arms\"";
-static const char tx_s1577[] COLOPY_TXMEM = "Select an Indian tune:";
-static const char tx_s1578[] COLOPY_TXMEM = "\"Indian Victory\"";
-static const char tx_s1579[] COLOPY_TXMEM = "\"Natives\"";
-static const char tx_s1580[] COLOPY_TXMEM = "\"Tenochtitlan\"";
-static const char tx_s1581[] COLOPY_TXMEM = "\"Pizarro at Cuzco\"";
-static const char tx_s1582[] COLOPY_TXMEM = "Exit to DOS\?";
-static const char tx_s1583[] COLOPY_TXMEM = "ABANDON";
-static const char tx_s1584[] COLOPY_TXMEM = "2";
-static const char tx_s1585[] COLOPY_TXMEM = "ABANDON2";
-static const char tx_s1586[] COLOPY_TXMEM = "ALREADYHAVE";
-static const char tx_s1587[] COLOPY_TXMEM = "ALREADYREVOLUTION";
-static const char tx_s1588[] COLOPY_TXMEM = "ALREADYSMITE";
-static const char tx_s1589[] COLOPY_TXMEM = "AMBUSHHINT";
-static const char tx_s1590[] COLOPY_TXMEM = "APOSTATES";
-static const char tx_s1591[] COLOPY_TXMEM = "APOSTATESUSA";
-static const char tx_s1592[] COLOPY_TXMEM = "ARMOPTIONS";
-static const char tx_s1593[] COLOPY_TXMEM = "ARTILLERY";
-static const char tx_s1594[] COLOPY_TXMEM = "ARTILLERY2";
-static const char tx_s1595[] COLOPY_TXMEM = "BADCARGO";
-static const char tx_s1596[] COLOPY_TXMEM = "BADHAGGLE0";
-static const char tx_s1597[] COLOPY_TXMEM = "BADHAGGLE1";
-static const char tx_s1598[] COLOPY_TXMEM = "BADHAGGLE2";
-static const char tx_s1599[] COLOPY_TXMEM = "BADHAGGLE3";
-static const char tx_s1600[] COLOPY_TXMEM = "BRING";
-static const char tx_s1601[] COLOPY_TXMEM = "BUILT";
-static const char tx_s1602[] COLOPY_TXMEM = "BURIAL1";
-static const char tx_s1603[] COLOPY_TXMEM = "BURIAL2";
-static const char tx_s1604[] COLOPY_TXMEM = "BURIAL3";
-static const char tx_s1605[] COLOPY_TXMEM = "BURNED";
-static const char tx_s1606[] COLOPY_TXMEM = "BURNED2";
-static const char tx_s1607[] COLOPY_TXMEM = "BURNED3";
-static const char tx_s1608[] COLOPY_TXMEM = "BUY0";
-static const char tx_s1609[] COLOPY_TXMEM = "BUY1";
-static const char tx_s1610[] COLOPY_TXMEM = "BUYME0";
-static const char tx_s1611[] COLOPY_TXMEM = "BUYME1";
-static const char tx_s1612[] COLOPY_TXMEM = "BUYWHICH";
-static const char tx_s1613[] COLOPY_TXMEM = "CANCELPEACE";
-static const char tx_s1614[] COLOPY_TXMEM = "CANESUGAR";
-static const char tx_s1615[] COLOPY_TXMEM = "CANNOTATTACK";
-static const char tx_s1616[] COLOPY_TXMEM = "CANTMOBILIZE";
-static const char tx_s1617[] COLOPY_TXMEM = "CAPTURED";
-static const char tx_s1618[] COLOPY_TXMEM = "CAPTURED2";
-static const char tx_s1619[] COLOPY_TXMEM = "CAPTURED3";
-static const char tx_s1620[] COLOPY_TXMEM = "CARGOCAPTURE";
-static const char tx_s1621[] COLOPY_TXMEM = "CARGOLOAD";
-static const char tx_s1622[] COLOPY_TXMEM = "CARGOREADY0";
-static const char tx_s1623[] COLOPY_TXMEM = "CARGOREADY1";
-static const char tx_s1624[] COLOPY_TXMEM = "CARGOREADY2";
-static const char tx_s1625[] COLOPY_TXMEM = "CARGOUNLOAD";
-static const char tx_s1626[] COLOPY_TXMEM = "CASHTREASURE";
-static const char tx_s1627[] COLOPY_TXMEM = "CHIEFAREA";
-static const char tx_s1628[] COLOPY_TXMEM = "CHIEFBORED";
-static const char tx_s1629[] COLOPY_TXMEM = "CHIEFGIFT";
-static const char tx_s1630[] COLOPY_TXMEM = "CHIEFGUIDES";
-static const char tx_s1631[] COLOPY_TXMEM = "CHIEFHOWDY";
-static const char tx_s1632[] COLOPY_TXMEM = "CHIEFKILL";
-static const char tx_s1633[] COLOPY_TXMEM = "CLEARCUT";
-static const char tx_s1634[] COLOPY_TXMEM = "COLLEGE2";
-static const char tx_s1635[] COLOPY_TXMEM = "COLONISTCAPTURE";
-static const char tx_s1636[] COLOPY_TXMEM = "COLONISTCAPTURE2";
-static const char tx_s1637[] COLOPY_TXMEM = "COLONYOPTIONS";
-static const char tx_s1638[] COLOPY_TXMEM = "CONFISCATE";
-static const char tx_s1639[] COLOPY_TXMEM = "CONSIDER";
-static const char tx_s1640[] COLOPY_TXMEM = "CONTINENTAL";
-static const char tx_s1641[] COLOPY_TXMEM = "COTTON";
-static const char tx_s1642[] COLOPY_TXMEM = "CUSTOM";
-static const char tx_s1643[] COLOPY_TXMEM = "DEADCONVERTS";
-static const char tx_s1644[] COLOPY_TXMEM = "DECLARE";
-static const char tx_s1645[] COLOPY_TXMEM = "DECLAREWAR";
-static const char tx_s1646[] COLOPY_TXMEM = "DEFICIT";
-static const char tx_s1647[] COLOPY_TXMEM = "DEFOREST";
-static const char tx_s1648[] COLOPY_TXMEM = "DEMOTE";
-static const char tx_s1649[] COLOPY_TXMEM = "DEPLETION";
-static const char tx_s1650[] COLOPY_TXMEM = "DISBANDSHIP";
-static const char tx_s1651[] COLOPY_TXMEM = "DONTKNOWSHIPS";
-static const char tx_s1652[] COLOPY_TXMEM = "DOS";
-static const char tx_s1653[] COLOPY_TXMEM = "EFFICIENT";
-static const char tx_s1654[] COLOPY_TXMEM = "EUROPEARM";
-static const char tx_s1655[] COLOPY_TXMEM = "EUROPELOSE";
-static const char tx_s1656[] COLOPY_TXMEM = "EUROPENOTAVAIL";
-static const char tx_s1657[] COLOPY_TXMEM = "EUROPENOTLEAVE";
-static const char tx_s1658[] COLOPY_TXMEM = "EUROPESHIPCLICK";
-static const char tx_s1659[] COLOPY_TXMEM = "EUROPESHIPOPTIONS";
-static const char tx_s1660[] COLOPY_TXMEM = "EUROPEWIN";
-static const char tx_s1661[] COLOPY_TXMEM = "EVASIVE";
-static const char tx_s1662[] COLOPY_TXMEM = "EXPLOITS";
-static const char tx_s1663[] COLOPY_TXMEM = "EXTINCT";
-static const char tx_s1664[] COLOPY_TXMEM = "EXTORTLAUGH";
-static const char tx_s1665[] COLOPY_TXMEM = "EXTORTNO";
-static const char tx_s1666[] COLOPY_TXMEM = "EXTORTPOOR";
-static const char tx_s1667[] COLOPY_TXMEM = "EXTORTSTUFF";
-static const char tx_s1668[] COLOPY_TXMEM = "FOOD1";
-static const char tx_s1669[] COLOPY_TXMEM = "FOOD2";
-static const char tx_s1670[] COLOPY_TXMEM = "FOODLOW";
-static const char tx_s1671[] COLOPY_TXMEM = "FOREIGNNOTAVAIL";
-static const char tx_s1672[] COLOPY_TXMEM = "FORTFIRE";
-static const char tx_s1673[] COLOPY_TXMEM = "FREEDOM";
-static const char tx_s1674[] COLOPY_TXMEM = "FURS";
-static const char tx_s1675[] COLOPY_TXMEM = "GAMEOPTIONS";
-static const char tx_s1676[] COLOPY_TXMEM = "GIFTS";
-static const char tx_s1677[] COLOPY_TXMEM = "GIVECASH";
-static const char tx_s1678[] COLOPY_TXMEM = "GRUDGEWAGONS";
-static const char tx_s1679[] COLOPY_TXMEM = "HALF";
-static const char tx_s1680[] COLOPY_TXMEM = "HAVETREATY";
-static const char tx_s1681[] COLOPY_TXMEM = "HEATHEN";
-static const char tx_s1682[] COLOPY_TXMEM = "HEATHENUSA";
-static const char tx_s1683[] COLOPY_TXMEM = "HELLOAHOY";
-static const char tx_s1684[] COLOPY_TXMEM = "HELLOFIRST";
-static const char tx_s1685[] COLOPY_TXMEM = "HELLOMANLY";
-static const char tx_s1686[] COLOPY_TXMEM = "HELLOMEEK";
-static const char tx_s1687[] COLOPY_TXMEM = "HELLOUSA";
-static const char tx_s1688[] COLOPY_TXMEM = "HERESY0";
-static const char tx_s1689[] COLOPY_TXMEM = "HERESY1";
-static const char tx_s1690[] COLOPY_TXMEM = "HOWTOWIN";
-static const char tx_s1691[] COLOPY_TXMEM = "INDEPENDENCE";
-static const char tx_s1692[] COLOPY_TXMEM = "INDIANBEGFOOD";
-static const char tx_s1693[] COLOPY_TXMEM = "INDIANBOW";
-static const char tx_s1694[] COLOPY_TXMEM = "INDIANBRIBE";
-static const char tx_s1695[] COLOPY_TXMEM = "INDIANBURN";
-static const char tx_s1696[] COLOPY_TXMEM = "INDIANBURNCOLONY";
-static const char tx_s1697[] COLOPY_TXMEM = "INDIANBURNCOLONY2";
-static const char tx_s1698[] COLOPY_TXMEM = "INDIANCITY";
-static const char tx_s1699[] COLOPY_TXMEM = "INDIANCOME";
-static const char tx_s1700[] COLOPY_TXMEM = "INDIANCOMMENT";
-static const char tx_s1701[] COLOPY_TXMEM = "INDIANFOREST";
-static const char tx_s1702[] COLOPY_TXMEM = "INDIANFOREST2";
-static const char tx_s1703[] COLOPY_TXMEM = "INDIANGIVEFOOD";
-static const char tx_s1704[] COLOPY_TXMEM = "INDIANGIVESTUFF";
-static const char tx_s1705[] COLOPY_TXMEM = "INDIANGOLD";
-static const char tx_s1706[] COLOPY_TXMEM = "INDIANGRUDGE";
-static const char tx_s1707[] COLOPY_TXMEM = "INDIANHELLO1";
-static const char tx_s1708[] COLOPY_TXMEM = "INDIANHELLO2";
-static const char tx_s1709[] COLOPY_TXMEM = "INDIANLAND";
-static const char tx_s1710[] COLOPY_TXMEM = "INDIANLOSE";
-static const char tx_s1711[] COLOPY_TXMEM = "INDIANPEACE";
-static const char tx_s1712[] COLOPY_TXMEM = "INDIANROAD";
-static const char tx_s1713[] COLOPY_TXMEM = "INDIANSCONVERT";
-static const char tx_s1714[] COLOPY_TXMEM = "INDIANSHUN";
-static const char tx_s1715[] COLOPY_TXMEM = "INDIANSLAVES";
-static const char tx_s1716[] COLOPY_TXMEM = "INDIANSURPRISE";
-static const char tx_s1717[] COLOPY_TXMEM = "INDIANTREATY";
-static const char tx_s1718[] COLOPY_TXMEM = "INDIANWAGONS";
-static const char tx_s1719[] COLOPY_TXMEM = "INDIANWAR";
-static const char tx_s1720[] COLOPY_TXMEM = "INDIANWARFARE";
-static const char tx_s1721[] COLOPY_TXMEM = "INDIANWARPATH";
-static const char tx_s1722[] COLOPY_TXMEM = "INDIANWARPATH2";
-static const char tx_s1723[] COLOPY_TXMEM = "INDIANWELCOME";
-static const char tx_s1724[] COLOPY_TXMEM = "INDIANWIN0";
-static const char tx_s1725[] COLOPY_TXMEM = "INDIANWIN1";
-static const char tx_s1726[] COLOPY_TXMEM = "INDIANWIN2";
-static const char tx_s1727[] COLOPY_TXMEM = "INDIANWINCOLONY";
-static const char tx_s1728[] COLOPY_TXMEM = "INDIANWINCOLONY2";
-static const char tx_s1729[] COLOPY_TXMEM = "INEFFICIENT";
-static const char tx_s1730[] COLOPY_TXMEM = "INTERVENE";
-static const char tx_s1731[] COLOPY_TXMEM = "INTERVENTION";
-static const char tx_s1732[] COLOPY_TXMEM = "INVASION";
-static const char tx_s1733[] COLOPY_TXMEM = "KEEPSTOCKADE";
-static const char tx_s1734[] COLOPY_TXMEM = "KILLWAGONS";
-static const char tx_s1735[] COLOPY_TXMEM = "KINGBUY";
-static const char tx_s1736[] COLOPY_TXMEM = "KINGFRIGATE";
-static const char tx_s1737[] COLOPY_TXMEM = "KINGGALLEON2";
-static const char tx_s1738[] COLOPY_TXMEM = "KINGGALLEON3";
-static const char tx_s1739[] COLOPY_TXMEM = "KINGLOSE";
-static const char tx_s1740[] COLOPY_TXMEM = "KINGLOWER";
-static const char tx_s1741[] COLOPY_TXMEM = "KINGMERCY";
-static const char tx_s1742[] COLOPY_TXMEM = "KINGMOBILIZE";
-static const char tx_s1743[] COLOPY_TXMEM = "KINGNAVACT";
-static const char tx_s1744[] COLOPY_TXMEM = "KINGNEWWAR";
-static const char tx_s1745[] COLOPY_TXMEM = "KINGNOTHING";
-static const char tx_s1746[] COLOPY_TXMEM = "KINGRAISE";
-static const char tx_s1747[] COLOPY_TXMEM = "KINGRECRUIT";
-static const char tx_s1748[] COLOPY_TXMEM = "KINGSTAMPACT";
-static const char tx_s1749[] COLOPY_TXMEM = "KINGTAX";
-static const char tx_s1750[] COLOPY_TXMEM = "KINGVICTORY";
-static const char tx_s1751[] COLOPY_TXMEM = "KINGWAR";
-static const char tx_s1752[] COLOPY_TXMEM = "KINGWIFE";
-static const char tx_s1753[] COLOPY_TXMEM = "KINGWIN";
-static const char tx_s1754[] COLOPY_TXMEM = "KISSSORRY";
-static const char tx_s1755[] COLOPY_TXMEM = "KISSUP";
-static const char tx_s1756[] COLOPY_TXMEM = "LANDFIRST";
-static const char tx_s1757[] COLOPY_TXMEM = "LEARNALREADY";
-static const char tx_s1758[] COLOPY_TXMEM = "LEARNCRIMINAL";
-static const char tx_s1759[] COLOPY_TXMEM = "LEARNDONE";
-static const char tx_s1760[] COLOPY_TXMEM = "LEARNLATER";
-static const char tx_s1761[] COLOPY_TXMEM = "LEARNMAD";
-static const char tx_s1762[] COLOPY_TXMEM = "LEARNMASTER";
-static const char tx_s1763[] COLOPY_TXMEM = "LEARNSLOW";
-static const char tx_s1764[] COLOPY_TXMEM = "LEARNSTAY";
-static const char tx_s1765[] COLOPY_TXMEM = "LOBOTOMIZE";
-static const char tx_s1766[] COLOPY_TXMEM = "LOOT";
-static const char tx_s1767[] COLOPY_TXMEM = "LOOT2";
-static const char tx_s1768[] COLOPY_TXMEM = "LOOTCAPTURE";
-static const char tx_s1769[] COLOPY_TXMEM = "LOOTCASH";
-static const char tx_s1770[] COLOPY_TXMEM = "LOOTFOREIGN";
-static const char tx_s1771[] COLOPY_TXMEM = "LOOTWAGONS";
-static const char tx_s1772[] COLOPY_TXMEM = "LOSENOCOLONIES";
-static const char tx_s1773[] COLOPY_TXMEM = "LOSING1";
-static const char tx_s1774[] COLOPY_TXMEM = "LOSING2";
-static const char tx_s1775[] COLOPY_TXMEM = "LOSING3";
-static const char tx_s1776[] COLOPY_TXMEM = "LOSTCITY0";
-static const char tx_s1777[] COLOPY_TXMEM = "LOSTCITY1";
-static const char tx_s1778[] COLOPY_TXMEM = "LOSTCITY2";
-static const char tx_s1779[] COLOPY_TXMEM = "LOSTCITY3";
-static const char tx_s1780[] COLOPY_TXMEM = "LOSTCITY4";
-static const char tx_s1781[] COLOPY_TXMEM = "LOSTCITY5";
-static const char tx_s1782[] COLOPY_TXMEM = "LOSTCITY6";
-static const char tx_s1783[] COLOPY_TXMEM = "LOSTCITY7";
-static const char tx_s1784[] COLOPY_TXMEM = "LOSTCITY8";
-static const char tx_s1785[] COLOPY_TXMEM = "LOSTCITY9";
-static const char tx_s1786[] COLOPY_TXMEM = "LOSTOURSCOUTS";
-static const char tx_s1787[] COLOPY_TXMEM = "LOSTTHEIRSCOUTS";
-static const char tx_s1788[] COLOPY_TXMEM = "LUMBER";
-static const char tx_s1789[] COLOPY_TXMEM = "MADATSHIPS";
-static const char tx_s1790[] COLOPY_TXMEM = "MADATWAGONS";
-static const char tx_s1791[] COLOPY_TXMEM = "MAYBEWITHDRAW";
-static const char tx_s1792[] COLOPY_TXMEM = "MERCANTILISM";
-static const char tx_s1793[] COLOPY_TXMEM = "MERCENARIES";
-static const char tx_s1794[] COLOPY_TXMEM = "MERCENARY";
-static const char tx_s1795[] COLOPY_TXMEM = "MERCS";
-static const char tx_s1796[] COLOPY_TXMEM = "MILITARY";
-static const char tx_s1797[] COLOPY_TXMEM = "MISSION0";
-static const char tx_s1798[] COLOPY_TXMEM = "MISSION1";
-static const char tx_s1799[] COLOPY_TXMEM = "MISSION2";
-static const char tx_s1800[] COLOPY_TXMEM = "MISSION3";
-static const char tx_s1801[] COLOPY_TXMEM = "MOBILIZE";
-static const char tx_s1802[] COLOPY_TXMEM = "MOBILIZE2";
-static const char tx_s1803[] COLOPY_TXMEM = "MORETHANTHREE";
-static const char tx_s1804[] COLOPY_TXMEM = "NEEDCOLLEGE";
-static const char tx_s1805[] COLOPY_TXMEM = "NEEDTOOLS";
-static const char tx_s1806[] COLOPY_TXMEM = "NEEDTOOLS0";
-static const char tx_s1807[] COLOPY_TXMEM = "NEEDUNIVERSITY";
-static const char tx_s1808[] COLOPY_TXMEM = "NEWCOLONIST";
-static const char tx_s1809[] COLOPY_TXMEM = "NOCITY";
-static const char tx_s1810[] COLOPY_TXMEM = "NOCOLONIESEITHER";
-static const char tx_s1811[] COLOPY_TXMEM = "NOCONTACT";
-static const char tx_s1812[] COLOPY_TXMEM = "NODOCKS";
-static const char tx_s1813[] COLOPY_TXMEM = "NOLOOT";
-static const char tx_s1814[] COLOPY_TXMEM = "NOMAYORSDURINGREV";
-static const char tx_s1815[] COLOPY_TXMEM = "NOMOREWAGONS";
-static const char tx_s1816[] COLOPY_TXMEM = "NOMOREWAREHOUSE";
-static const char tx_s1817[] COLOPY_TXMEM = "NOPLOW";
-static const char tx_s1818[] COLOPY_TXMEM = "NOPORT";
-static const char tx_s1819[] COLOPY_TXMEM = "NOROAD";
-static const char tx_s1820[] COLOPY_TXMEM = "NOTEACHER";
-static const char tx_s1821[] COLOPY_TXMEM = "NOTENOUGH";
-static const char tx_s1822[] COLOPY_TXMEM = "NOTHINGWITHDRAW";
-static const char tx_s1823[] COLOPY_TXMEM = "NOTWITHDRAW";
-static const char tx_s1824[] COLOPY_TXMEM = "NOWARSDURINGREV";
-static const char tx_s1825[] COLOPY_TXMEM = "OLDPEACEMANLY";
-static const char tx_s1826[] COLOPY_TXMEM = "OLDPEACEMEEK";
-static const char tx_s1827[] COLOPY_TXMEM = "ONLYCOL";
-static const char tx_s1828[] COLOPY_TXMEM = "ONLYPIO";
-static const char tx_s1829[] COLOPY_TXMEM = "ORE";
-static const char tx_s1830[] COLOPY_TXMEM = "OTHERGRANTED";
-static const char tx_s1831[] COLOPY_TXMEM = "OTHERLESS";
-static const char tx_s1832[] COLOPY_TXMEM = "OTHERMIGHT";
-static const char tx_s1833[] COLOPY_TXMEM = "OVERBOARD";
-static const char tx_s1834[] COLOPY_TXMEM = "PEACEMANLY";
-static const char tx_s1835[] COLOPY_TXMEM = "PEACEMEEK";
-static const char tx_s1836[] COLOPY_TXMEM = "PEACEUSA";
-static const char tx_s1837[] COLOPY_TXMEM = "PICKACARGO";
-static const char tx_s1838[] COLOPY_TXMEM = "PICKINDEPENDENCE";
-static const char tx_s1839[] COLOPY_TXMEM = "PICKINDIAN";
-static const char tx_s1840[] COLOPY_TXMEM = "PICKMILITARY";
-static const char tx_s1841[] COLOPY_TXMEM = "PICKMUSIC";
-static const char tx_s1842[] COLOPY_TXMEM = "PIRACY";
-static const char tx_s1843[] COLOPY_TXMEM = "PIRACYUSA";
-static const char tx_s1844[] COLOPY_TXMEM = "PISS0";
-static const char tx_s1845[] COLOPY_TXMEM = "PISS1";
-static const char tx_s1846[] COLOPY_TXMEM = "PISS2";
-static const char tx_s1847[] COLOPY_TXMEM = "PISS3";
-static const char tx_s1848[] COLOPY_TXMEM = "PISS4";
-static const char tx_s1849[] COLOPY_TXMEM = "PISS5";
-static const char tx_s1850[] COLOPY_TXMEM = "PRICEDOWN";
-static const char tx_s1851[] COLOPY_TXMEM = "PRICEUP";
-static const char tx_s1852[] COLOPY_TXMEM = "PROVOKE";
-static const char tx_s1853[] COLOPY_TXMEM = "PURCHASETAX";
-static const char tx_s1854[] COLOPY_TXMEM = "RAIDBURN";
-static const char tx_s1855[] COLOPY_TXMEM = "RAIDGOLD";
-static const char tx_s1856[] COLOPY_TXMEM = "RAIDNOTHING";
-static const char tx_s1857[] COLOPY_TXMEM = "RAIDSHIP";
-static const char tx_s1858[] COLOPY_TXMEM = "RAIDSTORES";
-static const char tx_s1859[] COLOPY_TXMEM = "RAIDWREAK";
-static const char tx_s1860[] COLOPY_TXMEM = "REALLYBUY";
-static const char tx_s1861[] COLOPY_TXMEM = "REBELDOWN";
-static const char tx_s1862[] COLOPY_TXMEM = "REBELMAJORITY";
-static const char tx_s1863[] COLOPY_TXMEM = "REBELUNANIMOUS";
-static const char tx_s1864[] COLOPY_TXMEM = "REBELUP";
-static const char tx_s1865[] COLOPY_TXMEM = "REBELUP50";
-static const char tx_s1866[] COLOPY_TXMEM = "RECRUITCHOOSE";
-static const char tx_s1867[] COLOPY_TXMEM = "REFIT";
-static const char tx_s1868[] COLOPY_TXMEM = "RETIRE";
-static const char tx_s1869[] COLOPY_TXMEM = "RETIRING";
-static const char tx_s1870[] COLOPY_TXMEM = "RETIRING2";
-static const char tx_s1871[] COLOPY_TXMEM = "RID";
-static const char tx_s1872[] COLOPY_TXMEM = "RIDUSA";
-static const char tx_s1873[] COLOPY_TXMEM = "ROUTELOOP";
-static const char tx_s1874[] COLOPY_TXMEM = "SAILPORT";
-static const char tx_s1875[] COLOPY_TXMEM = "SCHOOL1";
-static const char tx_s1876[] COLOPY_TXMEM = "SCORED";
-static const char tx_s1877[] COLOPY_TXMEM = "SCOUTCOLONY";
-static const char tx_s1878[] COLOPY_TXMEM = "SCREWED";
-static const char tx_s1879[] COLOPY_TXMEM = "SEACOLONY";
-static const char tx_s1880[] COLOPY_TXMEM = "SEIZURE";
-static const char tx_s1881[] COLOPY_TXMEM = "SEIZURELAND";
-static const char tx_s1882[] COLOPY_TXMEM = "SEIZURESEA";
-static const char tx_s1883[] COLOPY_TXMEM = "SHIPCOMBAT";
-static const char tx_s1884[] COLOPY_TXMEM = "SHIPDAMAGE";
-static const char tx_s1885[] COLOPY_TXMEM = "SHIPLAKE";
-static const char tx_s1886[] COLOPY_TXMEM = "SHIPRUN";
-static const char tx_s1887[] COLOPY_TXMEM = "SHIPSLOW";
-static const char tx_s1888[] COLOPY_TXMEM = "SHIPSUNK";
-static const char tx_s1889[] COLOPY_TXMEM = "SIEGE";
-static const char tx_s1890[] COLOPY_TXMEM = "SIEGES";
-static const char tx_s1891[] COLOPY_TXMEM = "SIEGESUSA";
-static const char tx_s1892[] COLOPY_TXMEM = "SIGNTREATY";
-static const char tx_s1893[] COLOPY_TXMEM = "SMITEEUROPE";
-static const char tx_s1894[] COLOPY_TXMEM = "SMITEINDIANS";
-static const char tx_s1895[] COLOPY_TXMEM = "SNEAK";
-static const char tx_s1896[] COLOPY_TXMEM = "SOMEBOYCOTT";
-static const char tx_s1897[] COLOPY_TXMEM = "SONSDOWN";
-static const char tx_s1898[] COLOPY_TXMEM = "SONSUP";
-static const char tx_s1899[] COLOPY_TXMEM = "SOONRETIRING0";
-static const char tx_s1900[] COLOPY_TXMEM = "SOONRETIRING1";
-static const char tx_s1901[] COLOPY_TXMEM = "SOUNDOPTIONS";
-static const char tx_s1902[] COLOPY_TXMEM = "SPOIL1";
-static const char tx_s1903[] COLOPY_TXMEM = "SPOIL2";
-static const char tx_s1904[] COLOPY_TXMEM = "SPOIL3";
-static const char tx_s1905[] COLOPY_TXMEM = "SPOIL4";
-static const char tx_s1906[] COLOPY_TXMEM = "STARVE1";
-static const char tx_s1907[] COLOPY_TXMEM = "STARVE2";
-static const char tx_s1908[] COLOPY_TXMEM = "SUCCESSION";
-static const char tx_s1909[] COLOPY_TXMEM = "SUREDELETE";
-static const char tx_s1910[] COLOPY_TXMEM = "SUREDISBAND";
-static const char tx_s1911[] COLOPY_TXMEM = "TAXOPTIONS";
-static const char tx_s1912[] COLOPY_TXMEM = "TEACHCONVERT";
-static const char tx_s1913[] COLOPY_TXMEM = "TEAPARTY";
-static const char tx_s1914[] COLOPY_TXMEM = "THREATS";
-static const char tx_s1915[] COLOPY_TXMEM = "TIMECHANGE";
-static const char tx_s1916[] COLOPY_TXMEM = "TOBACCO";
-static const char tx_s1917[] COLOPY_TXMEM = "TOOLS";
-static const char tx_s1918[] COLOPY_TXMEM = "TOOMOUNTAIN";
-static const char tx_s1919[] COLOPY_TXMEM = "TOONEAR";
-static const char tx_s1920[] COLOPY_TXMEM = "TOOTORY";
-static const char tx_s1921[] COLOPY_TXMEM = "TORYMAJORITY";
-static const char tx_s1922[] COLOPY_TXMEM = "TORYMINORITY";
-static const char tx_s1923[] COLOPY_TXMEM = "TORYUPRISING";
-static const char tx_s1924[] COLOPY_TXMEM = "TRADE0";
-static const char tx_s1925[] COLOPY_TXMEM = "TRADE1";
-static const char tx_s1926[] COLOPY_TXMEM = "TRADEATWAR";
-static const char tx_s1927[] COLOPY_TXMEM = "TRADEDELETE";
-static const char tx_s1928[] COLOPY_TXMEM = "TRADEMANY";
-static const char tx_s1929[] COLOPY_TXMEM = "TRADEMERCANTILISM";
-static const char tx_s1930[] COLOPY_TXMEM = "TRADENOCARGO";
-static const char tx_s1931[] COLOPY_TXMEM = "TRADENONE";
-static const char tx_s1932[] COLOPY_TXMEM = "TRADENONE2";
-static const char tx_s1933[] COLOPY_TXMEM = "TRADENOWANT";
-static const char tx_s1934[] COLOPY_TXMEM = "TRADESELECT";
-static const char tx_s1935[] COLOPY_TXMEM = "TRADESTART";
-static const char tx_s1936[] COLOPY_TXMEM = "TRADETYPE";
-static const char tx_s1937[] COLOPY_TXMEM = "TRADEWHICH";
-static const char tx_s1938[] COLOPY_TXMEM = "TRADEWITH";
-static const char tx_s1939[] COLOPY_TXMEM = "TRAINCRIMINAL";
-static const char tx_s1940[] COLOPY_TXMEM = "TRAINFAIL";
-static const char tx_s1941[] COLOPY_TXMEM = "TRAININDENTURED";
-static const char tx_s1942[] COLOPY_TXMEM = "TRAINPROFESSION";
-static const char tx_s1943[] COLOPY_TXMEM = "TRAVELPLACE";
-static const char tx_s1944[] COLOPY_TXMEM = "TRIBUTE";
-static const char tx_s1945[] COLOPY_TXMEM = "TRIBUTEUSA";
-static const char tx_s1946[] COLOPY_TXMEM = "TUTNOLUMBER";
-static const char tx_s1947[] COLOPY_TXMEM = "TUTNOSPACES";
-static const char tx_s1948[] COLOPY_TXMEM = "TUTORIAL1";
-static const char tx_s1949[] COLOPY_TXMEM = "TUTORIAL10";
-static const char tx_s1950[] COLOPY_TXMEM = "TUTORIAL11";
-static const char tx_s1951[] COLOPY_TXMEM = "TUTORIAL12";
-static const char tx_s1952[] COLOPY_TXMEM = "TUTORIAL13";
-static const char tx_s1953[] COLOPY_TXMEM = "TUTORIAL14";
-static const char tx_s1954[] COLOPY_TXMEM = "TUTORIAL15";
-static const char tx_s1955[] COLOPY_TXMEM = "TUTORIAL16";
-static const char tx_s1956[] COLOPY_TXMEM = "TUTORIAL17";
-static const char tx_s1957[] COLOPY_TXMEM = "TUTORIAL18";
-static const char tx_s1958[] COLOPY_TXMEM = "TUTORIAL19";
-static const char tx_s1959[] COLOPY_TXMEM = "TUTORIAL2";
-static const char tx_s1960[] COLOPY_TXMEM = "TUTORIAL3";
-static const char tx_s1961[] COLOPY_TXMEM = "TUTORIAL4";
-static const char tx_s1962[] COLOPY_TXMEM = "TUTORIAL5";
-static const char tx_s1963[] COLOPY_TXMEM = "TUTORIAL6";
-static const char tx_s1964[] COLOPY_TXMEM = "TUTORIAL7";
-static const char tx_s1965[] COLOPY_TXMEM = "TUTORIAL8";
-static const char tx_s1966[] COLOPY_TXMEM = "TUTORIAL9";
-static const char tx_s1967[] COLOPY_TXMEM = "UNFORTUNATE";
-static const char tx_s1968[] COLOPY_TXMEM = "UNIV3";
-static const char tx_s1969[] COLOPY_TXMEM = "UNREST";
-static const char tx_s1970[] COLOPY_TXMEM = "UPKEEP";
-static const char tx_s1971[] COLOPY_TXMEM = "USEDUPTOOLS";
-static const char tx_s1972[] COLOPY_TXMEM = "VALOR";
-static const char tx_s1973[] COLOPY_TXMEM = "VANISH";
-static const char tx_s1974[] COLOPY_TXMEM = "VETERAN";
-static const char tx_s1975[] COLOPY_TXMEM = "VILLAGEBAD";
-static const char tx_s1976[] COLOPY_TXMEM = "VILLAGEHAPPY";
-static const char tx_s1977[] COLOPY_TXMEM = "VILLAGEMEDIUM";
-static const char tx_s1978[] COLOPY_TXMEM = "VILLAGESAVAGE";
-static const char tx_s1979[] COLOPY_TXMEM = "VILLAGEWAR";
-static const char tx_s1980[] COLOPY_TXMEM = "VIOLATE";
-static const char tx_s1981[] COLOPY_TXMEM = "WAGONCAPTURE";
-static const char tx_s1982[] COLOPY_TXMEM = "WANTSTUFF";
-static const char tx_s1983[] COLOPY_TXMEM = "WANTSTUFFUSA";
-static const char tx_s1984[] COLOPY_TXMEM = "WAREHOUSEFULL";
-static const char tx_s1985[] COLOPY_TXMEM = "WARMANLY";
-static const char tx_s1986[] COLOPY_TXMEM = "WARMEEK";
-static const char tx_s1987[] COLOPY_TXMEM = "WARN1";
-static const char tx_s1988[] COLOPY_TXMEM = "WARN2";
-static const char tx_s1989[] COLOPY_TXMEM = "WARN3";
-static const char tx_s1990[] COLOPY_TXMEM = "WELLSEASONED";
-static const char tx_s1991[] COLOPY_TXMEM = "WHACKINDIANS";
-static const char tx_s1992[] COLOPY_TXMEM = "WHICHFREEDOM";
-static const char tx_s1993[] COLOPY_TXMEM = "WINNING";
-static const char tx_s1994[] COLOPY_TXMEM = "WITHDRAW";
-static const char tx_s1995[] COLOPY_TXMEM = "WORTHY";
-static const char tx_s1996[] COLOPY_TXMEM = "{COLONIZATION} Version %STRING0 -- %STRING1";
-static const char tx_s1997[] COLOPY_TXMEM = "Start a Game in NEW WORLD";
-static const char tx_s1998[] COLOPY_TXMEM = "Start a Game in AMERICA";
-static const char tx_s1999[] COLOPY_TXMEM = "CUSTOMIZE New World";
-static const char tx_s2000[] COLOPY_TXMEM = "LOAD Game";
-static const char tx_s2001[] COLOPY_TXMEM = "View Hall of Fame";
-static const char tx_s2002[] COLOPY_TXMEM = "a";
-static const char tx_s2003[] COLOPY_TXMEM = "an";
-static const char tx_s2004[] COLOPY_TXMEM = "End of Turn";
-static const char tx_s2005[] COLOPY_TXMEM = "None";
-static const char tx_s2006[] COLOPY_TXMEM = "Expert";
-static const char tx_s2007[] COLOPY_TXMEM = "Sailing For";
-static const char tx_s2008[] COLOPY_TXMEM = "Inbound From";
-static const char tx_s2009[] COLOPY_TXMEM = "Now Arriving In";
-static const char tx_s2010[] COLOPY_TXMEM = "Docks At";
-static const char tx_s2011[] COLOPY_TXMEM = "Expected Soon";
-static const char tx_s2012[] COLOPY_TXMEM = "Bound For";
-static const char tx_s2013[] COLOPY_TXMEM = "No Ships In Port";
-static const char tx_s2014[] COLOPY_TXMEM = "Awaiting Passage";
-static const char tx_s2015[] COLOPY_TXMEM = "(Cost:";
-static const char tx_s2016[] COLOPY_TXMEM = ")";
-static const char tx_s2017[] COLOPY_TXMEM = "Lost City Rumor";
-static const char tx_s2018[] COLOPY_TXMEM = ".5";
-static const char tx_s2019[] COLOPY_TXMEM = "Wilderness";
-static const char tx_s2020[] COLOPY_TXMEM = "Land";
-static const char tx_s2021[] COLOPY_TXMEM = "of the";
-static const char tx_s2022[] COLOPY_TXMEM = "No cargo ready for transport!";
-static const char tx_s2023[] COLOPY_TXMEM = "No cargo holds available!";
-static const char tx_s2024[] COLOPY_TXMEM = "No cargo on board!";
-static const char tx_s2025[] COLOPY_TXMEM = "Loading";
-static const char tx_s2026[] COLOPY_TXMEM = "Unloading";
-static const char tx_s2027[] COLOPY_TXMEM = "onto";
-static const char tx_s2028[] COLOPY_TXMEM = "in";
-static const char tx_s2029[] COLOPY_TXMEM = "Mission";
-static const char tx_s2030[] COLOPY_TXMEM = "Missions";
-static const char tx_s2031[] COLOPY_TXMEM = "INDIAN ADVISER REPORT";
-static const char tx_s2032[] COLOPY_TXMEM = "RELIGIOUS ADVISER REPORT";
-static const char tx_s2033[] COLOPY_TXMEM = "Road";
-static const char tx_s2034[] COLOPY_TXMEM = "only";
-static const char tx_s2035[] COLOPY_TXMEM = "Continue turn.";
-static const char tx_s2036[] COLOPY_TXMEM = "Zoom to colony.";
-static const char tx_s2037[] COLOPY_TXMEM = "The";
-static const char tx_s2038[] COLOPY_TXMEM = "CONTINENTAL CONGRESS ACTIVITIES";
-static const char tx_s2039[] COLOPY_TXMEM = "Now debating:";
-static const char tx_s2040[] COLOPY_TXMEM = "Alarmed by";
-static const char tx_s2041[] COLOPY_TXMEM = "Lake";
-static const char tx_s2042[] COLOPY_TXMEM = "wagons";
-static const char tx_s2043[] COLOPY_TXMEM = "holds";
-static const char tx_s2044[] COLOPY_TXMEM = "Requires";
-static const char tx_s2045[] COLOPY_TXMEM = "(CLEAR SPECIALTY)";
-static const char tx_s2046[] COLOPY_TXMEM = "Horse Herds";
-static const char tx_s2047[] COLOPY_TXMEM = "OK";
-static const char tx_s2048[] COLOPY_TXMEM = "sells";
-static const char tx_s2049[] COLOPY_TXMEM = "for";
-static const char tx_s2050[] COLOPY_TXMEM = "LABOR ADVISER REPORT";
-static const char tx_s2051[] COLOPY_TXMEM = "ECONOMIC ADVISER REPORT";
-static const char tx_s2052[] COLOPY_TXMEM = "COLONY ADVISER REPORT";
-static const char tx_s2053[] COLOPY_TXMEM = "NAVAL ADVISER REPORT";
-static const char tx_s2054[] COLOPY_TXMEM = "Off Mapboard (Europe)";
-static const char tx_s2055[] COLOPY_TXMEM = "On Mapboard";
-static const char tx_s2056[] COLOPY_TXMEM = "In Colonies";
-static const char tx_s2057[] COLOPY_TXMEM = "(Click on item to zoom)";
-static const char tx_s2058[] COLOPY_TXMEM = "K";
-static const char tx_s2059[] COLOPY_TXMEM = "Tons";
-static const char tx_s2060[] COLOPY_TXMEM = "Gold";
-static const char tx_s2061[] COLOPY_TXMEM = "High Seas";
-static const char tx_s2062[] COLOPY_TXMEM = "Ship";
-static const char tx_s2063[] COLOPY_TXMEM = "Cargo";
-static const char tx_s2064[] COLOPY_TXMEM = "Location";
-static const char tx_s2065[] COLOPY_TXMEM = "Destination";
-static const char tx_s2066[] COLOPY_TXMEM = "Veteran";
-static const char tx_s2067[] COLOPY_TXMEM = "Seasoned";
-static const char tx_s2068[] COLOPY_TXMEM = "Learned";
-static const char tx_s2069[] COLOPY_TXMEM = "Ask:";
-static const char tx_s2070[] COLOPY_TXMEM = "Rebel";
-static const char tx_s2071[] COLOPY_TXMEM = "Tory";
-static const char tx_s2072[] COLOPY_TXMEM = "Sentiment";
-static const char tx_s2073[] COLOPY_TXMEM = "King's Popularity";
-static const char tx_s2074[] COLOPY_TXMEM = "defeat";
-static const char tx_s2075[] COLOPY_TXMEM = "defeats";
-static const char tx_s2076[] COLOPY_TXMEM = "COMBAT ANALYSIS";
-static const char tx_s2077[] COLOPY_TXMEM = "Fatigue";
-static const char tx_s2078[] COLOPY_TXMEM = "Attack Bonus";
-static const char tx_s2079[] COLOPY_TXMEM = "Ambush";
-static const char tx_s2080[] COLOPY_TXMEM = "Terrain";
-static const char tx_s2081[] COLOPY_TXMEM = "Colony";
-static const char tx_s2082[] COLOPY_TXMEM = "Fortified";
-static const char tx_s2083[] COLOPY_TXMEM = "Spain Bonus";
-static const char tx_s2084[] COLOPY_TXMEM = "Plowed";
-static const char tx_s2085[] COLOPY_TXMEM = "Artillery In Open";
-static const char tx_s2086[] COLOPY_TXMEM = "Expeditionary Force";
-static const char tx_s2087[] COLOPY_TXMEM = "Rebels";
-static const char tx_s2088[] COLOPY_TXMEM = "Tories";
-static const char tx_s2089[] COLOPY_TXMEM = "Matters";
-static const char tx_s2090[] COLOPY_TXMEM = "Founding Fathers";
-static const char tx_s2091[] COLOPY_TXMEM = "Drake";
-static const char tx_s2092[] COLOPY_TXMEM = "(Building Upkeep)";
-static const char tx_s2093[] COLOPY_TXMEM = "TOTAL UPKEEP";
-static const char tx_s2094[] COLOPY_TXMEM = "FOREIGN AFFAIRS REPORT";
-static const char tx_s2095[] COLOPY_TXMEM = "'s";
-static const char tx_s2096[] COLOPY_TXMEM = "Colonies";
-static const char tx_s2097[] COLOPY_TXMEM = "Population";
-static const char tx_s2098[] COLOPY_TXMEM = "Average Colony";
-static const char tx_s2099[] COLOPY_TXMEM = "Military Power";
-static const char tx_s2100[] COLOPY_TXMEM = "Naval Power";
-static const char tx_s2101[] COLOPY_TXMEM = "Merchant Marine";
-static const char tx_s2102[] COLOPY_TXMEM = "War";
-static const char tx_s2103[] COLOPY_TXMEM = "Peace";
-static const char tx_s2104[] COLOPY_TXMEM = "Adviser";
-static const char tx_s2105[] COLOPY_TXMEM = "Bombard";
-static const char tx_s2106[] COLOPY_TXMEM = "+ More +";
-static const char tx_s2107[] COLOPY_TXMEM = "and";
-static const char tx_s2108[] COLOPY_TXMEM = "past";
-static const char tx_s2109[] COLOPY_TXMEM = "ENCYCLOPEDIA OF COLONIZATION";
-static const char tx_s2110[] COLOPY_TXMEM = "(More)";
-static const char tx_s2111[] COLOPY_TXMEM = "(Exit)";
-static const char tx_s2112[] COLOPY_TXMEM = "Intervention Force";
-static const char tx_s2113[] COLOPY_TXMEM = "Next Continental Congress Session";
-static const char tx_s2114[] COLOPY_TXMEM = "Intervention";
-static const char tx_s2115[] COLOPY_TXMEM = "COLONIZATION SCORE";
-static const char tx_s2116[] COLOPY_TXMEM = "Citizens";
-static const char tx_s2117[] COLOPY_TXMEM = "Independence";
-static const char tx_s2118[] COLOPY_TXMEM = "Villages Burned";
-static const char tx_s2119[] COLOPY_TXMEM = "Declared";
-static const char tx_s2120[] COLOPY_TXMEM = "Achieved";
-static const char tx_s2121[] COLOPY_TXMEM = "Foreign Recognition";
-static const char tx_s2122[] COLOPY_TXMEM = "Total Score";
-static const char tx_s2123[] COLOPY_TXMEM = "Trees";
-static const char tx_s2124[] COLOPY_TXMEM = "(Outside Colony)";
-static const char tx_s2125[] COLOPY_TXMEM = "Asking";
-static const char tx_s2126[] COLOPY_TXMEM = "Bidding";
-static const char tx_s2127[] COLOPY_TXMEM = "SCORING COMPLETE";
-static const char tx_s2128[] COLOPY_TXMEM = "COMPLETE";
-static const char tx_s2129[] COLOPY_TXMEM = "arrives in";
-static const char tx_s2130[] COLOPY_TXMEM = "Artillery Vs. Raid";
-static const char tx_s2131[] COLOPY_TXMEM = "Extinct";
-static const char tx_s2132[] COLOPY_TXMEM = "Boycott";
-static const char tx_s2133[] COLOPY_TXMEM = "Tory Unrest";
-static const char tx_s2134[] COLOPY_TXMEM = "Rebel Unrest";
-static const char tx_s2135[] COLOPY_TXMEM = "Continental Congress";
-static const char tx_s2136[] COLOPY_TXMEM = "Sold";
-static const char tx_s2137[] COLOPY_TXMEM = "Bought";
-static const char tx_s2138[] COLOPY_TXMEM = "at";
-static const char tx_s2139[] COLOPY_TXMEM = "$/ton";
-static const char tx_s2140[] COLOPY_TXMEM = "Price";
-static const char tx_s2141[] COLOPY_TXMEM = "% Tax";
-static const char tx_s2142[] COLOPY_TXMEM = "Net";
-static const char tx_s2143[] COLOPY_TXMEM = "Early Revolution";
-static const char tx_s2144[] COLOPY_TXMEM = "prior nations";
-static const char tx_s2145[] COLOPY_TXMEM = "Land Mass";
-static const char tx_s2146[] COLOPY_TXMEM = "Land Form";
-static const char tx_s2147[] COLOPY_TXMEM = "Temperature";
-static const char tx_s2148[] COLOPY_TXMEM = "Climate";
-static const char tx_s2149[] COLOPY_TXMEM = "Small";
-static const char tx_s2150[] COLOPY_TXMEM = "Moderate";
-static const char tx_s2151[] COLOPY_TXMEM = "Large";
-static const char tx_s2152[] COLOPY_TXMEM = "Archipelago";
-static const char tx_s2153[] COLOPY_TXMEM = "Normal";
-static const char tx_s2154[] COLOPY_TXMEM = "Continents";
-static const char tx_s2155[] COLOPY_TXMEM = "Cool";
-static const char tx_s2156[] COLOPY_TXMEM = "Temperate";
-static const char tx_s2157[] COLOPY_TXMEM = "Warm";
-static const char tx_s2158[] COLOPY_TXMEM = "Arid";
-static const char tx_s2159[] COLOPY_TXMEM = "Wet";
-static const char tx_s2160[] COLOPY_TXMEM = "CUSTOMIZE NEW WORLD";
-static const char tx_s2161[] COLOPY_TXMEM = "Click Here When Finished";
-static const char tx_s2162[] COLOPY_TXMEM = "Choose";
-static const char tx_s2163[] COLOPY_TXMEM = "Difficulty Level";
-static const char tx_s2164[] COLOPY_TXMEM = "Level";
-static const char tx_s2165[] COLOPY_TXMEM = "Easiest";
-static const char tx_s2166[] COLOPY_TXMEM = "Easy";
-static const char tx_s2167[] COLOPY_TXMEM = "Tough";
-static const char tx_s2168[] COLOPY_TXMEM = "Toughest";
-static const char tx_s2169[] COLOPY_TXMEM = "Select";
-static const char tx_s2170[] COLOPY_TXMEM = "European Power";
-static const char tx_s2171[] COLOPY_TXMEM = "Power";
-static const char tx_s2172[] COLOPY_TXMEM = "Immigration";
-static const char tx_s2173[] COLOPY_TXMEM = "Cooperation";
-static const char tx_s2174[] COLOPY_TXMEM = "Conquest";
-static const char tx_s2175[] COLOPY_TXMEM = "Trade";
-static const char tx_s2176[] COLOPY_TXMEM = "Fish";
-static const char tx_s2177[] COLOPY_TXMEM = "With";
-static const char tx_s2178[] COLOPY_TXMEM = "Combat";
-static const char tx_s2179[] COLOPY_TXMEM = "Attack";
-static const char tx_s2180[] COLOPY_TXMEM = "Cargo Holds";
-static const char tx_s2181[] COLOPY_TXMEM = "Moves";
-static const char tx_s2182[] COLOPY_TXMEM = "Plow";
-static const char tx_s2183[] COLOPY_TXMEM = "River";
-static const char tx_s2184[] COLOPY_TXMEM = "Coast";
-static const char tx_s2185[] COLOPY_TXMEM = "Move Cost";
-static const char tx_s2186[] COLOPY_TXMEM = "Defense or Ambush Bonus";
-static const char tx_s2187[] COLOPY_TXMEM = "Prerequisite";
-static const char tx_s2188[] COLOPY_TXMEM = "(F1 for Help)";
-static const char tx_s2189[] COLOPY_TXMEM = "(Withdrawn from New World)";
-static const char tx_s2190[] COLOPY_TXMEM = "Free";
-static const char tx_s2191[] COLOPY_TXMEM = "COLONIZATION HALL OF FAME";
-static const char tx_s2192[] COLOPY_TXMEM = "to";
-static const char tx_s2193[] COLOPY_TXMEM = "A.D.";
-static const char tx_s2194[] COLOPY_TXMEM = "President";
-static const char tx_s2195[] COLOPY_TXMEM = "General, Continental Army";
-static const char tx_s2196[] COLOPY_TXMEM = "Leader";
-static const char tx_s2197[] COLOPY_TXMEM = "Score";
-static const char tx_s2198[] COLOPY_TXMEM = "Colonization_Rating";
-static const char tx_s2199[] COLOPY_TXMEM = "Prime";
-static const char tx_s2200[] COLOPY_TXMEM = "Damaged";
-static const char tx_s2201[] COLOPY_TXMEM = "Press";
-static const char tx_s2202[] COLOPY_TXMEM = "Bid Price";
-static const char tx_s2203[] COLOPY_TXMEM = "Ask Price";
-static const char tx_s2204[] COLOPY_TXMEM = "Zoom to Europe.";
-static const char tx_s2205[] COLOPY_TXMEM = "European Trade";
-static const char tx_s2206[] COLOPY_TXMEM = "Cargo in Port";
-static const char tx_s2207[] COLOPY_TXMEM = "Military Garrisons";
-static const char tx_s2208[] COLOPY_TXMEM = "Sons of Liberty";
-static const char tx_s2209[] COLOPY_TXMEM = "Exit";
-static const char tx_s2210[] COLOPY_TXMEM = "211";
-static const char tx_s2211[] COLOPY_TXMEM = "212";
-static const char tx_s2212[] COLOPY_TXMEM = "213";
-static const char tx_s2213[] COLOPY_TXMEM = "214";
-static const char tx_s2214[] COLOPY_TXMEM = "215";
-static const char tx_s2215[] COLOPY_TXMEM = "216";
-static const char tx_s2216[] COLOPY_TXMEM = "217";
-static const char tx_s2217[] COLOPY_TXMEM = "218";
-static const char tx_s2218[] COLOPY_TXMEM = "219";
-static const char tx_s2219[] COLOPY_TXMEM = "220";
-static const char tx_s2220[] COLOPY_TXMEM = "Pop:";
-static const char tx_s2221[] COLOPY_TXMEM = "Gold:";
-static const char tx_s2222[] COLOPY_TXMEM = "BUY";
-static const char tx_s2223[] COLOPY_TXMEM = "CHANGE";
-static const char tx_s2224[] COLOPY_TXMEM = "Select An Item To Build";
-static const char tx_s2225[] COLOPY_TXMEM = "(No Production)";
-static const char tx_s2226[] COLOPY_TXMEM = "Turns)";
-static const char tx_s2227[] COLOPY_TXMEM = "Select a Profession for";
-static const char tx_s2228[] COLOPY_TXMEM = "Tax:";
-static const char tx_s2229[] COLOPY_TXMEM = "Harvest / Resources";
-static const char tx_s2230[] COLOPY_TXMEM = "Units Present";
-static const char tx_s2231[] COLOPY_TXMEM = "Make";
-static const char tx_s2232[] COLOPY_TXMEM = "bought for";
-static const char tx_s2233[] COLOPY_TXMEM = "sold for";
-static const char tx_s2234[] COLOPY_TXMEM = "moved to";
-static const char tx_s2235[] COLOPY_TXMEM = ". Price:";
-static const char tx_s2236[] COLOPY_TXMEM = "No room for";
-static const char tx_s2237[] COLOPY_TXMEM = "Nothing to transport";
-static const char tx_s2238[] COLOPY_TXMEM = "Not enough";
-static const char tx_s2239[] COLOPY_TXMEM = "to fill cargo hold!";
-static const char tx_s2240[] COLOPY_TXMEM = "too expensive!";
-static const char tx_s2241[] COLOPY_TXMEM = "in cargo hold!";
-static const char tx_s2242[] COLOPY_TXMEM = "Nothing to transfer!";
-static const char tx_s2243[] COLOPY_TXMEM = "Buying";
-static const char tx_s2244[] COLOPY_TXMEM = "Selling";
-static const char tx_s2245[] COLOPY_TXMEM = "% Tax:";
-static const char tx_s2246[] COLOPY_TXMEM = ". Net:";
-static const char tx_s2247[] COLOPY_TXMEM = "request";
-static const char tx_s2248[] COLOPY_TXMEM = "demand";
-static const char tx_s2249[] COLOPY_TXMEM = "our Queen and the Church of England";
-static const char tx_s2250[] COLOPY_TXMEM = "His Most Christian Majesty, King Louis";
-static const char tx_s2251[] COLOPY_TXMEM = "the Pope and the Spanish Crown";
-static const char tx_s2252[] COLOPY_TXMEM = "the Stadtholder of the United Provinces of the Netherlands";
-static const char tx_s2253[] COLOPY_TXMEM = "seek a life of {religious freedom} and service to the Crown";
-static const char tx_s2254[] COLOPY_TXMEM = "promote the greater {glory} of France";
-static const char tx_s2255[] COLOPY_TXMEM = "{convert the heathen} and enrich our Sovereign";
-static const char tx_s2256[] COLOPY_TXMEM = "build a mighty overseas {trading empire}";
-static const char tx_s2257[] COLOPY_TXMEM = "Our Queen";
-static const char tx_s2258[] COLOPY_TXMEM = "Our King";
-static const char tx_s2259[] COLOPY_TXMEM = "The Pope";
-static const char tx_s2260[] COLOPY_TXMEM = "Our Stadtholder";
-static const char tx_s2261[] COLOPY_TXMEM = "the Queen";
-static const char tx_s2262[] COLOPY_TXMEM = "the King";
-static const char tx_s2263[] COLOPY_TXMEM = "the Pope";
-static const char tx_s2264[] COLOPY_TXMEM = "the Stadtholder";
-static const char tx_s2265[] COLOPY_TXMEM = "British General Cornwallis";
-static const char tx_s2266[] COLOPY_TXMEM = "French General Lafayette";
-static const char tx_s2267[] COLOPY_TXMEM = "Spanish Generals";
-static const char tx_s2268[] COLOPY_TXMEM = "Dutch Admiral de Ruyter";
-static const char tx_s2269[] COLOPY_TXMEM = "^^ENGLAND\n^^_\n__The Age of Expansion coincided with a period of {religious\nstrife} in England.  The Church of England--theoretically a\nProtestant denomination but maintaining many Catholic traditions--faced\na series of challenges during the colonial period from would-be\nreformers, or {Puritans}.  The English monarchy shifted its support\nbetween pro-Catholic and various Protestant factions from generation to\ngeneration, and the English Civil War (1640-49) resulted in the execution\nof Charles I and a period of Puritan rule (1649-60) under Oliver Cromwell.\nWith so much religious conflict at home, the English government had\nneither the desire nor the ability to enforce religious conformity in\nits colonial possessions.  The colonies became havens of\n{religious freedom} for groups (e.g. Puritans, Anabaptists, Quakers) who\nfaced persecution in the Old World.";
-static const char tx_s2270[] COLOPY_TXMEM = "^^ENGLAND\n^^_\nTo reflect the great flow of religious immigrants into English\ncolonies, the English player requires only {2/3} the normal number of\n\"{Crosses}\" to generate immigrants.";
-static const char tx_s2271[] COLOPY_TXMEM = "^^FRANCE\n^^_\n__Latecomers to the New World, France established her first\nsecure American colonies in {Canada} along the St. Lawrence river, where the\nharsh northern climate proved more suitable for the {fur trade} than for\nlarge-scale agricultural endeavors.\nThe French found the\n{Great Lakes Indians} to be ideal partners in the fur trade and formed\nlong-term trading relationships with the Hurons, Algonquins and other\ntribes.  Though French forts, missions, and trading posts soon dotted\nthe Great Lakes region, French settlements were generally small enough\nto operate in relative {harmony} with the local native population.  Although\nthis relationship was not entirely without incident, the French were often\nable to cooperate profitably with the natives.  This cooperation occasionally\nextended into the military realm.";
-static const char tx_s2272[] COLOPY_TXMEM = "^^FRANCE\n^^_\nTo reflect the superior ability of the French to cooperate with the\nnative population, the French player's colonies and units cause {alarm} among\nthe Indians at only {half} the rate of other European powers.";
-static const char tx_s2273[] COLOPY_TXMEM = "^^SPAIN\n^^_\n__In 1492, the same year that Columbus discovered America, the Spanish\ncompleted their centuries-long \"reconquista\" of the\nIberian peninsula from the Muslim Moors.  This victory left Spain with\na generation of {military men} spoiling for a new avenue of expansion and\nmore eager than ever to bring Christianity to the {heathen} at the point\nof a sword.  The New World and its unsuspecting natives provided exactly\nsuch an opportunity, and the history of the first century of Spanish\nexpansion in America is the history of the conquest, plunder, and destruction\nof countless Native American civilizations.  The Spanish were the first\nEuropeans to encounter the 'Indians,' and the otherwise mighty {Aztec}\nand {Inca} empires proved psychologically unprepared for the arrival of an\nalien power armed with muskets and thirsty for conquest.  Conquistador\n{Hernan Cortes} arrived at Veracruz in 1519 with a few hundred men and,\nwithin two years, brought the Aztec Empire to its knees.";
-static const char tx_s2274[] COLOPY_TXMEM = "^^SPAIN\n^^_\nTo reflect the strategic surprise which Spain achieved over pre-Columbian\nAmerican civilizations, the Spanish player receives a {50%% combat bonus}\nwhen {attacking Indian villages}.";
-static const char tx_s2275[] COLOPY_TXMEM = "^^NETHERLANDS\n^^_\n__The Protestant Dutch provinces gained their independence from Catholic\nSpain during the Age of Expansion.  A maritime country of {fishermen}\nand {merchants}, the Dutch Netherlands operated large merchant and fishing\nfleets in the North Sea and the Baltic.  Upon achieving political\nindependence in the early seventeenth century, this tiny nation found itself\nideally poised to expand its {overseas trade} into lucrative new markets\nin the Far East and New World.  Unlike their rivals and sometime enemies\nthe Spanish, French, and English, the Dutch were ruled by their merchant\nclass.  This unique arrangement led them to focus all aspects of state\ndiplomatic, military, and economic policy around the {interests of trade}.\nTheir strategy proved quite successful, and the Dutch economy\nand merchant fleet expanded so rapidly that the other European powers felt\ncompelled to take drastic measures against the Dutch in order to prop up\ntheir own less successful enterprises.";
-static const char tx_s2276[] COLOPY_TXMEM = "^^NETHERLANDS\n^^_\n__To represent the strength of the Dutch economy, as well as Dutch\nachievements in shipping, commerce, and banking, the Dutch player\nreceives a bonus when trading with Amsterdam.  {Commodity prices} in\nAmsterdam {do not collapse} as quickly as in other European ports and\nthey {recover} more quickly.";
-static const char tx_s2277[] COLOPY_TXMEM = "^^In the Year of Our Lord One Thousand Four Hundred Ninety-Two,";
-static const char tx_s2278[] COLOPY_TXMEM = "^^an Expedition led by the Great %STRING0,\n^^%STRING1,";
-static const char tx_s2279[] COLOPY_TXMEM = "^^left %STRING0 on a Voyage of Discovery.";
-static const char tx_s2280[] COLOPY_TXMEM = "^^Commissioned and Blessed by the %STRING1 of %STRING0,";
-static const char tx_s2281[] COLOPY_TXMEM = "^^to Explore the Ocean Sea,";
-static const char tx_s2282[] COLOPY_TXMEM = "^^to find Uncharted Lands,";
-static const char tx_s2283[] COLOPY_TXMEM = "^^and to Establish Colonies for the Greater Glory of %STRING0.";
-static const char tx_s2284[] COLOPY_TXMEM = "^^A Ship loaded with Pioneers and Soldiers";
-static const char tx_s2285[] COLOPY_TXMEM = "^^Set Sail to find a New Life, a New Beginning, . . .";
-static const char tx_s2286[] COLOPY_TXMEM = "^^A New World!";
-static const char tx_s2287[] COLOPY_TXMEM = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The King of %COUNTRY\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\"";
-static const char tx_s2288[] COLOPY_TXMEM = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The Stadtholder\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\"\n\n\n@@VICEROY\n@@width=200\n@^^Year of Our Lord %YEAR\n@^^Audience With The King of %COUNTRY\n@^^_\n@\"For the greater glory of %COUNTRY, we\n@^_dub thee {Viceroy of the New World}. Go\n@^_and explore this new land. Settle it\n@^_and bring wealth and glory to yourself\n@^_and our nation.\"";
-static const char tx_s2289[] COLOPY_TXMEM = "King";
-static const char tx_s2290[] COLOPY_TXMEM = "Stadtholder";
+static const char tx_s1510[] COLOPY_TXMEM = "Clear orders.";
+static const char tx_s1511[] COLOPY_TXMEM = "Sentry / Board ship.";
+static const char tx_s1512[] COLOPY_TXMEM = "Fortify.";
+static const char tx_s1513[] COLOPY_TXMEM = "Sentry.";
+static const char tx_s1514[] COLOPY_TXMEM = "Anchor in harbor (\"Fortify\").";
+static const char tx_s1515[] COLOPY_TXMEM = "Only {Privateers} and {Frigates} can attack enemy ships.";
+static const char tx_s1516[] COLOPY_TXMEM = "{%STRING0} at {%STRING1} opens fire on {%STRING2 %STRING3}!";
+static const char tx_s1517[] COLOPY_TXMEM = "{%STRING0} cargo of {%NUMBER0 %STRING1} captured by {%STRING2 %STRING3}!";
+static const char tx_s1518[] COLOPY_TXMEM = "{%STRING0 %STRING1} evades {%STRING2 %STRING3}.";
+static const char tx_s1519[] COLOPY_TXMEM = "Our {scouts} have reached the outskirts of {%STRING0},";
+static const char tx_s1520[] COLOPY_TXMEM = "Your Excellency.  What shall they do\?";
+static const char tx_s1521[] COLOPY_TXMEM = "Meet With Mayor";
+static const char tx_s1522[] COLOPY_TXMEM = "Infiltrate Colony";
+static const char tx_s1523[] COLOPY_TXMEM = "Attack Colony";
+static const char tx_s1524[] COLOPY_TXMEM = "Nothing";
+static const char tx_s1525[] COLOPY_TXMEM = "Scouts cannot meet with mayors during the {War of Independence}.";
+static const char tx_s1526[] COLOPY_TXMEM = "War of the Spanish Succession ends in Europe!";
+static const char tx_s1527[] COLOPY_TXMEM = "{%STRING0}, ravaged by war, agrees to cede %STRING1";
+static const char tx_s1528[] COLOPY_TXMEM = "to the {%STRING2}.  Treaty of Utrecht specifies that all";
+static const char tx_s1529[] COLOPY_TXMEM = "{%STRING3} possessions in the New World now fall under {%STRING2} rule.";
+static const char tx_s1530[] COLOPY_TXMEM = "Set Game Options";
+static const char tx_s1531[] COLOPY_TXMEM = "Show ~Indian Moves";
+static const char tx_s1532[] COLOPY_TXMEM = "Show ~Foreign Moves";
+static const char tx_s1533[] COLOPY_TXMEM = "Fast Piece ~Slide";
+static const char tx_s1534[] COLOPY_TXMEM = "~End of Turn";
+static const char tx_s1535[] COLOPY_TXMEM = "~Autosave";
+static const char tx_s1536[] COLOPY_TXMEM = "~Combat Analysis";
+static const char tx_s1537[] COLOPY_TXMEM = "Water Color C~ycling";
+static const char tx_s1538[] COLOPY_TXMEM = "~Tutorial Hints";
+static const char tx_s1539[] COLOPY_TXMEM = "Set Colony Report Options";
+static const char tx_s1540[] COLOPY_TXMEM = "Labels on {buildings}";
+static const char tx_s1541[] COLOPY_TXMEM = "Labels on {cargo} and {terrain}";
+static const char tx_s1542[] COLOPY_TXMEM = "Report when colonists {trained}";
+static const char tx_s1543[] COLOPY_TXMEM = "Report {food} shortages";
+static const char tx_s1544[] COLOPY_TXMEM = "Report {raw materials} shortages";
+static const char tx_s1545[] COLOPY_TXMEM = "Report {tools} needed for production";
+static const char tx_s1546[] COLOPY_TXMEM = "Report {inefficient} government";
+static const char tx_s1547[] COLOPY_TXMEM = "Report {new cargos} available";
+static const char tx_s1548[] COLOPY_TXMEM = "Report {Sons of Liberty} membership";
+static const char tx_s1549[] COLOPY_TXMEM = "Report {rebel} majorities";
+static const char tx_s1550[] COLOPY_TXMEM = "Set Sound Options";
+static const char tx_s1551[] COLOPY_TXMEM = "~Background Music";
+static const char tx_s1552[] COLOPY_TXMEM = "~Event Music";
+static const char tx_s1553[] COLOPY_TXMEM = "~Sound Effects";
+static const char tx_s1554[] COLOPY_TXMEM = "Do you really want to quit\?";
+static const char tx_s1555[] COLOPY_TXMEM = "Select a piece of music:";
+static const char tx_s1556[] COLOPY_TXMEM = "\"Bird Song\"";
+static const char tx_s1557[] COLOPY_TXMEM = "\"Smoky Tune\"";
+static const char tx_s1558[] COLOPY_TXMEM = "\"Cornwall\"";
+static const char tx_s1559[] COLOPY_TXMEM = "\"Shady Grove\"";
+static const char tx_s1560[] COLOPY_TXMEM = "\"Fiddler's Dance\"";
+static const char tx_s1561[] COLOPY_TXMEM = "\"Jine the Cavalry\"";
+static const char tx_s1562[] COLOPY_TXMEM = "\"Joe Clark\"";
+static const char tx_s1563[] COLOPY_TXMEM = "\"Little Fiddle\"";
+static const char tx_s1564[] COLOPY_TXMEM = "\"Hornpipe\"";
+static const char tx_s1565[] COLOPY_TXMEM = "\"Bonny Morn\"";
+static const char tx_s1566[] COLOPY_TXMEM = "\"Hole In The Wall\"";
+static const char tx_s1567[] COLOPY_TXMEM = "\"Nightingale\"";
+static const char tx_s1568[] COLOPY_TXMEM = "Independence Tunes";
+static const char tx_s1569[] COLOPY_TXMEM = "Military Tunes";
+static const char tx_s1570[] COLOPY_TXMEM = "Indian Tunes";
+static const char tx_s1571[] COLOPY_TXMEM = "Select an independence tune:";
+static const char tx_s1572[] COLOPY_TXMEM = "\"Love Forever\"";
+static const char tx_s1573[] COLOPY_TXMEM = "\"York Fusiliers\"";
+static const char tx_s1574[] COLOPY_TXMEM = "\"Washington Artillery March\"";
+static const char tx_s1575[] COLOPY_TXMEM = "\"Road to Boston\"";
+static const char tx_s1576[] COLOPY_TXMEM = "\"Independence Way\"";
+static const char tx_s1577[] COLOPY_TXMEM = "Select a military tune:";
+static const char tx_s1578[] COLOPY_TXMEM = "\"The Reveille\"";
+static const char tx_s1579[] COLOPY_TXMEM = "\"Successful Campaign\"";
+static const char tx_s1580[] COLOPY_TXMEM = "\"Morelli's Lesson\"";
+static const char tx_s1581[] COLOPY_TXMEM = "\"To Arms\"";
+static const char tx_s1582[] COLOPY_TXMEM = "Select an Indian tune:";
+static const char tx_s1583[] COLOPY_TXMEM = "\"Indian Victory\"";
+static const char tx_s1584[] COLOPY_TXMEM = "\"Natives\"";
+static const char tx_s1585[] COLOPY_TXMEM = "\"Tenochtitlan\"";
+static const char tx_s1586[] COLOPY_TXMEM = "\"Pizarro at Cuzco\"";
+static const char tx_s1587[] COLOPY_TXMEM = "Exit to DOS\?";
+static const char tx_s1588[] COLOPY_TXMEM = "ABANDON";
+static const char tx_s1589[] COLOPY_TXMEM = "2";
+static const char tx_s1590[] COLOPY_TXMEM = "ABANDON2";
+static const char tx_s1591[] COLOPY_TXMEM = "ALREADYHAVE";
+static const char tx_s1592[] COLOPY_TXMEM = "ALREADYREVOLUTION";
+static const char tx_s1593[] COLOPY_TXMEM = "ALREADYSMITE";
+static const char tx_s1594[] COLOPY_TXMEM = "AMBUSHHINT";
+static const char tx_s1595[] COLOPY_TXMEM = "APOSTATES";
+static const char tx_s1596[] COLOPY_TXMEM = "APOSTATESUSA";
+static const char tx_s1597[] COLOPY_TXMEM = "ARMOPTIONS";
+static const char tx_s1598[] COLOPY_TXMEM = "ARTILLERY";
+static const char tx_s1599[] COLOPY_TXMEM = "ARTILLERY2";
+static const char tx_s1600[] COLOPY_TXMEM = "BADCARGO";
+static const char tx_s1601[] COLOPY_TXMEM = "BADHAGGLE0";
+static const char tx_s1602[] COLOPY_TXMEM = "BADHAGGLE1";
+static const char tx_s1603[] COLOPY_TXMEM = "BADHAGGLE2";
+static const char tx_s1604[] COLOPY_TXMEM = "BADHAGGLE3";
+static const char tx_s1605[] COLOPY_TXMEM = "BRING";
+static const char tx_s1606[] COLOPY_TXMEM = "BUILT";
+static const char tx_s1607[] COLOPY_TXMEM = "BURIAL1";
+static const char tx_s1608[] COLOPY_TXMEM = "BURIAL2";
+static const char tx_s1609[] COLOPY_TXMEM = "BURIAL3";
+static const char tx_s1610[] COLOPY_TXMEM = "BURNED";
+static const char tx_s1611[] COLOPY_TXMEM = "BURNED2";
+static const char tx_s1612[] COLOPY_TXMEM = "BURNED3";
+static const char tx_s1613[] COLOPY_TXMEM = "BUY0";
+static const char tx_s1614[] COLOPY_TXMEM = "BUY1";
+static const char tx_s1615[] COLOPY_TXMEM = "BUYME0";
+static const char tx_s1616[] COLOPY_TXMEM = "BUYME1";
+static const char tx_s1617[] COLOPY_TXMEM = "BUYWHICH";
+static const char tx_s1618[] COLOPY_TXMEM = "CANCELPEACE";
+static const char tx_s1619[] COLOPY_TXMEM = "CANESUGAR";
+static const char tx_s1620[] COLOPY_TXMEM = "CANNOTATTACK";
+static const char tx_s1621[] COLOPY_TXMEM = "CANTMOBILIZE";
+static const char tx_s1622[] COLOPY_TXMEM = "CAPTURED";
+static const char tx_s1623[] COLOPY_TXMEM = "CAPTURED2";
+static const char tx_s1624[] COLOPY_TXMEM = "CAPTURED3";
+static const char tx_s1625[] COLOPY_TXMEM = "CARGOCAPTURE";
+static const char tx_s1626[] COLOPY_TXMEM = "CARGOLOAD";
+static const char tx_s1627[] COLOPY_TXMEM = "CARGOREADY0";
+static const char tx_s1628[] COLOPY_TXMEM = "CARGOREADY1";
+static const char tx_s1629[] COLOPY_TXMEM = "CARGOREADY2";
+static const char tx_s1630[] COLOPY_TXMEM = "CARGOUNLOAD";
+static const char tx_s1631[] COLOPY_TXMEM = "CASHTREASURE";
+static const char tx_s1632[] COLOPY_TXMEM = "CHIEFAREA";
+static const char tx_s1633[] COLOPY_TXMEM = "CHIEFBORED";
+static const char tx_s1634[] COLOPY_TXMEM = "CHIEFGIFT";
+static const char tx_s1635[] COLOPY_TXMEM = "CHIEFGUIDES";
+static const char tx_s1636[] COLOPY_TXMEM = "CHIEFHOWDY";
+static const char tx_s1637[] COLOPY_TXMEM = "CHIEFKILL";
+static const char tx_s1638[] COLOPY_TXMEM = "CLEARCUT";
+static const char tx_s1639[] COLOPY_TXMEM = "COLLEGE2";
+static const char tx_s1640[] COLOPY_TXMEM = "COLONISTCAPTURE";
+static const char tx_s1641[] COLOPY_TXMEM = "COLONISTCAPTURE2";
+static const char tx_s1642[] COLOPY_TXMEM = "COLONYOPTIONS";
+static const char tx_s1643[] COLOPY_TXMEM = "CONFISCATE";
+static const char tx_s1644[] COLOPY_TXMEM = "CONSIDER";
+static const char tx_s1645[] COLOPY_TXMEM = "CONTINENTAL";
+static const char tx_s1646[] COLOPY_TXMEM = "COTTON";
+static const char tx_s1647[] COLOPY_TXMEM = "CUSTOM";
+static const char tx_s1648[] COLOPY_TXMEM = "DEADCONVERTS";
+static const char tx_s1649[] COLOPY_TXMEM = "DECLARE";
+static const char tx_s1650[] COLOPY_TXMEM = "DECLAREWAR";
+static const char tx_s1651[] COLOPY_TXMEM = "DEFICIT";
+static const char tx_s1652[] COLOPY_TXMEM = "DEFOREST";
+static const char tx_s1653[] COLOPY_TXMEM = "DEMOTE";
+static const char tx_s1654[] COLOPY_TXMEM = "DEPLETION";
+static const char tx_s1655[] COLOPY_TXMEM = "DISBANDSHIP";
+static const char tx_s1656[] COLOPY_TXMEM = "DONTKNOWSHIPS";
+static const char tx_s1657[] COLOPY_TXMEM = "DOS";
+static const char tx_s1658[] COLOPY_TXMEM = "EFFICIENT";
+static const char tx_s1659[] COLOPY_TXMEM = "EUROPEARM";
+static const char tx_s1660[] COLOPY_TXMEM = "EUROPELOSE";
+static const char tx_s1661[] COLOPY_TXMEM = "EUROPENOTAVAIL";
+static const char tx_s1662[] COLOPY_TXMEM = "EUROPENOTLEAVE";
+static const char tx_s1663[] COLOPY_TXMEM = "EUROPESHIPCLICK";
+static const char tx_s1664[] COLOPY_TXMEM = "EUROPESHIPOPTIONS";
+static const char tx_s1665[] COLOPY_TXMEM = "EUROPEWIN";
+static const char tx_s1666[] COLOPY_TXMEM = "EVASIVE";
+static const char tx_s1667[] COLOPY_TXMEM = "EXPLOITS";
+static const char tx_s1668[] COLOPY_TXMEM = "EXTINCT";
+static const char tx_s1669[] COLOPY_TXMEM = "EXTORTLAUGH";
+static const char tx_s1670[] COLOPY_TXMEM = "EXTORTNO";
+static const char tx_s1671[] COLOPY_TXMEM = "EXTORTPOOR";
+static const char tx_s1672[] COLOPY_TXMEM = "EXTORTSTUFF";
+static const char tx_s1673[] COLOPY_TXMEM = "FOOD1";
+static const char tx_s1674[] COLOPY_TXMEM = "FOOD2";
+static const char tx_s1675[] COLOPY_TXMEM = "FOODLOW";
+static const char tx_s1676[] COLOPY_TXMEM = "FOREIGNNOTAVAIL";
+static const char tx_s1677[] COLOPY_TXMEM = "FORTFIRE";
+static const char tx_s1678[] COLOPY_TXMEM = "FREEDOM";
+static const char tx_s1679[] COLOPY_TXMEM = "FURS";
+static const char tx_s1680[] COLOPY_TXMEM = "GAMEOPTIONS";
+static const char tx_s1681[] COLOPY_TXMEM = "GIFTS";
+static const char tx_s1682[] COLOPY_TXMEM = "GIVECASH";
+static const char tx_s1683[] COLOPY_TXMEM = "GRUDGEWAGONS";
+static const char tx_s1684[] COLOPY_TXMEM = "HALF";
+static const char tx_s1685[] COLOPY_TXMEM = "HAVETREATY";
+static const char tx_s1686[] COLOPY_TXMEM = "HEATHEN";
+static const char tx_s1687[] COLOPY_TXMEM = "HEATHENUSA";
+static const char tx_s1688[] COLOPY_TXMEM = "HELLOAHOY";
+static const char tx_s1689[] COLOPY_TXMEM = "HELLOFIRST";
+static const char tx_s1690[] COLOPY_TXMEM = "HELLOMANLY";
+static const char tx_s1691[] COLOPY_TXMEM = "HELLOMEEK";
+static const char tx_s1692[] COLOPY_TXMEM = "HELLOUSA";
+static const char tx_s1693[] COLOPY_TXMEM = "HERESY0";
+static const char tx_s1694[] COLOPY_TXMEM = "HERESY1";
+static const char tx_s1695[] COLOPY_TXMEM = "HOWTOWIN";
+static const char tx_s1696[] COLOPY_TXMEM = "INDEPENDENCE";
+static const char tx_s1697[] COLOPY_TXMEM = "INDIANBEGFOOD";
+static const char tx_s1698[] COLOPY_TXMEM = "INDIANBOW";
+static const char tx_s1699[] COLOPY_TXMEM = "INDIANBRIBE";
+static const char tx_s1700[] COLOPY_TXMEM = "INDIANBURN";
+static const char tx_s1701[] COLOPY_TXMEM = "INDIANBURNCOLONY";
+static const char tx_s1702[] COLOPY_TXMEM = "INDIANBURNCOLONY2";
+static const char tx_s1703[] COLOPY_TXMEM = "INDIANCITY";
+static const char tx_s1704[] COLOPY_TXMEM = "INDIANCOME";
+static const char tx_s1705[] COLOPY_TXMEM = "INDIANCOMMENT";
+static const char tx_s1706[] COLOPY_TXMEM = "INDIANFOREST";
+static const char tx_s1707[] COLOPY_TXMEM = "INDIANFOREST2";
+static const char tx_s1708[] COLOPY_TXMEM = "INDIANGIVEFOOD";
+static const char tx_s1709[] COLOPY_TXMEM = "INDIANGIVESTUFF";
+static const char tx_s1710[] COLOPY_TXMEM = "INDIANGOLD";
+static const char tx_s1711[] COLOPY_TXMEM = "INDIANGRUDGE";
+static const char tx_s1712[] COLOPY_TXMEM = "INDIANHELLO1";
+static const char tx_s1713[] COLOPY_TXMEM = "INDIANHELLO2";
+static const char tx_s1714[] COLOPY_TXMEM = "INDIANLAND";
+static const char tx_s1715[] COLOPY_TXMEM = "INDIANLOSE";
+static const char tx_s1716[] COLOPY_TXMEM = "INDIANPEACE";
+static const char tx_s1717[] COLOPY_TXMEM = "INDIANROAD";
+static const char tx_s1718[] COLOPY_TXMEM = "INDIANSCONVERT";
+static const char tx_s1719[] COLOPY_TXMEM = "INDIANSHUN";
+static const char tx_s1720[] COLOPY_TXMEM = "INDIANSLAVES";
+static const char tx_s1721[] COLOPY_TXMEM = "INDIANSURPRISE";
+static const char tx_s1722[] COLOPY_TXMEM = "INDIANTREATY";
+static const char tx_s1723[] COLOPY_TXMEM = "INDIANWAGONS";
+static const char tx_s1724[] COLOPY_TXMEM = "INDIANWAR";
+static const char tx_s1725[] COLOPY_TXMEM = "INDIANWARFARE";
+static const char tx_s1726[] COLOPY_TXMEM = "INDIANWARPATH";
+static const char tx_s1727[] COLOPY_TXMEM = "INDIANWARPATH2";
+static const char tx_s1728[] COLOPY_TXMEM = "INDIANWELCOME";
+static const char tx_s1729[] COLOPY_TXMEM = "INDIANWIN0";
+static const char tx_s1730[] COLOPY_TXMEM = "INDIANWIN1";
+static const char tx_s1731[] COLOPY_TXMEM = "INDIANWIN2";
+static const char tx_s1732[] COLOPY_TXMEM = "INDIANWINCOLONY";
+static const char tx_s1733[] COLOPY_TXMEM = "INDIANWINCOLONY2";
+static const char tx_s1734[] COLOPY_TXMEM = "INEFFICIENT";
+static const char tx_s1735[] COLOPY_TXMEM = "INTERVENE";
+static const char tx_s1736[] COLOPY_TXMEM = "INTERVENTION";
+static const char tx_s1737[] COLOPY_TXMEM = "INVASION";
+static const char tx_s1738[] COLOPY_TXMEM = "KEEPSTOCKADE";
+static const char tx_s1739[] COLOPY_TXMEM = "KILLWAGONS";
+static const char tx_s1740[] COLOPY_TXMEM = "KINGBUY";
+static const char tx_s1741[] COLOPY_TXMEM = "KINGFRIGATE";
+static const char tx_s1742[] COLOPY_TXMEM = "KINGGALLEON2";
+static const char tx_s1743[] COLOPY_TXMEM = "KINGGALLEON3";
+static const char tx_s1744[] COLOPY_TXMEM = "KINGLOSE";
+static const char tx_s1745[] COLOPY_TXMEM = "KINGLOWER";
+static const char tx_s1746[] COLOPY_TXMEM = "KINGMERCY";
+static const char tx_s1747[] COLOPY_TXMEM = "KINGMOBILIZE";
+static const char tx_s1748[] COLOPY_TXMEM = "KINGNAVACT";
+static const char tx_s1749[] COLOPY_TXMEM = "KINGNEWWAR";
+static const char tx_s1750[] COLOPY_TXMEM = "KINGNOTHING";
+static const char tx_s1751[] COLOPY_TXMEM = "KINGRAISE";
+static const char tx_s1752[] COLOPY_TXMEM = "KINGRECRUIT";
+static const char tx_s1753[] COLOPY_TXMEM = "KINGSTAMPACT";
+static const char tx_s1754[] COLOPY_TXMEM = "KINGTAX";
+static const char tx_s1755[] COLOPY_TXMEM = "KINGVICTORY";
+static const char tx_s1756[] COLOPY_TXMEM = "KINGWAR";
+static const char tx_s1757[] COLOPY_TXMEM = "KINGWIFE";
+static const char tx_s1758[] COLOPY_TXMEM = "KINGWIN";
+static const char tx_s1759[] COLOPY_TXMEM = "KISSSORRY";
+static const char tx_s1760[] COLOPY_TXMEM = "KISSUP";
+static const char tx_s1761[] COLOPY_TXMEM = "LANDFIRST";
+static const char tx_s1762[] COLOPY_TXMEM = "LEARNALREADY";
+static const char tx_s1763[] COLOPY_TXMEM = "LEARNCRIMINAL";
+static const char tx_s1764[] COLOPY_TXMEM = "LEARNDONE";
+static const char tx_s1765[] COLOPY_TXMEM = "LEARNLATER";
+static const char tx_s1766[] COLOPY_TXMEM = "LEARNMAD";
+static const char tx_s1767[] COLOPY_TXMEM = "LEARNMASTER";
+static const char tx_s1768[] COLOPY_TXMEM = "LEARNSLOW";
+static const char tx_s1769[] COLOPY_TXMEM = "LEARNSTAY";
+static const char tx_s1770[] COLOPY_TXMEM = "LOBOTOMIZE";
+static const char tx_s1771[] COLOPY_TXMEM = "LOOT";
+static const char tx_s1772[] COLOPY_TXMEM = "LOOT2";
+static const char tx_s1773[] COLOPY_TXMEM = "LOOTCAPTURE";
+static const char tx_s1774[] COLOPY_TXMEM = "LOOTCASH";
+static const char tx_s1775[] COLOPY_TXMEM = "LOOTFOREIGN";
+static const char tx_s1776[] COLOPY_TXMEM = "LOOTWAGONS";
+static const char tx_s1777[] COLOPY_TXMEM = "LOSENOCOLONIES";
+static const char tx_s1778[] COLOPY_TXMEM = "LOSING1";
+static const char tx_s1779[] COLOPY_TXMEM = "LOSING2";
+static const char tx_s1780[] COLOPY_TXMEM = "LOSING3";
+static const char tx_s1781[] COLOPY_TXMEM = "LOSTCITY0";
+static const char tx_s1782[] COLOPY_TXMEM = "LOSTCITY1";
+static const char tx_s1783[] COLOPY_TXMEM = "LOSTCITY2";
+static const char tx_s1784[] COLOPY_TXMEM = "LOSTCITY3";
+static const char tx_s1785[] COLOPY_TXMEM = "LOSTCITY4";
+static const char tx_s1786[] COLOPY_TXMEM = "LOSTCITY5";
+static const char tx_s1787[] COLOPY_TXMEM = "LOSTCITY6";
+static const char tx_s1788[] COLOPY_TXMEM = "LOSTCITY7";
+static const char tx_s1789[] COLOPY_TXMEM = "LOSTCITY8";
+static const char tx_s1790[] COLOPY_TXMEM = "LOSTCITY9";
+static const char tx_s1791[] COLOPY_TXMEM = "LOSTOURSCOUTS";
+static const char tx_s1792[] COLOPY_TXMEM = "LOSTTHEIRSCOUTS";
+static const char tx_s1793[] COLOPY_TXMEM = "LUMBER";
+static const char tx_s1794[] COLOPY_TXMEM = "MADATSHIPS";
+static const char tx_s1795[] COLOPY_TXMEM = "MADATWAGONS";
+static const char tx_s1796[] COLOPY_TXMEM = "MAYBEWITHDRAW";
+static const char tx_s1797[] COLOPY_TXMEM = "MERCANTILISM";
+static const char tx_s1798[] COLOPY_TXMEM = "MERCENARIES";
+static const char tx_s1799[] COLOPY_TXMEM = "MERCENARY";
+static const char tx_s1800[] COLOPY_TXMEM = "MERCS";
+static const char tx_s1801[] COLOPY_TXMEM = "MILITARY";
+static const char tx_s1802[] COLOPY_TXMEM = "MISSION0";
+static const char tx_s1803[] COLOPY_TXMEM = "MISSION1";
+static const char tx_s1804[] COLOPY_TXMEM = "MISSION2";
+static const char tx_s1805[] COLOPY_TXMEM = "MISSION3";
+static const char tx_s1806[] COLOPY_TXMEM = "MOBILIZE";
+static const char tx_s1807[] COLOPY_TXMEM = "MOBILIZE2";
+static const char tx_s1808[] COLOPY_TXMEM = "MORETHANTHREE";
+static const char tx_s1809[] COLOPY_TXMEM = "NEEDCOLLEGE";
+static const char tx_s1810[] COLOPY_TXMEM = "NEEDTOOLS";
+static const char tx_s1811[] COLOPY_TXMEM = "NEEDTOOLS0";
+static const char tx_s1812[] COLOPY_TXMEM = "NEEDUNIVERSITY";
+static const char tx_s1813[] COLOPY_TXMEM = "NEWCOLONIST";
+static const char tx_s1814[] COLOPY_TXMEM = "NOCITY";
+static const char tx_s1815[] COLOPY_TXMEM = "NOCOLONIESEITHER";
+static const char tx_s1816[] COLOPY_TXMEM = "NOCONTACT";
+static const char tx_s1817[] COLOPY_TXMEM = "NODOCKS";
+static const char tx_s1818[] COLOPY_TXMEM = "NOLOOT";
+static const char tx_s1819[] COLOPY_TXMEM = "NOMAYORSDURINGREV";
+static const char tx_s1820[] COLOPY_TXMEM = "NOMOREWAGONS";
+static const char tx_s1821[] COLOPY_TXMEM = "NOMOREWAREHOUSE";
+static const char tx_s1822[] COLOPY_TXMEM = "NOPLOW";
+static const char tx_s1823[] COLOPY_TXMEM = "NOPORT";
+static const char tx_s1824[] COLOPY_TXMEM = "NOROAD";
+static const char tx_s1825[] COLOPY_TXMEM = "NOTEACHER";
+static const char tx_s1826[] COLOPY_TXMEM = "NOTENOUGH";
+static const char tx_s1827[] COLOPY_TXMEM = "NOTHINGWITHDRAW";
+static const char tx_s1828[] COLOPY_TXMEM = "NOTWITHDRAW";
+static const char tx_s1829[] COLOPY_TXMEM = "NOWARSDURINGREV";
+static const char tx_s1830[] COLOPY_TXMEM = "OLDPEACEMANLY";
+static const char tx_s1831[] COLOPY_TXMEM = "OLDPEACEMEEK";
+static const char tx_s1832[] COLOPY_TXMEM = "ONLYCOL";
+static const char tx_s1833[] COLOPY_TXMEM = "ONLYPIO";
+static const char tx_s1834[] COLOPY_TXMEM = "ORE";
+static const char tx_s1835[] COLOPY_TXMEM = "OTHERGRANTED";
+static const char tx_s1836[] COLOPY_TXMEM = "OTHERLESS";
+static const char tx_s1837[] COLOPY_TXMEM = "OTHERMIGHT";
+static const char tx_s1838[] COLOPY_TXMEM = "OVERBOARD";
+static const char tx_s1839[] COLOPY_TXMEM = "PEACEMANLY";
+static const char tx_s1840[] COLOPY_TXMEM = "PEACEMEEK";
+static const char tx_s1841[] COLOPY_TXMEM = "PEACEUSA";
+static const char tx_s1842[] COLOPY_TXMEM = "PICKACARGO";
+static const char tx_s1843[] COLOPY_TXMEM = "PICKINDEPENDENCE";
+static const char tx_s1844[] COLOPY_TXMEM = "PICKINDIAN";
+static const char tx_s1845[] COLOPY_TXMEM = "PICKMILITARY";
+static const char tx_s1846[] COLOPY_TXMEM = "PICKMUSIC";
+static const char tx_s1847[] COLOPY_TXMEM = "PIRACY";
+static const char tx_s1848[] COLOPY_TXMEM = "PIRACYUSA";
+static const char tx_s1849[] COLOPY_TXMEM = "PISS0";
+static const char tx_s1850[] COLOPY_TXMEM = "PISS1";
+static const char tx_s1851[] COLOPY_TXMEM = "PISS2";
+static const char tx_s1852[] COLOPY_TXMEM = "PISS3";
+static const char tx_s1853[] COLOPY_TXMEM = "PISS4";
+static const char tx_s1854[] COLOPY_TXMEM = "PISS5";
+static const char tx_s1855[] COLOPY_TXMEM = "PRICEDOWN";
+static const char tx_s1856[] COLOPY_TXMEM = "PRICEUP";
+static const char tx_s1857[] COLOPY_TXMEM = "PROVOKE";
+static const char tx_s1858[] COLOPY_TXMEM = "PURCHASETAX";
+static const char tx_s1859[] COLOPY_TXMEM = "RAIDBURN";
+static const char tx_s1860[] COLOPY_TXMEM = "RAIDGOLD";
+static const char tx_s1861[] COLOPY_TXMEM = "RAIDNOTHING";
+static const char tx_s1862[] COLOPY_TXMEM = "RAIDSHIP";
+static const char tx_s1863[] COLOPY_TXMEM = "RAIDSTORES";
+static const char tx_s1864[] COLOPY_TXMEM = "RAIDWREAK";
+static const char tx_s1865[] COLOPY_TXMEM = "REALLYBUY";
+static const char tx_s1866[] COLOPY_TXMEM = "REBELDOWN";
+static const char tx_s1867[] COLOPY_TXMEM = "REBELMAJORITY";
+static const char tx_s1868[] COLOPY_TXMEM = "REBELUNANIMOUS";
+static const char tx_s1869[] COLOPY_TXMEM = "REBELUP";
+static const char tx_s1870[] COLOPY_TXMEM = "REBELUP50";
+static const char tx_s1871[] COLOPY_TXMEM = "RECRUITCHOOSE";
+static const char tx_s1872[] COLOPY_TXMEM = "REFIT";
+static const char tx_s1873[] COLOPY_TXMEM = "RETIRE";
+static const char tx_s1874[] COLOPY_TXMEM = "RETIRING";
+static const char tx_s1875[] COLOPY_TXMEM = "RETIRING2";
+static const char tx_s1876[] COLOPY_TXMEM = "RID";
+static const char tx_s1877[] COLOPY_TXMEM = "RIDUSA";
+static const char tx_s1878[] COLOPY_TXMEM = "ROUTELOOP";
+static const char tx_s1879[] COLOPY_TXMEM = "SAILPORT";
+static const char tx_s1880[] COLOPY_TXMEM = "SCHOOL1";
+static const char tx_s1881[] COLOPY_TXMEM = "SCORED";
+static const char tx_s1882[] COLOPY_TXMEM = "SCOUTCOLONY";
+static const char tx_s1883[] COLOPY_TXMEM = "SCREWED";
+static const char tx_s1884[] COLOPY_TXMEM = "SEACOLONY";
+static const char tx_s1885[] COLOPY_TXMEM = "SEIZURE";
+static const char tx_s1886[] COLOPY_TXMEM = "SEIZURELAND";
+static const char tx_s1887[] COLOPY_TXMEM = "SEIZURESEA";
+static const char tx_s1888[] COLOPY_TXMEM = "SHIPCOMBAT";
+static const char tx_s1889[] COLOPY_TXMEM = "SHIPDAMAGE";
+static const char tx_s1890[] COLOPY_TXMEM = "SHIPLAKE";
+static const char tx_s1891[] COLOPY_TXMEM = "SHIPOPTIONS";
+static const char tx_s1892[] COLOPY_TXMEM = "SHIPRUN";
+static const char tx_s1893[] COLOPY_TXMEM = "SHIPSLOW";
+static const char tx_s1894[] COLOPY_TXMEM = "SHIPSUNK";
+static const char tx_s1895[] COLOPY_TXMEM = "SIEGE";
+static const char tx_s1896[] COLOPY_TXMEM = "SIEGES";
+static const char tx_s1897[] COLOPY_TXMEM = "SIEGESUSA";
+static const char tx_s1898[] COLOPY_TXMEM = "SIGNTREATY";
+static const char tx_s1899[] COLOPY_TXMEM = "SMITEEUROPE";
+static const char tx_s1900[] COLOPY_TXMEM = "SMITEINDIANS";
+static const char tx_s1901[] COLOPY_TXMEM = "SNEAK";
+static const char tx_s1902[] COLOPY_TXMEM = "SOMEBOYCOTT";
+static const char tx_s1903[] COLOPY_TXMEM = "SONSDOWN";
+static const char tx_s1904[] COLOPY_TXMEM = "SONSUP";
+static const char tx_s1905[] COLOPY_TXMEM = "SOONRETIRING0";
+static const char tx_s1906[] COLOPY_TXMEM = "SOONRETIRING1";
+static const char tx_s1907[] COLOPY_TXMEM = "SOUNDOPTIONS";
+static const char tx_s1908[] COLOPY_TXMEM = "SPOIL1";
+static const char tx_s1909[] COLOPY_TXMEM = "SPOIL2";
+static const char tx_s1910[] COLOPY_TXMEM = "SPOIL3";
+static const char tx_s1911[] COLOPY_TXMEM = "SPOIL4";
+static const char tx_s1912[] COLOPY_TXMEM = "STARVE1";
+static const char tx_s1913[] COLOPY_TXMEM = "STARVE2";
+static const char tx_s1914[] COLOPY_TXMEM = "SUCCESSION";
+static const char tx_s1915[] COLOPY_TXMEM = "SUREDELETE";
+static const char tx_s1916[] COLOPY_TXMEM = "SUREDISBAND";
+static const char tx_s1917[] COLOPY_TXMEM = "TAXOPTIONS";
+static const char tx_s1918[] COLOPY_TXMEM = "TEACHCONVERT";
+static const char tx_s1919[] COLOPY_TXMEM = "TEAPARTY";
+static const char tx_s1920[] COLOPY_TXMEM = "THREATS";
+static const char tx_s1921[] COLOPY_TXMEM = "TIMECHANGE";
+static const char tx_s1922[] COLOPY_TXMEM = "TOBACCO";
+static const char tx_s1923[] COLOPY_TXMEM = "TOOLS";
+static const char tx_s1924[] COLOPY_TXMEM = "TOOMOUNTAIN";
+static const char tx_s1925[] COLOPY_TXMEM = "TOONEAR";
+static const char tx_s1926[] COLOPY_TXMEM = "TOOTORY";
+static const char tx_s1927[] COLOPY_TXMEM = "TORYMAJORITY";
+static const char tx_s1928[] COLOPY_TXMEM = "TORYMINORITY";
+static const char tx_s1929[] COLOPY_TXMEM = "TORYUPRISING";
+static const char tx_s1930[] COLOPY_TXMEM = "TRADE0";
+static const char tx_s1931[] COLOPY_TXMEM = "TRADE1";
+static const char tx_s1932[] COLOPY_TXMEM = "TRADEATWAR";
+static const char tx_s1933[] COLOPY_TXMEM = "TRADEDELETE";
+static const char tx_s1934[] COLOPY_TXMEM = "TRADEMANY";
+static const char tx_s1935[] COLOPY_TXMEM = "TRADEMERCANTILISM";
+static const char tx_s1936[] COLOPY_TXMEM = "TRADENOCARGO";
+static const char tx_s1937[] COLOPY_TXMEM = "TRADENONE";
+static const char tx_s1938[] COLOPY_TXMEM = "TRADENONE2";
+static const char tx_s1939[] COLOPY_TXMEM = "TRADENOWANT";
+static const char tx_s1940[] COLOPY_TXMEM = "TRADESELECT";
+static const char tx_s1941[] COLOPY_TXMEM = "TRADESTART";
+static const char tx_s1942[] COLOPY_TXMEM = "TRADETYPE";
+static const char tx_s1943[] COLOPY_TXMEM = "TRADEWHICH";
+static const char tx_s1944[] COLOPY_TXMEM = "TRADEWITH";
+static const char tx_s1945[] COLOPY_TXMEM = "TRAINCRIMINAL";
+static const char tx_s1946[] COLOPY_TXMEM = "TRAINFAIL";
+static const char tx_s1947[] COLOPY_TXMEM = "TRAININDENTURED";
+static const char tx_s1948[] COLOPY_TXMEM = "TRAINPROFESSION";
+static const char tx_s1949[] COLOPY_TXMEM = "TRAVELPLACE";
+static const char tx_s1950[] COLOPY_TXMEM = "TRIBUTE";
+static const char tx_s1951[] COLOPY_TXMEM = "TRIBUTEUSA";
+static const char tx_s1952[] COLOPY_TXMEM = "TUTNOLUMBER";
+static const char tx_s1953[] COLOPY_TXMEM = "TUTNOSPACES";
+static const char tx_s1954[] COLOPY_TXMEM = "TUTORIAL1";
+static const char tx_s1955[] COLOPY_TXMEM = "TUTORIAL10";
+static const char tx_s1956[] COLOPY_TXMEM = "TUTORIAL11";
+static const char tx_s1957[] COLOPY_TXMEM = "TUTORIAL12";
+static const char tx_s1958[] COLOPY_TXMEM = "TUTORIAL13";
+static const char tx_s1959[] COLOPY_TXMEM = "TUTORIAL14";
+static const char tx_s1960[] COLOPY_TXMEM = "TUTORIAL15";
+static const char tx_s1961[] COLOPY_TXMEM = "TUTORIAL16";
+static const char tx_s1962[] COLOPY_TXMEM = "TUTORIAL17";
+static const char tx_s1963[] COLOPY_TXMEM = "TUTORIAL18";
+static const char tx_s1964[] COLOPY_TXMEM = "TUTORIAL19";
+static const char tx_s1965[] COLOPY_TXMEM = "TUTORIAL2";
+static const char tx_s1966[] COLOPY_TXMEM = "TUTORIAL3";
+static const char tx_s1967[] COLOPY_TXMEM = "TUTORIAL4";
+static const char tx_s1968[] COLOPY_TXMEM = "TUTORIAL5";
+static const char tx_s1969[] COLOPY_TXMEM = "TUTORIAL6";
+static const char tx_s1970[] COLOPY_TXMEM = "TUTORIAL7";
+static const char tx_s1971[] COLOPY_TXMEM = "TUTORIAL8";
+static const char tx_s1972[] COLOPY_TXMEM = "TUTORIAL9";
+static const char tx_s1973[] COLOPY_TXMEM = "UNFORTUNATE";
+static const char tx_s1974[] COLOPY_TXMEM = "UNITOPTIONS";
+static const char tx_s1975[] COLOPY_TXMEM = "UNIV3";
+static const char tx_s1976[] COLOPY_TXMEM = "UNREST";
+static const char tx_s1977[] COLOPY_TXMEM = "UPKEEP";
+static const char tx_s1978[] COLOPY_TXMEM = "USEDUPTOOLS";
+static const char tx_s1979[] COLOPY_TXMEM = "VALOR";
+static const char tx_s1980[] COLOPY_TXMEM = "VANISH";
+static const char tx_s1981[] COLOPY_TXMEM = "VETERAN";
+static const char tx_s1982[] COLOPY_TXMEM = "VILLAGEBAD";
+static const char tx_s1983[] COLOPY_TXMEM = "VILLAGEHAPPY";
+static const char tx_s1984[] COLOPY_TXMEM = "VILLAGEMEDIUM";
+static const char tx_s1985[] COLOPY_TXMEM = "VILLAGESAVAGE";
+static const char tx_s1986[] COLOPY_TXMEM = "VILLAGEWAR";
+static const char tx_s1987[] COLOPY_TXMEM = "VIOLATE";
+static const char tx_s1988[] COLOPY_TXMEM = "WAGONCAPTURE";
+static const char tx_s1989[] COLOPY_TXMEM = "WANTSTUFF";
+static const char tx_s1990[] COLOPY_TXMEM = "WANTSTUFFUSA";
+static const char tx_s1991[] COLOPY_TXMEM = "WAREHOUSEFULL";
+static const char tx_s1992[] COLOPY_TXMEM = "WARMANLY";
+static const char tx_s1993[] COLOPY_TXMEM = "WARMEEK";
+static const char tx_s1994[] COLOPY_TXMEM = "WARN1";
+static const char tx_s1995[] COLOPY_TXMEM = "WARN2";
+static const char tx_s1996[] COLOPY_TXMEM = "WARN3";
+static const char tx_s1997[] COLOPY_TXMEM = "WELLSEASONED";
+static const char tx_s1998[] COLOPY_TXMEM = "WHACKINDIANS";
+static const char tx_s1999[] COLOPY_TXMEM = "WHICHFREEDOM";
+static const char tx_s2000[] COLOPY_TXMEM = "WINNING";
+static const char tx_s2001[] COLOPY_TXMEM = "WITHDRAW";
+static const char tx_s2002[] COLOPY_TXMEM = "WORTHY";
+static const char tx_s2003[] COLOPY_TXMEM = "{COLONIZATION} Version %STRING0 -- %STRING1";
+static const char tx_s2004[] COLOPY_TXMEM = "Start a Game in NEW WORLD";
+static const char tx_s2005[] COLOPY_TXMEM = "Start a Game in AMERICA";
+static const char tx_s2006[] COLOPY_TXMEM = "CUSTOMIZE New World";
+static const char tx_s2007[] COLOPY_TXMEM = "LOAD Game";
+static const char tx_s2008[] COLOPY_TXMEM = "View Hall of Fame";
+static const char tx_s2009[] COLOPY_TXMEM = "a";
+static const char tx_s2010[] COLOPY_TXMEM = "an";
+static const char tx_s2011[] COLOPY_TXMEM = "End of Turn";
+static const char tx_s2012[] COLOPY_TXMEM = "None";
+static const char tx_s2013[] COLOPY_TXMEM = "Expert";
+static const char tx_s2014[] COLOPY_TXMEM = "Sailing For";
+static const char tx_s2015[] COLOPY_TXMEM = "Inbound From";
+static const char tx_s2016[] COLOPY_TXMEM = "Now Arriving In";
+static const char tx_s2017[] COLOPY_TXMEM = "Docks At";
+static const char tx_s2018[] COLOPY_TXMEM = "Expected Soon";
+static const char tx_s2019[] COLOPY_TXMEM = "Bound For";
+static const char tx_s2020[] COLOPY_TXMEM = "No Ships In Port";
+static const char tx_s2021[] COLOPY_TXMEM = "Awaiting Passage";
+static const char tx_s2022[] COLOPY_TXMEM = "(Cost:";
+static const char tx_s2023[] COLOPY_TXMEM = ")";
+static const char tx_s2024[] COLOPY_TXMEM = "Lost City Rumor";
+static const char tx_s2025[] COLOPY_TXMEM = ".5";
+static const char tx_s2026[] COLOPY_TXMEM = "Wilderness";
+static const char tx_s2027[] COLOPY_TXMEM = "Land";
+static const char tx_s2028[] COLOPY_TXMEM = "of the";
+static const char tx_s2029[] COLOPY_TXMEM = "No cargo ready for transport!";
+static const char tx_s2030[] COLOPY_TXMEM = "No cargo holds available!";
+static const char tx_s2031[] COLOPY_TXMEM = "No cargo on board!";
+static const char tx_s2032[] COLOPY_TXMEM = "Loading";
+static const char tx_s2033[] COLOPY_TXMEM = "Unloading";
+static const char tx_s2034[] COLOPY_TXMEM = "onto";
+static const char tx_s2035[] COLOPY_TXMEM = "in";
+static const char tx_s2036[] COLOPY_TXMEM = "Mission";
+static const char tx_s2037[] COLOPY_TXMEM = "Missions";
+static const char tx_s2038[] COLOPY_TXMEM = "INDIAN ADVISER REPORT";
+static const char tx_s2039[] COLOPY_TXMEM = "RELIGIOUS ADVISER REPORT";
+static const char tx_s2040[] COLOPY_TXMEM = "Road";
+static const char tx_s2041[] COLOPY_TXMEM = "only";
+static const char tx_s2042[] COLOPY_TXMEM = "Continue turn.";
+static const char tx_s2043[] COLOPY_TXMEM = "Zoom to colony.";
+static const char tx_s2044[] COLOPY_TXMEM = "The";
+static const char tx_s2045[] COLOPY_TXMEM = "CONTINENTAL CONGRESS ACTIVITIES";
+static const char tx_s2046[] COLOPY_TXMEM = "Now debating:";
+static const char tx_s2047[] COLOPY_TXMEM = "Alarmed by";
+static const char tx_s2048[] COLOPY_TXMEM = "Lake";
+static const char tx_s2049[] COLOPY_TXMEM = "wagons";
+static const char tx_s2050[] COLOPY_TXMEM = "holds";
+static const char tx_s2051[] COLOPY_TXMEM = "Requires";
+static const char tx_s2052[] COLOPY_TXMEM = "(CLEAR SPECIALTY)";
+static const char tx_s2053[] COLOPY_TXMEM = "Horse Herds";
+static const char tx_s2054[] COLOPY_TXMEM = "OK";
+static const char tx_s2055[] COLOPY_TXMEM = "sells";
+static const char tx_s2056[] COLOPY_TXMEM = "for";
+static const char tx_s2057[] COLOPY_TXMEM = "LABOR ADVISER REPORT";
+static const char tx_s2058[] COLOPY_TXMEM = "ECONOMIC ADVISER REPORT";
+static const char tx_s2059[] COLOPY_TXMEM = "COLONY ADVISER REPORT";
+static const char tx_s2060[] COLOPY_TXMEM = "NAVAL ADVISER REPORT";
+static const char tx_s2061[] COLOPY_TXMEM = "Off Mapboard (Europe)";
+static const char tx_s2062[] COLOPY_TXMEM = "On Mapboard";
+static const char tx_s2063[] COLOPY_TXMEM = "In Colonies";
+static const char tx_s2064[] COLOPY_TXMEM = "(Click on item to zoom)";
+static const char tx_s2065[] COLOPY_TXMEM = "K";
+static const char tx_s2066[] COLOPY_TXMEM = "Tons";
+static const char tx_s2067[] COLOPY_TXMEM = "Gold";
+static const char tx_s2068[] COLOPY_TXMEM = "High Seas";
+static const char tx_s2069[] COLOPY_TXMEM = "Ship";
+static const char tx_s2070[] COLOPY_TXMEM = "Cargo";
+static const char tx_s2071[] COLOPY_TXMEM = "Location";
+static const char tx_s2072[] COLOPY_TXMEM = "Destination";
+static const char tx_s2073[] COLOPY_TXMEM = "Veteran";
+static const char tx_s2074[] COLOPY_TXMEM = "Seasoned";
+static const char tx_s2075[] COLOPY_TXMEM = "Learned";
+static const char tx_s2076[] COLOPY_TXMEM = "Ask:";
+static const char tx_s2077[] COLOPY_TXMEM = "Rebel";
+static const char tx_s2078[] COLOPY_TXMEM = "Tory";
+static const char tx_s2079[] COLOPY_TXMEM = "Sentiment";
+static const char tx_s2080[] COLOPY_TXMEM = "King's Popularity";
+static const char tx_s2081[] COLOPY_TXMEM = "defeat";
+static const char tx_s2082[] COLOPY_TXMEM = "defeats";
+static const char tx_s2083[] COLOPY_TXMEM = "COMBAT ANALYSIS";
+static const char tx_s2084[] COLOPY_TXMEM = "Fatigue";
+static const char tx_s2085[] COLOPY_TXMEM = "Attack Bonus";
+static const char tx_s2086[] COLOPY_TXMEM = "Ambush";
+static const char tx_s2087[] COLOPY_TXMEM = "Terrain";
+static const char tx_s2088[] COLOPY_TXMEM = "Colony";
+static const char tx_s2089[] COLOPY_TXMEM = "Fortified";
+static const char tx_s2090[] COLOPY_TXMEM = "Spain Bonus";
+static const char tx_s2091[] COLOPY_TXMEM = "Plowed";
+static const char tx_s2092[] COLOPY_TXMEM = "Artillery In Open";
+static const char tx_s2093[] COLOPY_TXMEM = "Expeditionary Force";
+static const char tx_s2094[] COLOPY_TXMEM = "Rebels";
+static const char tx_s2095[] COLOPY_TXMEM = "Tories";
+static const char tx_s2096[] COLOPY_TXMEM = "Matters";
+static const char tx_s2097[] COLOPY_TXMEM = "Founding Fathers";
+static const char tx_s2098[] COLOPY_TXMEM = "Drake";
+static const char tx_s2099[] COLOPY_TXMEM = "(Building Upkeep)";
+static const char tx_s2100[] COLOPY_TXMEM = "TOTAL UPKEEP";
+static const char tx_s2101[] COLOPY_TXMEM = "FOREIGN AFFAIRS REPORT";
+static const char tx_s2102[] COLOPY_TXMEM = "'s";
+static const char tx_s2103[] COLOPY_TXMEM = "Colonies";
+static const char tx_s2104[] COLOPY_TXMEM = "Population";
+static const char tx_s2105[] COLOPY_TXMEM = "Average Colony";
+static const char tx_s2106[] COLOPY_TXMEM = "Military Power";
+static const char tx_s2107[] COLOPY_TXMEM = "Naval Power";
+static const char tx_s2108[] COLOPY_TXMEM = "Merchant Marine";
+static const char tx_s2109[] COLOPY_TXMEM = "War";
+static const char tx_s2110[] COLOPY_TXMEM = "Peace";
+static const char tx_s2111[] COLOPY_TXMEM = "Adviser";
+static const char tx_s2112[] COLOPY_TXMEM = "Bombard";
+static const char tx_s2113[] COLOPY_TXMEM = "+ More +";
+static const char tx_s2114[] COLOPY_TXMEM = "and";
+static const char tx_s2115[] COLOPY_TXMEM = "past";
+static const char tx_s2116[] COLOPY_TXMEM = "ENCYCLOPEDIA OF COLONIZATION";
+static const char tx_s2117[] COLOPY_TXMEM = "(More)";
+static const char tx_s2118[] COLOPY_TXMEM = "(Exit)";
+static const char tx_s2119[] COLOPY_TXMEM = "Intervention Force";
+static const char tx_s2120[] COLOPY_TXMEM = "Next Continental Congress Session";
+static const char tx_s2121[] COLOPY_TXMEM = "Intervention";
+static const char tx_s2122[] COLOPY_TXMEM = "COLONIZATION SCORE";
+static const char tx_s2123[] COLOPY_TXMEM = "Citizens";
+static const char tx_s2124[] COLOPY_TXMEM = "Independence";
+static const char tx_s2125[] COLOPY_TXMEM = "Villages Burned";
+static const char tx_s2126[] COLOPY_TXMEM = "Declared";
+static const char tx_s2127[] COLOPY_TXMEM = "Achieved";
+static const char tx_s2128[] COLOPY_TXMEM = "Foreign Recognition";
+static const char tx_s2129[] COLOPY_TXMEM = "Total Score";
+static const char tx_s2130[] COLOPY_TXMEM = "Trees";
+static const char tx_s2131[] COLOPY_TXMEM = "(Outside Colony)";
+static const char tx_s2132[] COLOPY_TXMEM = "Asking";
+static const char tx_s2133[] COLOPY_TXMEM = "Bidding";
+static const char tx_s2134[] COLOPY_TXMEM = "SCORING COMPLETE";
+static const char tx_s2135[] COLOPY_TXMEM = "COMPLETE";
+static const char tx_s2136[] COLOPY_TXMEM = "arrives in";
+static const char tx_s2137[] COLOPY_TXMEM = "Artillery Vs. Raid";
+static const char tx_s2138[] COLOPY_TXMEM = "Extinct";
+static const char tx_s2139[] COLOPY_TXMEM = "Boycott";
+static const char tx_s2140[] COLOPY_TXMEM = "Tory Unrest";
+static const char tx_s2141[] COLOPY_TXMEM = "Rebel Unrest";
+static const char tx_s2142[] COLOPY_TXMEM = "Continental Congress";
+static const char tx_s2143[] COLOPY_TXMEM = "Sold";
+static const char tx_s2144[] COLOPY_TXMEM = "Bought";
+static const char tx_s2145[] COLOPY_TXMEM = "at";
+static const char tx_s2146[] COLOPY_TXMEM = "$/ton";
+static const char tx_s2147[] COLOPY_TXMEM = "Price";
+static const char tx_s2148[] COLOPY_TXMEM = "% Tax";
+static const char tx_s2149[] COLOPY_TXMEM = "Net";
+static const char tx_s2150[] COLOPY_TXMEM = "Early Revolution";
+static const char tx_s2151[] COLOPY_TXMEM = "prior nations";
+static const char tx_s2152[] COLOPY_TXMEM = "Land Mass";
+static const char tx_s2153[] COLOPY_TXMEM = "Land Form";
+static const char tx_s2154[] COLOPY_TXMEM = "Temperature";
+static const char tx_s2155[] COLOPY_TXMEM = "Climate";
+static const char tx_s2156[] COLOPY_TXMEM = "Small";
+static const char tx_s2157[] COLOPY_TXMEM = "Moderate";
+static const char tx_s2158[] COLOPY_TXMEM = "Large";
+static const char tx_s2159[] COLOPY_TXMEM = "Archipelago";
+static const char tx_s2160[] COLOPY_TXMEM = "Normal";
+static const char tx_s2161[] COLOPY_TXMEM = "Continents";
+static const char tx_s2162[] COLOPY_TXMEM = "Cool";
+static const char tx_s2163[] COLOPY_TXMEM = "Temperate";
+static const char tx_s2164[] COLOPY_TXMEM = "Warm";
+static const char tx_s2165[] COLOPY_TXMEM = "Arid";
+static const char tx_s2166[] COLOPY_TXMEM = "Wet";
+static const char tx_s2167[] COLOPY_TXMEM = "CUSTOMIZE NEW WORLD";
+static const char tx_s2168[] COLOPY_TXMEM = "Click Here When Finished";
+static const char tx_s2169[] COLOPY_TXMEM = "Choose";
+static const char tx_s2170[] COLOPY_TXMEM = "Difficulty Level";
+static const char tx_s2171[] COLOPY_TXMEM = "Level";
+static const char tx_s2172[] COLOPY_TXMEM = "Easiest";
+static const char tx_s2173[] COLOPY_TXMEM = "Easy";
+static const char tx_s2174[] COLOPY_TXMEM = "Tough";
+static const char tx_s2175[] COLOPY_TXMEM = "Toughest";
+static const char tx_s2176[] COLOPY_TXMEM = "Select";
+static const char tx_s2177[] COLOPY_TXMEM = "European Power";
+static const char tx_s2178[] COLOPY_TXMEM = "Power";
+static const char tx_s2179[] COLOPY_TXMEM = "Immigration";
+static const char tx_s2180[] COLOPY_TXMEM = "Cooperation";
+static const char tx_s2181[] COLOPY_TXMEM = "Conquest";
+static const char tx_s2182[] COLOPY_TXMEM = "Trade";
+static const char tx_s2183[] COLOPY_TXMEM = "Fish";
+static const char tx_s2184[] COLOPY_TXMEM = "With";
+static const char tx_s2185[] COLOPY_TXMEM = "Combat";
+static const char tx_s2186[] COLOPY_TXMEM = "Attack";
+static const char tx_s2187[] COLOPY_TXMEM = "Cargo Holds";
+static const char tx_s2188[] COLOPY_TXMEM = "Moves";
+static const char tx_s2189[] COLOPY_TXMEM = "Plow";
+static const char tx_s2190[] COLOPY_TXMEM = "River";
+static const char tx_s2191[] COLOPY_TXMEM = "Coast";
+static const char tx_s2192[] COLOPY_TXMEM = "Move Cost";
+static const char tx_s2193[] COLOPY_TXMEM = "Defense or Ambush Bonus";
+static const char tx_s2194[] COLOPY_TXMEM = "Prerequisite";
+static const char tx_s2195[] COLOPY_TXMEM = "(F1 for Help)";
+static const char tx_s2196[] COLOPY_TXMEM = "(Withdrawn from New World)";
+static const char tx_s2197[] COLOPY_TXMEM = "Free";
+static const char tx_s2198[] COLOPY_TXMEM = "COLONIZATION HALL OF FAME";
+static const char tx_s2199[] COLOPY_TXMEM = "to";
+static const char tx_s2200[] COLOPY_TXMEM = "A.D.";
+static const char tx_s2201[] COLOPY_TXMEM = "President";
+static const char tx_s2202[] COLOPY_TXMEM = "General, Continental Army";
+static const char tx_s2203[] COLOPY_TXMEM = "Leader";
+static const char tx_s2204[] COLOPY_TXMEM = "Score";
+static const char tx_s2205[] COLOPY_TXMEM = "Colonization_Rating";
+static const char tx_s2206[] COLOPY_TXMEM = "Prime";
+static const char tx_s2207[] COLOPY_TXMEM = "Damaged";
+static const char tx_s2208[] COLOPY_TXMEM = "Press";
+static const char tx_s2209[] COLOPY_TXMEM = "Bid Price";
+static const char tx_s2210[] COLOPY_TXMEM = "Ask Price";
+static const char tx_s2211[] COLOPY_TXMEM = "Zoom to Europe.";
+static const char tx_s2212[] COLOPY_TXMEM = "European Trade";
+static const char tx_s2213[] COLOPY_TXMEM = "Cargo in Port";
+static const char tx_s2214[] COLOPY_TXMEM = "Military Garrisons";
+static const char tx_s2215[] COLOPY_TXMEM = "Sons of Liberty";
+static const char tx_s2216[] COLOPY_TXMEM = "Exit";
+static const char tx_s2217[] COLOPY_TXMEM = "211";
+static const char tx_s2218[] COLOPY_TXMEM = "212";
+static const char tx_s2219[] COLOPY_TXMEM = "213";
+static const char tx_s2220[] COLOPY_TXMEM = "214";
+static const char tx_s2221[] COLOPY_TXMEM = "215";
+static const char tx_s2222[] COLOPY_TXMEM = "216";
+static const char tx_s2223[] COLOPY_TXMEM = "217";
+static const char tx_s2224[] COLOPY_TXMEM = "218";
+static const char tx_s2225[] COLOPY_TXMEM = "219";
+static const char tx_s2226[] COLOPY_TXMEM = "220";
+static const char tx_s2227[] COLOPY_TXMEM = "Pop:";
+static const char tx_s2228[] COLOPY_TXMEM = "Gold:";
+static const char tx_s2229[] COLOPY_TXMEM = "BUY";
+static const char tx_s2230[] COLOPY_TXMEM = "CHANGE";
+static const char tx_s2231[] COLOPY_TXMEM = "Select An Item To Build";
+static const char tx_s2232[] COLOPY_TXMEM = "(No Production)";
+static const char tx_s2233[] COLOPY_TXMEM = "Turns)";
+static const char tx_s2234[] COLOPY_TXMEM = "Select a Profession for";
+static const char tx_s2235[] COLOPY_TXMEM = "Tax:";
+static const char tx_s2236[] COLOPY_TXMEM = "Harvest / Resources";
+static const char tx_s2237[] COLOPY_TXMEM = "Units Present";
+static const char tx_s2238[] COLOPY_TXMEM = "Make";
+static const char tx_s2239[] COLOPY_TXMEM = "bought for";
+static const char tx_s2240[] COLOPY_TXMEM = "sold for";
+static const char tx_s2241[] COLOPY_TXMEM = "moved to";
+static const char tx_s2242[] COLOPY_TXMEM = ". Price:";
+static const char tx_s2243[] COLOPY_TXMEM = "No room for";
+static const char tx_s2244[] COLOPY_TXMEM = "Nothing to transport";
+static const char tx_s2245[] COLOPY_TXMEM = "Not enough";
+static const char tx_s2246[] COLOPY_TXMEM = "to fill cargo hold!";
+static const char tx_s2247[] COLOPY_TXMEM = "too expensive!";
+static const char tx_s2248[] COLOPY_TXMEM = "in cargo hold!";
+static const char tx_s2249[] COLOPY_TXMEM = "Nothing to transfer!";
+static const char tx_s2250[] COLOPY_TXMEM = "Buying";
+static const char tx_s2251[] COLOPY_TXMEM = "Selling";
+static const char tx_s2252[] COLOPY_TXMEM = "% Tax:";
+static const char tx_s2253[] COLOPY_TXMEM = ". Net:";
+static const char tx_s2254[] COLOPY_TXMEM = "request";
+static const char tx_s2255[] COLOPY_TXMEM = "demand";
+static const char tx_s2256[] COLOPY_TXMEM = "our Queen and the Church of England";
+static const char tx_s2257[] COLOPY_TXMEM = "His Most Christian Majesty, King Louis";
+static const char tx_s2258[] COLOPY_TXMEM = "the Pope and the Spanish Crown";
+static const char tx_s2259[] COLOPY_TXMEM = "the Stadtholder of the United Provinces of the Netherlands";
+static const char tx_s2260[] COLOPY_TXMEM = "seek a life of {religious freedom} and service to the Crown";
+static const char tx_s2261[] COLOPY_TXMEM = "promote the greater {glory} of France";
+static const char tx_s2262[] COLOPY_TXMEM = "{convert the heathen} and enrich our Sovereign";
+static const char tx_s2263[] COLOPY_TXMEM = "build a mighty overseas {trading empire}";
+static const char tx_s2264[] COLOPY_TXMEM = "Our Queen";
+static const char tx_s2265[] COLOPY_TXMEM = "Our King";
+static const char tx_s2266[] COLOPY_TXMEM = "The Pope";
+static const char tx_s2267[] COLOPY_TXMEM = "Our Stadtholder";
+static const char tx_s2268[] COLOPY_TXMEM = "the Queen";
+static const char tx_s2269[] COLOPY_TXMEM = "the King";
+static const char tx_s2270[] COLOPY_TXMEM = "the Pope";
+static const char tx_s2271[] COLOPY_TXMEM = "the Stadtholder";
+static const char tx_s2272[] COLOPY_TXMEM = "British General Cornwallis";
+static const char tx_s2273[] COLOPY_TXMEM = "French General Lafayette";
+static const char tx_s2274[] COLOPY_TXMEM = "Spanish Generals";
+static const char tx_s2275[] COLOPY_TXMEM = "Dutch Admiral de Ruyter";
+static const char tx_s2276[] COLOPY_TXMEM = "^^ENGLAND\n^^_\n__The Age of Expansion coincided with a period of {religious\nstrife} in England.  The Church of England--theoretically a\nProtestant denomination but maintaining many Catholic traditions--faced\na series of challenges during the colonial period from would-be\nreformers, or {Puritans}.  The English monarchy shifted its support\nbetween pro-Catholic and various Protestant factions from generation to\ngeneration, and the English Civil War (1640-49) resulted in the execution\nof Charles I and a period of Puritan rule (1649-60) under Oliver Cromwell.\nWith so much religious conflict at home, the English government had\nneither the desire nor the ability to enforce religious conformity in\nits colonial possessions.  The colonies became havens of\n{religious freedom} for groups (e.g. Puritans, Anabaptists, Quakers) who\nfaced persecution in the Old World.";
+static const char tx_s2277[] COLOPY_TXMEM = "^^ENGLAND\n^^_\nTo reflect the great flow of religious immigrants into English\ncolonies, the English player requires only {2/3} the normal number of\n\"{Crosses}\" to generate immigrants.";
+static const char tx_s2278[] COLOPY_TXMEM = "^^FRANCE\n^^_\n__Latecomers to the New World, France established her first\nsecure American colonies in {Canada} along the St. Lawrence river, where the\nharsh northern climate proved more suitable for the {fur trade} than for\nlarge-scale agricultural endeavors.\nThe French found the\n{Great Lakes Indians} to be ideal partners in the fur trade and formed\nlong-term trading relationships with the Hurons, Algonquins and other\ntribes.  Though French forts, missions, and trading posts soon dotted\nthe Great Lakes region, French settlements were generally small enough\nto operate in relative {harmony} with the local native population.  Although\nthis relationship was not entirely without incident, the French were often\nable to cooperate profitably with the natives.  This cooperation occasionally\nextended into the military realm.";
+static const char tx_s2279[] COLOPY_TXMEM = "^^FRANCE\n^^_\nTo reflect the superior ability of the French to cooperate with the\nnative population, the French player's colonies and units cause {alarm} among\nthe Indians at only {half} the rate of other European powers.";
+static const char tx_s2280[] COLOPY_TXMEM = "^^SPAIN\n^^_\n__In 1492, the same year that Columbus discovered America, the Spanish\ncompleted their centuries-long \"reconquista\" of the\nIberian peninsula from the Muslim Moors.  This victory left Spain with\na generation of {military men} spoiling for a new avenue of expansion and\nmore eager than ever to bring Christianity to the {heathen} at the point\nof a sword.  The New World and its unsuspecting natives provided exactly\nsuch an opportunity, and the history of the first century of Spanish\nexpansion in America is the history of the conquest, plunder, and destruction\nof countless Native American civilizations.  The Spanish were the first\nEuropeans to encounter the 'Indians,' and the otherwise mighty {Aztec}\nand {Inca} empires proved psychologically unprepared for the arrival of an\nalien power armed with muskets and thirsty for conquest.  Conquistador\n{Hernan Cortes} arrived at Veracruz in 1519 with a few hundred men and,\nwithin two years, brought the Aztec Empire to its knees.";
+static const char tx_s2281[] COLOPY_TXMEM = "^^SPAIN\n^^_\nTo reflect the strategic surprise which Spain achieved over pre-Columbian\nAmerican civilizations, the Spanish player receives a {50%% combat bonus}\nwhen {attacking Indian villages}.";
+static const char tx_s2282[] COLOPY_TXMEM = "^^NETHERLANDS\n^^_\n__The Protestant Dutch provinces gained their independence from Catholic\nSpain during the Age of Expansion.  A maritime country of {fishermen}\nand {merchants}, the Dutch Netherlands operated large merchant and fishing\nfleets in the North Sea and the Baltic.  Upon achieving political\nindependence in the early seventeenth century, this tiny nation found itself\nideally poised to expand its {overseas trade} into lucrative new markets\nin the Far East and New World.  Unlike their rivals and sometime enemies\nthe Spanish, French, and English, the Dutch were ruled by their merchant\nclass.  This unique arrangement led them to focus all aspects of state\ndiplomatic, military, and economic policy around the {interests of trade}.\nTheir strategy proved quite successful, and the Dutch economy\nand merchant fleet expanded so rapidly that the other European powers felt\ncompelled to take drastic measures against the Dutch in order to prop up\ntheir own less successful enterprises.";
+static const char tx_s2283[] COLOPY_TXMEM = "^^NETHERLANDS\n^^_\n__To represent the strength of the Dutch economy, as well as Dutch\nachievements in shipping, commerce, and banking, the Dutch player\nreceives a bonus when trading with Amsterdam.  {Commodity prices} in\nAmsterdam {do not collapse} as quickly as in other European ports and\nthey {recover} more quickly.";
+static const char tx_s2284[] COLOPY_TXMEM = "^^In the Year of Our Lord One Thousand Four Hundred Ninety-Two,";
+static const char tx_s2285[] COLOPY_TXMEM = "^^an Expedition led by the Great %STRING0,\n^^%STRING1,";
+static const char tx_s2286[] COLOPY_TXMEM = "^^left %STRING0 on a Voyage of Discovery.";
+static const char tx_s2287[] COLOPY_TXMEM = "^^Commissioned and Blessed by the %STRING1 of %STRING0,";
+static const char tx_s2288[] COLOPY_TXMEM = "^^to Explore the Ocean Sea,";
+static const char tx_s2289[] COLOPY_TXMEM = "^^to find Uncharted Lands,";
+static const char tx_s2290[] COLOPY_TXMEM = "^^and to Establish Colonies for the Greater Glory of %STRING0.";
+static const char tx_s2291[] COLOPY_TXMEM = "^^A Ship loaded with Pioneers and Soldiers";
+static const char tx_s2292[] COLOPY_TXMEM = "^^Set Sail to find a New Life, a New Beginning, . . .";
+static const char tx_s2293[] COLOPY_TXMEM = "^^A New World!";
+static const char tx_s2294[] COLOPY_TXMEM = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The King of %COUNTRY\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\"";
+static const char tx_s2295[] COLOPY_TXMEM = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The Stadtholder\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\"\n\n\n@@VICEROY\n@@width=200\n@^^Year of Our Lord %YEAR\n@^^Audience With The King of %COUNTRY\n@^^_\n@\"For the greater glory of %COUNTRY, we\n@^_dub thee {Viceroy of the New World}. Go\n@^_and explore this new land. Settle it\n@^_and bring wealth and glory to yourself\n@^_and our nation.\"";
+static const char tx_s2296[] COLOPY_TXMEM = "King";
+static const char tx_s2297[] COLOPY_TXMEM = "Stadtholder";
 
 const char *const dat_dialogs_landho_body[2] COLOPY_TXMEM = {
   tx_s0,
@@ -6216,99 +6223,120 @@ const char *const dat_events_europeshipoptions_body[4] COLOPY_TXMEM = {
 const int32_t dat_events_europeshipoptions_width COLOPY_TXMEM = 80;
 const char *const dat_events_europeshipoptions_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_europeshipoptions_small COLOPY_TXMEM = 0;
+const char *const dat_events_unitoptions_body[5] COLOPY_TXMEM = {
+  tx_s1507,
+  tx_s1510,
+  tx_s1511,
+  tx_s1512,
+  tx_s1506
+};
+const int32_t dat_events_unitoptions_width COLOPY_TXMEM = 80;
+const char *const dat_events_unitoptions_default COLOPY_TXMEM = NULL;
+const uint8_t dat_events_unitoptions_small COLOPY_TXMEM = 0;
+const char *const dat_events_shipoptions_body[6] COLOPY_TXMEM = {
+  tx_s1507,
+  tx_s1510,
+  tx_s1513,
+  tx_s1514,
+  tx_s1509,
+  tx_s1506
+};
+const int32_t dat_events_shipoptions_width COLOPY_TXMEM = 80;
+const char *const dat_events_shipoptions_default COLOPY_TXMEM = NULL;
+const uint8_t dat_events_shipoptions_small COLOPY_TXMEM = 0;
 const char *const dat_events_shipcombat_body[1] COLOPY_TXMEM = {
-  tx_s1510
+  tx_s1515
 };
 const int32_t dat_events_shipcombat_width COLOPY_TXMEM = 190;
 const char *const dat_events_shipcombat_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_shipcombat_small COLOPY_TXMEM = 0;
 const char *const dat_events_fortfire_body[1] COLOPY_TXMEM = {
-  tx_s1511
+  tx_s1516
 };
 const int32_t dat_events_fortfire_width COLOPY_TXMEM = 190;
 const char *const dat_events_fortfire_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_fortfire_small COLOPY_TXMEM = 0;
 const char *const dat_events_cargocapture_body[1] COLOPY_TXMEM = {
-  tx_s1512
+  tx_s1517
 };
 const int32_t dat_events_cargocapture_width COLOPY_TXMEM = 190;
 const char *const dat_events_cargocapture_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_cargocapture_small COLOPY_TXMEM = 0;
 const char *const dat_events_evasive_body[1] COLOPY_TXMEM = {
-  tx_s1513
+  tx_s1518
 };
 const int32_t dat_events_evasive_width COLOPY_TXMEM = 190;
 const char *const dat_events_evasive_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_evasive_small COLOPY_TXMEM = 0;
 const char *const dat_events_scoutcolony_body[2] COLOPY_TXMEM = {
-  tx_s1514,
-  tx_s1515
-};
-const char *const dat_events_scoutcolony_tail[4] COLOPY_TXMEM = {
-  tx_s1516,
-  tx_s1517,
-  tx_s1518,
-  tx_s1519
-};
-const int32_t dat_events_scoutcolony_width COLOPY_TXMEM = 190;
-const char *const dat_events_scoutcolony_default COLOPY_TXMEM = NULL;
-const uint8_t dat_events_scoutcolony_small COLOPY_TXMEM = 0;
-const char *const dat_events_nomayorsduringrev_body[1] COLOPY_TXMEM = {
+  tx_s1519,
   tx_s1520
 };
-const int32_t dat_events_nomayorsduringrev_width COLOPY_TXMEM = 190;
-const char *const dat_events_nomayorsduringrev_default COLOPY_TXMEM = NULL;
-const uint8_t dat_events_nomayorsduringrev_small COLOPY_TXMEM = 0;
-const char *const dat_events_succession_body[4] COLOPY_TXMEM = {
+const char *const dat_events_scoutcolony_tail[4] COLOPY_TXMEM = {
   tx_s1521,
   tx_s1522,
   tx_s1523,
   tx_s1524
 };
+const int32_t dat_events_scoutcolony_width COLOPY_TXMEM = 190;
+const char *const dat_events_scoutcolony_default COLOPY_TXMEM = NULL;
+const uint8_t dat_events_scoutcolony_small COLOPY_TXMEM = 0;
+const char *const dat_events_nomayorsduringrev_body[1] COLOPY_TXMEM = {
+  tx_s1525
+};
+const int32_t dat_events_nomayorsduringrev_width COLOPY_TXMEM = 190;
+const char *const dat_events_nomayorsduringrev_default COLOPY_TXMEM = NULL;
+const uint8_t dat_events_nomayorsduringrev_small COLOPY_TXMEM = 0;
+const char *const dat_events_succession_body[4] COLOPY_TXMEM = {
+  tx_s1526,
+  tx_s1527,
+  tx_s1528,
+  tx_s1529
+};
 const int32_t dat_events_succession_width COLOPY_TXMEM = 220;
 const char *const dat_events_succession_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_succession_small COLOPY_TXMEM = 0;
 const char *const dat_events_gameoptions_body[9] COLOPY_TXMEM = {
-  tx_s1525,
-  tx_s1526,
-  tx_s1527,
-  tx_s1528,
-  tx_s1529,
   tx_s1530,
   tx_s1531,
   tx_s1532,
-  tx_s1533
+  tx_s1533,
+  tx_s1534,
+  tx_s1535,
+  tx_s1536,
+  tx_s1537,
+  tx_s1538
 };
 const int32_t dat_events_gameoptions_width COLOPY_TXMEM = 190;
 const char *const dat_events_gameoptions_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_gameoptions_small COLOPY_TXMEM = 0;
 const char *const dat_events_colonyoptions_body[11] COLOPY_TXMEM = {
-  tx_s1534,
-  tx_s1535,
-  tx_s1536,
-  tx_s1537,
-  tx_s1538,
   tx_s1539,
   tx_s1540,
   tx_s1541,
   tx_s1542,
   tx_s1543,
-  tx_s1544
+  tx_s1544,
+  tx_s1545,
+  tx_s1546,
+  tx_s1547,
+  tx_s1548,
+  tx_s1549
 };
 const int32_t dat_events_colonyoptions_width COLOPY_TXMEM = 220;
 const char *const dat_events_colonyoptions_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_colonyoptions_small COLOPY_TXMEM = 0;
 const char *const dat_events_soundoptions_body[4] COLOPY_TXMEM = {
-  tx_s1545,
-  tx_s1546,
-  tx_s1547,
-  tx_s1548
+  tx_s1550,
+  tx_s1551,
+  tx_s1552,
+  tx_s1553
 };
 const int32_t dat_events_soundoptions_width COLOPY_TXMEM = 190;
 const char *const dat_events_soundoptions_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_soundoptions_small COLOPY_TXMEM = 0;
 const char *const dat_events_retire_body[1] COLOPY_TXMEM = {
-  tx_s1549
+  tx_s1554
 };
 const char *const dat_events_retire_tail[2] COLOPY_TXMEM = {
   tx_s443,
@@ -6318,14 +6346,9 @@ const int32_t dat_events_retire_width COLOPY_TXMEM = 80;
 const char dat_events_retire_default[] COLOPY_TXMEM = "2";
 const uint8_t dat_events_retire_small COLOPY_TXMEM = 0;
 const char *const dat_events_pickmusic_body[1] COLOPY_TXMEM = {
-  tx_s1550
+  tx_s1555
 };
 const char *const dat_events_pickmusic_tail[15] COLOPY_TXMEM = {
-  tx_s1551,
-  tx_s1552,
-  tx_s1553,
-  tx_s1554,
-  tx_s1555,
   tx_s1556,
   tx_s1557,
   tx_s1558,
@@ -6335,50 +6358,55 @@ const char *const dat_events_pickmusic_tail[15] COLOPY_TXMEM = {
   tx_s1562,
   tx_s1563,
   tx_s1564,
-  tx_s1565
+  tx_s1565,
+  tx_s1566,
+  tx_s1567,
+  tx_s1568,
+  tx_s1569,
+  tx_s1570
 };
 const int32_t dat_events_pickmusic_width COLOPY_TXMEM = 220;
 const char *const dat_events_pickmusic_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_pickmusic_small COLOPY_TXMEM = 1;
 const char *const dat_events_pickindependence_body[1] COLOPY_TXMEM = {
-  tx_s1566
-};
-const char *const dat_events_pickindependence_tail[5] COLOPY_TXMEM = {
-  tx_s1567,
-  tx_s1568,
-  tx_s1569,
-  tx_s1570,
   tx_s1571
 };
-const int32_t dat_events_pickindependence_width COLOPY_TXMEM = 220;
-const char *const dat_events_pickindependence_default COLOPY_TXMEM = NULL;
-const uint8_t dat_events_pickindependence_small COLOPY_TXMEM = 1;
-const char *const dat_events_pickmilitary_body[1] COLOPY_TXMEM = {
-  tx_s1572
-};
-const char *const dat_events_pickmilitary_tail[4] COLOPY_TXMEM = {
+const char *const dat_events_pickindependence_tail[5] COLOPY_TXMEM = {
+  tx_s1572,
   tx_s1573,
   tx_s1574,
   tx_s1575,
   tx_s1576
 };
-const int32_t dat_events_pickmilitary_width COLOPY_TXMEM = 220;
-const char *const dat_events_pickmilitary_default COLOPY_TXMEM = NULL;
-const uint8_t dat_events_pickmilitary_small COLOPY_TXMEM = 1;
-const char *const dat_events_pickindian_body[1] COLOPY_TXMEM = {
+const int32_t dat_events_pickindependence_width COLOPY_TXMEM = 220;
+const char *const dat_events_pickindependence_default COLOPY_TXMEM = NULL;
+const uint8_t dat_events_pickindependence_small COLOPY_TXMEM = 1;
+const char *const dat_events_pickmilitary_body[1] COLOPY_TXMEM = {
   tx_s1577
 };
-const char *const dat_events_pickindian_tail[4] COLOPY_TXMEM = {
+const char *const dat_events_pickmilitary_tail[4] COLOPY_TXMEM = {
   tx_s1578,
   tx_s1579,
   tx_s1580,
   tx_s1581
 };
+const int32_t dat_events_pickmilitary_width COLOPY_TXMEM = 220;
+const char *const dat_events_pickmilitary_default COLOPY_TXMEM = NULL;
+const uint8_t dat_events_pickmilitary_small COLOPY_TXMEM = 1;
+const char *const dat_events_pickindian_body[1] COLOPY_TXMEM = {
+  tx_s1582
+};
+const char *const dat_events_pickindian_tail[4] COLOPY_TXMEM = {
+  tx_s1583,
+  tx_s1584,
+  tx_s1585,
+  tx_s1586
+};
 const int32_t dat_events_pickindian_width COLOPY_TXMEM = 220;
 const char *const dat_events_pickindian_default COLOPY_TXMEM = NULL;
 const uint8_t dat_events_pickindian_small COLOPY_TXMEM = 1;
 const char *const dat_events_dos_body[1] COLOPY_TXMEM = {
-  tx_s1582
+  tx_s1587
 };
 const char *const dat_events_dos_tail[2] COLOPY_TXMEM = {
   tx_s443,
@@ -6387,440 +6415,435 @@ const char *const dat_events_dos_tail[2] COLOPY_TXMEM = {
 const int32_t dat_events_dos_width COLOPY_TXMEM = 80;
 const char dat_events_dos_default[] COLOPY_TXMEM = "2";
 const uint8_t dat_events_dos_small COLOPY_TXMEM = 0;
-const dat_events_entry_t dat_events_index[415] COLOPY_TXMEM = {
-  {tx_s1583, dat_events_abandon_body, 3, dat_events_abandon_tail, 2, 190, tx_s1584, 0},
-  {tx_s1585, dat_events_abandon2_body, 4, dat_events_abandon2_tail, 2, 190, tx_s1584, 0},
-  {tx_s1586, dat_events_alreadyhave_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1587, dat_events_alreadyrevolution_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1588, dat_events_alreadysmite_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1589, dat_events_ambushhint_body, 6, NULL, 0, 220, NULL, 0},
-  {tx_s1590, dat_events_apostates_body, 3, dat_events_apostates_tail, 2, 220, NULL, 0},
-  {tx_s1591, dat_events_apostatesusa_body, 3, dat_events_apostatesusa_tail, 2, 220, NULL, 0},
-  {tx_s1592, dat_events_armoptions_body, 12, NULL, 0, 80, NULL, 0},
-  {tx_s1593, dat_events_artillery_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1594, dat_events_artillery2_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1595, dat_events_badcargo_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1596, dat_events_badhaggle0_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1597, dat_events_badhaggle1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1598, dat_events_badhaggle2_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1599, dat_events_badhaggle3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1600, dat_events_bring_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1601, dat_events_built_body, 1, NULL, 0, 140, NULL, 0},
-  {tx_s1602, dat_events_burial1_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1603, dat_events_burial2_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1604, dat_events_burial3_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1605, dat_events_burned_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1606, dat_events_burned2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1607, dat_events_burned3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1608, dat_events_buy0_body, 2, dat_events_buy0_tail, 3, 190, NULL, 0},
-  {tx_s1609, dat_events_buy1_body, 3, dat_events_buy1_tail, 3, 190, NULL, 0},
-  {tx_s1610, dat_events_buyme0_body, 2, NULL, 0, 160, NULL, 0},
-  {tx_s1611, dat_events_buyme1_body, 2, dat_events_buyme1_tail, 2, 160, tx_s43, 0},
-  {tx_s1612, dat_events_buywhich_body, 2, dat_events_buywhich_tail, 4, 190, NULL, 0},
-  {tx_s1613, dat_events_cancelpeace_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1614, dat_events_canesugar_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1615, dat_events_cannotattack_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1616, dat_events_cantmobilize_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1617, dat_events_captured_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1618, dat_events_captured2_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1619, dat_events_captured3_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1620, dat_events_cargocapture_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1621, dat_events_cargoload_body, 1, NULL, 0, 120, NULL, 0},
-  {tx_s1622, dat_events_cargoready0_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1623, dat_events_cargoready1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1624, dat_events_cargoready2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1625, dat_events_cargounload_body, 1, NULL, 0, 120, NULL, 0},
-  {tx_s1626, dat_events_cashtreasure_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1627, dat_events_chiefarea_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1628, dat_events_chiefbored_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1629, dat_events_chiefgift_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1630, dat_events_chiefguides_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1631, dat_events_chiefhowdy_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1632, dat_events_chiefkill_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1633, dat_events_clearcut_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1634, dat_events_college2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1635, dat_events_colonistcapture_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1636, dat_events_colonistcapture2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1637, dat_events_colonyoptions_body, 11, NULL, 0, 220, NULL, 0},
-  {tx_s1638, dat_events_confiscate_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1639, dat_events_consider_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1640, dat_events_continental_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1641, dat_events_cotton_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1642, dat_events_custom_body, 1, NULL, 0, 190, NULL, 1},
-  {tx_s1643, dat_events_deadconverts_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1644, dat_events_declare_body, 2, dat_events_declare_tail, 2, 190, NULL, 0},
-  {tx_s1645, dat_events_declarewar_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1646, dat_events_deficit_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1647, dat_events_deforest_body, 1, NULL, 0, 160, NULL, 0},
-  {tx_s1648, dat_events_demote_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1649, dat_events_depletion_body, 1, NULL, 0, 160, NULL, 0},
-  {tx_s1650, dat_events_disbandship_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1651, dat_events_dontknowships_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1652, dat_events_dos_body, 1, dat_events_dos_tail, 2, 80, tx_s1584, 0},
-  {tx_s1653, dat_events_efficient_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1654, dat_events_europearm_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1655, dat_events_europelose_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1656, dat_events_europenotavail_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1657, dat_events_europenotleave_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1658, dat_events_europeshipclick_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1659, dat_events_europeshipoptions_body, 4, NULL, 0, 80, NULL, 0},
-  {tx_s1660, dat_events_europewin_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1661, dat_events_evasive_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1662, dat_events_exploits_body, 3, NULL, 0, 80, NULL, 0},
-  {tx_s1663, dat_events_extinct_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1664, dat_events_extortlaugh_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1665, dat_events_extortno_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1666, dat_events_extortpoor_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1667, dat_events_extortstuff_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1668, dat_events_food1_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1669, dat_events_food2_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1670, dat_events_foodlow_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1671, dat_events_foreignnotavail_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1672, dat_events_fortfire_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1673, dat_events_freedom_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1674, dat_events_furs_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1675, dat_events_gameoptions_body, 9, NULL, 0, 190, NULL, 0},
-  {tx_s1676, dat_events_gifts_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1677, dat_events_givecash_body, 2, dat_events_givecash_tail, 2, 220, NULL, 0},
-  {tx_s1678, dat_events_grudgewagons_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1679, dat_events_half_body, 3, dat_events_half_tail, 2, 190, NULL, 0},
-  {tx_s1680, dat_events_havetreaty_body, 2, dat_events_havetreaty_tail, 2, 190, NULL, 0},
-  {tx_s1681, dat_events_heathen_body, 2, dat_events_heathen_tail, 2, 220, NULL, 0},
-  {tx_s1682, dat_events_heathenusa_body, 4, dat_events_heathenusa_tail, 2, 220, NULL, 0},
-  {tx_s1683, dat_events_helloahoy_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1684, dat_events_hellofirst_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1685, dat_events_hellomanly_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1686, dat_events_hellomeek_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1687, dat_events_hellousa_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1688, dat_events_heresy0_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1689, dat_events_heresy1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1690, dat_events_howtowin_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1691, dat_events_independence_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1692, dat_events_indianbegfood_body, 4, dat_events_indianbegfood_tail, 2, 190, NULL, 0},
-  {tx_s1693, dat_events_indianbow_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1694, dat_events_indianbribe_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1695, dat_events_indianburn_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1696, dat_events_indianburncolony_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1697, dat_events_indianburncolony2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1698, dat_events_indiancity_body, 4, dat_events_indiancity_tail, 2, 190, NULL, 0},
-  {tx_s1699, dat_events_indiancome_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1700, dat_events_indiancomment_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1701, dat_events_indianforest_body, 3, dat_events_indianforest_tail, 3, 190, NULL, 0},
-  {tx_s1702, dat_events_indianforest2_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1703, dat_events_indiangivefood_body, 6, NULL, 0, 190, NULL, 0},
-  {tx_s1704, dat_events_indiangivestuff_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1705, dat_events_indiangold_body, 2, dat_events_indiangold_tail, 2, 190, NULL, 0},
-  {tx_s1706, dat_events_indiangrudge_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1707, dat_events_indianhello1_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1708, dat_events_indianhello2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1709, dat_events_indianland_body, 2, dat_events_indianland_tail, 3, 190, NULL, 0},
-  {tx_s1710, dat_events_indianlose_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1711, dat_events_indianpeace_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1712, dat_events_indianroad_body, 3, dat_events_indianroad_tail, 3, 190, NULL, 0},
-  {tx_s1713, dat_events_indiansconvert_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1714, dat_events_indianshun_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1715, dat_events_indianslaves_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1716, dat_events_indiansurprise_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1717, dat_events_indiantreaty_body, 5, dat_events_indiantreaty_tail, 2, 190, NULL, 0},
-  {tx_s1718, dat_events_indianwagons_body, 4, dat_events_indianwagons_tail, 2, 190, NULL, 0},
-  {tx_s1719, dat_events_indianwar_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1720, dat_events_indianwarfare_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1721, dat_events_indianwarpath_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1722, dat_events_indianwarpath2_body, 2, dat_events_indianwarpath2_tail, 2, 190, NULL, 0},
-  {tx_s1723, dat_events_indianwelcome_body, 6, dat_events_indianwelcome_tail, 2, 190, NULL, 0},
-  {tx_s1724, dat_events_indianwin0_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1725, dat_events_indianwin1_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1726, dat_events_indianwin2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1727, dat_events_indianwincolony_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1728, dat_events_indianwincolony2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1729, dat_events_inefficient_body, 9, NULL, 0, 220, NULL, 0},
-  {tx_s1730, dat_events_intervene_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1731, dat_events_intervention_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1732, dat_events_invasion_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1733, dat_events_keepstockade_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1734, dat_events_killwagons_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1735, dat_events_kingbuy_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1736, dat_events_kingfrigate_body, 4, dat_events_kingfrigate_tail, 2, 190, NULL, 0},
-  {tx_s1737, dat_events_kinggalleon2_body, 7, dat_events_kinggalleon2_tail, 2, 220, NULL, 0},
-  {tx_s1738, dat_events_kinggalleon3_body, 7, dat_events_kinggalleon3_tail, 2, 220, NULL, 0},
-  {tx_s1739, dat_events_kinglose_body, 5, NULL, 0, 68, NULL, 0},
-  {tx_s1740, dat_events_kinglower_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1741, dat_events_kingmercy_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1742, dat_events_kingmobilize_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1743, dat_events_kingnavact_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1744, dat_events_kingnewwar_body, 7, NULL, 0, 190, NULL, 0},
-  {tx_s1745, dat_events_kingnothing_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1746, dat_events_kingraise_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1747, dat_events_kingrecruit_body, 3, NULL, 0, 190, NULL, 1},
-  {tx_s1748, dat_events_kingstampact_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1749, dat_events_kingtax_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1750, dat_events_kingvictory_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1751, dat_events_kingwar_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1752, dat_events_kingwife_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1753, dat_events_kingwin_body, 4, NULL, 0, 90, NULL, 0},
-  {tx_s1754, dat_events_kisssorry_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1755, dat_events_kissup_body, 3, dat_events_kissup_tail, 2, 220, NULL, 0},
-  {tx_s1756, dat_events_landfirst_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1757, dat_events_learnalready_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1758, dat_events_learncriminal_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1759, dat_events_learndone_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1760, dat_events_learnlater_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1761, dat_events_learnmad_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1762, dat_events_learnmaster_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1763, dat_events_learnslow_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1764, dat_events_learnstay_body, 3, dat_events_learnstay_tail, 2, 190, NULL, 0},
-  {tx_s1765, dat_events_lobotomize_body, 2, dat_events_lobotomize_tail, 2, 190, NULL, 0},
-  {tx_s1766, dat_events_loot_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1767, dat_events_loot2_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1768, dat_events_lootcapture_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1769, dat_events_lootcash_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1770, dat_events_lootforeign_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1771, dat_events_lootwagons_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1772, dat_events_losenocolonies_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1773, dat_events_losing1_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1774, dat_events_losing2_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1775, dat_events_losing3_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1776, dat_events_lostcity0_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1777, dat_events_lostcity1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1778, dat_events_lostcity2_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1779, dat_events_lostcity3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1780, dat_events_lostcity4_body, 2, dat_events_lostcity4_tail, 2, 190, NULL, 0},
-  {tx_s1781, dat_events_lostcity5_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1782, dat_events_lostcity6_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1783, dat_events_lostcity7_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1784, dat_events_lostcity8_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1785, dat_events_lostcity9_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1786, dat_events_lostourscouts_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1787, dat_events_losttheirscouts_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1788, dat_events_lumber_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1789, dat_events_madatships_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1790, dat_events_madatwagons_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1791, dat_events_maybewithdraw_body, 3, dat_events_maybewithdraw_tail, 3, 220, NULL, 0},
-  {tx_s1792, dat_events_mercantilism_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1793, dat_events_mercenaries_body, 3, dat_events_mercenaries_tail, 2, 190, NULL, 0},
-  {tx_s1794, dat_events_mercenary_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1795, dat_events_mercs_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1796, dat_events_military_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1797, dat_events_mission0_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1798, dat_events_mission1_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1799, dat_events_mission2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1800, dat_events_mission3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1801, dat_events_mobilize_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1802, dat_events_mobilize2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1803, dat_events_morethanthree_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1804, dat_events_needcollege_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1805, dat_events_needtools_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1806, dat_events_needtools0_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1807, dat_events_needuniversity_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1808, dat_events_newcolonist_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1809, dat_events_nocity_body, 1, dat_events_nocity_tail, 1, 190, NULL, 0},
-  {tx_s1810, dat_events_nocolonieseither_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1811, dat_events_nocontact_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1812, dat_events_nodocks_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1813, dat_events_noloot_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1814, dat_events_nomayorsduringrev_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1815, dat_events_nomorewagons_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1816, dat_events_nomorewarehouse_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1817, dat_events_noplow_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1818, dat_events_noport_body, 5, dat_events_noport_tail, 2, 190, NULL, 0},
-  {tx_s1819, dat_events_noroad_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1820, dat_events_noteacher_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1821, dat_events_notenough_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1822, dat_events_nothingwithdraw_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1823, dat_events_notwithdraw_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1824, dat_events_nowarsduringrev_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1825, dat_events_oldpeacemanly_body, 2, dat_events_oldpeacemanly_tail, 4, 220, NULL, 0},
-  {tx_s1826, dat_events_oldpeacemeek_body, 3, dat_events_oldpeacemeek_tail, 4, 220, NULL, 0},
-  {tx_s1827, dat_events_onlycol_body, 2, NULL, 0, 120, NULL, 0},
-  {tx_s1828, dat_events_onlypio_body, 2, NULL, 0, 120, NULL, 0},
-  {tx_s1829, dat_events_ore_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1830, dat_events_othergranted_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1831, dat_events_otherless_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1832, dat_events_othermight_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1833, dat_events_overboard_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1834, dat_events_peacemanly_body, 4, dat_events_peacemanly_tail, 4, 220, NULL, 0},
-  {tx_s1835, dat_events_peacemeek_body, 4, dat_events_peacemeek_tail, 4, 220, NULL, 0},
-  {tx_s1836, dat_events_peaceusa_body, 2, dat_events_peaceusa_tail, 4, 220, NULL, 0},
-  {tx_s1837, dat_events_pickacargo_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1838, dat_events_pickindependence_body, 1, dat_events_pickindependence_tail, 5, 220, NULL, 1},
-  {tx_s1839, dat_events_pickindian_body, 1, dat_events_pickindian_tail, 4, 220, NULL, 1},
-  {tx_s1840, dat_events_pickmilitary_body, 1, dat_events_pickmilitary_tail, 4, 220, NULL, 1},
-  {tx_s1841, dat_events_pickmusic_body, 1, dat_events_pickmusic_tail, 15, 220, NULL, 1},
-  {tx_s1842, dat_events_piracy_body, 3, dat_events_piracy_tail, 2, 220, NULL, 0},
-  {tx_s1843, dat_events_piracyusa_body, 3, dat_events_piracyusa_tail, 2, 220, NULL, 0},
-  {tx_s1844, dat_events_piss0_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1845, dat_events_piss1_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1846, dat_events_piss2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1847, dat_events_piss3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1848, dat_events_piss4_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1849, dat_events_piss5_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1850, dat_events_pricedown_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1851, dat_events_priceup_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1852, dat_events_provoke_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1853, dat_events_purchasetax_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1854, dat_events_raidburn_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1855, dat_events_raidgold_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1856, dat_events_raidnothing_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1857, dat_events_raidship_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1858, dat_events_raidstores_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1859, dat_events_raidwreak_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1860, dat_events_reallybuy_body, 1, dat_events_reallybuy_tail, 2, 190, NULL, 0},
-  {tx_s1861, dat_events_rebeldown_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1862, dat_events_rebelmajority_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1863, dat_events_rebelunanimous_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1864, dat_events_rebelup_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1865, dat_events_rebelup50_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1866, dat_events_recruitchoose_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1867, dat_events_refit_body, 1, NULL, 0, 190, NULL, 0},
+const dat_events_entry_t dat_events_index[417] COLOPY_TXMEM = {
+  {tx_s1588, dat_events_abandon_body, 3, dat_events_abandon_tail, 2, 190, tx_s1589, 0},
+  {tx_s1590, dat_events_abandon2_body, 4, dat_events_abandon2_tail, 2, 190, tx_s1589, 0},
+  {tx_s1591, dat_events_alreadyhave_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1592, dat_events_alreadyrevolution_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1593, dat_events_alreadysmite_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1594, dat_events_ambushhint_body, 6, NULL, 0, 220, NULL, 0},
+  {tx_s1595, dat_events_apostates_body, 3, dat_events_apostates_tail, 2, 220, NULL, 0},
+  {tx_s1596, dat_events_apostatesusa_body, 3, dat_events_apostatesusa_tail, 2, 220, NULL, 0},
+  {tx_s1597, dat_events_armoptions_body, 12, NULL, 0, 80, NULL, 0},
+  {tx_s1598, dat_events_artillery_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1599, dat_events_artillery2_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1600, dat_events_badcargo_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1601, dat_events_badhaggle0_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1602, dat_events_badhaggle1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1603, dat_events_badhaggle2_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1604, dat_events_badhaggle3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1605, dat_events_bring_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1606, dat_events_built_body, 1, NULL, 0, 140, NULL, 0},
+  {tx_s1607, dat_events_burial1_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1608, dat_events_burial2_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1609, dat_events_burial3_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1610, dat_events_burned_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1611, dat_events_burned2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1612, dat_events_burned3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1613, dat_events_buy0_body, 2, dat_events_buy0_tail, 3, 190, NULL, 0},
+  {tx_s1614, dat_events_buy1_body, 3, dat_events_buy1_tail, 3, 190, NULL, 0},
+  {tx_s1615, dat_events_buyme0_body, 2, NULL, 0, 160, NULL, 0},
+  {tx_s1616, dat_events_buyme1_body, 2, dat_events_buyme1_tail, 2, 160, tx_s43, 0},
+  {tx_s1617, dat_events_buywhich_body, 2, dat_events_buywhich_tail, 4, 190, NULL, 0},
+  {tx_s1618, dat_events_cancelpeace_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1619, dat_events_canesugar_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1620, dat_events_cannotattack_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1621, dat_events_cantmobilize_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1622, dat_events_captured_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1623, dat_events_captured2_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1624, dat_events_captured3_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1625, dat_events_cargocapture_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1626, dat_events_cargoload_body, 1, NULL, 0, 120, NULL, 0},
+  {tx_s1627, dat_events_cargoready0_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1628, dat_events_cargoready1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1629, dat_events_cargoready2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1630, dat_events_cargounload_body, 1, NULL, 0, 120, NULL, 0},
+  {tx_s1631, dat_events_cashtreasure_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1632, dat_events_chiefarea_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1633, dat_events_chiefbored_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1634, dat_events_chiefgift_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1635, dat_events_chiefguides_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1636, dat_events_chiefhowdy_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1637, dat_events_chiefkill_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1638, dat_events_clearcut_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1639, dat_events_college2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1640, dat_events_colonistcapture_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1641, dat_events_colonistcapture2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1642, dat_events_colonyoptions_body, 11, NULL, 0, 220, NULL, 0},
+  {tx_s1643, dat_events_confiscate_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1644, dat_events_consider_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1645, dat_events_continental_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1646, dat_events_cotton_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1647, dat_events_custom_body, 1, NULL, 0, 190, NULL, 1},
+  {tx_s1648, dat_events_deadconverts_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1649, dat_events_declare_body, 2, dat_events_declare_tail, 2, 190, NULL, 0},
+  {tx_s1650, dat_events_declarewar_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1651, dat_events_deficit_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1652, dat_events_deforest_body, 1, NULL, 0, 160, NULL, 0},
+  {tx_s1653, dat_events_demote_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1654, dat_events_depletion_body, 1, NULL, 0, 160, NULL, 0},
+  {tx_s1655, dat_events_disbandship_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1656, dat_events_dontknowships_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1657, dat_events_dos_body, 1, dat_events_dos_tail, 2, 80, tx_s1589, 0},
+  {tx_s1658, dat_events_efficient_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1659, dat_events_europearm_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1660, dat_events_europelose_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1661, dat_events_europenotavail_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1662, dat_events_europenotleave_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1663, dat_events_europeshipclick_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1664, dat_events_europeshipoptions_body, 4, NULL, 0, 80, NULL, 0},
+  {tx_s1665, dat_events_europewin_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1666, dat_events_evasive_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1667, dat_events_exploits_body, 3, NULL, 0, 80, NULL, 0},
+  {tx_s1668, dat_events_extinct_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1669, dat_events_extortlaugh_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1670, dat_events_extortno_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1671, dat_events_extortpoor_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1672, dat_events_extortstuff_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1673, dat_events_food1_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1674, dat_events_food2_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1675, dat_events_foodlow_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1676, dat_events_foreignnotavail_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1677, dat_events_fortfire_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1678, dat_events_freedom_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1679, dat_events_furs_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1680, dat_events_gameoptions_body, 9, NULL, 0, 190, NULL, 0},
+  {tx_s1681, dat_events_gifts_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1682, dat_events_givecash_body, 2, dat_events_givecash_tail, 2, 220, NULL, 0},
+  {tx_s1683, dat_events_grudgewagons_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1684, dat_events_half_body, 3, dat_events_half_tail, 2, 190, NULL, 0},
+  {tx_s1685, dat_events_havetreaty_body, 2, dat_events_havetreaty_tail, 2, 190, NULL, 0},
+  {tx_s1686, dat_events_heathen_body, 2, dat_events_heathen_tail, 2, 220, NULL, 0},
+  {tx_s1687, dat_events_heathenusa_body, 4, dat_events_heathenusa_tail, 2, 220, NULL, 0},
+  {tx_s1688, dat_events_helloahoy_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1689, dat_events_hellofirst_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1690, dat_events_hellomanly_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1691, dat_events_hellomeek_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1692, dat_events_hellousa_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1693, dat_events_heresy0_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1694, dat_events_heresy1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1695, dat_events_howtowin_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1696, dat_events_independence_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1697, dat_events_indianbegfood_body, 4, dat_events_indianbegfood_tail, 2, 190, NULL, 0},
+  {tx_s1698, dat_events_indianbow_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1699, dat_events_indianbribe_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1700, dat_events_indianburn_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1701, dat_events_indianburncolony_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1702, dat_events_indianburncolony2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1703, dat_events_indiancity_body, 4, dat_events_indiancity_tail, 2, 190, NULL, 0},
+  {tx_s1704, dat_events_indiancome_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1705, dat_events_indiancomment_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1706, dat_events_indianforest_body, 3, dat_events_indianforest_tail, 3, 190, NULL, 0},
+  {tx_s1707, dat_events_indianforest2_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1708, dat_events_indiangivefood_body, 6, NULL, 0, 190, NULL, 0},
+  {tx_s1709, dat_events_indiangivestuff_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1710, dat_events_indiangold_body, 2, dat_events_indiangold_tail, 2, 190, NULL, 0},
+  {tx_s1711, dat_events_indiangrudge_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1712, dat_events_indianhello1_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1713, dat_events_indianhello2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1714, dat_events_indianland_body, 2, dat_events_indianland_tail, 3, 190, NULL, 0},
+  {tx_s1715, dat_events_indianlose_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1716, dat_events_indianpeace_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1717, dat_events_indianroad_body, 3, dat_events_indianroad_tail, 3, 190, NULL, 0},
+  {tx_s1718, dat_events_indiansconvert_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1719, dat_events_indianshun_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1720, dat_events_indianslaves_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1721, dat_events_indiansurprise_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1722, dat_events_indiantreaty_body, 5, dat_events_indiantreaty_tail, 2, 190, NULL, 0},
+  {tx_s1723, dat_events_indianwagons_body, 4, dat_events_indianwagons_tail, 2, 190, NULL, 0},
+  {tx_s1724, dat_events_indianwar_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1725, dat_events_indianwarfare_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1726, dat_events_indianwarpath_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1727, dat_events_indianwarpath2_body, 2, dat_events_indianwarpath2_tail, 2, 190, NULL, 0},
+  {tx_s1728, dat_events_indianwelcome_body, 6, dat_events_indianwelcome_tail, 2, 190, NULL, 0},
+  {tx_s1729, dat_events_indianwin0_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1730, dat_events_indianwin1_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1731, dat_events_indianwin2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1732, dat_events_indianwincolony_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1733, dat_events_indianwincolony2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1734, dat_events_inefficient_body, 9, NULL, 0, 220, NULL, 0},
+  {tx_s1735, dat_events_intervene_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1736, dat_events_intervention_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1737, dat_events_invasion_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1738, dat_events_keepstockade_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1739, dat_events_killwagons_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1740, dat_events_kingbuy_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1741, dat_events_kingfrigate_body, 4, dat_events_kingfrigate_tail, 2, 190, NULL, 0},
+  {tx_s1742, dat_events_kinggalleon2_body, 7, dat_events_kinggalleon2_tail, 2, 220, NULL, 0},
+  {tx_s1743, dat_events_kinggalleon3_body, 7, dat_events_kinggalleon3_tail, 2, 220, NULL, 0},
+  {tx_s1744, dat_events_kinglose_body, 5, NULL, 0, 68, NULL, 0},
+  {tx_s1745, dat_events_kinglower_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1746, dat_events_kingmercy_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1747, dat_events_kingmobilize_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1748, dat_events_kingnavact_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1749, dat_events_kingnewwar_body, 7, NULL, 0, 190, NULL, 0},
+  {tx_s1750, dat_events_kingnothing_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1751, dat_events_kingraise_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1752, dat_events_kingrecruit_body, 3, NULL, 0, 190, NULL, 1},
+  {tx_s1753, dat_events_kingstampact_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1754, dat_events_kingtax_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1755, dat_events_kingvictory_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1756, dat_events_kingwar_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1757, dat_events_kingwife_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1758, dat_events_kingwin_body, 4, NULL, 0, 90, NULL, 0},
+  {tx_s1759, dat_events_kisssorry_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1760, dat_events_kissup_body, 3, dat_events_kissup_tail, 2, 220, NULL, 0},
+  {tx_s1761, dat_events_landfirst_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1762, dat_events_learnalready_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1763, dat_events_learncriminal_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1764, dat_events_learndone_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1765, dat_events_learnlater_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1766, dat_events_learnmad_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1767, dat_events_learnmaster_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1768, dat_events_learnslow_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1769, dat_events_learnstay_body, 3, dat_events_learnstay_tail, 2, 190, NULL, 0},
+  {tx_s1770, dat_events_lobotomize_body, 2, dat_events_lobotomize_tail, 2, 190, NULL, 0},
+  {tx_s1771, dat_events_loot_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1772, dat_events_loot2_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1773, dat_events_lootcapture_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1774, dat_events_lootcash_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1775, dat_events_lootforeign_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1776, dat_events_lootwagons_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1777, dat_events_losenocolonies_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1778, dat_events_losing1_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1779, dat_events_losing2_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1780, dat_events_losing3_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1781, dat_events_lostcity0_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1782, dat_events_lostcity1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1783, dat_events_lostcity2_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1784, dat_events_lostcity3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1785, dat_events_lostcity4_body, 2, dat_events_lostcity4_tail, 2, 190, NULL, 0},
+  {tx_s1786, dat_events_lostcity5_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1787, dat_events_lostcity6_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1788, dat_events_lostcity7_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1789, dat_events_lostcity8_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1790, dat_events_lostcity9_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1791, dat_events_lostourscouts_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1792, dat_events_losttheirscouts_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1793, dat_events_lumber_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1794, dat_events_madatships_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1795, dat_events_madatwagons_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1796, dat_events_maybewithdraw_body, 3, dat_events_maybewithdraw_tail, 3, 220, NULL, 0},
+  {tx_s1797, dat_events_mercantilism_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1798, dat_events_mercenaries_body, 3, dat_events_mercenaries_tail, 2, 190, NULL, 0},
+  {tx_s1799, dat_events_mercenary_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1800, dat_events_mercs_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1801, dat_events_military_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1802, dat_events_mission0_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1803, dat_events_mission1_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1804, dat_events_mission2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1805, dat_events_mission3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1806, dat_events_mobilize_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1807, dat_events_mobilize2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1808, dat_events_morethanthree_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1809, dat_events_needcollege_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1810, dat_events_needtools_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1811, dat_events_needtools0_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1812, dat_events_needuniversity_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1813, dat_events_newcolonist_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1814, dat_events_nocity_body, 1, dat_events_nocity_tail, 1, 190, NULL, 0},
+  {tx_s1815, dat_events_nocolonieseither_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1816, dat_events_nocontact_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1817, dat_events_nodocks_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1818, dat_events_noloot_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1819, dat_events_nomayorsduringrev_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1820, dat_events_nomorewagons_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1821, dat_events_nomorewarehouse_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1822, dat_events_noplow_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1823, dat_events_noport_body, 5, dat_events_noport_tail, 2, 190, NULL, 0},
+  {tx_s1824, dat_events_noroad_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1825, dat_events_noteacher_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1826, dat_events_notenough_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1827, dat_events_nothingwithdraw_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1828, dat_events_notwithdraw_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1829, dat_events_nowarsduringrev_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1830, dat_events_oldpeacemanly_body, 2, dat_events_oldpeacemanly_tail, 4, 220, NULL, 0},
+  {tx_s1831, dat_events_oldpeacemeek_body, 3, dat_events_oldpeacemeek_tail, 4, 220, NULL, 0},
+  {tx_s1832, dat_events_onlycol_body, 2, NULL, 0, 120, NULL, 0},
+  {tx_s1833, dat_events_onlypio_body, 2, NULL, 0, 120, NULL, 0},
+  {tx_s1834, dat_events_ore_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1835, dat_events_othergranted_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1836, dat_events_otherless_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1837, dat_events_othermight_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1838, dat_events_overboard_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1839, dat_events_peacemanly_body, 4, dat_events_peacemanly_tail, 4, 220, NULL, 0},
+  {tx_s1840, dat_events_peacemeek_body, 4, dat_events_peacemeek_tail, 4, 220, NULL, 0},
+  {tx_s1841, dat_events_peaceusa_body, 2, dat_events_peaceusa_tail, 4, 220, NULL, 0},
+  {tx_s1842, dat_events_pickacargo_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1843, dat_events_pickindependence_body, 1, dat_events_pickindependence_tail, 5, 220, NULL, 1},
+  {tx_s1844, dat_events_pickindian_body, 1, dat_events_pickindian_tail, 4, 220, NULL, 1},
+  {tx_s1845, dat_events_pickmilitary_body, 1, dat_events_pickmilitary_tail, 4, 220, NULL, 1},
+  {tx_s1846, dat_events_pickmusic_body, 1, dat_events_pickmusic_tail, 15, 220, NULL, 1},
+  {tx_s1847, dat_events_piracy_body, 3, dat_events_piracy_tail, 2, 220, NULL, 0},
+  {tx_s1848, dat_events_piracyusa_body, 3, dat_events_piracyusa_tail, 2, 220, NULL, 0},
+  {tx_s1849, dat_events_piss0_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1850, dat_events_piss1_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1851, dat_events_piss2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1852, dat_events_piss3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1853, dat_events_piss4_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1854, dat_events_piss5_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1855, dat_events_pricedown_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1856, dat_events_priceup_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1857, dat_events_provoke_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1858, dat_events_purchasetax_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1859, dat_events_raidburn_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1860, dat_events_raidgold_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1861, dat_events_raidnothing_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1862, dat_events_raidship_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1863, dat_events_raidstores_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1864, dat_events_raidwreak_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1865, dat_events_reallybuy_body, 1, dat_events_reallybuy_tail, 2, 190, NULL, 0},
+  {tx_s1866, dat_events_rebeldown_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1867, dat_events_rebelmajority_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1868, dat_events_rebelunanimous_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1869, dat_events_rebelup_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1870, dat_events_rebelup50_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1871, dat_events_recruitchoose_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1872, dat_events_refit_body, 1, NULL, 0, 190, NULL, 0},
   {tx_s49, dat_events_renamecolony_body, 1, dat_events_renamecolony_tail, 1, 80, NULL, 0},
-  {tx_s1868, dat_events_retire_body, 1, dat_events_retire_tail, 2, 80, tx_s1584, 0},
-  {tx_s1869, dat_events_retiring_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1870, dat_events_retiring2_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1871, dat_events_rid_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1872, dat_events_ridusa_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1873, dat_events_routeloop_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1873, dat_events_retire_body, 1, dat_events_retire_tail, 2, 80, tx_s1589, 0},
+  {tx_s1874, dat_events_retiring_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1875, dat_events_retiring2_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1876, dat_events_rid_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1877, dat_events_ridusa_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1878, dat_events_routeloop_body, 2, NULL, 0, 190, NULL, 0},
   {tx_s50, dat_events_sailaway_body, 2, dat_events_sailaway_tail, 2, 190, tx_s43, 0},
-  {tx_s1874, dat_events_sailport_body, 1, NULL, 0, 190, tx_s43, 0},
-  {tx_s1875, dat_events_school1_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1876, dat_events_scored_body, 1, dat_events_scored_tail, 2, 220, NULL, 0},
-  {tx_s1877, dat_events_scoutcolony_body, 2, dat_events_scoutcolony_tail, 4, 190, NULL, 0},
-  {tx_s1878, dat_events_screwed_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1879, dat_events_seacolony_body, 2, NULL, 0, 140, NULL, 0},
-  {tx_s1880, dat_events_seizure_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1881, dat_events_seizureland_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1882, dat_events_seizuresea_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1883, dat_events_shipcombat_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1884, dat_events_shipdamage_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1885, dat_events_shiplake_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1886, dat_events_shiprun_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1887, dat_events_shipslow_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1888, dat_events_shipsunk_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1889, dat_events_siege_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1890, dat_events_sieges_body, 3, dat_events_sieges_tail, 2, 220, NULL, 0},
-  {tx_s1891, dat_events_siegesusa_body, 5, dat_events_siegesusa_tail, 2, 220, NULL, 0},
-  {tx_s1892, dat_events_signtreaty_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1893, dat_events_smiteeurope_body, 3, dat_events_smiteeurope_tail, 2, 220, NULL, 0},
-  {tx_s1894, dat_events_smiteindians_body, 2, dat_events_smiteindians_tail, 2, 220, NULL, 0},
-  {tx_s1895, dat_events_sneak_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1896, dat_events_someboycott_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1897, dat_events_sonsdown_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1898, dat_events_sonsup_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1899, dat_events_soonretiring0_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1900, dat_events_soonretiring1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1901, dat_events_soundoptions_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1902, dat_events_spoil1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1903, dat_events_spoil2_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1904, dat_events_spoil3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1905, dat_events_spoil4_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1906, dat_events_starve1_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1907, dat_events_starve2_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1908, dat_events_succession_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1909, dat_events_suredelete_body, 1, dat_events_suredelete_tail, 2, 190, NULL, 0},
-  {tx_s1910, dat_events_suredisband_body, 1, dat_events_suredisband_tail, 2, 190, NULL, 0},
-  {tx_s1911, dat_events_taxoptions_body, 2, NULL, 0, 80, NULL, 0},
-  {tx_s1912, dat_events_teachconvert_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1913, dat_events_teaparty_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1914, dat_events_threats_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1915, dat_events_timechange_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1916, dat_events_tobacco_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1917, dat_events_tools_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1918, dat_events_toomountain_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1919, dat_events_toonear_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1920, dat_events_tootory_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1921, dat_events_torymajority_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1922, dat_events_toryminority_body, 4, NULL, 0, 220, NULL, 0},
-  {tx_s1923, dat_events_toryuprising_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1924, dat_events_trade0_body, 3, dat_events_trade0_tail, 4, 190, NULL, 0},
-  {tx_s1925, dat_events_trade1_body, 3, dat_events_trade1_tail, 3, 190, NULL, 0},
-  {tx_s1926, dat_events_tradeatwar_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1927, dat_events_tradedelete_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1928, dat_events_trademany_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1929, dat_events_trademercantilism_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1879, dat_events_sailport_body, 1, NULL, 0, 190, tx_s43, 0},
+  {tx_s1880, dat_events_school1_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1881, dat_events_scored_body, 1, dat_events_scored_tail, 2, 220, NULL, 0},
+  {tx_s1882, dat_events_scoutcolony_body, 2, dat_events_scoutcolony_tail, 4, 190, NULL, 0},
+  {tx_s1883, dat_events_screwed_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1884, dat_events_seacolony_body, 2, NULL, 0, 140, NULL, 0},
+  {tx_s1885, dat_events_seizure_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1886, dat_events_seizureland_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1887, dat_events_seizuresea_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1888, dat_events_shipcombat_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1889, dat_events_shipdamage_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1890, dat_events_shiplake_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1891, dat_events_shipoptions_body, 6, NULL, 0, 80, NULL, 0},
+  {tx_s1892, dat_events_shiprun_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1893, dat_events_shipslow_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1894, dat_events_shipsunk_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1895, dat_events_siege_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1896, dat_events_sieges_body, 3, dat_events_sieges_tail, 2, 220, NULL, 0},
+  {tx_s1897, dat_events_siegesusa_body, 5, dat_events_siegesusa_tail, 2, 220, NULL, 0},
+  {tx_s1898, dat_events_signtreaty_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1899, dat_events_smiteeurope_body, 3, dat_events_smiteeurope_tail, 2, 220, NULL, 0},
+  {tx_s1900, dat_events_smiteindians_body, 2, dat_events_smiteindians_tail, 2, 220, NULL, 0},
+  {tx_s1901, dat_events_sneak_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1902, dat_events_someboycott_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1903, dat_events_sonsdown_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1904, dat_events_sonsup_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1905, dat_events_soonretiring0_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1906, dat_events_soonretiring1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1907, dat_events_soundoptions_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1908, dat_events_spoil1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1909, dat_events_spoil2_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1910, dat_events_spoil3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1911, dat_events_spoil4_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1912, dat_events_starve1_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1913, dat_events_starve2_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1914, dat_events_succession_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1915, dat_events_suredelete_body, 1, dat_events_suredelete_tail, 2, 190, NULL, 0},
+  {tx_s1916, dat_events_suredisband_body, 1, dat_events_suredisband_tail, 2, 190, NULL, 0},
+  {tx_s1917, dat_events_taxoptions_body, 2, NULL, 0, 80, NULL, 0},
+  {tx_s1918, dat_events_teachconvert_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1919, dat_events_teaparty_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1920, dat_events_threats_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1921, dat_events_timechange_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1922, dat_events_tobacco_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1923, dat_events_tools_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1924, dat_events_toomountain_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1925, dat_events_toonear_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1926, dat_events_tootory_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1927, dat_events_torymajority_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1928, dat_events_toryminority_body, 4, NULL, 0, 220, NULL, 0},
+  {tx_s1929, dat_events_toryuprising_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s1930, dat_events_trade0_body, 3, dat_events_trade0_tail, 4, 190, NULL, 0},
+  {tx_s1931, dat_events_trade1_body, 3, dat_events_trade1_tail, 3, 190, NULL, 0},
+  {tx_s1932, dat_events_tradeatwar_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1933, dat_events_tradedelete_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1934, dat_events_trademany_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1935, dat_events_trademercantilism_body, 3, NULL, 0, 190, NULL, 0},
   {tx_s52, dat_events_tradename_body, 1, dat_events_tradename_tail, 1, 190, NULL, 0},
-  {tx_s1930, dat_events_tradenocargo_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1931, dat_events_tradenone_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1932, dat_events_tradenone2_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1933, dat_events_tradenowant_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1934, dat_events_tradeselect_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1935, dat_events_tradestart_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1936, dat_events_tradetype_body, 1, dat_events_tradetype_tail, 2, 190, NULL, 0},
-  {tx_s1937, dat_events_tradewhich_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1938, dat_events_tradewith_body, 3, dat_events_tradewith_tail, 3, 190, NULL, 0},
-  {tx_s1939, dat_events_traincriminal_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1940, dat_events_trainfail_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1941, dat_events_trainindentured_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1942, dat_events_trainprofession_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1943, dat_events_travelplace_body, 1, NULL, 0, 190, tx_s43, 0},
-  {tx_s1944, dat_events_tribute_body, 4, dat_events_tribute_tail, 2, 220, NULL, 0},
-  {tx_s1945, dat_events_tributeusa_body, 4, dat_events_tributeusa_tail, 2, 220, NULL, 0},
-  {tx_s1946, dat_events_tutnolumber_body, 3, dat_events_tutnolumber_tail, 2, 220, NULL, 0},
-  {tx_s1947, dat_events_tutnospaces_body, 4, dat_events_tutnospaces_tail, 2, 220, NULL, 0},
-  {tx_s1948, dat_events_tutorial1_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1949, dat_events_tutorial10_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1950, dat_events_tutorial11_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1951, dat_events_tutorial12_body, 7, NULL, 0, 220, NULL, 0},
-  {tx_s1952, dat_events_tutorial13_body, 9, NULL, 0, 220, NULL, 0},
-  {tx_s1953, dat_events_tutorial14_body, 7, NULL, 0, 220, NULL, 0},
-  {tx_s1954, dat_events_tutorial15_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1955, dat_events_tutorial16_body, 8, NULL, 0, 220, NULL, 1},
-  {tx_s1956, dat_events_tutorial17_body, 11, NULL, 0, 300, NULL, 1},
-  {tx_s1957, dat_events_tutorial18_body, 7, NULL, 0, 300, NULL, 1},
-  {tx_s1958, dat_events_tutorial19_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1959, dat_events_tutorial2_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1960, dat_events_tutorial3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1961, dat_events_tutorial4_body, 7, NULL, 0, 190, NULL, 0},
-  {tx_s1962, dat_events_tutorial5_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1963, dat_events_tutorial6_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1964, dat_events_tutorial7_body, 9, NULL, 0, 220, NULL, 0},
-  {tx_s1965, dat_events_tutorial8_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1966, dat_events_tutorial9_body, 5, NULL, 0, 220, NULL, 0},
-  {tx_s1967, dat_events_unfortunate_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1968, dat_events_univ3_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1969, dat_events_unrest_body, 2, NULL, 0, 190, tx_s43, 0},
-  {tx_s1970, dat_events_upkeep_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1971, dat_events_useduptools_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1972, dat_events_valor_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1973, dat_events_vanish_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1974, dat_events_veteran_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1975, dat_events_villagebad_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1976, dat_events_villagehappy_body, 3, NULL, 0, 190, NULL, 0},
-  {tx_s1977, dat_events_villagemedium_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1978, dat_events_villagesavage_body, 5, NULL, 0, 190, NULL, 0},
-  {tx_s1979, dat_events_villagewar_body, 4, NULL, 0, 190, NULL, 0},
-  {tx_s1980, dat_events_violate_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1981, dat_events_wagoncapture_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1982, dat_events_wantstuff_body, 3, dat_events_wantstuff_tail, 2, 260, NULL, 0},
-  {tx_s1983, dat_events_wantstuffusa_body, 3, dat_events_wantstuffusa_tail, 2, 220, NULL, 0},
-  {tx_s1984, dat_events_warehousefull_body, 4, dat_events_warehousefull_tail, 2, 190, NULL, 0},
-  {tx_s1985, dat_events_warmanly_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1986, dat_events_warmeek_body, 2, NULL, 0, 220, NULL, 0},
-  {tx_s1987, dat_events_warn1_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1988, dat_events_warn2_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1989, dat_events_warn3_body, 3, NULL, 0, 220, NULL, 0},
-  {tx_s1990, dat_events_wellseasoned_body, 1, NULL, 0, 190, NULL, 0},
-  {tx_s1991, dat_events_whackindians_body, 1, dat_events_whackindians_tail, 2, 190, NULL, 0},
-  {tx_s1992, dat_events_whichfreedom_body, 2, NULL, 0, 190, NULL, 0},
-  {tx_s1993, dat_events_winning_body, 6, NULL, 0, 220, NULL, 0},
-  {tx_s1994, dat_events_withdraw_body, 1, NULL, 0, 220, NULL, 0},
-  {tx_s1995, dat_events_worthy_body, 4, dat_events_worthy_tail, 2, 220, NULL, 0}
+  {tx_s1936, dat_events_tradenocargo_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1937, dat_events_tradenone_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1938, dat_events_tradenone2_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1939, dat_events_tradenowant_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1940, dat_events_tradeselect_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1941, dat_events_tradestart_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1942, dat_events_tradetype_body, 1, dat_events_tradetype_tail, 2, 190, NULL, 0},
+  {tx_s1943, dat_events_tradewhich_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1944, dat_events_tradewith_body, 3, dat_events_tradewith_tail, 3, 190, NULL, 0},
+  {tx_s1945, dat_events_traincriminal_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1946, dat_events_trainfail_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1947, dat_events_trainindentured_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1948, dat_events_trainprofession_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1949, dat_events_travelplace_body, 1, NULL, 0, 190, tx_s43, 0},
+  {tx_s1950, dat_events_tribute_body, 4, dat_events_tribute_tail, 2, 220, NULL, 0},
+  {tx_s1951, dat_events_tributeusa_body, 4, dat_events_tributeusa_tail, 2, 220, NULL, 0},
+  {tx_s1952, dat_events_tutnolumber_body, 3, dat_events_tutnolumber_tail, 2, 220, NULL, 0},
+  {tx_s1953, dat_events_tutnospaces_body, 4, dat_events_tutnospaces_tail, 2, 220, NULL, 0},
+  {tx_s1954, dat_events_tutorial1_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1955, dat_events_tutorial10_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1956, dat_events_tutorial11_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1957, dat_events_tutorial12_body, 7, NULL, 0, 220, NULL, 0},
+  {tx_s1958, dat_events_tutorial13_body, 9, NULL, 0, 220, NULL, 0},
+  {tx_s1959, dat_events_tutorial14_body, 7, NULL, 0, 220, NULL, 0},
+  {tx_s1960, dat_events_tutorial15_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1961, dat_events_tutorial16_body, 8, NULL, 0, 220, NULL, 1},
+  {tx_s1962, dat_events_tutorial17_body, 11, NULL, 0, 300, NULL, 1},
+  {tx_s1963, dat_events_tutorial18_body, 7, NULL, 0, 300, NULL, 1},
+  {tx_s1964, dat_events_tutorial19_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1965, dat_events_tutorial2_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1966, dat_events_tutorial3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1967, dat_events_tutorial4_body, 7, NULL, 0, 190, NULL, 0},
+  {tx_s1968, dat_events_tutorial5_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1969, dat_events_tutorial6_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1970, dat_events_tutorial7_body, 9, NULL, 0, 220, NULL, 0},
+  {tx_s1971, dat_events_tutorial8_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1972, dat_events_tutorial9_body, 5, NULL, 0, 220, NULL, 0},
+  {tx_s1973, dat_events_unfortunate_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1974, dat_events_unitoptions_body, 5, NULL, 0, 80, NULL, 0},
+  {tx_s1975, dat_events_univ3_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1976, dat_events_unrest_body, 2, NULL, 0, 190, tx_s43, 0},
+  {tx_s1977, dat_events_upkeep_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1978, dat_events_useduptools_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1979, dat_events_valor_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1980, dat_events_vanish_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1981, dat_events_veteran_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1982, dat_events_villagebad_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1983, dat_events_villagehappy_body, 3, NULL, 0, 190, NULL, 0},
+  {tx_s1984, dat_events_villagemedium_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1985, dat_events_villagesavage_body, 5, NULL, 0, 190, NULL, 0},
+  {tx_s1986, dat_events_villagewar_body, 4, NULL, 0, 190, NULL, 0},
+  {tx_s1987, dat_events_violate_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s1988, dat_events_wagoncapture_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1989, dat_events_wantstuff_body, 3, dat_events_wantstuff_tail, 2, 260, NULL, 0},
+  {tx_s1990, dat_events_wantstuffusa_body, 3, dat_events_wantstuffusa_tail, 2, 220, NULL, 0},
+  {tx_s1991, dat_events_warehousefull_body, 4, dat_events_warehousefull_tail, 2, 190, NULL, 0},
+  {tx_s1992, dat_events_warmanly_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1993, dat_events_warmeek_body, 2, NULL, 0, 220, NULL, 0},
+  {tx_s1994, dat_events_warn1_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1995, dat_events_warn2_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1996, dat_events_warn3_body, 3, NULL, 0, 220, NULL, 0},
+  {tx_s1997, dat_events_wellseasoned_body, 1, NULL, 0, 190, NULL, 0},
+  {tx_s1998, dat_events_whackindians_body, 1, dat_events_whackindians_tail, 2, 190, NULL, 0},
+  {tx_s1999, dat_events_whichfreedom_body, 2, NULL, 0, 190, NULL, 0},
+  {tx_s2000, dat_events_winning_body, 6, NULL, 0, 220, NULL, 0},
+  {tx_s2001, dat_events_withdraw_body, 1, NULL, 0, 220, NULL, 0},
+  {tx_s2002, dat_events_worthy_body, 4, dat_events_worthy_tail, 2, 220, NULL, 0}
 };
 const char *const dat_text_beginmenu[6] COLOPY_TXMEM = {
-  tx_s1996,
-  tx_s1997,
-  tx_s1998,
-  tx_s1999,
-  tx_s2000,
-  tx_s2001
-};
-const char dat_text_leadername[] COLOPY_TXMEM = "^^Please Enter Your Name.\n_\n_\n______________________";
-const char *const dat_text_misc[221] COLOPY_TXMEM = {
-  tx_s2002,
   tx_s2003,
   tx_s2004,
   tx_s2005,
   tx_s2006,
   tx_s2007,
-  tx_s2008,
+  tx_s2008
+};
+const char dat_text_leadername[] COLOPY_TXMEM = "^^Please Enter Your Name.\n_\n_\n______________________";
+const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2009,
   tx_s2010,
   tx_s2011,
@@ -6846,7 +6869,6 @@ const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2031,
   tx_s2032,
   tx_s2033,
-  tx_s1519,
   tx_s2034,
   tx_s2035,
   tx_s2036,
@@ -6854,6 +6876,7 @@ const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2038,
   tx_s2039,
   tx_s2040,
+  tx_s1524,
   tx_s2041,
   tx_s2042,
   tx_s2043,
@@ -6972,7 +6995,6 @@ const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2156,
   tx_s2157,
   tx_s2158,
-  tx_s2153,
   tx_s2159,
   tx_s2160,
   tx_s2161,
@@ -6980,8 +7002,8 @@ const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2163,
   tx_s2164,
   tx_s2165,
+  tx_s2160,
   tx_s2166,
-  tx_s2150,
   tx_s2167,
   tx_s2168,
   tx_s2169,
@@ -6989,6 +7011,7 @@ const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2171,
   tx_s2172,
   tx_s2173,
+  tx_s2157,
   tx_s2174,
   tx_s2175,
   tx_s2176,
@@ -7034,105 +7057,112 @@ const char *const dat_text_misc[221] COLOPY_TXMEM = {
   tx_s2216,
   tx_s2217,
   tx_s2218,
-  tx_s2219
-};
-const char *const dat_text_ctitle[10] COLOPY_TXMEM = {
+  tx_s2219,
   tx_s2220,
   tx_s2221,
   tx_s2222,
   tx_s2223,
   tx_s2224,
   tx_s2225,
-  tx_s2110,
-  tx_s2226,
-  tx_s2227,
-  tx_s2228
+  tx_s2226
 };
-const char *const dat_text_cmisc[3] COLOPY_TXMEM = {
+const char *const dat_text_ctitle[10] COLOPY_TXMEM = {
+  tx_s2227,
+  tx_s2228,
   tx_s2229,
   tx_s2230,
-  tx_s2231
-};
-const char *const dat_text_cmessage[19] COLOPY_TXMEM = {
+  tx_s2231,
   tx_s2232,
+  tx_s2117,
   tx_s2233,
   tx_s2234,
-  tx_s2235,
+  tx_s2235
+};
+const char *const dat_text_cmisc[3] COLOPY_TXMEM = {
   tx_s2236,
   tx_s2237,
-  tx_s2238,
+  tx_s2238
+};
+const char *const dat_text_cmessage[19] COLOPY_TXMEM = {
   tx_s2239,
   tx_s2240,
-  tx_s444,
   tx_s2241,
   tx_s2242,
-  tx_s2138,
   tx_s2243,
   tx_s2244,
-  tx_s2025,
-  tx_s2026,
   tx_s2245,
-  tx_s2246
-};
-const char *const dat_diplotext_meekness[2] COLOPY_TXMEM = {
+  tx_s2246,
   tx_s2247,
-  tx_s2248
-};
-const char *const dat_diplotext_greatkings[4] COLOPY_TXMEM = {
+  tx_s444,
+  tx_s2248,
   tx_s2249,
+  tx_s2145,
   tx_s2250,
   tx_s2251,
-  tx_s2252
+  tx_s2032,
+  tx_s2033,
+  tx_s2252,
+  tx_s2253
 };
-const char *const dat_diplotext_greatdeeds[4] COLOPY_TXMEM = {
-  tx_s2253,
+const char *const dat_diplotext_meekness[2] COLOPY_TXMEM = {
   tx_s2254,
-  tx_s2255,
-  tx_s2256
+  tx_s2255
 };
-const char *const dat_diplotext_greatleader[4] COLOPY_TXMEM = {
+const char *const dat_diplotext_greatkings[4] COLOPY_TXMEM = {
+  tx_s2256,
   tx_s2257,
   tx_s2258,
-  tx_s2259,
-  tx_s2260
+  tx_s2259
 };
-const char *const dat_diplotext_greatleader2[4] COLOPY_TXMEM = {
+const char *const dat_diplotext_greatdeeds[4] COLOPY_TXMEM = {
+  tx_s2260,
   tx_s2261,
   tx_s2262,
-  tx_s2263,
-  tx_s2264
+  tx_s2263
 };
-const char *const dat_diplotext_friend[4] COLOPY_TXMEM = {
+const char *const dat_diplotext_greatleader[4] COLOPY_TXMEM = {
+  tx_s2264,
   tx_s2265,
   tx_s2266,
-  tx_s2267,
-  tx_s2268
+  tx_s2267
+};
+const char *const dat_diplotext_greatleader2[4] COLOPY_TXMEM = {
+  tx_s2268,
+  tx_s2269,
+  tx_s2270,
+  tx_s2271
+};
+const char *const dat_diplotext_friend[4] COLOPY_TXMEM = {
+  tx_s2272,
+  tx_s2273,
+  tx_s2274,
+  tx_s2275
 };
 const char *const dat_briefings[4][2] COLOPY_TXMEM = {
-  {tx_s2269,tx_s2270},
-  {tx_s2271,tx_s2272},
-  {tx_s2273,tx_s2274},
-  {tx_s2275,tx_s2276}
+  {tx_s2276,tx_s2277},
+  {tx_s2278,tx_s2279},
+  {tx_s2280,tx_s2281},
+  {tx_s2282,tx_s2283}
 };
 const char *const dat_cards[10] COLOPY_TXMEM = {
-  tx_s2277,
-  tx_s2278,
-  tx_s2279,
-  tx_s2280,
-  tx_s2281,
-  tx_s2282,
-  tx_s2283,
   tx_s2284,
   tx_s2285,
-  tx_s2286
+  tx_s2286,
+  tx_s2287,
+  tx_s2288,
+  tx_s2289,
+  tx_s2290,
+  tx_s2291,
+  tx_s2292,
+  tx_s2293
 };
 const char *const dat_viceroy[2] COLOPY_TXMEM = {
-  tx_s2287,
-  tx_s2288
+  tx_s2294,
+  tx_s2295
 };
 const char *const dat_myleader[4] COLOPY_TXMEM = {
-  tx_s2289,
-  tx_s2289,
-  tx_s2289,
-  tx_s2290
+  tx_s2296,
+  tx_s2296,
+  tx_s2296,
+  tx_s2297
 };

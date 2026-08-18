@@ -438,6 +438,9 @@ def build_data():
               "@TOONEAR", "@NOPORT", "@MORETHANTHREE", "@SAILAWAY",
               # The Europe harbour context menus (dock units and ships)
               "@EUROPEARM", "@EUROPESHIPCLICK", "@ARMOPTIONS", "@EUROPESHIPOPTIONS",
+              # ...and their colony-side twins: the garrison unit menu and the
+              # ships-in-port menu (spec/ui/context_dialogs.md §4)
+              "@UNITOPTIONS", "@SHIPOPTIONS",
               # Naval combat, scouts, the Spanish Succession
               "@SHIPCOMBAT", "@FORTFIRE", "@CARGOCAPTURE", "@EVASIVE",
               "@SCOUTCOLONY", "@NOMAYORSDURINGREV", "@SUCCESSION",

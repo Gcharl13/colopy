@@ -335,7 +335,6 @@ typedef struct {
 } euro_crossing;
 
 int  entry_unit_type(const immigrant *e);      /* entryType (game.js:4595) */
-void euro_arm_verb_label(int verb, const immigrant *e, char *out, int cap);
 void hold_add(hold_slot *hold, uint8_t *n, int good, int qty); /* holdAdd */
 
 /* A rival power's colony (JS r.colonies member): a runtime OBJECT, not a
