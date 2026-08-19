@@ -248,6 +248,7 @@ static int  bt_mode = 0;              /* 0 off, 1 the pairing screen */
 static int  bt_state = 0;             /* 0 idle, 1 scanning, 2 list,
                                        * 3 connecting, 4 connected, 5 fail */
 static void bt_init(void);
+static void bt_begin(void);      /* the real BLE bring-up, on first use */
 static void bt_pump(void);
 static void bt_ui_draw(void);
 static int  bt_ui_tap(int gx, int gy);
@@ -1505,6 +1506,7 @@ static void bt_report(uint8_t *d, size_t n) {
 
 /* scan for devices ADVERTISING the HID service (0x1812) */
 static void bt_scan(void) {
+    bt_begin();                  /* first use is where BLE may fail */
     bt_state = 1;
     bt_n = 0;
     BLEScan *scan = BLEDevice::getScan();
@@ -1662,10 +1664,28 @@ static void bt_pump(void) {
     }
 }
 
-static void bt_init(void) {
+/* LAZY, and that is the point.  BLEDevice::init() brings up the NimBLE
+ * host over the ESP-Hosted link to the C6, and on a board whose C6 runs
+ * Wi-Fi-only slave firmware that init ABORTS — which on the ESP32 means
+ * a panic and a reboot, i.e. the game never boots at all.  Two of the
+ * three conditions in the banner at the top of this file are outside
+ * this sketch's control and one of them is explicitly unverified, so
+ * this must not sit in setup().  Calling it from the Bluetooth row
+ * instead means a broken or absent hosted-BT stack costs you Bluetooth
+ * and nothing else.
+ *
+ * bt_init() is therefore a no-op at boot; bt_begin() does the real work
+ * on first use and remembers whether it has run. */
+static int bt_started = 0;
+static void bt_init(void) {}
+static void bt_begin(void) {
+    if (bt_started) return;
+    bt_started = 1;
+    Serial.println("BLE: bringing up the host over the C6...");
+    Serial.flush();          /* so the line survives a panic in init() */
     BLEDevice::init("Colopy");
-    Serial.println("BLE: host up (hosted C6). Open Bluetooth on the title "
-                   "screen to pair a mouse.");
+    Serial.println("BLE: host up (hosted C6). Tap Scan to look for a "
+                   "mouse.");
 }
 #endif
 
@@ -1977,7 +1997,8 @@ void setup() {
 
     sd_mount();
 
-    bt_init();         /* BLE mouse over the C6 (no-op unless enabled) */
+    bt_init();         /* deliberately a NO-OP: the BLE host comes up on
+                        * first use, not at boot — see bt_begin() */
     Serial.println(sd_ready ? "SD up" : "SD unavailable");
     audio_init();      /* picks COLAUDIO.PAK or COLDIG.BIN, or stays mute */
     stack_report("boot");

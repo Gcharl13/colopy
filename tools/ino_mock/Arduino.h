@@ -10,6 +10,7 @@ struct SerialCls {
     void printf(const char *, ...);
     void print(const char *);
     void println(const char *);
+    void flush();
     operator bool();
 };
 extern SerialCls Serial;
