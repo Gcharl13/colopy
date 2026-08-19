@@ -1,10 +1,12 @@
 /* The player-command layer — Phase 5 slice 2.  Each function mirrors a
  * game.js UI command over the records + CR runtime; the byte citations
  * live with the JS originals (spec/systems/terrain_improvement.md §);
- * where a branch is not yet portable (ships at sea, rival tiles,
- * villages, rumour entry — slices 3-5) it is an EXPLICIT no-op and the
- * scripted parity harness keeps both engines off it with one shared
- * legality filter.
+ * every move target is handled: ships at sea and the sea lane, attacks
+ * (native, REF, the @HALF fatigue ask), the rival land arms, village
+ * entry and rumour entry.  This header used to say those were "an
+ * EXPLICIT no-op, slices 3-5"; that was stale and struck 2026-08-19
+ * after it had been read as current by ledger row B4.5 and by a status
+ * overview.
  *
  * Movement budgets are THIRDS (MOVE_UNIT = 3): the @UNIT loader
  * multiplies the movement column by 3 (`SHL al,1 / ADD al,cl` @0x074F04,
@@ -493,12 +495,21 @@ void cmd_improve(int ui, int n) {
     if (n == 8 && is_forested_id(tile_terrain(v))) work_objection(ui, 0);
 }
 
-/* moveSel (game.js:10919) — the slice-2 subset: a LAND unit taking one
- * step onto empty legal ground.  Ship movement (landfall, SHIPLAKE,
- * interception, sea lane), attacks, rival tiles (parley/war/trade/
- * scout) and village entry stay with slices 3-5 — each such target is
- * an explicit no-op here, and the scripted harness filters them on both
- * sides with one shared legality test. */
+/* moveSel (game.js:10919) — COMPLETE, and the comment that used to sit
+ * here was three slices out of date.
+ *
+ * It said this was "the slice-2 subset: a LAND unit taking one step onto
+ * empty legal ground", with ship movement, attacks, rival tiles and
+ * village entry all "an explicit no-op here".  None of that is true any
+ * more: attacks resolve (natives, REF, the @HALF fatigue ask), the rival
+ * land arms are complete (war ladder, treaty ask, Wagon Train trade,
+ * Scout dialog, parley), village_enter() runs, enter_rumour() runs, and
+ * the sea lane is handled below.  Struck 2026-08-19 in the staleness
+ * sweep — it had been read as current and had put a false "several move
+ * targets are no-ops" row in the ledger (B4.5) and in a status overview.
+ *
+ * The one genuine limit that survives is narrow and immediately below:
+ * a rival-born unit whose movesLeft is undefined. */
 void cmd_move(int ui, int dx, int dy) {
     UnitRecord *u = &CS.units[ui];
     /* undefined movesLeft (rival-born, see colopy_sim.h) would slip the
@@ -614,9 +625,9 @@ void cmd_move(int ui, int dx, int dy) {
     }
     /* an occupied tile — a native/squatter (attack §14, with the §14.3
      * tired-troops @HALF ask), a rival (parley/war/trade/scout), a
-     * village, a rumour square: each an EXPLICIT no-op pending slices
-     * 3-5; the scripted harness filters these targets on both sides, so
-     * a no-op here is parity-safe and no unexercised port ships. */
+     * village, a rumour square.  All of these are IMPLEMENTED; the
+     * "each an EXPLICIT no-op pending slices 3-5" wording that stood
+     * here was stale (see the head of this file). */
     {
         /* a native brave or a King's unit on the target square is an
          * attack (§14; game.js:10984): @CANNOTATTACK gates a zero-

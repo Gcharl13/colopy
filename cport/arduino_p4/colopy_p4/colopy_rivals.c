@@ -13,13 +13,27 @@
  * the MEEK/MANLY tone = strength comparison (@0x5881F, proxied), and the
  * REL bit values (WAR matrix PowerRecord +0x34, TREATY +0x40).
  *
- * Trace semantics: askEvent is stubbed (key only, callback never runs), so
+ * Ask semantics — CORRECTED 2026-08-19, the old wording was badly stale.
+ *
+ * It used to read: "askEvent is stubbed (key only, callback never runs), so
  * every meeting topic ENDS at its first ask — treaties, tribute payments,
- * war declarations and withdrawals never execute.  The war matrix starts
- * empty (the JS importer does not populate it — TBD against PowerRecord
- * +0x34) and no ported path writes REL.WAR, so rivalTurn's WAR branch
- * (attack march + resolveAttack + the capture path) is unreachable for
- * now; it lands with the combat-resolution slice and is marked below. */
+ * war declarations and withdrawals never execute … no ported path writes
+ * REL.WAR".  None of that is true any more, and it was being read as
+ * current: it put "European diplomacy = STUB" into a status overview.
+ *
+ * What is actually true: ask_choice() RETURNS a answer and the code after
+ * it runs.  In live play the board installs colopy_ask_hook (board_ask,
+ * colopy_p4.ino) and the PLAYER answers; in the parity trace a scripted
+ * per-prompt counter answers.  Either way meeting_topic acts on the
+ * result at 13 sites — accept_treaty() writes the treaty matrix and clears
+ * REL_WAR, declare_war_on() sets REL_WAR, the @PIRACY row sails every
+ * player Privateer home, tribute and tension adjustments apply.
+ *
+ * The residual, stated narrowly so it cannot inflate again: the war matrix
+ * starts EMPTY on import (the JS importer does not populate it — TBD
+ * against PowerRecord +0x34), so a loaded save begins with no wars in
+ * progress and rivalTurn's WAR branch only becomes reachable once a war is
+ * declared in play. */
 #include <stdio.h>
 #include <string.h>
 

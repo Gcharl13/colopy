@@ -26,10 +26,7 @@ extern "C" {
 #define CAUD_BLOCK        1024  /* samples per IMA block */
 #define CAUD_BLOCK_BYTES  516   /* 4-byte header + 512 nibble bytes */
 
-/* Generation census: 25 entries (25 SFX slices, 0 music renders)
- * — the capture masters dir was absent at generation, so this
- * build carries SFX only; rerun with tools/audio/captures/masters
- * present to pack the tunes and fanfares. */
+/* Generation census: 67 entries (25 SFX slices, 42 music renders) */
 
 #ifdef __cplusplus
 }

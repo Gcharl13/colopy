@@ -73,16 +73,23 @@ def probe_b42() -> bool:
 
 
 def probe_b43() -> bool:
-    """B4.3: village trade haggle unported. Proxy: the C village module still
-    says so at its own top."""
-    v = (ROOT / "cport/core/colopy_village.c").read_text()
-    return "unported" in v
+    """B4.3: the village trade HAGGLE (tradeSellPick..tradeBuyRound) is not
+    ported. Proxy: open_village_trade still ends after the refusal/laden
+    gates without entering a sell pick. NOTE the row's stated blocker --
+    "unreachable until a load-cargo command exists" -- is itself doubtful:
+    run_trade_route loads a Wagon Train (colopy_rivals.c:1296). Re-check the
+    blocker before quoting it."""
+    v = _strip_comments((ROOT / "cport/core/colopy_village.c").read_text())
+    return "trade_sell_pick" not in v
 
 
-def probe_b45() -> bool:
-    """B4.5: several move targets are explicit no-ops. Proxy: colopy_cmd.c
-    still carries the no-op guard block it documents at the top."""
-    return "unported" in (ROOT / "cport/core/colopy_cmd.c").read_text()
+def probe_b45_fixed() -> bool:
+    """B4.5 was STALE and is now closed. Pinned: every move target stays
+    handled -- village entry, rumour entry and the sea lane must all remain
+    reachable from cmd_move."""
+    c = _strip_comments((ROOT / "cport/core/colopy_cmd.c").read_text())
+    return ("village_enter(" in c and "enter_rumour(" in c
+            and "TERR_SEALANE" in c)
 
 
 def probe_b47() -> bool:
@@ -152,7 +159,8 @@ def probe_unit_builds() -> bool:
 CLAIMS = [
     ("B4.2", "docs/REMAINING_WORK.md", "tutorial bindings not ported", probe_b42),
     ("B4.3", "docs/REMAINING_WORK.md", "village trade haggle unported", probe_b43),
-    ("B4.5", "docs/REMAINING_WORK.md", "some move targets are no-ops", probe_b45),
+    ("FIXED-2026-08-19c", "cport/core/colopy_cmd.c",
+     "every move target is handled", probe_b45_fixed),
     ("B4.7", "docs/REMAINING_WORK.md", "only the drag layer is absent", probe_b47),
     ("B3.2", "docs/REMAINING_WORK.md", "F5 second page not drawn", probe_b32),
     ("B3.3", "docs/REMAINING_WORK.md", "F9 paginator not wired", probe_b33),
