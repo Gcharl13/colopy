@@ -57,3 +57,6 @@ cport/arduino/colopy/colopy_pak_blob.c
 # audio milestone: raw per-id captures + local pak are regenerable
 tools/audio/captures/
 cport/pak/COLAUDIO.PAK
+
+# tools/ino_mock regenerates this from the sketch on every run
+tools/ino_mock/sketch_test.cpp

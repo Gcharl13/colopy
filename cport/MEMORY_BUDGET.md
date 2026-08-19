@@ -58,8 +58,42 @@ consumer, which is why `sidebuf` and the pak buffer are PSRAM allocations
 rather than arrays. It is also why the host build compiles with
 `-Wframe-larger-than=4096 -Werror`: a 25,600-byte scene band on the stack
 smashed the loop task on 2026-08-17, and a 1,216-byte array deep in the
-end-turn chain did it again the same day. Per-frame ceilings do not catch
-*depth* — see Part G of `docs/REMAINING_WORK.md`.
+end-turn chain did it again the same day.
+
+**Per-frame ceilings do not catch depth**, and depth is what every crash
+after the first one actually was. `make test` therefore also runs
+`tools/stack_budget.py`, which compiles the core with `-fstack-usage` for
+frame sizes, reads the call edges out of `objdump -d`, and reports the
+max-weight path from each of the board's entry points. The gate is
+`--limit 4096`. Current worst paths:
+
+| entry | bytes | path |
+|---|---|---|
+| `in_key` | 2,352 | `in_key_inner` → `build_picker_commit` → `build_rows` |
+| `in_click` | 2,048 | `in_click_inner` → `build_picker_commit` → `build_rows` |
+| `rm_draw_colony` | 1,376 | `gauge_strip` |
+| `rm_draw_dialog_rows_notes` | 688 | `draw_speaker` |
+| `rm_draw_europe` | 640 | `crossing_cell` → `draw_sack` |
+
+Recursion cycles and calls through function pointers are reported
+separately and are NOT in these totals — the tool says so on every run.
+
+**The one sanctioned exception to "do not add statics"** is UI scratch on
+the deep path. The two input dispatchers sit at the top of the whole
+command chain (`in_click_inner` → `run_menu_row` → `cmd_*` → `advance` →
+`end_turn`), so a row buffer there is charged against every frame beneath
+it. `erows`/`enotes`/`erp`, `trows`, and the three `rm_mrow` row arrays
+are file-scope statics for that reason. The trade, measured:
+
+- BSS `colopy_input.o` 5,360 → 14,528 bytes (**+9,168**, paid once)
+- stack `in_key` 5,200 → 2,352, `in_click` 4,192 → 2,048 (**−2,848 peak**)
+
+BSS is the plentiful side of this budget and the stack is the scarce one:
+the loop task has a few KB, the core's BSS has ~219 KB of a much larger
+pool. Converting a variable peak into a fixed cost is the right direction
+here — but it is an exception with a reason, not a licence. The UI is
+single-threaded and non-reentrant, which is what makes it safe; anything
+that could be entered twice must not do this.
 
 **Measure, do not quote.** How much internal SRAM is actually free after the
 IDF, the DPI driver and the Arduino runtime have taken their share is a

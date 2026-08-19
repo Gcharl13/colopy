@@ -7,6 +7,14 @@ CC      ?= gcc
 # quiet on those while catching real offenders — the colony painter used
 # to put a 25,600-byte scene band here, which smashed the ESP32 loop
 # stack and crashed the board (2026-08-17).
+#
+# It is PER-FUNCTION, and that is the whole of what it can see.  Every
+# OTHER board stack crash was DEPTH: legal frames stacked under legal
+# frames.  `make test` therefore also runs tools/stack_budget.py, which
+# walks the real call graph and sizes the worst path from each entry
+# point.  The build-colony crash (2026-08-19) got past this gate at
+# 3,488 bytes — under the per-frame bar, on top of the whole command
+# chain.
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Werror -Wframe-larger-than=4096 \
            -I../core -I../data
 OBJ      = ../data/colopy_data.o ../data/colopy_text.o ../data/colopy_ui.o ../core/colopy_sav.o ../core/colopy_map.o ../core/colopy_colony.o ../core/colopy_market.o ../core/colopy_events.o ../core/colopy_move.o ../core/colopy_combat.o ../core/colopy_turn.o ../core/colopy_natives.o ../core/colopy_rivals.o ../core/colopy_resolve.o ../core/colopy_cmd.o ../core/colopy_europe.o ../core/colopy_village.o ../core/colopy_woi.o ../core/colopy_newgame.o ../core/colopy_extras.o ../render/colopy_render.o ../render/colopy_map_render.o ../render/colopy_dialog.o ../render/colopy_colony_render.o ../render/colopy_europe_render.o ../render/colopy_report_render.o ../render/colopy_boot_render.o ../game/colopy_input.o ../audio/colopy_audio.o ../audio/colopy_audio_mix.o ../audio/colopy_audio_pak.o ../audio/colopy_audio_cues.o pak_check.o render_smoke.o audio_pak_check.o audio_smoke.o main.o
@@ -20,8 +28,11 @@ smoke: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 %.o: %.c $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@
-test: smoke
+test: smoke budget
 	./smoke
+# The depth gate.  Self-locating, so the cwd here does not matter.
+budget:
+	python3 ../../tools/stack_budget.py --limit 4096
 clean:
 	rm -f smoke $(OBJ)
-.PHONY: test clean
+.PHONY: test budget clean

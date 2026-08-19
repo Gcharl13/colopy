@@ -135,8 +135,24 @@ static void advance(void) {
 }
 
 /* openMenu (game.js:1874): first non-separator row selected */
+/* Menu-row buffers: STATIC, and one PER FUNCTION.
+ *
+ * These sit on the deepest path the board has — in_key -> in_key_inner
+ * -> run_menu_row -> the command -> advance -> end_turn — and at 64 rows
+ * each is 1.5 KB on the host, charged against every frame beneath.  That
+ * is the shape of every stack crash this port has had: legal frames
+ * summing past the task's stack, which -Wframe-larger-than cannot see.
+ * `python3 tools/stack_budget.py` walks the real call graph and prints
+ * the number; run it after touching anything on this path.
+ *
+ * Separate buffers rather than one shared: run_menu_row holds a pointer
+ * into its rows and then dispatches a command that can call open_menu.
+ * Today it copies the label out first so sharing would happen to work —
+ * that is exactly the kind of accident not worth relying on. */
+static rm_mrow mrows_open[64], mrows_run[64], mrows_key[64];
+
 static void open_menu(int mi) {
-    rm_mrow rows[64];
+    rm_mrow *rows = mrows_open;
     int n = rm_menu_rows(mi, UI.sel, rows);
     UI.open_menu = (int8_t)mi;
     UI.menu_sel = 0;
@@ -276,7 +292,7 @@ static void open_pedia(int cat) {
 static void open_trade_menu(int mode);
 static void run_menu_row(void) {
     if (UI.open_menu < 0) return;
-    rm_mrow rows[64];
+    rm_mrow *rows = mrows_run;
     int n = rm_menu_rows(UI.open_menu, UI.sel, rows);
     const rm_mrow *r = (UI.menu_sel >= 0 && UI.menu_sel < n)
                            ? &rows[UI.menu_sel] : 0;
@@ -1827,7 +1843,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
     case SCR_MAP: {
         /* an open pulldown owns the keyboard (game.js:12545) */
         if (UI.open_menu >= 0) {
-            rm_mrow rows[64];
+            rm_mrow *rows = mrows_key;
             int n = rm_menu_rows(UI.open_menu, UI.sel, rows);
             if (key_is(k, "ArrowUp") || key_is(k, "ArrowDown")) {
                 int dir = key_is(k, "ArrowUp") ? -1 : 1;
@@ -2225,7 +2241,8 @@ static void in_key_inner(const char *k, int alt, int shift) {
             wc_dismiss();
         break;
     case SCR_TRADE: {
-        char trows[20][64];
+        static char trows[20][64];      /* static: see the note in
+                                         * in_click_inner (G1) */
         int tn = ui_trade_rows(trows, 20);
         if (tn < 1) tn = 1;
         if (key_is(k, "ArrowUp"))
@@ -2649,8 +2666,15 @@ static void in_click_inner(int mx, int my, int right) {
          * JS euroMenuBox — FLAGGED divergence, scripts click only
          * far-outside points. */
         if (UI.euro_menu) {
-            char erows[24][64], enotes[24][64];
-            const char *erp[24];
+            /* STATIC, not stack: in_click_inner sits at the top of the
+             * whole command chain (menu row -> cmd_* -> advance ->
+             * end_turn), so anything big here is charged against every
+             * frame beneath it.  3 KB of row buffers put the build-colony
+             * path over on the board — the second crash from stack DEPTH,
+             * which -Wframe-larger-than cannot see (G1).  Single-threaded
+             * UI scratch, so static costs nothing but BSS. */
+            static char erows[24][64], enotes[24][64];
+            static const char *erp[24];
             int en = ui_euro_menu_rows(erows, enotes, 24);
             for (int i = 0; i < en; i++) erp[i] = erows[i];
             rm_subs subs;

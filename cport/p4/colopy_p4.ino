@@ -1473,15 +1473,23 @@ static void bt_report(uint8_t *d, size_t n) {
     ms_btn = b;
 }
 
-/* NOTE the one-space indent: the IDE's prototype generator only picks
- * up definitions whose return type starts at column 0, and it hoists
- * what it finds ABOVE every #include — a hoisted prototype naming a
- * BLE type would not compile.  Indenting hides this one from it. */
- static void bt_notify_cb(BLERemoteCharacteristic *c, uint8_t *data,
-                          size_t len, bool isNotify) {
-    (void)c; (void)isNotify;
-    bt_report(data, len);
-}
+/* The notify callback is a CAPTURELESS LAMBDA at its registration site
+ * (see bt_connect below), not a named function, and that placement is
+ * load-bearing rather than stylistic.
+ *
+ * The IDE generates a prototype for every function definition it finds
+ * in the .ino and hoists the whole block ABOVE this file's own
+ * #includes.  A prototype naming BLERemoteCharacteristic therefore
+ * lands where <BLEDevice.h> has not been seen yet, and the sketch dies
+ * with "variable or field 'bt_notify_cb' declared void" — reported
+ * from a real Arduino IDE 3.3.11 / esp32 core build, 2026-08-19.
+ *
+ * The previous guard here was a one-space indent, on the belief that
+ * the generator only picks up definitions starting at column 0.  That
+ * is FALSE on the current toolchain: the indented definition was
+ * hoisted regardless.  A lambda has no name to hoist, so it cannot be,
+ * whatever the generator's heuristics turn out to be next.  Do not
+ * lift this back out into a named function. */
 
 /* scan for devices ADVERTISING the HID service (0x1812) */
 static void bt_scan(void) {
@@ -1521,7 +1529,12 @@ static void bt_connect(int i) {
             BLERemoteCharacteristic *ch = kv.second;
             if (!ch->getUUID().equals(BLEUUID((uint16_t)0x2A4D))) continue;
             if (!ch->canNotify()) continue;
-            ch->registerForNotify(bt_notify_cb);
+            ch->registerForNotify(
+                [](BLERemoteCharacteristic *rc, uint8_t *d, size_t n,
+                   bool isNotify) {
+                    (void)rc; (void)isNotify;
+                    bt_report(d, n);
+                });
             subscribed++;
         }
     bt_state = subscribed ? 4 : 5;
