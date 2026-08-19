@@ -236,9 +236,13 @@ static void flush_fb(void) {
 #endif
 
 #if COLOPY_BLE_MOUSE
-/* included HERE, above every sketch function: the IDE hoists its
- * generated prototypes to just after the last #include, so an include
- * further down the file would push them below their call sites */
+/* Included HERE rather than down beside the implementation, because the
+ * IDE hoists its generated prototypes ABOVE this file's own #includes
+ * and a prototype naming a BLE type must not land before the header.
+ * Even this is not sufficient on its own — the hoist point is above the
+ * FIRST function definition, which is earlier still — so the notify
+ * callback is a lambda with no name to hoist. See the note at
+ * bt_connect(). */
 #include <BLEDevice.h>
 static int  bt_mode = 0;              /* 0 off, 1 the pairing screen */
 static int  bt_state = 0;             /* 0 idle, 1 scanning, 2 list,
@@ -256,14 +260,22 @@ static int  bt_ui_tap(int gx, int gy) { (void)gx; (void)gy; return 0; }
 #endif
 
 /* THE LAST #include IN THIS FILE, AND IT MUST STAY UNCONDITIONAL.
- * The IDE hoists its generated prototypes to just after the last
- * #include it sees.  If that include sits inside a #if that is FALSE,
- * every prototype lands in the dead block and the whole sketch fails
- * with "not declared in this scope" at the first forward call.  That is
- * exactly what happened on 2026-08-17 when the audio merge moved
- * <ESP_I2S.h> up, leaving <BLEDevice.h> (guarded by COLOPY_BLE_MOUSE,
- * off by default) as the last one.  Keep an unconditional include here
- * so the hoist point is always live. */
+ * It is here because on 2026-08-17 the audio merge moved <ESP_I2S.h>
+ * up, leaving <BLEDevice.h> (guarded by COLOPY_BLE_MOUSE, off by
+ * default) as the last include in the file, and the sketch then failed
+ * with "not declared in this scope" at the first forward call — every
+ * generated prototype had landed somewhere inert.  An unconditional
+ * include here fixed it and has held since, so it stays.
+ *
+ * CORRECTION 2026-08-19: this used to assert that the IDE hoists its
+ * prototypes "to just after the last #include", and that model is
+ * WRONG.  A real IDE build (esp32 core 3.3.11) put a prototype ABOVE
+ * this file's own includes — above the first function definition, which
+ * is line ~180, far earlier than any include down here — and died on a
+ * BLE type it could not see.  The 2026-08-17 mechanism above was
+ * inferred from its symptom and was never verified; what is verified is
+ * that the fix worked.  Do not reason from the old model.  The gate
+ * that models this properly is tools/ino_mock/. */
 #include <stddef.h>
 
 /* the title screen's Bluetooth row.  SHELL CHROME: the DOS main menu
