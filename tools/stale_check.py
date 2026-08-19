@@ -119,12 +119,20 @@ def probe_b34() -> bool:
 
 
 def probe_b36() -> bool:
-    """B3.6: rival AI colony development absent -- no growth, construction or
-    unit production. Proxy: the rival tick never advances construction or
-    grows a rival colony."""
-    r = (ROOT / "cport/core/colopy_rivals.c").read_text()
-    return not re.search(r"rival_(colony_grow|construction|build)",
-                         _strip_comments(r))
+    """B3.6 (re-scoped): the colony pass still runs for the HUMAN only, so
+    rival colonies do not develop. Proxy: turn_step_prefix's loop still tests
+    the owner against cs_nation() rather than sweeping all four powers.
+    Flips the day the per-power loop goes live -- which is the point."""
+    t = _strip_comments((ROOT / "cport/core/colopy_turn.c").read_text())
+    return "owner_power & 3) == cs_nation()" in t
+
+
+def probe_b36_scaffold() -> bool:
+    """Pinned: the per-power scaffolding stays in place, and father_owned
+    keeps reading the PASS's power. Losing this silently re-introduces the
+    cross-power Founding-Father bug the moment the loop goes live."""
+    t = _strip_comments((ROOT / "cport/core/colopy_turn.c").read_text())
+    return "turn_power" in t and "CS.powers[cur_power()].founding_fathers" in t
 
 
 def probe_doi() -> bool:
@@ -166,6 +174,9 @@ CLAIMS = [
     ("B3.3", "docs/REMAINING_WORK.md", "F9 paginator not wired", probe_b33),
     ("B3.4", "docs/REMAINING_WORK.md", "no per-stop trade-route editor", probe_b34),
     ("B3.6", "docs/REMAINING_WORK.md", "rival AI colony development absent", probe_b36),
+    ("B3.6-scaffold", "cport/core/colopy_turn.c",
+     "per-power scaffolding + father_owned reads the pass's power",
+     probe_b36_scaffold),
     ("E-DoI", "docs/REMAINING_WORK.md", "Declaration screen does not exist", probe_doi),
     ("G3", "cport/PORT_LEDGER.md", "ledger status is derived, not declared",
      probe_ledger_derived),

@@ -85,8 +85,13 @@ int colony_has_bld_name(int ci, const char *name) {
     return has_bld(ci, bld_by_name(name));
 }
 
+static int cur_power(void);          /* the pass's power — see turn_power */
+/* Founding Fathers belong to a POWER, not to the game: reading the human's
+ * set here gave every rival colony the human's Congress once the per-power
+ * colony pass went live (Jan de Witt's +20 SoL was the first to show).
+ * Outside a pass cur_power() is the human, so nothing else moves. */
 int father_owned(int idx) {
-    return idx >= 0 && ((CS.powers[cs_nation()].founding_fathers >> idx) & 1);
+    return idx >= 0 && ((CS.powers[cur_power()].founding_fathers >> idx) & 1);
 }
 /* JS c.buildings.includes(name) — the runtime list, membership by NAME. */
 static int has_bld(int ci, int idx) {
@@ -351,6 +356,40 @@ static void building_add(int ci, int idx) {
 }
 
 /* ---- SoL: updateSoL (byte-verified EMA @0x2DA1C) + solAnnounce ---------- */
+/* ---- the power whose colonies are being processed ------------------
+ * func_02F052 @0x59EA is a PER-POWER colony pass: it zeroes that power's
+ * bells accumulator, then loops every colony and processes the ones whose
+ * `ColonyRecord +0x1A == power` (@0x2F256).  The engine runs the SAME
+ * production code for all four powers -- rival colonies grow, build and
+ * produce because they go through this loop too, not because of any
+ * separate AI.
+ *
+ * This port ran the loop for the human only, which is why ledger row B3.6
+ * read as "rival AI colony development is entirely absent".  It was never
+ * missing logic: rival ColonyRecords are fully populated in the save
+ * (COLONY01 carries Jamestown at pop 11 with 11 jobs and a live build
+ * target), CR runtime state is built for all of them, and one owner test
+ * kept the production code off them.
+ *
+ * `turn_power` is that [bp+6].  Everything the pass does that belongs to a
+ * PLAYER rather than to a colony -- popups, asks, the treasury -- is gated
+ * on it, or a rival's harvest posts the human a message and a rival's
+ * cargo asks the human to zoom. */
+static int turn_power = -1;
+static int cur_is_human(void) {
+    return turn_power < 0 || turn_power == (int)cs_nation();
+}
+/* the owning power of the colony being processed (the human outside a pass) */
+static int cur_power(void) {
+    return turn_power < 0 ? (int)cs_nation() : turn_power;
+}
+/* event + ask, silenced for a non-human power */
+static void cev(const char *k, int32_t a, int32_t b,
+                const char *s0, const char *s1) {
+    if (cur_is_human()) ev_emit(k, a, b, s0, s1);
+}
+static int cask(void) { return cur_is_human() ? ask_choice() : 0; }
+
 static void update_sol(int ci, int bells) {
     colony_rt *r = &CR.col[ci];
     int pop = CS.colonies[ci].population;
@@ -373,12 +412,12 @@ static void sol_announce(int ci) {
     const char *nm = CS.colonies[ci].name;
     int band = r->sol / 10;
     if (r->sol_band == 0xFF) r->sol_band = (uint8_t)band;
-    else if (band > r->sol_band) { ev_emit("SONSUP", r->sol, 0, nm, 0); r->sol_band = (uint8_t)band; }
-    else if (band < r->sol_band) { ev_emit("SONSDOWN", r->sol, 0, nm, 0); r->sol_band = (uint8_t)band; }
-    if (r->sol >= 50 && !(r->latch & 0x04)) { r->latch |= 0x04; ev_emit("REBELMAJORITY", 0, 0, nm, 0); }
-    if (r->sol >= 100 && !(r->latch & 0x02)) { r->latch |= 0x02; ev_emit("REBELUNANIMOUS", 0, 0, nm, 0); }
-    if (r->sol < 95 && (r->latch & 0x02)) { r->latch &= ~0x02; ev_emit("TORYMINORITY", 0, 0, nm, 0); }
-    if (r->sol < 50 && (r->latch & 0x04)) { r->latch &= ~0x04; ev_emit("TORYMAJORITY", 0, 0, nm, 0); }
+    else if (band > r->sol_band) { cev("SONSUP", r->sol, 0, nm, 0); r->sol_band = (uint8_t)band; }
+    else if (band < r->sol_band) { cev("SONSDOWN", r->sol, 0, nm, 0); r->sol_band = (uint8_t)band; }
+    if (r->sol >= 50 && !(r->latch & 0x04)) { r->latch |= 0x04; cev("REBELMAJORITY", 0, 0, nm, 0); }
+    if (r->sol >= 100 && !(r->latch & 0x02)) { r->latch |= 0x02; cev("REBELUNANIMOUS", 0, 0, nm, 0); }
+    if (r->sol < 95 && (r->latch & 0x02)) { r->latch &= ~0x02; cev("TORYMINORITY", 0, 0, nm, 0); }
+    if (r->sol < 50 && (r->latch & 0x04)) { r->latch &= ~0x04; cev("TORYMAJORITY", 0, 0, nm, 0); }
 }
 
 /* ---- construction (advanceConstruction, game.js:3114) ------------------ */
@@ -446,11 +485,11 @@ static void advance_construction(int ci, int hammers) {
                     strcmp(dat_units[CS.units[i].type].name,
                            "Wagon Train") == 0) wagons++;
             for (int i = 0; i < CS.n_colonies; i++)
-                if ((CS.colonies[i].owner_power & 3) == cs_nation()) ncol++;
+                if ((CS.colonies[i].owner_power & 3) == cur_power()) ncol++;
             if (wagons >= ncol) {
                 if (!r->cap_warned) {
                     r->cap_warned = 1;
-                    ev_emit("NOMOREWAGONS", ncol, 0, c->name, 0);
+                    cev("NOMOREWAGONS", ncol, 0, c->name, 0);
                 }
                 return;
             }
@@ -459,13 +498,13 @@ static void advance_construction(int ci, int hammers) {
         if (c->stock[TOOLS] < need_tools) {
             if (!r->tool_warned) {
                 r->tool_warned = 1;
-                ev_emit(c->stock[TOOLS] > 0 ? "NEEDTOOLS" : "NEEDTOOLS0",
+                cev(c->stock[TOOLS] > 0 ? "NEEDTOOLS" : "NEEDTOOLS0",
                         need_tools, c->stock[TOOLS], c->name, un);
-                if (ask_choice() == 1) {
+                if (cask() == 1) {
                     CR.screen_map = 0;
                     int ord = -1;
                     for (int q = 0; q <= ci; q++)
-                        if ((CS.colonies[q].owner_power & 3) == cs_nation())
+                        if ((CS.colonies[q].owner_power & 3) == cur_power())
                             ord++;
                     CR.zoom_colony = (int16_t)ord;
                 }
@@ -477,9 +516,9 @@ static void advance_construction(int ci, int hammers) {
         c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
         /* the finished unit steps onto the colony square (ships sit in
          * port on that same tile) */
-        unit_append(urow, (int)cs_nation(), c->map_x, c->map_y);
+        unit_append(urow, (int)cur_power(), c->map_x, c->map_y);
         c->building_in_production = 0xFF;
-        ev_emit("BUILT", 0, 0, c->name, un);
+        cev("BUILT", 0, 0, c->name, un);
         return;
     }
     if (bip >= DAT_BUILDINGS_COUNT) return;      /* no target */
@@ -490,7 +529,7 @@ static void advance_construction(int ci, int hammers) {
     resolve();
     if (has_bld(ci, bip) ||
         (bip == bld_by_name("Warehouse Expansion") && c->warehouse_level >= 2)) {
-        ev_emit(strcmp(b->name, "Warehouse Expansion") == 0 ?
+        cev(strcmp(b->name, "Warehouse Expansion") == 0 ?
                 "NOMOREWAREHOUSE" : "ALREADYHAVE", 0, 0, c->name, b->name);
         c->building_in_production = 0xFF;
         return;
@@ -498,15 +537,15 @@ static void advance_construction(int ci, int hammers) {
     if (c->stock[TOOLS] < need_tools) {
         if (!r->tool_warned) {
             r->tool_warned = 1;
-            ev_emit(c->stock[TOOLS] > 0 ? "NEEDTOOLS" : "NEEDTOOLS0",
+            cev(c->stock[TOOLS] > 0 ? "NEEDTOOLS" : "NEEDTOOLS0",
                     need_tools, c->stock[TOOLS], c->name, b->name);
             /* askZoom (game.js:6372 via 3155): choice 1 zooms to the
              * colony — G.screen leaves 'map', closing the parley gate. */
-            if (ask_choice() == 1) {
+            if (cask() == 1) {
                 CR.screen_map = 0;
                 int ord = -1;
                 for (int q = 0; q <= ci; q++)
-                    if ((CS.colonies[q].owner_power & 3) == cs_nation())
+                    if ((CS.colonies[q].owner_power & 3) == cur_power())
                         ord++;
                 CR.zoom_colony = (int16_t)ord;
             }
@@ -518,15 +557,15 @@ static void advance_construction(int ci, int hammers) {
     c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
     building_add(ci, bip);
     if ((FACTORY_MASK >> bip) & 1) {
-        PowerRecord *p = &CS.powers[cs_nation()];
+        PowerRecord *p = &CS.powers[cur_power()];
         if (p->tax_rate < 75) {                  /* WOI flag TBD: fixtures 0 */
             p->tax_rate++;
-            ev_emit("MERCANTILISM", 1, p->tax_rate, b->name,
-                    dat_nations[cs_nation()].adjective);
+            cev("MERCANTILISM", 1, p->tax_rate, b->name,
+                    dat_nations[cur_power()].adjective);
         }
     }
     c->building_in_production = 0xFF;
-    ev_emit("BUILT", 0, 0, c->name, b->name);
+    cev("BUILT", 0, 0, c->name, b->name);
 }
 
 /* exported for the input layer's rushBuy mirror (game.js:3208) */
@@ -585,20 +624,20 @@ static void run_school(int ci) {
                 break;
             }
         }
-        if (student < 0) { ev_emit("TRAINFAIL", 0, 0, 0, 0); continue; }
+        if (student < 0) { cev("TRAINFAIL", 0, 0, 0, 0); continue; }
         r->taught[student]++;
         if (r->taught[student] < need) continue;
         r->taught[student] = 0;
         int rung = tier_rank(c->profession[student]);
         if (rung == 0) {
             c->profession[student] = (uint8_t)TIER_ROW[1];
-            ev_emit("TRAINCRIMINAL", 0, 0, c->name, 0);
+            cev("TRAINCRIMINAL", 0, 0, c->name, 0);
         } else if (rung == 1) {
             c->profession[student] = (uint8_t)TIER_ROW[2];
-            ev_emit("TRAININDENTURED", 0, 0, c->name, 0);
+            cev("TRAININDENTURED", 0, 0, c->name, 0);
         } else {
             c->profession[student] = c->profession[teacher];
-            ev_emit("TRAINPROFESSION", 0, 0, c->name,
+            cev("TRAINPROFESSION", 0, 0, c->name,
                     dat_jobexpert[c->profession[teacher]]);
         }
     }
@@ -608,7 +647,7 @@ static void run_school(int ci) {
 static void auto_export(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
     colony_rt *r = &CR.col[ci];
-    PowerRecord *p = &CS.powers[cs_nation()];
+    PowerRecord *p = &CS.powers[cur_power()];
     int spoiled_good = -1, spoiled_qty = 0, n_spoiled = 0;
     resolve();
     int smith = 0;
@@ -621,20 +660,20 @@ static void auto_export(int ci) {
         if (prot) {
             if (i != FOOD && !((r->cargo_ready >> i) & 1)) {
                 r->cargo_ready |= (uint16_t)(1 << i);
-                ev_emit("CARGOREADY0", 0, 0, c->name, dat_cargo[i].name);
+                cev("CARGOREADY0", 0, 0, c->name, dat_cargo[i].name);
             }
             continue;
         }
         if (!((r->cargo_ready >> i) & 1)) {
             r->cargo_ready |= (uint16_t)(1 << i);
-            ev_emit(c->warehouse_level < 2 ? "CARGOREADY1" : "CARGOREADY2",
+            cev(c->warehouse_level < 2 ? "CARGOREADY1" : "CARGOREADY2",
                     100, 0, c->name, dat_cargo[i].name);
             /* askZoom (game.js:6372 via 2863): same colony-zoom ask. */
-            if (ask_choice() == 1) {
+            if (cask() == 1) {
                 CR.screen_map = 0;
                 int ord = -1;
                 for (int q = 0; q <= ci; q++)
-                    if ((CS.colonies[q].owner_power & 3) == cs_nation())
+                    if ((CS.colonies[q].owner_power & 3) == cur_power())
                         ord++;
                 CR.zoom_colony = (int16_t)ord;
             }
@@ -659,10 +698,10 @@ static void auto_export(int ci) {
     for (int i = 0; i < N_GOODS; i++)
         if (c->stock[i] < 100) r->cargo_ready &= (uint16_t)~(1 << i);
     if (n_spoiled == 1)
-        ev_emit(c->warehouse_level < 2 ? "SPOIL1" : "SPOIL3",
+        cev(c->warehouse_level < 2 ? "SPOIL1" : "SPOIL3",
                 spoiled_qty, 0, c->name, dat_cargo[spoiled_good].name);
     else if (n_spoiled > 1)
-        ev_emit(c->warehouse_level < 2 ? "SPOIL2" : "SPOIL4", 0, 0, c->name, 0);
+        cev(c->warehouse_level < 2 ? "SPOIL2" : "SPOIL4", 0, 0, c->name, 0);
 }
 
 /* ---- the per-colony turn (colonyTurn, game.js:3004) -------------------- */
@@ -683,7 +722,7 @@ void colony_turn(int ci) {
      * 1 of the colony outnumbering the player's attack-capable land units
      * there. */
     {
-        int me = cs_nation(), enemies = 0, friends = 0;
+        int me = cur_power(), enemies = 0, friends = 0;
         for (int ui = 0; ui < CS.n_units; ui++) {
             const UnitRecord *u = &CS.units[ui];
             if (u->type >= DAT_UNITS_COUNT ||
@@ -711,7 +750,7 @@ void colony_turn(int ci) {
             }
         }
         if (enemies > friends) {
-            if (!r->sieged) { r->sieged = 1; ev_emit("SIEGE", 0, 0, 0, 0); }
+            if (!r->sieged) { r->sieged = 1; cev("SIEGE", 0, 0, 0, 0); }
         } else r->sieged = 0;
     }
     for (int raw = 0; raw < N_GOODS; raw++) {
@@ -719,7 +758,7 @@ void colony_turn(int ci) {
         if (!((o.outages >> raw) & 1)) { if (key) r->outage_latch &= (uint16_t)~(1 << raw); continue; }
         if (!key || ((r->outage_latch >> raw) & 1)) continue;
         r->outage_latch |= (uint16_t)(1 << raw);
-        ev_emit(key, 0, 0, c->name, 0);
+        cev(key, 0, 0, c->name, 0);
     }
     for (int i = 0; i < N_GOODS; i++) {
         int32_t v = (int32_t)c->stock[i] + o.out[i];
@@ -736,19 +775,19 @@ void colony_turn(int ci) {
     if (o.net_food < 0 && c->stock[FOOD] == 0) {
         if (!r->food_depleted) {
             r->food_depleted = 1;
-            ev_emit(pre_winter ? "FOOD2" : "FOOD1", 0, 0, c->name, 0);
+            cev(pre_winter ? "FOOD2" : "FOOD1", 0, 0, c->name, 0);
         } else if (c->population > 1) {
             colonist_remove_last(ci);
-            ev_emit(pre_winter ? "STARVE2" : "STARVE1", 0, 0, c->name, 0);
+            cev(pre_winter ? "STARVE2" : "STARVE1", 0, 0, c->name, 0);
             r->food_warned = 0;
         } else {
             r->vanished = 1;
-            ev_emit("VANISH", 0, 0, c->name, 0);
+            cev("VANISH", 0, 0, c->name, 0);
         }
     } else if (o.net_food < 0 && c->stock[FOOD] < FOOD_FOR_COLONIST &&
                !r->food_warned) {
         r->food_warned = 1;
-        ev_emit("FOODLOW", c->stock[FOOD], 0, c->name, 0);
+        cev("FOODLOW", c->stock[FOOD], 0, c->name, 0);
     } else if (o.net_food >= 0) {
         r->food_warned = 0;
         r->food_depleted = 0;
@@ -756,7 +795,7 @@ void colony_turn(int ci) {
     if (c->stock[FOOD] >= FOOD_FOR_COLONIST) {
         c->stock[FOOD] = (uint16_t)(c->stock[FOOD] - FOOD_FOR_COLONIST);
         colonist_add(c);
-        ev_emit("NEWCOLONIST", 0, 0, c->name, 0);
+        cev("NEWCOLONIST", 0, 0, c->name, 0);
     }
     resolve();
     /* tutorial bindings: NOT ported (see header) */
@@ -770,7 +809,7 @@ void colony_turn(int ci) {
         int mi = (c->map_y + DY[k]) * COLOPY_MAP_W + (c->map_x + DX[k]);
         if (!(CS.improve[mi] & 0x80) && (int)((rng_next() * 50u) >> 15) == 0) {
             CS.improve[mi] |= 0x80;
-            ev_emit("DEPLETION", 0, 0, c->name, 0);
+            cev("DEPLETION", 0, 0, c->name, 0);
         }
     }
     r->crosses_turn = o.crosses;
@@ -791,10 +830,10 @@ void colony_turn(int ci) {
         if (r->sol >= 100) pen += 1;
         if (pen < 0 && !r->ineff) {
             r->ineff = 1;
-            ev_emit("INEFFICIENT", 10 - cs_difficulty(), 0, c->name, 0);
+            cev("INEFFICIENT", 10 - cs_difficulty(), 0, c->name, 0);
         } else if (pen >= 0 && r->ineff) {
             r->ineff = 0;
-            ev_emit("EFFICIENT", 0, 0, c->name, 0);
+            cev("EFFICIENT", 0, 0, c->name, 0);
         }
     }
     advance_construction(ci, o.hammers);
@@ -847,9 +886,32 @@ void turn_step_prefix(void) {
         else { CR.upkeep_unpaid = 1; ev_emit("UPKEEP", due, 0, 0, 0); }
     }
     /* the colony loop (player colonies, record order, like JS G.colonies) */
+    /* THE HUMAN'S COLONIES ONLY — and that is a known divergence, not the
+     * engine's shape.  func_02F052 @0x59EA is a PER-POWER pass: it loops
+     * every colony once per power and processes the ones that power owns
+     * (`ColonyRecord +0x1A == power` @0x2F256), so in the original a
+     * rival's colonies run the SAME production code the human's do.  That
+     * is all "rival colony development" ever was; there is no separate AI
+     * for it (ledger B3.6, re-scoped 2026-08-19).
+     *
+     * Turning it on here is a two-line change and it is NOT the blocker.
+     * The blocker is the DATA MODEL: the C imports every colony into
+     * CS.colonies with its owner byte (COLONY01 = 8 human + 6 rival, fully
+     * populated), but the JS reference port keeps only the human's in
+     * G.colonies and models rivals as a separate stub. Processing rivals
+     * on this side alone would break the reference relationship the whole
+     * oracle suite rests on. Unifying the two models means auditing ~374
+     * owner-correctness sites across both engines (127 G.colonies + 247
+     * CS.colonies), which is its own piece of work.
+     *
+     * The scaffolding above (turn_power / cur_power / cev / cask) is the
+     * prerequisite and is already in place and oracle-verified neutral, so
+     * that change becomes the loop below plus the JS model. */
+    turn_power = (int)cs_nation();
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())
             colony_turn(ci);
+    turn_power = -1;
     colony_vanish_filter();
 }
 
