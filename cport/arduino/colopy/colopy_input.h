@@ -91,7 +91,7 @@ int  ui_trade_rows(char out[][64], int cap);
 void ui_trade_sofar(char *out, int cap);
 /* the Europe sub-menu row model (euroMenuRows, game.js:4662) + the
  * GAME.TXT caption its box quotes — for the shells' painter */
-int  ui_euro_menu_rows(char out[][64], int cap);
+int  ui_euro_menu_rows(char out[][64], char notes[][64], int cap);
 const char *ui_euro_menu_caption(void);
 /* the colony popups' display model (colonyPopupRows, game.js:3895):
  * labels + right-aligned notes + the @CTITLE title; small = build */

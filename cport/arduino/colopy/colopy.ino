@@ -387,15 +387,15 @@ static void draw_screen(void) {
          * framework over the shared row model (the economic adviser
          * fronts the two menus that quote his GAME.TXT captions) */
         if (UI.euro_menu) {
-            static char er[24][64];
-            static const char *erp[24];
-            int en = ui_euro_menu_rows(er, 24);
-            for (int i = 0; i < en; i++) erp[i] = er[i];
+            static char er[24][64], en2[24][64];
+            static const char *erp[24], *enp[24];
+            int en = ui_euro_menu_rows(er, en2, 24);
+            for (int i = 0; i < en; i++) { erp[i] = er[i]; enp[i] = en2[i]; }
             rm_subs subs;
             memset(&subs, 0, sizeof(subs));
-            rm_draw_dialog_rows(ui_euro_menu_caption(), &subs,
-                                UI.euro_menu <= 2 ? "MSS2" : 0,
-                                UI.euro_menu_row, erp, en);
+            rm_draw_dialog_rows_notes(ui_euro_menu_caption(), &subs,
+                                      UI.euro_menu <= 2 ? "MSS2" : 0,
+                                      UI.euro_menu_row, erp, en, enp);
         }
         break;
     case SCR_HOF:

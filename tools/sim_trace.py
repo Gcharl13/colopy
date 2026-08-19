@@ -214,8 +214,15 @@ INPUT = """([save, events]) => {
       // information, different layout — a real board divergence this field
       // surfaced on the day it was added, logged in docs/REMAINING_WORK.md
       // rather than papered over by widening the comparison to swallow it.
-      emrows: G.euroMenu === 'ship' || G.euroMenu === 'dockunit'
-        ? euroMenuRows().map(r => r.label) : [],
+      // Every euro menu now, not just the two harbour ones. The scoping was
+      // D12's fault: the shop menus carried their price as a separate
+      // right-aligned column here and the C baked it into the row string,
+      // so the strings could never match. With the price split out into
+      // `emnotes` on both sides the labels agree and all five are compared.
+      emrows: G.euroMenu ? euroMenuRows().map(r => r.label) : [],
+      emnotes: G.euroMenu ? euroMenuRows().map(r =>
+        r.cost === undefined || r.hideCost ? ''
+          : `${(DATA.text.misc || [])[13] || '(Cost:'} ${r.cost}${(DATA.text.misc || [])[14] || ')'}`) : [],
       // How many times each prompt has been asked. input_compare compares
       // this on the INTERSECTION only: a key just one engine asks is B4.6
       // (this one reaches the European meeting flow and the C does not) and

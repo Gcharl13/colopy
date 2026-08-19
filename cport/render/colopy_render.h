@@ -187,6 +187,11 @@ int  rm_dialog_row_hit(const char *key, const rm_subs *subs,
                        const char *speaker, int mx, int my);
 /* the same dialog with RUNTIME option rows (the JS askEvent rows arg —
  * goto port picker, @CUSTOM toggles) in place of the GAME.TXT tail */
+/* the shop menus' right-aligned second column (D12); rnotes may be 0 */
+void rm_draw_dialog_rows_notes(const char *key, const rm_subs *subs,
+                               const char *speaker, int sel,
+                               const char *const *rrows, int nrr,
+                               const char *const *rnotes);
 void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
                          const char *speaker, int sel,
                          const char *const *rrows, int nrr);

@@ -303,7 +303,8 @@ static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
                        const char *speaker, char body[16][256],
                        char rows[16][256], int *nb_out, int *nr_out,
                        int *x, int *y, int *w, int *h, int *seed,
-                       const char *const *rrows, int nrr) {
+                       const char *const *rrows, int nrr,
+                       const char *const *rnotes) {
     if (!e || !e->body) return 0;
     const rd_font *f = dfont(e->small);
     int tp = dtext(e->small), rp = drow(e->small);
@@ -321,7 +322,13 @@ static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
             snprintf(rows[i], 256, "%s", rrows[i]);
         else
             fill_template(e->tail[i], subs, rows[i], sizeof(rows[i]));
-        int lw = stripped_width(f, rows[i]) + 10;
+        /* a row with a right-aligned NOTE (the shop menus' "(Cost: N)")
+         * has to fit both plus the gutter — euroMenuBox's own width math,
+         * game.js: label + note + 20 */
+        int lw = rnotes && rnotes[i] && rnotes[i][0]
+                     ? stripped_width(f, rows[i]) +
+                       stripped_width(f, rnotes[i]) + 20
+                     : stripped_width(f, rows[i]) + 10;
         if (lw > cw) cw = lw;
     }
     *w = cw + 6;
@@ -340,9 +347,16 @@ static int dialog_geom(const dat_events_entry_t *e, const rm_subs *subs,
     return 1;
 }
 
-void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
-                         const char *speaker, int sel,
-                         const char *const *rrows, int nrr) {
+/* rnotes: an optional per-row RIGHT-ALIGNED second column.  The three
+ * Europe shop menus put their price there — census_euro_train shows
+ * "(Cost: N)" hard against the box's right edge, not run on after the
+ * label — and until 2026-08-17 this painter had no second column, so the
+ * C baked the price into the row string and the board laid it out wrong
+ * (D12).  Pass 0 for the ordinary single-column dialogs. */
+void rm_draw_dialog_rows_notes(const char *key, const rm_subs *subs,
+                               const char *speaker, int sel,
+                               const char *const *rrows, int nrr,
+                               const char *const *rnotes) {
     dresolve();
     const dat_events_entry_t *e = event_by_key(key);
     char (*body)[256] = sc_body();
@@ -350,7 +364,7 @@ void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
     if (!body || !rows) return;
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
-                     &x, &y, &w, &h, &seed, rrows, nrr))
+                     &x, &y, &w, &h, &seed, rrows, nrr, rnotes))
         return;
     const rd_font *f = dfont(e->small);
     int tp = dtext(e->small), rp = drow(e->small);
@@ -363,7 +377,17 @@ void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
         int oy = seed + k * rp;
         if (k == sel) rd_fill(x + 4, oy, w - 8, rp - 2, SELECT_GAME);
         span_text(f, rows[k], x + 9, oy + 1, base, hi);
+        if (rnotes && rnotes[k] && rnotes[k][0])
+            span_text(f, rnotes[k],
+                      x + w - 8 - stripped_width(f, rnotes[k]),
+                      oy + 1, base, hi);
     }
+}
+
+void rm_draw_dialog_rows(const char *key, const rm_subs *subs,
+                         const char *speaker, int sel,
+                         const char *const *rrows, int nrr) {
+    rm_draw_dialog_rows_notes(key, subs, speaker, sel, rrows, nrr, 0);
 }
 
 void rm_draw_dialog_event(const char *key, const rm_subs *subs,
@@ -542,7 +566,7 @@ int rm_dialog_rows_hit(const char *key, const rm_subs *subs,
     if (!body || !rows) return -1;
     int nb, nr, x, y, w, h, seed;
     if (!dialog_geom(e, subs, speaker, body, rows, &nb, &nr,
-                     &x, &y, &w, &h, &seed, rrows, nrr))
+                     &x, &y, &w, &h, &seed, rrows, nrr, 0))
         return -1;
     if (mx < x || mx >= x + w || my < y || my >= y + h) return -1;
     int rp = drow(e->small);

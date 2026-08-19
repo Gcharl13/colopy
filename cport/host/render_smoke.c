@@ -343,13 +343,27 @@ static void in_project(void) {
         printf("%s\"%s\":%u", i ? "," : "", ask_key_name(i),
                (unsigned)ask_key_hits(i));
     printf("},");
+    /* Every euro menu now, not just the two harbour ones. The scoping was
+     * D12's fault: the shop menus baked "(Cost: N)" into the row string
+     * here and carried it as a separate right-aligned column in the JS, so
+     * the strings could never match. With the price split out into notes
+     * on both sides the labels agree and all five menus are compared. */
     printf("\"emrows\":[");
-    if (UI.euro_menu == 4 || UI.euro_menu == 5) {   /* ship / dockunit */
-        char rows[24][64];
-        int nr = ui_euro_menu_rows(rows, 24);
+    {
+        char rows[24][64], notes[24][64];
+        int nr = UI.euro_menu ? ui_euro_menu_rows(rows, notes, 24) : 0;
         for (int i = 0; i < nr; i++) {
             printf("%s\"", i ? "," : "");
             for (const char *q = rows[i]; *q; q++) {
+                if (*q == '"' || *q == '\\') putchar('\\');
+                putchar(*q);
+            }
+            putchar('"');
+        }
+        printf("],\"emnotes\":[");
+        for (int i = 0; i < nr; i++) {
+            printf("%s\"", i ? "," : "");
+            for (const char *q = notes[i]; *q; q++) {
                 if (*q == '"' || *q == '\\') putchar('\\');
                 putchar(*q);
             }

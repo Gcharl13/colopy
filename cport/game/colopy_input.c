@@ -814,7 +814,8 @@ static void euro_arm_verb_label(int verb, const immigrant *e,
  * shells' euro-menu painter and the pointer layer's row hit-test.  The
  * exact engine row text is unread; prices ride the labels where the JS
  * shows them (TRAIN "(Cost: N)"; RECRUIT hides its per-row price). */
-int ui_euro_menu_rows(char out[][64], int cap) {
+int ui_euro_menu_rows(char out[][64], char notes[][64], int cap) {
+    for (int i = 0; i < cap; i++) notes[i][0] = 0;
     int n = 0;
     switch (UI.euro_menu) {
     case 1:                              /* recruit: (None) + 3 dock */
@@ -822,16 +823,29 @@ int ui_euro_menu_rows(char out[][64], int cap) {
         for (int i = 0; i < 3 && n < cap; i++)
             snprintf(out[n++], 64, "%s", immigrant_name(&CR.dock[i]));
         break;
+    /* The price is a RIGHT-ALIGNED second column, not part of the label —
+     * census_euro_train shows "(Cost: N)" hard against the box's right
+     * edge.  It was concatenated into the row string until 2026-08-17,
+     * which laid the board's shop menus out unlike the reference port's
+     * (D12).  @MISC 13/14 are the "(Cost:" and ")" fragments. */
     case 2:                              /* the purchase catalog */
-        for (int r = 0; r < 6 && n < cap; r++)
-            snprintf(out[n++], 64, "%s (Cost: %ld)", euro_purchase_unit(r),
-                     (long)euro_purchase_price(r));
+        for (int r = 0; r < 6 && n < cap; r++) {
+            snprintf(out[n], 64, "%s", euro_purchase_unit(r));
+            snprintf(notes[n], 64, "%s %ld%s", dat_text_misc[13],
+                     (long)euro_purchase_price(r), dat_text_misc[14]);
+            n++;
+        }
         break;
     case 3:                              /* train, sorted by cost */
-        snprintf(out[n++], 64, "%s", dat_text_misc[3]);      /* None */
-        for (int r = 0; r < DAT_JOBTRAIN_COUNT && n < cap; r++)
-            snprintf(out[n++], 64, "%s (Cost: %ld)", euro_train_expert(r),
-                     (long)euro_train_cost(r));
+        snprintf(out[n], 64, "%s", dat_text_misc[3]);        /* None */
+        notes[n][0] = 0;
+        n++;
+        for (int r = 0; r < DAT_JOBTRAIN_COUNT && n < cap; r++) {
+            snprintf(out[n], 64, "%s", euro_train_expert(r));
+            snprintf(notes[n], 64, "%s %ld%s", dat_text_misc[13],
+                     (long)euro_train_cost(r), dat_text_misc[14]);
+            n++;
+        }
         break;
     case 4:                              /* euroShipRows — @EUROPESHIPOPTIONS */
         for (int r = 0; r < 4 && n < cap; r++)
@@ -2635,9 +2649,9 @@ static void in_click_inner(int mx, int my, int right) {
          * JS euroMenuBox — FLAGGED divergence, scripts click only
          * far-outside points. */
         if (UI.euro_menu) {
-            char erows[24][64];
+            char erows[24][64], enotes[24][64];
             const char *erp[24];
-            int en = ui_euro_menu_rows(erows, 24);
+            int en = ui_euro_menu_rows(erows, enotes, 24);
             for (int i = 0; i < en; i++) erp[i] = erows[i];
             rm_subs subs;
             memset(&subs, 0, sizeof(subs));
