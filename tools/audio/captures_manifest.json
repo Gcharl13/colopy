@@ -1,6 +1,6 @@
 {
  "0x20": {
-  "duration_s": 68.68,
+  "duration_s": 68.58,
   "file": "tune_20.wav",
   "first_signal_s": 0.5,
   "id": 32,
@@ -8,7 +8,7 @@
   "signal": true
  },
  "0x21": {
-  "duration_s": 69.71,
+  "duration_s": 69.61,
   "file": "tune_21.wav",
   "first_signal_s": 0.5,
   "id": 33,
@@ -16,7 +16,7 @@
   "signal": true
  },
  "0x22": {
-  "duration_s": 99.87,
+  "duration_s": 99.68,
   "file": "tune_22.wav",
   "first_signal_s": 0.5,
   "id": 34,
@@ -24,7 +24,7 @@
   "signal": true
  },
  "0x23": {
-  "duration_s": 101.88,
+  "duration_s": 101.89,
   "file": "tune_23.wav",
   "first_signal_s": 0.5,
   "id": 35,
@@ -32,7 +32,7 @@
   "signal": true
  },
  "0x24": {
-  "duration_s": 70.71,
+  "duration_s": 70.9,
   "file": "tune_24.wav",
   "first_signal_s": 0.5,
   "id": 36,
@@ -40,7 +40,7 @@
   "signal": true
  },
  "0x25": {
-  "duration_s": 74.23,
+  "duration_s": 74.14,
   "file": "tune_25.wav",
   "first_signal_s": 0.5,
   "id": 37,
@@ -48,7 +48,7 @@
   "signal": true
  },
  "0x26": {
-  "duration_s": 75.22,
+  "duration_s": 75.96,
   "file": "tune_26.wav",
   "first_signal_s": 0.5,
   "id": 38,
@@ -56,7 +56,7 @@
   "signal": true
  },
  "0x27": {
-  "duration_s": 30.97,
+  "duration_s": 31.06,
   "file": "tune_27.wav",
   "first_signal_s": 0.5,
   "id": 39,
@@ -64,7 +64,7 @@
   "signal": true
  },
  "0x28": {
-  "duration_s": 90.33,
+  "duration_s": 90.32,
   "file": "tune_28.wav",
   "first_signal_s": 0.5,
   "id": 40,
@@ -72,7 +72,7 @@
   "signal": true
  },
  "0x29": {
-  "duration_s": 49.58,
+  "duration_s": 50.21,
   "file": "tune_29.wav",
   "first_signal_s": 0.5,
   "id": 41,
@@ -80,7 +80,7 @@
   "signal": true
  },
  "0x2A": {
-  "duration_s": 90.35,
+  "duration_s": 90.1,
   "file": "tune_2a.wav",
   "first_signal_s": 0.5,
   "id": 42,
@@ -88,7 +88,7 @@
   "signal": true
  },
  "0x2B": {
-  "duration_s": 79.1,
+  "duration_s": 78.98,
   "file": "tune_2b.wav",
   "first_signal_s": 0.5,
   "id": 43,
@@ -96,7 +96,7 @@
   "signal": true
  },
  "0x2C": {
-  "duration_s": 79.28,
+  "duration_s": 79.1,
   "file": "tune_2c.wav",
   "first_signal_s": 0.5,
   "id": 44,
@@ -104,7 +104,7 @@
   "signal": true
  },
  "0x2D": {
-  "duration_s": 51.1,
+  "duration_s": 51.13,
   "file": "tune_2d.wav",
   "first_signal_s": 0.5,
   "id": 45,
@@ -112,7 +112,7 @@
   "signal": true
  },
  "0x2E": {
-  "duration_s": 47.06,
+  "duration_s": 47.07,
   "file": "tune_2e.wav",
   "first_signal_s": 0.5,
   "id": 46,
@@ -120,7 +120,7 @@
   "signal": true
  },
  "0x2F": {
-  "duration_s": 100.97,
+  "duration_s": 101.16,
   "file": "tune_2f.wav",
   "first_signal_s": 0.5,
   "id": 47,
@@ -128,7 +128,7 @@
   "signal": true
  },
  "0x30": {
-  "duration_s": 112.0,
+  "duration_s": 112.28,
   "file": "tune_30.wav",
   "first_signal_s": 0.5,
   "id": 48,
@@ -136,7 +136,7 @@
   "signal": true
  },
  "0x31": {
-  "duration_s": 55.17,
+  "duration_s": 55.22,
   "file": "tune_31.wav",
   "first_signal_s": 0.5,
   "id": 49,
@@ -144,7 +144,7 @@
   "signal": true
  },
  "0x32": {
-  "duration_s": 48.56,
+  "duration_s": 48.74,
   "file": "tune_32.wav",
   "first_signal_s": 0.5,
   "id": 50,
@@ -152,15 +152,15 @@
   "signal": true
  },
  "0x33": {
-  "duration_s": 59.64,
+  "duration_s": 59.75,
   "file": "tune_33.wav",
-  "first_signal_s": 0.51,
+  "first_signal_s": 0.5,
   "id": 51,
   "provenance": "empirical capture: stock CONFIG.COL driver under DOSBox 0.74 sb16 (OPL+DSP), Sound Test cheat, 44100 Hz WAV mixer capture",
   "signal": true
  },
  "0x34": {
-  "duration_s": 242.18,
+  "duration_s": 241.46,
   "file": "tune_34.wav",
   "first_signal_s": 0.5,
   "id": 52,
@@ -168,7 +168,7 @@
   "signal": true
  },
  "0x35": {
-  "duration_s": 25.39,
+  "duration_s": 24.97,
   "file": "tune_35.wav",
   "first_signal_s": 0.5,
   "id": 53,
@@ -176,7 +176,7 @@
   "signal": true
  },
  "0x36": {
-  "duration_s": 38.02,
+  "duration_s": 38.2,
   "file": "tune_36.wav",
   "first_signal_s": 0.5,
   "id": 54,
@@ -184,7 +184,7 @@
   "signal": true
  },
  "0x37": {
-  "duration_s": 71.2,
+  "duration_s": 71.43,
   "file": "tune_37.wav",
   "first_signal_s": 0.5,
   "id": 55,
@@ -192,7 +192,7 @@
   "signal": true
  },
  "0x38": {
-  "duration_s": 166.34,
+  "duration_s": 166.14,
   "file": "tune_38.wav",
   "first_signal_s": 0.5,
   "id": 56,
@@ -200,7 +200,7 @@
   "signal": true
  },
  "0x39": {
-  "duration_s": 95.83,
+  "duration_s": 96.34,
   "file": "tune_39.wav",
   "first_signal_s": 0.5,
   "id": 57,
@@ -208,7 +208,7 @@
   "signal": true
  },
  "0x3A": {
-  "duration_s": 72.2,
+  "duration_s": 72.58,
   "file": "tune_3a.wav",
   "first_signal_s": 0.5,
   "id": 58,
@@ -216,7 +216,7 @@
   "signal": true
  },
  "0x3B": {
-  "duration_s": 94.33,
+  "duration_s": 94.46,
   "file": "tune_3b.wav",
   "first_signal_s": 0.5,
   "id": 59,
@@ -224,7 +224,7 @@
   "signal": true
  },
  "0x3E": {
-  "duration_s": 9.85,
+  "duration_s": 9.82,
   "file": "tune_3e.wav",
   "first_signal_s": 0.5,
   "id": 62,
@@ -232,7 +232,7 @@
   "signal": true
  },
  "0x3F": {
-  "duration_s": 9.85,
+  "duration_s": 9.3,
   "file": "tune_3f.wav",
   "first_signal_s": 0.5,
   "id": 63,
