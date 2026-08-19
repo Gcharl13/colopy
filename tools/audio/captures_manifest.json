@@ -496,7 +496,7 @@
   "signal": false
  },
  "0x8020": {
-  "duration_s": 9.42,
+  "duration_s": 9.48,
   "file": "fanfare_8020.wav",
   "first_signal_s": 0.5,
   "id": 32800,
@@ -504,7 +504,7 @@
   "signal": true
  },
  "0x8021": {
-  "duration_s": 9.44,
+  "duration_s": 9.02,
   "file": "fanfare_8021.wav",
   "first_signal_s": 0.5,
   "id": 32801,
@@ -512,7 +512,7 @@
   "signal": true
  },
  "0x8022": {
-  "duration_s": 10.96,
+  "duration_s": 11.34,
   "file": "fanfare_8022.wav",
   "first_signal_s": 0.5,
   "id": 32802,
@@ -520,7 +520,7 @@
   "signal": true
  },
  "0x8023": {
-  "duration_s": 9.45,
+  "duration_s": 9.01,
   "file": "fanfare_8023.wav",
   "first_signal_s": 0.5,
   "id": 32803,
@@ -536,7 +536,7 @@
   "signal": true
  },
  "0x8025": {
-  "duration_s": 14.97,
+  "duration_s": 15.0,
   "file": "fanfare_8025.wav",
   "first_signal_s": 0.5,
   "id": 32805,
@@ -544,7 +544,7 @@
   "signal": true
  },
  "0x8026": {
-  "duration_s": 47.13,
+  "duration_s": 47.23,
   "file": "fanfare_8026.wav",
   "first_signal_s": 0.5,
   "id": 32806,
@@ -552,7 +552,7 @@
   "signal": true
  },
  "0x8027": {
-  "duration_s": 47.16,
+  "duration_s": 47.1,
   "file": "fanfare_8027.wav",
   "first_signal_s": 0.5,
   "id": 32807,
