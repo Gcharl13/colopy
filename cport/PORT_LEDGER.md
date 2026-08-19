@@ -5,554 +5,574 @@ One row per game.js function. `SIM` rows are ported to C; `RENDER`/
 rows flagged **HOIST** contain game decisions interleaved with
 presentation — the decision half moves into the core.
 
-Status column is maintained by hand as porting proceeds:
-`todo` / `ported` / `excluded` / `n.a.`
+**Status is DERIVED, not declared** — it is computed from the C
+sources' own `game.js:NNNN` citations on every run (ledger G3). It
+used to be a hard-coded `todo` that the header called
+hand-maintained, so 113 of 279 `todo` rows named functions the C
+demonstrably ports.
+
+`ported` = the C cites this function by name or cites a line inside
+it. `unevidenced` = no citation found, which is **not** proof it is
+unported — the C can implement logic without citing the line. The
+parity oracles prove behaviour; this column only maps the paper
+trail. `excluded` / `n.a.` are structural (render + browser layers).
 
 | Category | Count |
 |---|---|
 | BROWSER | 6 |
 | MIXED | 10 |
 | RENDER | 56 |
-| SIM | 430 |
-| UI | 14 |
+| SIM | 440 |
+| UI | 15 |
 
 ## MIXED (game logic interleaved with drawing) — hoist first
 
 | Function | Line | Lines | Status |
 |---|---|---|---|
-| `drawDialog` | 909 | 35 | todo |
-| `drawBriefing` | 1106 | 25 | todo |
-| `drawKing` | 1248 | 24 | todo |
-| `drawMap` | 1555 | 159 | todo |
-| `drawColony` | 3445 | 204 | todo |
-| `drawColonyPopup` | 3951 | 33 | todo |
-| `drawColonyPanel` | 4137 | 51 | todo |
-| `drawEuroMenu` | 4735 | 38 | todo |
-| `drawPedia` | 10667 | 56 | todo |
-| `frameBody` | 12685 | 36 | todo |
+| `drawDialog` | 922 | 35 | ported |
+| `drawBriefing` | 1121 | 25 | ported |
+| `drawKing` | 1263 | 24 | ported |
+| `drawMap` | 1583 | 159 | ported |
+| `drawColony` | 3597 | 204 | ported |
+| `drawColonyPopup` | 4146 | 41 | unevidenced |
+| `drawColonyPanel` | 4441 | 51 | ported |
+| `drawEuroMenu` | 5071 | 43 | ported |
+| `drawPedia` | 11008 | 56 | ported |
+| `frameBody` | 13081 | 36 | unevidenced |
 
 ## SIM — port to C
 
 | Function | Line | Lines | Flag | Status |
 |---|---|---|---|---|
-| `isPlaceholder` | 18 | 0 |  | todo |
-| `_merged` | 19 | 13 |  | todo |
-| `isEgaStubRow` | 33 | 2 |  | todo |
-| `usePalette` | 36 | 13 |  | todo |
-| `ink` | 50 | 6 |  | todo |
-| `lut` | 144 | 12 |  | todo |
-| `CYC` | 157 | 0 |  | todo |
-| `CYCLED` | 158 | 0 |  | todo |
-| `_cycAtlas` | 159 | 1 |  | todo |
-| `cyclePhase` | 161 | 8 |  | todo |
-| `frameSize` | 207 | 19 |  | todo |
-| `stripPitch` | 242 | 18 |  | todo |
-| `countRowLayout` | 282 | 37 |  | todo |
-| `tileTerrain` | 356 | 1 |  | ported |
-| `isWaterId` | 358 | 0 |  | todo |
-| `tileWater` | 359 | 1 |  | ported |
-| `tileHills` | 361 | 0 |  | ported |
-| `tileMountains` | 362 | 2 |  | ported |
-| `tileRiver` | 365 | 2 |  | ported |
-| `groundFrame` | 368 | 6 |  | todo |
-| `isForested` | 375 | 32 |  | todo |
-| `mask4` | 408 | 8 |  | todo |
-| `forestConnects` | 417 | 0 |  | todo |
-| `isScrub` | 418 | 1 |  | todo |
-| `riverConnects` | 420 | 19 |  | todo |
-| `detailClass` | 440 | 4 |  | todo |
-| `detailFrame` | 445 | 9 |  | todo |
-| `terrainName` | 455 | 13 |  | todo |
-| `at` | 469 | 6 |  | todo |
-| `IMPROVE` | 476 | 5 |  | todo |
-| `REGION` | 482 | 0 |  | todo |
-| `buildRegions` | 483 | 23 |  | todo |
-| `impAt` | 507 | 1 |  | todo |
-| `hasRoad` | 509 | 0 |  | todo |
-| `hasPlow` | 510 | 115 |  | todo |
-| `unit` | 626 | 23 |  | todo |
-| `mkUnit` | 650 | 17 |  | todo |
-| `VIEW_COLS` | 755 | 0 |  | todo |
-| `VIEW_ROWS` | 756 | 0 |  | todo |
-| `TILE_PX` | 757 | 0 |  | todo |
-| `centerOn` | 758 | 36 |  | todo |
-| `DFONT` | 855 | 5 |  | todo |
-| `dFont` | 861 | 0 |  | todo |
-| `dText` | 862 | 0 |  | todo |
-| `dRow` | 863 | 0 |  | todo |
-| `dialogInks` | 896 | 3 |  | todo |
-| `spanText` | 900 | 8 |  | todo |
-| `openDialog` | 945 | 23 |  | todo |
-| `askAmount` | 969 | 13 |  | todo |
-| `closeDialog` | 983 | 4 |  | todo |
-| `dialogKey` | 988 | 14 |  | todo |
-| `dialogClick` | 1003 | 9 |  | todo |
-| `MENU_OPTS` | 1013 | 2 |  | todo |
-| `DIFF_CELL` | 1038 | 4 |  | todo |
-| `NAT_CELL` | 1068 | 0 |  | todo |
-| `briefLines` | 1100 | 5 |  | todo |
-| `cardText` | 1132 | 14 |  | todo |
-| `woodcutOnce` | 1205 | 10 |  | todo |
-| `firstTribeContact` | 1216 | 31 |  | ported (met latch; woodcut after-cb headless-inert) |
-| `wrapText` | 1273 | 35 |  | todo |
-| `edgeBlend` | 1328 | 50 |  | todo |
-| `landBits` | 1379 | 7 |  | todo |
-| `coastPattern` | 1387 | 15 |  | todo |
-| `quadCodes` | 1403 | 9 |  | todo |
-| `haloGround` | 1413 | 8 |  | todo |
-| `ownerColour` | 1715 | 5 |  | todo |
-| `onSeaLane` | 1773 | 0 |  | todo |
-| `ordersMenuRows` | 1774 | 32 |  | todo |
-| `menuVisibleRows` | 1807 | 19 |  | todo |
-| `pulldownBox` | 1827 | 8 |  | todo |
-| `barTitleAt` | 1867 | 6 |  | todo |
-| `openMenu` | 1874 | 4 |  | todo |
-| `runMenuRow` | 1879 | 26 |  | todo |
-| `carriedLabel` | 1906 | 7 |  | todo |
-| `unitToColonist` | 2003 | 11 |  | todo |
-| `buildColony` | 2015 | 147 |  | todo |
-| `STARTING_BUILDINGS` | 2163 | 2 |  | todo |
-| `colonyAt` | 2166 | 5 |  | todo |
-| `abandonColony` | 2172 | 22 |  | todo |
-| `renameColony` | 2195 | 10 |  | todo |
-| `pillage` | 2206 | 15 |  | todo |
-| `beginGoToPage` | 2237 | 30 |  | todo |
-| `setGoTo` | 2268 | 5 |  | todo |
-| `advanceGoTo` | 2274 | 41 |  | ported |
-| `terrainCol` | 2316 | 5 |  | ported |
-| `improveWork` | 2322 | 0 |  | todo |
-| `terrainMove` | 2323 | 0 |  | todo |
-| `isHardy` | 2324 | 0 |  | todo |
-| `canImprove` | 2325 | 1 |  | ported (inline in cmd_improve) |
-| `workThreshold` | 2327 | 6 |  | ported |
-| `advanceImprovements` | 2334 | 61 |  | ported |
-| `spendTools` | 2396 | 18 |  | ported |
-| `tileYield` | 2415 | 26 |  | ported |
-| `jobIndex` | 2442 | 27 |  | todo |
-| `workplaceFor` | 2470 | 2 |  | todo |
-| `jobForBuilding` | 2473 | 4 |  | todo |
-| `chainCount` | 2478 | 8 |  | ported |
-| `colonyUpkeep` | 2487 | 5 |  | ported |
-| `totalUpkeep` | 2493 | 0 |  | ported |
-| `payUpkeep` | 2494 | 13 |  | ported |
-| `indoorRate` | 2508 | 7 |  | ported |
-| `toryPenalty` | 2516 | 9 |  | ported |
-| `isExpert` | 2526 | 8 |  | ported |
-| `improvementBonus` | 2535 | 8 |  | ported |
-| `fieldYield` | 2544 | 55 |  | ported |
-| `FIELD_JOB_NAMES` | 2600 | 0 |  | todo |
-| `bestFieldJob` | 2601 | 16 |  | todo |
-| `indoorYield` | 2618 | 11 |  | todo |
-| `colonyProduce` | 2630 | 72 |  | ported |
-| `colonyFood` | 2703 | 4 |  | todo |
-| `colonyHammers` | 2708 | 15 |  | todo |
-| `schoolLevel` | 2724 | 6 |  | todo |
-| `professionClass` | 2731 | 9 |  | todo |
-| `teacherGuard` | 2741 | 18 |  | todo |
-| `runSchool` | 2760 | 46 |  | ported |
-| `updateSoL` | 2807 | 14 |  | ported |
-| `warehouseLevel` | 2822 | 9 |  | todo |
-| `autoExport` | 2832 | 72 |  | ported |
-| `BUILDING_INDEPENDENT` | 2905 | 1 |  | todo |
-| `buildingChain` | 2907 | 22 |  | todo |
-| `BUILDING_FACTORY` | 2930 | 7 |  | todo |
-| `buildOptions` | 2938 | 26 |  | todo |
-| `unitBuildRow` | 2965 | 7 |  | todo |
-| `unitBuildRows` | 2973 | 21 |  | todo |
-| `colonyBesieged` | 2995 | 8 |  | ported |
-| `colonyTurn` | 3004 | 109 |  | ported |
-| `advanceConstruction` | 3114 | 77 |  | ported |
-| `customHouseMenu` | 3192 | 11 |  | todo |
-| `rushBuy` | 3204 | 22 |  | todo |
-| `sailForEurope` | 3227 | 11 |  | ported (cmd_sail_for_europe) |
-| `sailForNewWorld` | 3239 | 14 |  | ported (euro_sail_new_world) |
-| `advanceCrossings` | 3254 | 40 |  | ported |
-| `holdQty` | 3295 | 0 |  | ported (hold_qty) |
-| `holdAdd` | 3296 | 26 |  | ported (hold_add) |
-| `PLOT_CATEGORY` | 3323 | 22 |  | todo |
-| `ColonyRng` | 3346 | 22 |  | todo |
-| `buildingFrame` | 3369 | 12 |  | todo |
-| `colonyPlacement` | 3382 | 62 |  | todo |
-| `plazaRow` | 3774 | 19 |  | todo |
-| `occupationRows` | 3879 | 11 |  | todo |
-| `buildingCrew` | 3931 | 7 |  | todo |
-| `colonyPopupSmall` | 3939 | 0 |  | todo |
-| `colonyPopupBox` | 3940 | 10 |  | todo |
-| `openBuildPicker` | 3985 | 6 |  | todo |
-| `colonyPopupCommit` | 3992 | 70 |  | todo |
-| `colonyShips` | 4063 | 2 |  | todo |
-| `colonyShip` | 4066 | 5 |  | todo |
-| `productionRows` | 4202 | 75 |  | todo |
-| `bandFor` | 4278 | 6 |  | ported (band_for) |
-| `rollImmigrant` | 4285 | 18 |  | ported |
-| `seedMarket` | 4304 | 7 |  | todo |
-| `askPrice` | 4312 | 0 |  | ported |
-| `stepPrice` | 4313 | 20 |  | todo |
-| `driftMarket` | 4334 | 8 |  | ported |
-| `isBoycotted` | 4343 | 0 |  | ported (runtime CR.boycotts mirror) |
-| `sellGoods` | 4344 | 18 |  | ported |
-| `buyGoods` | 4363 | 16 |  | ported |
-| `EURO_ROWS` | 4380 | 11 |  | todo |
-| `purchasePrice` | 4392 | 1 |  | ported (inline in euro_purchase) |
-| `shipsInPort` | 4394 | 0 |  | ported (state filter, script portIdx) |
-| `entryName` | 4590 | 0 |  | ported (immigrant_name) |
-| `entryType` | 4591 | 26 |  | ported (entry_unit_type) |
-| `dockUnitRows` | 4618 | 28 |  | partial (the 'arm' subset = euro_arm_rows) |
-| `euroShipRows` | 4647 | 10 |  | todo |
-| `euroMenuRows` | 4658 | 23 |  | todo |
-| `TRAIN_CAPTION` | 4682 | 6 |  | todo |
-| `hasAdviser` | 4689 | 0 |  | todo |
-| `euroMenuBox` | 4690 | 44 |  | todo |
-| `openEuroMenu` | 4774 | 7 |  | todo |
-| `sellFromShip` | 4782 | 37 |  | ported (explicit-qty path + KISSUP; HOWMUCH5 amount ask = UI, slice 4+) |
-| `buyToShip` | 4820 | 20 |  | ported (euro_buy_to_ship) |
-| `euroContextCommit` | 4841 | 73 |  | partial (the 'arm' rows; board/front/bless = UI state) |
-| `euroMenuCommit` | 4915 | 82 |  | partial (recruit + purchase; train pending) |
-| `colonyLevel` | 4998 | 5 |  | ported |
-| `tensionBandIdx` | 5089 | 9 |  | ported |
-| `adjustTension` | 5099 | 42 |  | ported |
-| `seedNatives` | 5142 | 42 |  | todo |
-| `villageDemand` | 5185 | 22 |  | ported (village_demand, cached) |
-| `villageOffer` | 5208 | 19 |  | todo |
-| `villageSell` | 5228 | 24 |  | todo |
-| `villageAsk` | 5253 | 11 |  | todo |
-| `villageSurplus` | 5265 | 5 |  | ported (village_surplus_good) |
-| `villageBuy` | 5271 | 12 |  | todo |
-| `villageGift` | 5284 | 19 |  | todo |
-| `missionBand` | 5304 | 9 |  | ported (inline) |
-| `establishMission` | 5314 | 23 |  | ported |
-| `denounceHeresy` | 5338 | 24 |  | ported |
-| `conversionThreshold` | 5363 | 5 |  | ported |
-| `attemptConversions` | 5369 | 21 |  | ported |
-| `ageConverts` | 5391 | 26 |  | ported |
-| `nativeDemands` | 5418 | 126 |  | ported |
-| `clearObjection` | 5545 | 19 |  | ported (work_objection) |
-| `roadObjection` | 5565 | 33 |  | ported (work_objection) |
-| `surpriseRaidCheck` | 5599 | 6 |  | ported |
-| `raidOutcome` | 5606 | 35 |  | ported |
-| `raidTargetScore` | 5642 | 55 |  | ported |
-| `nativeRaid` | 5698 | 122 |  | ported |
-| `headingScore` | 5821 | 35 |  | ported |
-| `nativeMoveAI` | 5857 | 55 |  | ported |
-| `settlementCap` | 5913 | 3 |  | ported |
-| `missionStrength` | 5917 | 7 |  | ported |
-| `nativeTick` | 5925 | 21 |  | ported |
-| `spawnBrave` | 5947 | 23 |  | ported |
-| `villageSkill` | 5971 | 2 |  | ported (inline) |
-| `liveAmong` | 5974 | 47 |  | ported |
-| `speakToChief` | 6022 | 51 |  | ported |
-| `incitePrice` | 6074 | 6 |  | ported (inline) |
-| `inciteIndians` | 6081 | 14 |  | ported |
-| `inciteAgainst` | 6096 | 27 |  | ported (inline) |
-| `militaryScore` | 6124 | 4 |  | ported |
-| `demandTribute` | 6129 | 43 |  | ported |
-| `razeGold` | 6173 | 5 |  | ported (inline in attack_village) |
-| `removeVillage` | 6179 | 14 |  | ported (remove_village) |
-| `attackVillage` | 6194 | 58 |  | ported (attack_village) |
-| `fillTemplate` | 6253 | 45 |  | todo |
-| `eventSpeaker` | 6299 | 18 |  | todo |
-| `showEvent` | 6338 | 13 |  | todo |
-| `notice` | 6352 | 15 |  | todo |
-| `askZoom` | 6368 | 10 |  | ported (colony-zoom = screen_map latch) |
-| `askEvent` | 6379 | 19 |  | todo |
-| `enterVillage` | 6426 | 35 |  | ported (village_enter; INDIANWELCOME after-cb never fires headless) |
-| `villageActions` | 6462 | 15 |  | ported (village_action_rows) |
-| `villageRowCount` | 6478 | 2 |  | ported (row count) |
-| `actionLabel` | 6481 | 8 |  | todo |
-| `runVillageAction` | 6490 | 28 |  | ported (run_village_action; trade rows = slice 4c) |
-| `tradeSpeaker` | 6519 | 0 |  | todo |
-| `openVillageTrade` | 6520 | 28 |  | partial (anger refusals + empty-wagon; the haggle needs load-cargo) |
-| `tradeSellPick` | 6549 | 11 |  | todo |
-| `tradeSellOffer` | 6561 | 31 |  | todo |
-| `tradeSellRound` | 6593 | 50 |  | todo |
-| `tradeBuyPhase` | 6644 | 9 |  | todo |
-| `tradeBuyOffer` | 6654 | 15 |  | todo |
-| `tradeBuyRound` | 6670 | 35 |  | todo |
-| `villageBand` | 6706 | 3 |  | todo |
-| `villageBody` | 6710 | 12 |  | todo |
-| `villageBox` | 6723 | 14 |  | todo |
-| `villageSpeaker` | 6738 | 3 |  | todo |
-| `villageCommit` | 6760 | 23 |  | todo |
-| `terrainDefence` | 6784 | 6 |  | todo |
-| `defenceBonus` | 6791 | 13 |  | ported |
-| `MISC` | 6805 | 0 |  | todo |
-| `combatAnalysis` | 6806 | 77 |  | ported |
-| `combatStrength` | 6884 | 6 |  | ported |
-| `navalAttack` | 6891 | 38 |  | ported (naval_attack: SHIPCOMBAT gate, EVASIVE, CARGOCAPTURE/PICKACARGO) |
-| `shoreBombardment` | 6930 | 27 |  | ported |
-| `scoutColony` | 6958 | 32 |  | todo |
-| `powerStrength` | 6991 | 2 |  | ported |
-| `spanishSuccession` | 6994 | 38 |  | ported |
-| `ownerAdjective` | 7033 | 2 |  | todo |
-| `removeUnit` | 7036 | 16 |  | ported |
-| `becomeType` | 7053 | 8 |  | ported |
-| `applyDefeat` | 7062 | 118 |  | ported |
-| `tryPromote` | 7181 | 33 |  | ported |
-| `resolveAttack` | 7215 | 34 |  | ported |
-| `combatBox` | 7250 | 5 |  | todo |
-| `seedRivals` | 7297 | 15 |  | todo |
-| `checkContact` | 7313 | 48 |  | ported |
-| `newsTick` | 7362 | 147 |  | ported |
-| `rivalTurn` | 7510 | 105 |  | ported |
-| `fatherCost` | 7616 | 8 |  | ported |
-| `currentEra` | 7625 | 3 |  | todo |
-| `bellsPerTurn` | 7629 | 5 |  | todo |
-| `fatherCandidates` | 7635 | 14 |  | ported |
-| `updateCongress` | 7650 | 28 |  | ported |
-| `applyFatherEffect` | 7679 | 31 |  | ported |
-| `routeStopName` | 7711 | 7 |  | todo |
-| `routeName` | 7719 | 4 |  | todo |
-| `createRoute` | 7724 | 10 |  | todo |
-| `runTradeRoute` | 7735 | 73 |  | todo |
-| `advanceTradeRoutes` | 7809 | 4 |  | ported |
-| `tradeStopChoices` | 7814 | 3 |  | todo |
-| `openTradeMenu` | 7818 | 8 |  | todo |
-| `tradeRows` | 7827 | 8 |  | todo |
-| `tradeCommit` | 7836 | 53 |  | todo |
-| `optionWord` | 7933 | 2 |  | todo |
-| `setOptionWord` | 7936 | 4 |  | todo |
-| `optionBit` | 7941 | 5 |  | todo |
-| `optionChecked` | 7947 | 5 |  | todo |
-| `openOptions` | 7953 | 5 |  | todo |
-| `optionsCommit` | 7959 | 5 |  | todo |
-| `musicRow` | 8024 | 10 |  | ported — `cport/audio/` (the id→row table is engine data; the picker UI screen itself is still todo) |
-| `playTune` | 8035 | 3 |  | ported — `cport/audio/colopy_audio.c` `au_cmd`/`au_current_tune`; unlike the JS stub this one PLAYS (COLAUDIO.PAK renders/slices, empirical-capture tier — docs/AUDIO_PORT.md) |
-| `pickMusic` | 8039 | 15 |  | todo (UI screen; the engine side — gate, scheduler, class verbs — is ported in `cport/audio/`) |
-| `exitToDos` | 8055 | 31 |  | todo |
-| `tutOnce` | 8087 | 27 |  | todo |
-| `endGameSequence` | 8115 | 29 |  | ported |
-| `woiLocked` | 8145 | 3 |  | ported |
-| `retire` | 8149 | 18 |  | ported |
-| `relKey` | 8168 | 0 |  | todo |
-| `relWar` | 8169 | 0 |  | todo |
-| `relTreaty` | 8170 | 0 |  | todo |
-| `setWar` | 8171 | 4 |  | todo |
-| `setTreaty` | 8176 | 3 |  | todo |
-| `atWar` | 8180 | 0 |  | todo |
-| `haveTreaty` | 8181 | 0 |  | todo |
-| `declareWarOn` | 8182 | 5 |  | ported |
-| `signTreaty` | 8188 | 13 |  | ported (inside accept_treaty) |
-| `parleyEligible` | 8202 | 7 |  | ported |
-| `demandValue` | 8210 | 22 |  | ported |
-| `powerMetric` | 8233 | 7 |  | ported |
-| `meetingTone` | 8241 | 0 |  | ported |
-| `meetingSubs` | 8242 | 7 |  | todo |
-| `runMeeting` | 8250 | 11 |  | ported (run_meeting incl. HELLOAHOY) |
-| `meetingTopic` | 8262 | 117 |  | ported (PIRACY callback live: privateer recall + hub) |
-| `meetingPeaceHub` | 8380 | 17 |  | ported (rows 2-3 unreachable under ask policy) |
-| `acceptTreaty` | 8398 | 6 |  | ported |
-| `rivalForcesNearby` | 8405 | 3 |  | ported (inside meeting_withdraw) |
-| `meetingWithdraw` | 8409 | 20 |  | ported |
-| `meetingThreat` | 8430 | 13 |  | todo |
-| `meetingAlliance` | 8444 | 35 |  | todo |
-| `aiDiplomacyTick` | 8480 | 30 |  | ported |
-| `kingsCut` | 8511 | 3 |  | ported (inline in check_treasure) |
-| `treasureValue` | 8515 | 0 |  | ported (CR.unit_treasure * 100) |
-| `hasGalleon` | 8516 | 3 |  | ported (units + europe scan) |
-| `cashTreasureInFull` | 8520 | 7 |  | ported (check_treasure declared branch) |
-| `offerGalleon` | 8528 | 21 |  | ported (in check_treasure: gross/cut wired to unit_treasure) |
-| `checkTreasure` | 8550 | 16 |  | ported |
-| `SEEN` | 8567 | 0 |  | todo |
-| `SEEN_BIT` | 8568 | 0 |  | todo |
-| `isSeen` | 8569 | 2 |  | todo |
-| `sightRadius` | 8572 | 7 |  | todo |
-| `reveal` | 8580 | 9 |  | todo |
-| `revealAll` | 8590 | 11 |  | todo |
-| `taxInterval` | 8602 | 11 |  | ported |
-| `taxRaise` | 8614 | 8 |  | ported |
-| `taxPretext` | 8623 | 18 |  | ported |
-| `kingSalutation` | 8642 | 0 |  | todo |
-| `kingTaxDemand` | 8643 | 31 |  | ported |
-| `teaParty` | 8675 | 32 |  | ported (inline at tax-demand site) |
-| `rumourAt` | 8708 | 13 |  | ported (rumour_at + rumoursDone bitset) |
-| `scoutLevel` | 8722 | 6 |  | ported (scout_level) |
-| `d` | 8729 | 0 |  | ported (d_roll) |
-| `dsum` | 8730 | 5 |  | ported (dsum_roll) |
-| `enterRumour` | 8736 | 115 |  | ported (enter_rumour — full outcome tree, LOSTCITY0 picks, SCREWED) |
-| `nationalSoL` | 8852 | 12 |  | ported |
-| `seedREF` | 8865 | 13 |  | ported (load reads globals +0x5A..0x60 — the importer overwrite, not the formula) |
-| `refEra` | 8879 | 14 |  | ported (in grow_ref) |
-| `petitionLowerTaxes` | 8894 | 18 |  | todo |
-| `growREF` | 8913 | 38 |  | ported |
-| `kingWarCycle` | 8952 | 52 |  | ported |
-| `declareIndependence` | 9005 | 38 |  | ported |
-| `mobilizeContinentals` | 9044 | 37 |  | ported |
-| `coastalColonies` | 9082 | 3 |  | todo |
-| `refWave` | 9086 | 36 |  | ported |
-| `runWar` | 9123 | 102 |  | ported |
-| `mercPrice` | 9226 | 4 |  | todo |
-| `offerMercenaries` | 9231 | 45 |  | ported |
-| `solAnnounce` | 9277 | 24 |  | ported |
-| `toryUprising` | 9302 | 20 |  | ported |
-| `checkIntervention` | 9323 | 45 |  | ported |
-| `scoreParts` | 9369 | 155 |  | ported |
-| `professionIcon` | 9590 | 4 |  | todo |
-| `professionIconByName` | 9595 | 6 |  | todo |
-| `colonistFigure` | 9602 | 20 |  | todo |
-| `gaugeLayout` | 9668 | 20 |  | todo |
-| `drawReligiousReport` | 9714 | 13 |  | todo |
-| `europeTons` | 9836 | 0 |  | todo |
-| `europeGold` | 9837 | 4 |  | todo |
-| `f5Gold` | 9842 | 8 |  | todo |
-| `garrisonOf` | 9876 | 25 |  | todo |
-| `tribeLevel` | 10065 | 0 |  | todo |
-| `tribeStock` | 10066 | 1 |  | todo |
-| `tensionBand` | 10068 | 15 |  | todo |
-| `countProfession` | 10109 | 21 |  | todo |
-| `immigrationThreshold` | 10131 | 13 |  | ported |
-| `crossesPerTurn` | 10145 | 3 |  | todo |
-| `checkImmigration` | 10149 | 53 |  | ported |
-| `SAV_PROFESSION` | 10203 | 1 |  | todo |
-| `importSav` | 10205 | 287 |  | ported |
-| `b64bytes` | 10493 | 3 |  | todo |
-| `loadGame` | 10536 | 70 |  | todo |
-| `pediaNames` | 10607 | 30 |  | todo |
-| `pediaArticleId` | 10638 | 0 |  | todo |
-| `pediaComplete` | 10639 | 5 |  | todo |
-| `pediaList` | 10645 | 4 |  | todo |
-| `pediaBody` | 10650 | 5 |  | todo |
-| `pediaStats` | 10656 | 10 |  | todo |
-| `endTurn` | 10724 | 98 |  | ported (full chain; WoI steps gated) |
-| `moveCost` | 10823 | 5 |  | ported |
-| `step` | 10829 | 32 |  | ported (inside cmd_move) |
-| `advance` | 10862 | 5 |  | todo |
-| `skipUnit` | 10868 | 9 |  | ported (cmd_skip) |
-| `askLandName` | 10878 | 12 |  | todo |
-| `landfall` | 10891 | 23 |  | todo |
-| `moveSel` | 10915 | 248 |  | partial (cmd_move: land pure-step; attacks/ships/rival/village slices 3-5) |
-| `nextUnit` | 11164 | 12 |  | todo |
-| `setOrder` | 11177 | 9 |  | ported (cmd_set_order) |
-| `improveOrder` | 11187 | 26 |  | ported (cmd_improve) |
-| `returnToEurope` | 11214 | 8 |  | todo |
-| `centreView` | 11223 | 0 |  | todo |
-| `activateUnit` | 11224 | 5 |  | ported (cmd_activate) |
-| `loadCargo` | 11230 | 21 |  | todo |
-| `unloadCargo` | 11252 | 34 |  | todo |
-| `dumpCargo` | 11287 | 11 |  | todo |
-| `disbandUnit` | 11299 | 22 |  | todo |
-| `findColony` | 11322 | 15 |  | todo |
-| `setZoom` | 11338 | 86 |  | todo |
-| `openPedia` | 11425 | 4 |  | todo |
-| `regionAt` | 11514 | 3 |  | todo |
-| `colonyRegionAt` | 11518 | 0 |  | todo |
-| `europeRegionAt` | 11519 | 10 |  | todo |
-| `dropAllowed` | 11530 | 7 |  | todo |
-| `colonyCellAt` | 11538 | 7 |  | todo |
-| `plazaColonistAt` | 11546 | 12 |  | todo |
-| `colonyPlotAt` | 11559 | 30 |  | todo |
-| `euroHoldAt` | 11590 | 6 |  | todo |
-| `goodCellAt` | 11597 | 4 |  | todo |
-| `dragGhostFrame` | 11602 | 18 |  | todo |
-| `beginDrag` | 11621 | 3 |  | todo |
-| `cancelDrag` | 11625 | 1 |  | todo |
-| `europePointerDown` | 11713 | 55 |  | todo |
-| `colonyDrop` | 11857 | 103 |  | todo |
-| `europeDrop` | 11961 | 52 |  | todo |
-| `menuRowAt` | 12036 | 7 |  | todo |
-| `commitMenu` | 12381 | 8 |  | todo |
-| `flushMapMsg` | 12644 | 6 |  | todo |
-| `guarded` | 12676 | 8 |  | todo |
-| `dbgNum` | 12802 | 0 |  | todo |
-| `dbgList` | 12803 | 0 |  | todo |
-| `dbgGood` | 12804 | 0 |  | todo |
-| `dbgOn` | 12805 | 0 |  | todo |
-| `dbgEsc` | 12806 | 2 |  | todo |
-| `dbgVal` | 12809 | 18 |  | todo |
-| `dbgH` | 12828 | 0 |  | todo |
-| `dbgKV` | 12829 | 6 |  | todo |
-| `dbgTable` | 12836 | 10 |  | todo |
-| `hot` | 12847 | 0 |  | todo |
-| `dim` | 12848 | 3 |  | todo |
-| `dbgAddTab` | 12852 | 285 |  | todo |
-| `dbgFieldRows` | 13138 | 67 |  | todo |
+| `isPlaceholder` | 18 | 0 |  | unevidenced |
+| `_merged` | 19 | 13 |  | unevidenced |
+| `isEgaStubRow` | 33 | 2 |  | unevidenced |
+| `usePalette` | 36 | 25 |  | ported |
+| `ink` | 62 | 6 |  | unevidenced |
+| `lut` | 156 | 12 |  | unevidenced |
+| `CYC` | 169 | 0 |  | unevidenced |
+| `CYCLED` | 170 | 0 |  | unevidenced |
+| `_cycAtlas` | 171 | 1 |  | unevidenced |
+| `cyclePhase` | 173 | 8 |  | unevidenced |
+| `frameSize` | 219 | 19 |  | unevidenced |
+| `stripPitch` | 254 | 18 |  | unevidenced |
+| `countRowLayout` | 294 | 37 |  | unevidenced |
+| `tileTerrain` | 368 | 1 |  | unevidenced |
+| `isWaterId` | 370 | 0 |  | unevidenced |
+| `tileWater` | 371 | 1 |  | unevidenced |
+| `tileHills` | 373 | 0 |  | unevidenced |
+| `tileMountains` | 374 | 2 |  | unevidenced |
+| `tileRiver` | 377 | 2 |  | unevidenced |
+| `groundFrame` | 380 | 6 |  | ported |
+| `isForested` | 387 | 32 |  | ported |
+| `mask4` | 420 | 8 |  | unevidenced |
+| `forestConnects` | 429 | 0 |  | unevidenced |
+| `isScrub` | 430 | 1 |  | unevidenced |
+| `riverConnects` | 432 | 19 |  | unevidenced |
+| `detailClass` | 452 | 4 |  | unevidenced |
+| `detailFrame` | 457 | 9 |  | ported |
+| `terrainName` | 467 | 13 |  | ported |
+| `at` | 481 | 6 |  | ported |
+| `IMPROVE` | 488 | 5 |  | unevidenced |
+| `REGION` | 494 | 0 |  | unevidenced |
+| `buildRegions` | 495 | 23 |  | ported |
+| `impAt` | 519 | 1 |  | unevidenced |
+| `hasRoad` | 521 | 0 |  | unevidenced |
+| `hasPlow` | 522 | 116 |  | ported |
+| `unit` | 639 | 23 |  | ported |
+| `mkUnit` | 663 | 17 |  | ported |
+| `VIEW_COLS` | 768 | 0 |  | unevidenced |
+| `VIEW_ROWS` | 769 | 0 |  | unevidenced |
+| `TILE_PX` | 770 | 0 |  | ported |
+| `centerOn` | 771 | 36 |  | ported |
+| `DFONT` | 868 | 5 |  | unevidenced |
+| `dFont` | 874 | 0 |  | unevidenced |
+| `dText` | 875 | 0 |  | unevidenced |
+| `dRow` | 876 | 0 |  | unevidenced |
+| `dialogInks` | 909 | 3 |  | ported |
+| `spanText` | 913 | 8 |  | ported |
+| `openDialog` | 958 | 24 |  | ported |
+| `askAmount` | 983 | 14 |  | ported |
+| `closeDialog` | 998 | 4 |  | unevidenced |
+| `dialogKey` | 1003 | 14 |  | ported |
+| `dialogClick` | 1018 | 9 |  | ported |
+| `MENU_OPTS` | 1028 | 2 |  | unevidenced |
+| `DIFF_CELL` | 1053 | 4 |  | unevidenced |
+| `NAT_CELL` | 1083 | 0 |  | unevidenced |
+| `briefLines` | 1115 | 5 |  | unevidenced |
+| `cardText` | 1147 | 14 |  | ported |
+| `woodcutOnce` | 1220 | 10 |  | ported |
+| `firstTribeContact` | 1231 | 31 |  | unevidenced |
+| `wrapText` | 1288 | 35 |  | ported |
+| `edgeBlend` | 1343 | 50 |  | ported |
+| `landBits` | 1394 | 7 |  | unevidenced |
+| `coastPattern` | 1402 | 15 |  | unevidenced |
+| `quadCodes` | 1418 | 9 |  | ported |
+| `haloGround` | 1428 | 8 |  | unevidenced |
+| `ownerColour` | 1743 | 5 |  | ported |
+| `onSeaLane` | 1801 | 7 |  | unevidenced |
+| `nearestSeaLane` | 1809 | 16 |  | ported |
+| `orderSailHome` | 1826 | 12 |  | ported |
+| `ordersMenuRows` | 1839 | 32 |  | ported |
+| `menuVisibleRows` | 1872 | 19 |  | ported |
+| `pulldownBox` | 1892 | 8 |  | ported |
+| `barTitleAt` | 1932 | 6 |  | unevidenced |
+| `openMenu` | 1939 | 4 |  | ported |
+| `runMenuRow` | 1944 | 26 |  | ported |
+| `carriedLabel` | 1971 | 7 |  | ported |
+| `unitToColonist` | 2068 | 33 |  | unevidenced |
+| `colonistToFence` | 2102 | 7 |  | ported |
+| `buildColony` | 2110 | 147 |  | ported |
+| `STARTING_BUILDINGS` | 2258 | 2 |  | ported |
+| `colonyAt` | 2261 | 5 |  | unevidenced |
+| `abandonColony` | 2267 | 22 |  | ported |
+| `renameColony` | 2290 | 10 |  | ported |
+| `pillage` | 2301 | 15 |  | ported |
+| `beginGoToPage` | 2332 | 28 |  | ported |
+| `setGoTo` | 2361 | 5 |  | ported |
+| `advanceGoTo` | 2367 | 61 |  | ported |
+| `terrainCol` | 2429 | 5 |  | ported |
+| `improveWork` | 2435 | 0 |  | ported |
+| `terrainMove` | 2436 | 0 |  | unevidenced |
+| `isHardy` | 2437 | 0 |  | unevidenced |
+| `canImprove` | 2438 | 1 |  | ported |
+| `workThreshold` | 2440 | 6 |  | ported |
+| `advanceImprovements` | 2447 | 61 |  | ported |
+| `spendTools` | 2509 | 18 |  | ported |
+| `tileYield` | 2528 | 26 |  | ported |
+| `jobIndex` | 2555 | 27 |  | ported |
+| `workplaceFor` | 2583 | 2 |  | unevidenced |
+| `jobForBuilding` | 2586 | 4 |  | ported |
+| `chainCount` | 2591 | 8 |  | ported |
+| `colonyUpkeep` | 2600 | 5 |  | ported |
+| `totalUpkeep` | 2606 | 0 |  | unevidenced |
+| `payUpkeep` | 2607 | 13 |  | unevidenced |
+| `indoorRate` | 2621 | 7 |  | ported |
+| `toryPenalty` | 2629 | 9 |  | ported |
+| `isExpert` | 2639 | 8 |  | ported |
+| `improvementBonus` | 2648 | 8 |  | ported |
+| `fieldYield` | 2657 | 55 |  | ported |
+| `FIELD_JOB_NAMES` | 2713 | 0 |  | unevidenced |
+| `bestFieldJob` | 2714 | 16 |  | ported |
+| `indoorYield` | 2731 | 11 |  | unevidenced |
+| `colonyProduce` | 2743 | 76 |  | ported |
+| `warehouseCapacity` | 2820 | 26 |  | ported |
+| `horsesBredThisTurn` | 2847 | 10 |  | unevidenced |
+| `colonyFood` | 2858 | 4 |  | unevidenced |
+| `colonyHammers` | 2863 | 15 |  | ported |
+| `schoolLevel` | 2879 | 6 |  | unevidenced |
+| `professionClass` | 2886 | 9 |  | unevidenced |
+| `teacherGuard` | 2896 | 18 |  | ported |
+| `runSchool` | 2915 | 46 |  | ported |
+| `updateSoL` | 2962 | 14 |  | ported |
+| `warehouseLevel` | 2977 | 9 |  | unevidenced |
+| `autoExport` | 2987 | 72 |  | ported |
+| `BUILDING_INDEPENDENT` | 3060 | 1 |  | unevidenced |
+| `buildingChain` | 3062 | 22 |  | ported |
+| `BUILDING_FACTORY` | 3085 | 7 |  | unevidenced |
+| `buildOptions` | 3093 | 26 |  | ported |
+| `unitBuildRow` | 3120 | 7 |  | ported |
+| `unitBuildRows` | 3128 | 21 |  | unevidenced |
+| `colonyBesieged` | 3150 | 8 |  | ported |
+| `colonyTurn` | 3159 | 106 |  | ported |
+| `advanceConstruction` | 3266 | 77 |  | ported |
+| `customHouseMenu` | 3344 | 11 |  | ported |
+| `rushBuy` | 3356 | 22 |  | ported |
+| `sailForEurope` | 3379 | 11 |  | ported |
+| `sailForNewWorld` | 3391 | 14 |  | ported |
+| `advanceCrossings` | 3406 | 40 |  | ported |
+| `holdQty` | 3447 | 0 |  | unevidenced |
+| `holdAdd` | 3448 | 26 |  | ported |
+| `PLOT_CATEGORY` | 3475 | 22 |  | unevidenced |
+| `ColonyRng` | 3498 | 22 |  | unevidenced |
+| `buildingFrame` | 3521 | 12 |  | unevidenced |
+| `colonyPlacement` | 3534 | 62 |  | ported |
+| `occupationRows` | 4035 | 33 |  | ported |
+| `buildingCrew` | 4126 | 7 |  | ported |
+| `colonyPopupSmall` | 4134 | 0 |  | unevidenced |
+| `colonyPopupBox` | 4135 | 10 |  | ported |
+| `openBuildPicker` | 4188 | 15 |  | ported |
+| `unitOptionsCommit` | 4204 | 19 |  | unevidenced |
+| `unloadAllCargo` | 4224 | 21 |  | unevidenced |
+| `shipOptionsCommit` | 4246 | 15 |  | unevidenced |
+| `colonyPopupCommit` | 4262 | 104 |  | ported |
+| `colonyShips` | 4367 | 2 |  | unevidenced |
+| `colonyShip` | 4370 | 5 |  | unevidenced |
+| `productionRows` | 4506 | 75 |  | unevidenced |
+| `bandFor` | 4582 | 6 |  | ported |
+| `rollImmigrant` | 4589 | 18 |  | ported |
+| `seedMarket` | 4608 | 7 |  | ported |
+| `askPrice` | 4616 | 0 |  | unevidenced |
+| `stepPrice` | 4617 | 20 |  | ported |
+| `driftMarket` | 4638 | 8 |  | ported |
+| `isBoycotted` | 4647 | 0 |  | ported |
+| `sellGoods` | 4648 | 18 |  | ported |
+| `buyGoods` | 4667 | 16 |  | ported |
+| `EURO_ROWS` | 4684 | 11 |  | ported |
+| `purchasePrice` | 4696 | 1 |  | unevidenced |
+| `shipsInPort` | 4698 | 0 |  | unevidenced |
+| `entryName` | 4894 | 0 |  | unevidenced |
+| `entryType` | 4895 | 29 |  | ported |
+| `ARMOPT_ROWS` | 4925 | 16 |  | ported |
+| `armOptionSubs` | 4942 | 4 |  | ported |
+| `dockUnitRows` | 4947 | 37 |  | ported |
+| `euroShipRows` | 4985 | 8 |  | ported |
+| `euroMenuRows` | 4994 | 23 |  | ported |
+| `TRAIN_CAPTION` | 5018 | 6 |  | unevidenced |
+| `hasAdviser` | 5025 | 0 |  | unevidenced |
+| `euroMenuBox` | 5026 | 44 |  | ported |
+| `openEuroMenu` | 5115 | 7 |  | unevidenced |
+| `sellFromShip` | 5123 | 37 |  | ported |
+| `buyToShip` | 5161 | 20 |  | ported |
+| `euroContextCommit` | 5182 | 73 |  | ported |
+| `euroMenuCommit` | 5256 | 82 |  | ported |
+| `colonyLevel` | 5339 | 5 |  | ported |
+| `tensionBandIdx` | 5430 | 9 |  | ported |
+| `adjustTension` | 5440 | 42 |  | ported |
+| `seedNatives` | 5483 | 42 |  | ported |
+| `villageDemand` | 5526 | 22 |  | ported |
+| `villageOffer` | 5549 | 19 |  | ported |
+| `villageSell` | 5569 | 24 |  | unevidenced |
+| `villageAsk` | 5594 | 11 |  | unevidenced |
+| `villageSurplus` | 5606 | 5 |  | ported |
+| `villageBuy` | 5612 | 12 |  | unevidenced |
+| `villageGift` | 5625 | 19 |  | unevidenced |
+| `missionBand` | 5645 | 9 |  | ported |
+| `establishMission` | 5655 | 23 |  | ported |
+| `denounceHeresy` | 5679 | 24 |  | ported |
+| `conversionThreshold` | 5704 | 5 |  | ported |
+| `attemptConversions` | 5710 | 21 |  | ported |
+| `ageConverts` | 5732 | 26 |  | ported |
+| `nativeDemands` | 5759 | 126 |  | ported |
+| `clearObjection` | 5886 | 19 |  | unevidenced |
+| `roadObjection` | 5906 | 33 |  | ported |
+| `surpriseRaidCheck` | 5940 | 6 |  | unevidenced |
+| `raidOutcome` | 5947 | 35 |  | ported |
+| `raidTargetScore` | 5983 | 55 |  | ported |
+| `nativeRaid` | 6039 | 122 |  | ported |
+| `headingScore` | 6162 | 35 |  | ported |
+| `nativeMoveAI` | 6198 | 55 |  | ported |
+| `settlementCap` | 6254 | 3 |  | ported |
+| `missionStrength` | 6258 | 7 |  | ported |
+| `nativeTick` | 6266 | 21 |  | unevidenced |
+| `spawnBrave` | 6288 | 23 |  | ported |
+| `villageSkill` | 6312 | 2 |  | unevidenced |
+| `liveAmong` | 6315 | 47 |  | ported |
+| `speakToChief` | 6363 | 51 |  | ported |
+| `incitePrice` | 6415 | 6 |  | unevidenced |
+| `inciteIndians` | 6422 | 14 |  | ported |
+| `inciteAgainst` | 6437 | 27 |  | ported |
+| `militaryScore` | 6465 | 4 |  | ported |
+| `demandTribute` | 6470 | 43 |  | ported |
+| `razeGold` | 6514 | 5 |  | unevidenced |
+| `removeVillage` | 6520 | 14 |  | ported |
+| `attackVillage` | 6535 | 58 |  | ported |
+| `fillTemplate` | 6594 | 45 |  | ported |
+| `eventSpeaker` | 6640 | 18 |  | unevidenced |
+| `showEvent` | 6679 | 13 |  | unevidenced |
+| `notice` | 6693 | 15 |  | unevidenced |
+| `askZoom` | 6709 | 10 |  | ported |
+| `askEvent` | 6720 | 19 |  | unevidenced |
+| `enterVillage` | 6767 | 35 |  | ported |
+| `villageActions` | 6803 | 15 |  | ported |
+| `villageRowCount` | 6819 | 2 |  | ported |
+| `actionLabel` | 6822 | 8 |  | unevidenced |
+| `runVillageAction` | 6831 | 28 |  | ported |
+| `tradeSpeaker` | 6860 | 0 |  | unevidenced |
+| `openVillageTrade` | 6861 | 28 |  | ported |
+| `tradeSellPick` | 6890 | 11 |  | ported |
+| `tradeSellOffer` | 6902 | 31 |  | unevidenced |
+| `tradeSellRound` | 6934 | 50 |  | ported |
+| `tradeBuyPhase` | 6985 | 9 |  | unevidenced |
+| `tradeBuyOffer` | 6995 | 15 |  | ported |
+| `tradeBuyRound` | 7011 | 35 |  | ported |
+| `villageBand` | 7047 | 3 |  | ported |
+| `villageBody` | 7051 | 12 |  | ported |
+| `villageBox` | 7064 | 14 |  | ported |
+| `villageSpeaker` | 7079 | 3 |  | unevidenced |
+| `villageCommit` | 7101 | 23 |  | ported |
+| `terrainDefence` | 7125 | 6 |  | unevidenced |
+| `defenceBonus` | 7132 | 13 |  | ported |
+| `MISC` | 7146 | 0 |  | unevidenced |
+| `combatAnalysis` | 7147 | 77 |  | ported |
+| `combatStrength` | 7225 | 6 |  | unevidenced |
+| `navalAttack` | 7232 | 38 |  | ported |
+| `shoreBombardment` | 7271 | 27 |  | ported |
+| `scoutColony` | 7299 | 32 |  | ported |
+| `powerStrength` | 7332 | 2 |  | unevidenced |
+| `spanishSuccession` | 7335 | 38 |  | ported |
+| `ownerAdjective` | 7374 | 2 |  | unevidenced |
+| `removeUnit` | 7377 | 16 |  | unevidenced |
+| `becomeType` | 7394 | 8 |  | ported |
+| `applyDefeat` | 7403 | 118 |  | ported |
+| `tryPromote` | 7522 | 33 |  | ported |
+| `resolveAttack` | 7556 | 34 |  | ported |
+| `combatBox` | 7591 | 5 |  | unevidenced |
+| `seedRivals` | 7638 | 15 |  | unevidenced |
+| `checkContact` | 7654 | 48 |  | ported |
+| `newsTick` | 7703 | 147 |  | ported |
+| `rivalTurn` | 7851 | 105 |  | ported |
+| `fatherCost` | 7957 | 8 |  | ported |
+| `currentEra` | 7966 | 3 |  | ported |
+| `bellsPerTurn` | 7970 | 5 |  | unevidenced |
+| `fatherCandidates` | 7976 | 14 |  | unevidenced |
+| `updateCongress` | 7991 | 28 |  | ported |
+| `applyFatherEffect` | 8020 | 31 |  | ported |
+| `routeStopName` | 8052 | 7 |  | ported |
+| `routeName` | 8060 | 4 |  | unevidenced |
+| `createRoute` | 8065 | 10 |  | unevidenced |
+| `runTradeRoute` | 8076 | 73 |  | ported |
+| `advanceTradeRoutes` | 8150 | 4 |  | ported |
+| `tradeStopChoices` | 8155 | 3 |  | unevidenced |
+| `openTradeMenu` | 8159 | 8 |  | unevidenced |
+| `tradeRows` | 8168 | 8 |  | unevidenced |
+| `tradeCommit` | 8177 | 53 |  | ported |
+| `optionWord` | 8274 | 2 |  | ported |
+| `setOptionWord` | 8277 | 4 |  | unevidenced |
+| `optionBit` | 8282 | 5 |  | unevidenced |
+| `optionChecked` | 8288 | 5 |  | unevidenced |
+| `openOptions` | 8294 | 5 |  | ported |
+| `optionsCommit` | 8300 | 5 |  | ported |
+| `musicRow` | 8365 | 10 |  | ported |
+| `playTune` | 8376 | 3 |  | unevidenced |
+| `pickMusic` | 8380 | 15 |  | ported |
+| `exitToDos` | 8396 | 31 |  | ported |
+| `tutOnce` | 8428 | 27 |  | unevidenced |
+| `endGameSequence` | 8456 | 29 |  | ported |
+| `woiLocked` | 8486 | 3 |  | unevidenced |
+| `retire` | 8490 | 18 |  | ported |
+| `relKey` | 8509 | 0 |  | unevidenced |
+| `relWar` | 8510 | 0 |  | unevidenced |
+| `relTreaty` | 8511 | 0 |  | unevidenced |
+| `setWar` | 8512 | 4 |  | unevidenced |
+| `setTreaty` | 8517 | 3 |  | ported |
+| `atWar` | 8521 | 0 |  | unevidenced |
+| `haveTreaty` | 8522 | 0 |  | unevidenced |
+| `declareWarOn` | 8523 | 5 |  | ported |
+| `signTreaty` | 8529 | 13 |  | ported |
+| `parleyEligible` | 8543 | 7 |  | ported |
+| `demandValue` | 8551 | 22 |  | ported |
+| `powerMetric` | 8574 | 7 |  | ported |
+| `meetingTone` | 8582 | 0 |  | unevidenced |
+| `meetingSubs` | 8583 | 7 |  | ported |
+| `runMeeting` | 8591 | 11 |  | ported |
+| `meetingTopic` | 8603 | 117 |  | ported |
+| `meetingPeaceHub` | 8721 | 17 |  | ported |
+| `acceptTreaty` | 8739 | 6 |  | ported |
+| `rivalForcesNearby` | 8746 | 3 |  | unevidenced |
+| `meetingWithdraw` | 8750 | 20 |  | ported |
+| `meetingThreat` | 8771 | 13 |  | unevidenced |
+| `meetingAlliance` | 8785 | 35 |  | unevidenced |
+| `aiDiplomacyTick` | 8821 | 30 |  | ported |
+| `kingsCut` | 8852 | 3 |  | unevidenced |
+| `treasureValue` | 8856 | 0 |  | ported |
+| `hasGalleon` | 8857 | 3 |  | ported |
+| `cashTreasureInFull` | 8861 | 7 |  | ported |
+| `offerGalleon` | 8869 | 21 |  | ported |
+| `checkTreasure` | 8891 | 16 |  | ported |
+| `SEEN` | 8908 | 0 |  | unevidenced |
+| `SEEN_BIT` | 8909 | 0 |  | unevidenced |
+| `isSeen` | 8910 | 2 |  | unevidenced |
+| `sightRadius` | 8913 | 7 |  | ported |
+| `reveal` | 8921 | 9 |  | ported |
+| `revealAll` | 8931 | 11 |  | ported |
+| `taxInterval` | 8943 | 11 |  | unevidenced |
+| `taxRaise` | 8955 | 8 |  | ported |
+| `taxPretext` | 8964 | 18 |  | unevidenced |
+| `kingSalutation` | 8983 | 0 |  | unevidenced |
+| `kingTaxDemand` | 8984 | 31 |  | ported |
+| `teaParty` | 9016 | 32 |  | ported |
+| `rumourAt` | 9049 | 13 |  | ported |
+| `scoutLevel` | 9063 | 6 |  | ported |
+| `d` | 9070 | 0 |  | unevidenced |
+| `dsum` | 9071 | 5 |  | unevidenced |
+| `enterRumour` | 9077 | 115 |  | ported |
+| `nationalSoL` | 9193 | 12 |  | ported |
+| `seedREF` | 9206 | 13 |  | unevidenced |
+| `refEra` | 9220 | 14 |  | unevidenced |
+| `petitionLowerTaxes` | 9235 | 18 |  | ported |
+| `growREF` | 9254 | 38 |  | ported |
+| `kingWarCycle` | 9293 | 52 |  | ported |
+| `declareIndependence` | 9346 | 38 |  | ported |
+| `mobilizeContinentals` | 9385 | 37 |  | ported |
+| `coastalColonies` | 9423 | 3 |  | ported |
+| `refWave` | 9427 | 36 |  | ported |
+| `runWar` | 9464 | 102 |  | ported |
+| `mercPrice` | 9567 | 4 |  | unevidenced |
+| `offerMercenaries` | 9572 | 45 |  | ported |
+| `solAnnounce` | 9618 | 24 |  | unevidenced |
+| `toryUprising` | 9643 | 20 |  | ported |
+| `checkIntervention` | 9664 | 45 |  | ported |
+| `scoreParts` | 9710 | 155 |  | ported |
+| `professionIcon` | 9931 | 4 |  | unevidenced |
+| `professionIconByName` | 9936 | 6 |  | ported |
+| `colonistFigure` | 9943 | 20 |  | ported |
+| `gaugeLayout` | 10009 | 20 |  | unevidenced |
+| `drawReligiousReport` | 10055 | 13 |  | unevidenced |
+| `europeTons` | 10177 | 0 |  | unevidenced |
+| `europeGold` | 10178 | 4 |  | unevidenced |
+| `f5Gold` | 10183 | 8 |  | unevidenced |
+| `garrisonOf` | 10217 | 25 |  | ported |
+| `tribeLevel` | 10406 | 0 |  | unevidenced |
+| `tribeStock` | 10407 | 1 |  | unevidenced |
+| `tensionBand` | 10409 | 15 |  | ported |
+| `countProfession` | 10450 | 21 |  | ported |
+| `immigrationThreshold` | 10472 | 13 |  | ported |
+| `crossesPerTurn` | 10486 | 3 |  | unevidenced |
+| `checkImmigration` | 10490 | 53 |  | ported |
+| `SAV_PROFESSION` | 10544 | 1 |  | ported |
+| `importSav` | 10546 | 287 |  | ported |
+| `b64bytes` | 10834 | 3 |  | unevidenced |
+| `loadGame` | 10877 | 70 |  | ported |
+| `pediaNames` | 10948 | 30 |  | ported |
+| `pediaArticleId` | 10979 | 0 |  | unevidenced |
+| `pediaComplete` | 10980 | 5 |  | ported |
+| `pediaList` | 10986 | 4 |  | unevidenced |
+| `pediaBody` | 10991 | 5 |  | unevidenced |
+| `pediaStats` | 10997 | 10 |  | unevidenced |
+| `endTurn` | 11065 | 98 |  | ported |
+| `moveCost` | 11164 | 5 |  | ported |
+| `step` | 11170 | 32 |  | ported |
+| `advance` | 11203 | 5 |  | ported |
+| `skipUnit` | 11209 | 9 |  | ported |
+| `askLandName` | 11219 | 12 |  | ported |
+| `landfall` | 11232 | 23 |  | ported |
+| `moveSel` | 11256 | 248 |  | ported |
+| `nextUnit` | 11505 | 28 |  | ported |
+| `setOrder` | 11534 | 9 |  | ported |
+| `improveOrder` | 11544 | 26 |  | ported |
+| `returnToEurope` | 11571 | 7 |  | ported |
+| `centreView` | 11579 | 0 |  | unevidenced |
+| `activateUnit` | 11580 | 5 |  | ported |
+| `loadCargo` | 11586 | 21 |  | ported |
+| `unloadCargo` | 11608 | 34 |  | ported |
+| `dumpCargo` | 11643 | 11 |  | ported |
+| `disbandUnit` | 11655 | 22 |  | ported |
+| `findColony` | 11678 | 15 |  | ported |
+| `setZoom` | 11694 | 86 |  | ported |
+| `openPedia` | 11781 | 4 |  | ported |
+| `regionAt` | 11870 | 3 |  | unevidenced |
+| `colonyRegionAt` | 11874 | 0 |  | unevidenced |
+| `europeRegionAt` | 11875 | 10 |  | unevidenced |
+| `dropAllowed` | 11886 | 7 |  | unevidenced |
+| `colonyCellAt` | 11894 | 11 |  | unevidenced |
+| `plazaUnitAt` | 11906 | 8 |  | unevidenced |
+| `plazaColonistAt` | 11915 | 12 |  | unevidenced |
+| `colonyPlotAt` | 11928 | 30 |  | unevidenced |
+| `euroHoldAt` | 11959 | 6 |  | unevidenced |
+| `goodCellAt` | 11966 | 4 |  | unevidenced |
+| `dragGhostFrame` | 11971 | 18 |  | unevidenced |
+| `beginDrag` | 11990 | 3 |  | unevidenced |
+| `cancelDrag` | 11994 | 1 |  | unevidenced |
+| `europePointerDown` | 12085 | 55 |  | ported |
+| `colonyDrop` | 12229 | 105 |  | ported |
+| `europeDrop` | 12335 | 52 |  | ported |
+| `menuRowAt` | 12410 | 7 |  | ported |
+| `commitMenu` | 12777 | 8 |  | unevidenced |
+| `flushMapMsg` | 13040 | 6 |  | unevidenced |
+| `guarded` | 13072 | 8 |  | unevidenced |
+| `dbgNum` | 13198 | 0 |  | unevidenced |
+| `dbgList` | 13199 | 0 |  | unevidenced |
+| `dbgGood` | 13200 | 0 |  | unevidenced |
+| `dbgOn` | 13201 | 0 |  | unevidenced |
+| `dbgEsc` | 13202 | 2 |  | unevidenced |
+| `dbgVal` | 13205 | 18 |  | unevidenced |
+| `dbgH` | 13224 | 0 |  | unevidenced |
+| `dbgKV` | 13225 | 6 |  | unevidenced |
+| `dbgTable` | 13232 | 10 |  | unevidenced |
+| `hot` | 13243 | 0 |  | unevidenced |
+| `dim` | 13244 | 3 |  | unevidenced |
+| `dbgAddTab` | 13248 | 285 |  | unevidenced |
+| `dbgFieldRows` | 13534 | 67 |  | unevidenced |
 
 ## UI — input/screen plumbing (HOIST rows carry decisions)
 
 | Function | Line | Lines | Flag | Status |
 |---|---|---|---|---|
-| `beginGame` | 668 | 86 | HOIST | todo |
-| `layoutDialog` | 864 | 31 |  | excluded |
-| `beginGoTo` | 2222 | 14 |  | excluded |
-| `centreYield` | 3731 | 42 | HOIST | todo |
-| `colonyPopupRows` | 3891 | 39 | HOIST | todo |
-| `activeShip` | 4395 | 24 |  | excluded |
-| `openLoadMenu` | 10497 | 28 | HOIST | todo |
-| `onPointerDown` | 11627 | 26 | HOIST | todo |
-| `colonyPointerDown` | 11654 | 58 | HOIST | todo |
-| `onPointerMove` | 11769 | 44 | HOIST | todo |
-| `onPointerUp` | 11814 | 42 | HOIST | todo |
-| `confirmSailAway` | 12014 | 13 |  | excluded |
-| `onClick` | 12044 | 279 | HOIST | todo |
-| `onKey` | 12390 | 226 | HOIST | todo |
+| `beginGame` | 681 | 86 | HOIST | ported |
+| `layoutDialog` | 877 | 31 |  | ported |
+| `beginGoTo` | 2317 | 14 |  | ported |
+| `centreYield` | 3883 | 42 | HOIST | ported |
+| `plazaRow` | 3926 | 23 | HOIST | unevidenced |
+| `colonyPopupRows` | 4069 | 56 | HOIST | unevidenced |
+| `activeShip` | 4699 | 24 |  | excluded |
+| `openLoadMenu` | 10838 | 28 | HOIST | ported |
+| `onPointerDown` | 11996 | 26 | HOIST | unevidenced |
+| `colonyPointerDown` | 12023 | 61 | HOIST | ported |
+| `onPointerMove` | 12141 | 44 | HOIST | ported |
+| `onPointerUp` | 12186 | 42 | HOIST | ported |
+| `confirmSailAway` | 12388 | 13 |  | ported |
+| `onClick` | 12418 | 301 | HOIST | ported |
+| `onKey` | 12786 | 226 | HOIST | unevidenced |
 
 ## RENDER — excluded
 
 | Function | Line | Lines | Flag | Status |
 |---|---|---|---|---|
-| `loadImages` | 57 | 86 |  | excluded |
-| `cycAtlas` | 170 | 27 |  | excluded |
-| `sheetFrame` | 198 | 8 |  | excluded |
-| `countBadge` | 227 | 14 |  | excluded |
-| `proportionalStrip` | 261 | 20 |  | excluded |
-| `drawCountRow` | 320 | 35 |  | excluded |
-| `plaque` | 795 | 36 |  | excluded |
-| `hollowRect` | 832 | 22 |  | excluded |
-| `drawTitle` | 1016 | 21 |  | excluded |
-| `drawDifficulty` | 1043 | 24 |  | excluded |
-| `drawNation` | 1069 | 17 |  | excluded |
-| `drawName` | 1087 | 12 |  | excluded |
-| `drawCards` | 1147 | 17 |  | excluded |
-| `sheetAnchored` | 1165 | 14 |  | excluded |
-| `drawWoodcut` | 1180 | 24 |  | excluded |
-| `stencilBlit` | 1309 | 18 |  | excluded |
-| `drawTile` | 1422 | 103 |  | excluded |
-| `drawImprovements` | 1526 | 17 |  | excluded |
-| `zoomBuffer` | 1544 | 10 |  | excluded |
-| `nationPlate` | 1721 | 5 |  | excluded |
-| `drawUnit` | 1727 | 10 |  | excluded |
-| `drawMenuBar` | 1738 | 34 |  | excluded |
-| `drawPulldown` | 1836 | 30 |  | excluded |
-| `drawSidebar` | 1914 | 88 |  | excluded |
-| `drawColonyTiles` | 3650 | 80 |  | excluded |
-| `drawColonyPlaza` | 3794 | 57 |  | excluded |
-| `groundSpeckle` | 3852 | 26 |  | excluded |
-| `drawColonyDock` | 4072 | 57 |  | excluded |
-| `drawPanelButton` | 4130 | 6 |  | excluded |
-| `drawProductionStrips` | 4189 | 12 |  | excluded |
-| `drawSack` | 4420 | 13 |  | excluded |
-| `drawEurope` | 4434 | 155 |  | excluded |
-| `drawSettlement` | 5004 | 84 |  | excluded |
-| `drawSpeakerSheet` | 6318 | 19 |  | excluded |
-| `drawEvent` | 6399 | 26 |  | excluded |
-| `drawVillage` | 6742 | 17 |  | excluded |
-| `drawCombat` | 7256 | 40 |  | excluded |
-| `drawTrade` | 7890 | 42 |  | excluded |
-| `drawOptions` | 7965 | 58 |  | excluded |
-| `drawReport` | 9525 | 32 |  | excluded |
-| `okButton` | 9558 | 31 |  | excluded |
-| `drawLaborReport` | 9623 | 44 |  | excluded |
-| `gauge` | 9689 | 24 |  | excluded |
-| `drawCongressReport` | 9728 | 83 |  | excluded |
-| `drawEconomicReport` | 9812 | 23 |  | excluded |
-| `drawColonyReport` | 9851 | 24 |  | excluded |
-| `drawNavalReport` | 9902 | 58 |  | excluded |
-| `drawForeignReport` | 9961 | 60 |  | excluded |
-| `drawIndianReport` | 10022 | 42 |  | excluded |
-| `drawScoreReport` | 10084 | 24 |  | excluded |
-| `hit` | 11430 | 83 |  | excluded |
-| `drawDragGhost` | 12028 | 7 |  | excluded |
-| `drawHof` | 12354 | 26 |  | excluded |
-| `resize` | 12617 | 26 |  | excluded |
-| `frame` | 12651 | 24 |  | excluded |
-| `main` | 12722 | 79 |  | excluded |
+| `loadImages` | 69 | 86 |  | ported |
+| `cycAtlas` | 182 | 27 |  | excluded |
+| `sheetFrame` | 210 | 8 |  | excluded |
+| `countBadge` | 239 | 14 |  | excluded |
+| `proportionalStrip` | 273 | 20 |  | excluded |
+| `drawCountRow` | 332 | 35 |  | ported |
+| `plaque` | 808 | 36 |  | excluded |
+| `hollowRect` | 845 | 22 |  | ported |
+| `drawTitle` | 1031 | 21 |  | ported |
+| `drawDifficulty` | 1058 | 24 |  | ported |
+| `drawNation` | 1084 | 17 |  | ported |
+| `drawName` | 1102 | 12 |  | ported |
+| `drawCards` | 1162 | 17 |  | ported |
+| `sheetAnchored` | 1180 | 14 |  | ported |
+| `drawWoodcut` | 1195 | 24 |  | excluded |
+| `stencilBlit` | 1324 | 18 |  | ported |
+| `drawTile` | 1437 | 114 |  | ported |
+| `drawImprovements` | 1552 | 19 |  | ported |
+| `zoomBuffer` | 1572 | 10 |  | ported |
+| `nationPlate` | 1749 | 5 |  | ported |
+| `drawUnit` | 1755 | 10 |  | excluded |
+| `drawMenuBar` | 1766 | 34 |  | ported |
+| `drawPulldown` | 1901 | 30 |  | ported |
+| `drawSidebar` | 1979 | 88 |  | ported |
+| `drawColonyTiles` | 3802 | 80 |  | ported |
+| `drawColonyPlaza` | 3950 | 57 |  | ported |
+| `groundSpeckle` | 4008 | 26 |  | ported |
+| `drawColonyDock` | 4376 | 57 |  | ported |
+| `drawPanelButton` | 4434 | 6 |  | excluded |
+| `drawProductionStrips` | 4493 | 12 |  | excluded |
+| `drawSack` | 4724 | 13 |  | ported |
+| `drawEurope` | 4738 | 155 |  | ported |
+| `drawSettlement` | 5345 | 84 |  | ported |
+| `drawSpeakerSheet` | 6659 | 19 |  | ported |
+| `drawEvent` | 6740 | 26 |  | ported |
+| `drawVillage` | 7083 | 17 |  | excluded |
+| `drawCombat` | 7597 | 40 |  | ported |
+| `drawTrade` | 8231 | 42 |  | ported |
+| `drawOptions` | 8306 | 58 |  | ported |
+| `drawReport` | 9866 | 32 |  | excluded |
+| `okButton` | 9899 | 31 |  | ported |
+| `drawLaborReport` | 9964 | 44 |  | excluded |
+| `gauge` | 10030 | 24 |  | excluded |
+| `drawCongressReport` | 10069 | 83 |  | ported |
+| `drawEconomicReport` | 10153 | 23 |  | ported |
+| `drawColonyReport` | 10192 | 24 |  | ported |
+| `drawNavalReport` | 10243 | 58 |  | ported |
+| `drawForeignReport` | 10302 | 60 |  | ported |
+| `drawIndianReport` | 10363 | 42 |  | ported |
+| `drawScoreReport` | 10425 | 24 |  | ported |
+| `hit` | 11786 | 83 |  | excluded |
+| `drawDragGhost` | 12402 | 7 |  | ported |
+| `drawHof` | 12750 | 26 |  | excluded |
+| `resize` | 13013 | 26 |  | excluded |
+| `frame` | 13047 | 24 |  | excluded |
+| `main` | 13118 | 79 |  | excluded |
 
 ## BROWSER — n.a. on Teensy
 
 | Function | Line | Lines | Flag | Status |
 |---|---|---|---|---|
-| `saveGame` | 10526 | 9 |  | n.a. |
-| `hofLoad` | 12324 | 3 |  | n.a. |
-| `hofWrite` | 12328 | 25 |  | n.a. |
-| `dbgRender` | 13206 | 17 |  | n.a. |
-| `dbgToggle` | 13224 | 6 |  | n.a. |
-| `dbgInit` | 13231 | 9 |  | n.a. |
+| `saveGame` | 10867 | 9 |  | n.a. |
+| `hofLoad` | 12720 | 3 |  | n.a. |
+| `hofWrite` | 12724 | 25 |  | n.a. |
+| `dbgRender` | 13602 | 17 |  | n.a. |
+| `dbgToggle` | 13620 | 6 |  | n.a. |
+| `dbgInit` | 13627 | 9 |  | n.a. |

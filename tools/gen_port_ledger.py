@@ -14,6 +14,24 @@ Classification is mechanical, from what each function's body touches:
 A function that both draws and mutates game state is flagged MIXED:HOIST —
 those are the dangerous ones, listed first, because the game-logic half must
 move into the core before the render half can be dropped.
+
+STATUS IS DERIVED, NOT DECLARED (fixed 2026-08-19, ledger G3).
+
+It used to be a hard-coded literal `todo` for every SIM and HOIST row, written
+fresh on each run, while the header claimed it was "maintained by hand as
+porting proceeds". It was therefore never a record of anything: 279 rows read
+`todo`, and 113 of them named functions the C demonstrably ports. A column that
+cannot change is worse than a stale one — it looks like evidence.
+
+Status now comes from the C sources themselves. The C cites its origin as
+`game.js:NNNN` line references and `name (game.js:NNNN)` call-outs; a function
+is `ported` when the C cites it by name or cites any line inside its body.
+
+The honest limit, stated here because the column will be read as fact:
+a citation proves the C references that function; its ABSENCE proves nothing.
+The C can implement logic without citing the line, so `unevidenced` means
+"no citation found", NOT "not ported". The oracles are what prove behaviour;
+this column only maps where the port left a paper trail.
 """
 import json
 import re
@@ -23,6 +41,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "port/src/game.js"
 OUT = ROOT / "cport/PORT_LEDGER.md"
+C_DIRS = ("core", "game", "render")
 
 RENDER_PAT = re.compile(
     r"\bctx\.|\bcanvas\b|sheetFrame\(|plaque\(|hollowRect\(|countBadge\(|"
@@ -68,14 +87,25 @@ def classify(body):
         return "UI", ""
     return "SIM", ""
 
+def c_citations():
+    """Every game.js line and function name the C sources cite."""
+    text = "\n".join(p.read_text() for d in C_DIRS
+                     for p in sorted((ROOT / "cport" / d).glob("*.c")))
+    lines = {int(x) for x in re.findall(r"game\.js:(\d+)", text)}
+    names = set(re.findall(r"\b([a-zA-Z_$][\w$]*)\s*\(game\.js", text))
+    return lines, names
+
+
 def main():
     text = SRC.read_text()
     funcs = parse_functions(text)
     rows = []
+    cited_lines, cited_names = c_citations()
     for name, start, end, body in funcs:
         cat, flag = classify(body)
+        ported = name in cited_names or any(start <= c <= end for c in cited_lines)
         rows.append({"name": name, "line": start, "size": end - start,
-                     "cat": cat, "flag": flag})
+                     "cat": cat, "flag": flag, "ported": ported})
     counts = {}
     for r in rows:
         counts[r["cat"]] = counts.get(r["cat"], 0) + 1
@@ -87,8 +117,17 @@ def main():
           "rows flagged **HOIST** contain game decisions interleaved with",
           "presentation — the decision half moves into the core.",
           "",
-          "Status column is maintained by hand as porting proceeds:",
-          "`todo` / `ported` / `excluded` / `n.a.`",
+          "**Status is DERIVED, not declared** — it is computed from the C",
+          "sources' own `game.js:NNNN` citations on every run (ledger G3). It",
+          "used to be a hard-coded `todo` that the header called",
+          "hand-maintained, so 113 of 279 `todo` rows named functions the C",
+          "demonstrably ports.",
+          "",
+          "`ported` = the C cites this function by name or cites a line inside",
+          "it. `unevidenced` = no citation found, which is **not** proof it is",
+          "unported — the C can implement logic without citing the line. The",
+          "parity oracles prove behaviour; this column only maps the paper",
+          "trail. `excluded` / `n.a.` are structural (render + browser layers).",
           "",
           "| Category | Count |",
           "|---|---|"]
@@ -98,7 +137,9 @@ def main():
            "| Function | Line | Lines | Status |", "|---|---|---|---|"]
     for r in rows:
         if r["cat"] == "MIXED":
-            md.append("| `%s` | %d | %d | todo |" % (r["name"], r["line"], r["size"]))
+            md.append("| `%s` | %d | %d | %s |"
+                      % (r["name"], r["line"], r["size"],
+                         "ported" if r["ported"] else "unevidenced"))
     for cat, title in (("SIM", "SIM — port to C"),
                        ("UI", "UI — input/screen plumbing (HOIST rows carry decisions)"),
                        ("RENDER", "RENDER — excluded"),
@@ -107,13 +148,18 @@ def main():
                "|---|---|---|---|---|"]
         for r in rows:
             if r["cat"] == cat:
-                st = "todo" if cat == "SIM" or r["flag"] else \
-                     ("excluded" if cat in ("RENDER", "UI") else "n.a.")
+                if cat in ("SIM", "UI", "RENDER") :
+                    st = "ported" if r["ported"] else (
+                        "unevidenced" if cat == "SIM" or r["flag"] else "excluded")
+                else:
+                    st = "n.a."
                 md.append("| `%s` | %d | %d | %s | %s |"
                           % (r["name"], r["line"], r["size"], r["flag"], st))
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text("\n".join(md) + "\n")
+    np = sum(1 for r in rows if r["ported"])
     print("functions:", len(rows), " ", json.dumps(counts))
+    print("ported (cited by the C): %d / %d" % (np, len(rows)))
     print("->", OUT)
 
 if __name__ == "__main__":

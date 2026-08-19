@@ -13,8 +13,15 @@
  *     projected.  TODO with the tutorial subsystem.
  *   - colonyBesieged: rival wars counted (game.js:2995); the REF-unit
  *     term joins with the WoI slice.
- *   - unit BUILD targets: the importer nulls them (bip >= 42), so the
- *     completion path handles buildings only.  TBD with the unit pipeline.
+ *
+ * (A third limit used to be listed here -- "unit BUILD targets: the importer
+ * nulls them (bip >= 42), so the completion path handles buildings only".
+ * That was FIXED and the comment outlived it: the picker encodes a unit
+ * target as 0xC0+u, advance_construction resolves it through
+ * BUILD_UNIT_NAMES (see is_unit below), and the .CPX sidecar persists it
+ * across a save.  Wagon Trains, Artillery and ships all complete.  Removed
+ * 2026-08-19 in the staleness sweep -- it had been read as current by the
+ * ledger and by a status overview.)
  */
 #include <stdio.h>
 #include <string.h>

@@ -28,11 +28,14 @@ smoke: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 %.o: %.c $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@
-test: smoke budget
+test: smoke budget records
 	./smoke
 # The depth gate.  Self-locating, so the cwd here does not matter.
 budget:
 	python3 ../../tools/stack_budget.py --limit 4096
+# The staleness gate: the ledger's load-bearing claims, as probes that run.
+records:
+	python3 ../../tools/stale_check.py
 clean:
 	rm -f smoke $(OBJ)
-.PHONY: test budget clean
+.PHONY: test budget records clean
