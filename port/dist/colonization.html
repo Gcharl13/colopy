@@ -1663,9 +1663,20 @@ function drawTile(ctx, mx, my, px, py) {
 // (rendered and read off the art). A colony counts as a road end, which is what
 // makes a road into a colony connect.
 //
-// A plowed field has no dedicated frame anywhere in PHYS0, so the port marks it
-// with furrow dots in the ploughed-earth tone rather than borrowing a sprite
-// that means something else. Flagged in docs/UI_AUDIT_TRACKER.md.
+// A plowed field has no dedicated frame anywhere in PHYS0 -- the byte-verified
+// band list (spec/systems/map_system.md, func_0681A8/func_067A24) has river,
+// road, mountain, hill, forest, coast, fog, detail and mouth layers and no plow
+// layer at all -- so the port marks it with furrows in the ploughed-earth tone
+// rather than borrowing a sprite that means something else. STILL INVENTED,
+// still flagged in docs/UI_AUDIT_TRACKER.md: what the original draws for a
+// plowed tile is UNKNOWN, not "this".
+//
+// Widened 2026-08-19 from a single 4-dot row at py+12 to three staggered rows
+// across the tile. The one row was reported from the board as "off and mostly
+// hidden", which it was: 4 dark pixels on the bottom edge of a 16px tile, under
+// whatever unit or colony sprite lands on it. Three rows read as furrows at a
+// glance and survive a unit standing on the tile. This changes only how big the
+// invention is, not its status.
 function drawImprovements(ctx, mx, my, px, py) {
   if (hasRoad(mx, my)) {
     sheetFrame(ctx, 'PHYS0', PHYS.ROAD, px, py);
@@ -1677,7 +1688,9 @@ function drawImprovements(ctx, mx, my, px, py) {
   }
   if (hasPlow(mx, my)) {
     ctx.fillStyle = ink(0x55);
-    for (let k = 0; k < 4; k++) ctx.fillRect(px + 3 + k * 3, py + 12, 2, 1);
+    for (let r = 0; r < 3; r++)
+      for (let k = 0; k < 4; k++)
+        ctx.fillRect(px + 2 + k * 3 + (r & 1), py + 5 + r * 4, 2, 1);
   }
 }
 
@@ -4156,6 +4169,28 @@ function occupationRows(c, p) {
     return { label: name, note: `${n} ${g >= 0 ? DATA.cargo[g].name : ''}`,
              job: name, yield: n };
   });
+  // The colony's INDOOR workplaces, appended to the outdoor list.
+  //
+  // SHELL CHROME, and a deliberate departure from the two-menu split the
+  // port had: the field worker's menu offered only crops, and the only
+  // route from a field to a building was "Return to the fence", then find
+  // the man again in the plaza row, then his jobs menu. Nothing about the
+  // screen said so, so "I cannot put colonists in buildings" is what it
+  // looks like from the chair -- reported from the board 2026-08-19.
+  //
+  // This adds no mechanic. Every row commits through the SAME rules the
+  // plaza jobs menu already applied: jobForBuilding for the job, the
+  // @MORETHANTHREE crew cap, and teacherGuard for the Schoolhouse. It is
+  // a second route to a workplace the player could already reach, the way
+  // @UNITOPTIONS is a second route to orders the sim already had.
+  for (const b of c.buildings) {
+    if (!workplaceFor(b)) continue;
+    const job = jobForBuilding(b), g = JOB_GOOD[jobIndex(job)];
+    const made = g >= 0 ? DATA.cargo[g].name
+               : g === HAMMERS ? 'Hammers' : g === BELLS ? 'Bells'
+               : g === CROSSES ? 'Crosses' : 'Teaching';
+    rows.push({ label: b, note: `${job} - ${made}`, building: b });
+  }
   rows.push({ label: 'Return to the fence', note: '', job: null });
   return rows;
 }
@@ -4373,6 +4408,24 @@ function colonyPopupCommit() {
   } else if (G.colonyPopup === 'occupation') {
     const p = c.colonists[G.colonistSel];
     if (p) {
+      // A BUILDING row: same gates as the plaza jobs menu, then he leaves
+      // the field for the workplace.
+      if (r.building) {
+        const job = jobForBuilding(r.building);
+        if (buildingCrew(c, r.building) >= 3 && p.job !== job) {
+          showEvent('MORETHANTHREE', {});
+          G.colonyPopup = null;
+          return;
+        }
+        if (job === 'Teacher' && p.job !== 'Teacher' && teacherGuard(c, p)) {
+          G.colonyPopup = null;
+          return;
+        }
+        p.job = job;
+        p.cell = null;
+        G.colonyPopup = null;
+        return;
+      }
       // "Return to the fence" is not a job, it is OUT of the colony.
       if (r.job === null) {
         colonistToFence(c, G.colonistSel);

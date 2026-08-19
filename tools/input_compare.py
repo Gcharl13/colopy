@@ -291,6 +291,19 @@ def colony_clicks(C, K):
     C(6, 146)                       # plaza colonist 0
     C(6, 146)                       # again -> the jobs popup
     C(160, 96)                      # commit a popup row
+    # The occupation menu's BUILDING rows (added 2026-08-19). The block above
+    # opens the menu and commits by clicking a y, which lands on one of the
+    # outdoor jobs at the top -- the building rows sit below them and were
+    # never touched, so a merge bug there would have read green. This walks to
+    # them by KEY, which is deterministic whatever the colony has built:
+    # ArrowUp from row 0 wraps to the LAST row, so it also pins the two
+    # engines' row COUNTS against each other, which is where an off-by-one in
+    # the derived fence index would show.
+    C(280, 64)                      # select the worker on cell (1,0)
+    C(280, 64)                      # again -> his occupation menu
+    K("ArrowUp")                    # wrap to the last row: "Return to the fence"
+    K("ArrowUp")                    # -> the last BUILDING row
+    K("Enter")                      # commit: the field worker moves indoors
     C(303, 162)                     # view button 2 (build)
     C(276, 142)                     # BUILD_BTN change -> the picker
     C(160, 60)                      # a picker row

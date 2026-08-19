@@ -1223,6 +1223,25 @@ int ui_colony_popup_model(char labels[][40], char notes[][40],
                      g >= 0 && g < N_GOODS ? dat_cargo[g].name : "");
             n2++;
         }
+        /* then the colony's INDOOR workplaces — see the long note on
+         * occupationRows in game.js: a field worker had no route to a
+         * building but "Return to the fence" and a second menu, which
+         * reads as "colonists cannot go in buildings".  Same rows the
+         * plaza jobs menu offers, committed through the same gates. */
+        const colony_rt *r = &CR.col[cci];
+        for (int b = 0; b < r->n_bld && n2 < cap - 1; b++) {
+            const char *nm = dat_buildings[r->bld[b]].name;
+            int job = workplace_job_for_name(nm);
+            if (job < 0) continue;
+            int g = colony_job_good(job);
+            const char *made = g >= 0 && g < N_GOODS ? dat_cargo[g].name
+                             : g == -1 ? "Hammers" : g == -2 ? "Bells"
+                             : g == -3 ? "Crosses" : "Teaching";
+            snprintf(labels[n2], 40, "%s", nm);
+            snprintf(notes[n2], 40, "%s - %s",
+                     job < DAT_JOBS_COUNT ? dat_jobs[job] : "", made);
+            n2++;
+        }
         if (n2 < cap) {
             snprintf(labels[n2], 40, "Return to the fence");
             notes[n2][0] = 0;
@@ -1334,16 +1353,33 @@ static int best_field_job(int cci, int k, int dx, int dy) {
     return best;
 }
 
+/* The occupation menu's shape: rows 0..8 are the outdoor jobs, then one
+ * row per EMPLOYING building, then "Return to the fence" last.  The fence
+ * used to be a written-down index 9 because the list ended there; it moves
+ * with the building count now, so both the commit and the key handler's
+ * wrap-around derive it from here rather than each keeping their own copy
+ * (the two disagreeing is exactly how an off-by-one hides). */
+static int occupation_bld_rows(int cci) {
+    const colony_rt *r = &CR.col[cci];
+    int n = 0;
+    for (int b = 0; b < r->n_bld; b++)
+        if (workplace_job_for_name(dat_buildings[r->bld[b]].name) >= 0) n++;
+    return n;
+}
+static int occupation_row_count(int cci) { return 10 + occupation_bld_rows(cci); }
+
 /* colonyPopupCommit 'occupation' (game.js:4003): a job row re-tasks the
- * worker on his cell (Teacher through the same guard); the last row
- * calls him back to the plaza (cell null + job null) */
+ * worker on his cell (Teacher through the same guard); a BUILDING row
+ * moves him indoors; the last row calls him back to the plaza */
 static void occupation_commit(void) {
     int cci = player_colony_rec(UI.colony);
     if (cci < 0) { UI.colony_popup = 0; return; }
     ColonyRecord *c = &CS.colonies[cci];
     int k = UI.colonist_sel, row = UI.colony_popup_row;
+    const colony_rt *r = &CR.col[cci];
+    int fence_row = 9 + occupation_bld_rows(cci);
     if (k >= 0 && k < c->population) {
-        if (row == 9) {
+        if (row == fence_row) {
             /* "Return to the fence" is not a job, it is OUT of the colony:
              * the man stops being a member and stands on the square, where
              * the plaza row draws him in the garrison group and the food
@@ -1351,6 +1387,36 @@ static void occupation_commit(void) {
             colonist_to_fence(cci, k);
             if (UI.colonist_sel >= c->population)
                 UI.colonist_sel = (int8_t)(c->population ? c->population - 1 : 0);
+        } else if (row >= 9 && row < fence_row) {
+            /* a BUILDING row: the same gates the plaza jobs menu applies,
+             * then he leaves the field for the workplace */
+            int seen = 0, job = -1;
+            for (int b = 0; b < r->n_bld && job < 0; b++) {
+                int j = workplace_job_for_name(dat_buildings[r->bld[b]].name);
+                if (j < 0) continue;
+                if (9 + seen == row) job = j;
+                seen++;
+            }
+            if (job < 0) { UI.colony_popup = 0; return; }
+            int crew = 0;
+            for (int q = 0; q < c->population && q < 32; q++) {
+                int qc = -1;
+                for (int j = 0; j < 8; j++)
+                    if ((uint8_t)c->tiles[j] == (uint8_t)q) qc = j;
+                if (qc < 0 && c->occupation[q] == job) crew++;
+            }
+            if (crew >= 3 && c->occupation[k] != job) {
+                ev_emit("MORETHANTHREE", 0, 0, 0, 0);
+                UI.colony_popup = 0;
+                return;
+            }
+            if (job == workplace_job_for_name("Schoolhouse") &&
+                c->occupation[k] != job && teacher_guard(cci, k)) {
+                UI.colony_popup = 0;
+                return;
+            }
+            c->occupation[k] = (uint8_t)job;
+            cell_clear(c, k);                    /* p.cell = null */
         } else if (row >= 0 && row <= 8) {
             int job = row;
             if (job < DAT_JOBS_COUNT &&
@@ -2175,7 +2241,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
             int n = 1;
             if (cci >= 0)
                 n = UI.colony_popup == 2 ? build_rows(cci, names)
-                  : UI.colony_popup == 3 ? 10      /* 9 jobs + the fence */
+                  : UI.colony_popup == 3 ? occupation_row_count(cci)
                   : UI.colony_popup == 4 ? 5       /* @UNITOPTIONS */
                   : UI.colony_popup == 5 ? 6       /* @SHIPOPTIONS */
                                          : jobs_rows(cci, names);

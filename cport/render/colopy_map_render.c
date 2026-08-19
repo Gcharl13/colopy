@@ -246,9 +246,16 @@ static void draw_improvements(int mx, int my, int px, int py) {
                 rd_blit(&RD.phys0, PH_ROAD + 1 + d, px, py);
         }
     }
-    if (imp_at(mx, my) & PLOW_BIT)      /* furrow dots — port-invented, flagged */
-        for (int k = 0; k < 4; k++)
-            rd_fill(px + 3 + k * 3, py + 12, 2, 1, 0x55);
+    /* Furrows — PORT-INVENTED, flagged. The byte-verified PHYS0 band list
+     * (spec/systems/map_system.md) has no plow layer at all, so what the
+     * original draws here is UNKNOWN. Widened 2026-08-19 from one 4-dot row
+     * on the tile's bottom edge, reported from the board as "off and mostly
+     * hidden" — which it was, under any unit standing there. Bigger
+     * invention, same status. */
+    if (imp_at(mx, my) & PLOW_BIT)
+        for (int r = 0; r < 3; r++)
+            for (int k = 0; k < 4; k++)
+                rd_fill(px + 2 + k * 3 + (r & 1), py + 5 + r * 4, 2, 1, 0x55);
 }
 
 /* drawTile (game.js:1422) — the O514 -> O513 -> O512 chain */
