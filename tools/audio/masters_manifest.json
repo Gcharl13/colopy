@@ -1,164 +1,92 @@
 {
  "fanfare_8020": {
-  "duration_s": 3.86,
+  "duration_s": 3.85,
   "master": "masters/fanfare_8020.wav",
-  "peak": 4470,
+  "peak": 4500,
   "trim": [
-   1.37,
-   5.23
+   1.41,
+   5.27
   ]
  },
  "fanfare_8021": {
   "duration_s": 3.99,
   "master": "masters/fanfare_8021.wav",
-  "peak": 5009,
+  "peak": 5010,
   "trim": [
-   1.37,
-   5.36
+   1.42,
+   5.41
   ]
  },
  "fanfare_8022": {
-  "duration_s": 5.64,
+  "duration_s": 5.62,
   "master": "masters/fanfare_8022.wav",
-  "peak": 3230,
+  "peak": 3369,
   "trim": [
-   1.37,
-   7.01
+   1.41,
+   7.03
   ]
  },
  "fanfare_8023": {
   "duration_s": 3.73,
   "master": "masters/fanfare_8023.wav",
-  "peak": 3290,
+  "peak": 3284,
   "trim": [
-   1.37,
-   5.1
+   1.42,
+   5.15
   ]
  },
  "fanfare_8024": {
   "duration_s": 7.51,
   "master": "masters/fanfare_8024.wav",
-  "peak": 2061,
+  "peak": 2071,
   "trim": [
-   1.37,
-   8.87
+   1.4,
+   8.91
   ]
  },
  "fanfare_8025": {
-  "duration_s": 9.84,
+  "duration_s": 9.82,
   "master": "masters/fanfare_8025.wav",
-  "peak": 3078,
+  "peak": 3131,
   "trim": [
-   1.36,
-   11.2
+   1.43,
+   11.25
   ]
  },
  "fanfare_8026": {
-  "duration_s": 45.76,
+  "duration_s": 45.82,
   "master": "masters/fanfare_8026.wav",
-  "peak": 9050,
+  "peak": 8979,
   "trim": [
-   1.37,
-   47.13
+   1.41,
+   47.23
   ]
  },
  "fanfare_8027": {
-  "duration_s": 47.16,
+  "duration_s": 47.1,
   "master": "masters/fanfare_8027.wav",
-  "peak": 5524,
+  "peak": 5285,
   "trim": [
    0.0,
-   47.16
+   47.1
   ]
  },
  "sfx_47": {
   "duration_s": 0.5,
   "master": "masters/sfx_47.wav",
-  "peak": 2780,
+  "peak": 2728,
+  "trim": [
+   1.32,
+   1.82
+  ]
+ },
+ "sfx_59": {
+  "duration_s": 3.32,
+  "master": "masters/sfx_59.wav",
+  "peak": 9558,
   "trim": [
    1.31,
-   1.81
-  ]
- },
- "sfx_4d": {
-  "duration_s": 4.06,
-  "master": "masters/sfx_4d.wav",
-  "peak": 8379,
-  "trim": [
-   1.26,
-   5.32
-  ]
- },
- "sfx_4e": {
-  "duration_s": 3.79,
-  "master": "masters/sfx_4e.wav",
-  "peak": 3956,
-  "trim": [
-   1.3,
-   5.09
-  ]
- },
- "sfx_4f": {
-  "duration_s": 3.79,
-  "master": "masters/sfx_4f.wav",
-  "peak": 8471,
-  "trim": [
-   1.3,
-   5.1
-  ]
- },
- "sfx_50": {
-  "duration_s": 4.74,
-  "master": "masters/sfx_50.wav",
-  "peak": 8520,
-  "trim": [
-   1.27,
-   6.01
-  ]
- },
- "sfx_51": {
-  "duration_s": 4.4,
-  "master": "masters/sfx_51.wav",
-  "peak": 8492,
-  "trim": [
-   1.27,
-   5.67
-  ]
- },
- "sfx_52": {
-  "duration_s": 3.71,
-  "master": "masters/sfx_52.wav",
-  "peak": 4018,
-  "trim": [
-   1.27,
-   4.98
-  ]
- },
- "sfx_54": {
-  "duration_s": 5.73,
-  "master": "masters/sfx_54.wav",
-  "peak": 8436,
-  "trim": [
-   1.27,
-   6.99
-  ]
- },
- "sfx_55": {
-  "duration_s": 2.18,
-  "master": "masters/sfx_55.wav",
-  "peak": 8390,
-  "trim": [
-   1.27,
-   3.45
-  ]
- },
- "sfx_56": {
-  "duration_s": 4.42,
-  "master": "masters/sfx_56.wav",
-  "peak": 8520,
-  "trim": [
-   1.26,
-   5.69
+   4.63
   ]
  },
  "sfx_5a": {
@@ -166,296 +94,287 @@
   "master": "masters/sfx_5a.wav",
   "peak": 3349,
   "trim": [
-   1.27,
-   6.71
-  ]
- },
- "sfx_5b": {
-  "duration_s": 4.04,
-  "master": "masters/sfx_5b.wav",
-  "peak": 8453,
-  "trim": [
-   1.27,
-   5.31
+   1.31,
+   6.75
   ]
  },
  "sfx_5d": {
   "duration_s": 1.5,
   "master": "masters/sfx_5d.wav",
-  "peak": 1390,
+  "peak": 1391,
   "trim": [
-   1.27,
-   2.77
+   1.33,
+   2.82
   ]
  },
  "tune_20": {
   "duration_s": 62.93,
   "master": "masters/tune_20.wav",
-  "peak": 2462,
+  "peak": 2348,
   "trim": [
-   1.29,
-   64.22
+   1.27,
+   64.19
   ]
  },
  "tune_21": {
   "duration_s": 64.09,
   "master": "masters/tune_21.wav",
-  "peak": 2636,
+  "peak": 2365,
   "trim": [
    1.29,
    65.39
   ]
  },
  "tune_22": {
-  "duration_s": 93.73,
+  "duration_s": 93.74,
   "master": "masters/tune_22.wav",
-  "peak": 1713,
+  "peak": 1702,
   "trim": [
-   1.28,
+   1.27,
    95.01
   ]
  },
  "tune_23": {
   "duration_s": 95.93,
   "master": "masters/tune_23.wav",
-  "peak": 3304,
+  "peak": 3513,
   "trim": [
-   1.28,
-   97.2
+   1.3,
+   97.23
   ]
  },
  "tune_24": {
   "duration_s": 65.48,
   "master": "masters/tune_24.wav",
-  "peak": 4344,
+  "peak": 4042,
   "trim": [
-   1.27,
-   66.74
+   1.31,
+   66.79
   ]
  },
  "tune_25": {
-  "duration_s": 68.45,
+  "duration_s": 68.44,
   "master": "masters/tune_25.wav",
-  "peak": 4336,
+  "peak": 4158,
   "trim": [
-   1.3,
-   69.75
+   1.33,
+   69.77
   ]
  },
  "tune_26": {
-  "duration_s": 69.97,
+  "duration_s": 70.81,
   "master": "masters/tune_26.wav",
-  "peak": 3542,
+  "peak": 4382,
   "trim": [
-   1.27,
-   71.25
+   1.36,
+   72.17
   ]
  },
  "tune_27": {
   "duration_s": 25.91,
   "master": "masters/tune_27.wav",
-  "peak": 3755,
+  "peak": 3846,
   "trim": [
-   1.3,
-   27.21
+   1.34,
+   27.25
   ]
  },
  "tune_28": {
   "duration_s": 84.79,
   "master": "masters/tune_28.wav",
-  "peak": 7538,
+  "peak": 7366,
   "trim": [
-   1.27,
-   86.06
+   1.31,
+   86.1
   ]
  },
  "tune_29": {
   "duration_s": 44.67,
   "master": "masters/tune_29.wav",
-  "peak": 5114,
+  "peak": 5310,
   "trim": [
-   1.27,
-   45.94
+   1.3,
+   45.97
   ]
  },
  "tune_2a": {
   "duration_s": 84.79,
   "master": "masters/tune_2a.wav",
-  "peak": 7836,
+  "peak": 7242,
   "trim": [
-   1.27,
-   86.06
+   1.32,
+   86.11
   ]
  },
  "tune_2b": {
   "duration_s": 73.87,
   "master": "masters/tune_2b.wav",
-  "peak": 7336,
+  "peak": 7158,
   "trim": [
-   1.26,
-   75.13
+   1.31,
+   75.18
   ]
  },
  "tune_2c": {
   "duration_s": 73.86,
   "master": "masters/tune_2c.wav",
-  "peak": 7191,
+  "peak": 6809,
   "trim": [
-   1.27,
-   75.13
+   1.3,
+   75.16
   ]
  },
  "tune_2d": {
-  "duration_s": 46.03,
+  "duration_s": 46.04,
   "master": "masters/tune_2d.wav",
-  "peak": 7154,
+  "peak": 7000,
   "trim": [
-   1.27,
-   47.3
+   1.29,
+   47.33
   ]
  },
  "tune_2e": {
   "duration_s": 41.93,
   "master": "masters/tune_2e.wav",
-  "peak": 5929,
+  "peak": 5853,
   "trim": [
    1.28,
-   43.2
+   43.21
   ]
  },
  "tune_2f": {
-  "duration_s": 95.82,
+  "duration_s": 95.84,
   "master": "masters/tune_2f.wav",
-  "peak": 5449,
+  "peak": 5544,
   "trim": [
-   1.27,
-   97.09
+   1.3,
+   97.14
   ]
  },
  "tune_30": {
-  "duration_s": 106.9,
+  "duration_s": 106.91,
   "master": "masters/tune_30.wav",
-  "peak": 5958,
+  "peak": 6051,
   "trim": [
-   1.28,
-   108.18
+   1.31,
+   108.22
   ]
  },
  "tune_31": {
   "duration_s": 49.93,
   "master": "masters/tune_31.wav",
-  "peak": 6089,
+  "peak": 5883,
   "trim": [
-   1.31,
+   1.3,
    51.23
   ]
  },
  "tune_32": {
   "duration_s": 40.05,
   "master": "masters/tune_32.wav",
-  "peak": 5222,
+  "peak": 5443,
   "trim": [
-   1.26,
-   41.31
+   1.3,
+   41.35
   ]
  },
  "tune_33": {
   "duration_s": 54.57,
   "master": "masters/tune_33.wav",
-  "peak": 4479,
+  "peak": 4476,
   "trim": [
-   1.28,
-   55.85
+   1.31,
+   55.88
   ]
  },
  "tune_34": {
-  "duration_s": 240.9,
+  "duration_s": 240.15,
   "master": "masters/tune_34.wav",
-  "peak": 7878,
+  "peak": 7774,
   "trim": [
-   1.29,
-   242.18
+   1.31,
+   241.46
   ]
  },
  "tune_35": {
-  "duration_s": 20.99,
+  "duration_s": 21.02,
   "master": "masters/tune_35.wav",
-  "peak": 4918,
+  "peak": 4882,
   "trim": [
    0.0,
-   20.99
+   21.02
   ]
  },
  "tune_36": {
   "duration_s": 32.9,
   "master": "masters/tune_36.wav",
-  "peak": 3947,
+  "peak": 3957,
   "trim": [
-   1.27,
-   34.17
+   1.31,
+   34.21
   ]
  },
  "tune_37": {
   "duration_s": 65.49,
   "master": "masters/tune_37.wav",
-  "peak": 4957,
+  "peak": 4655,
   "trim": [
-   1.27,
-   66.76
+   1.32,
+   66.81
   ]
  },
  "tune_38": {
   "duration_s": 160.7,
   "master": "masters/tune_38.wav",
-  "peak": 3823,
+  "peak": 3933,
   "trim": [
-   1.27,
-   161.97
+   1.32,
+   162.02
   ]
  },
  "tune_39": {
   "duration_s": 90.19,
   "master": "masters/tune_39.wav",
-  "peak": 2675,
+  "peak": 2669,
   "trim": [
-   1.29,
-   91.48
+   1.32,
+   91.51
   ]
  },
  "tune_3a": {
   "duration_s": 66.74,
   "master": "masters/tune_3a.wav",
-  "peak": 3393,
+  "peak": 3433,
   "trim": [
-   1.28,
-   68.02
+   1.31,
+   68.05
   ]
  },
  "tune_3b": {
-  "duration_s": 88.65,
+  "duration_s": 88.66,
   "master": "masters/tune_3b.wav",
-  "peak": 2228,
+  "peak": 2243,
   "trim": [
-   1.28,
-   89.93
+   1.32,
+   89.98
   ]
  },
  "tune_3e": {
-  "duration_s": 3.59,
+  "duration_s": 3.6,
   "master": "masters/tune_3e.wav",
-  "peak": 4999,
+  "peak": 5107,
   "trim": [
-   1.27,
-   4.87
+   1.3,
+   4.9
   ]
  },
  "tune_3f": {
   "duration_s": 4.48,
   "master": "masters/tune_3f.wav",
-  "peak": 3601,
+  "peak": 3378,
   "trim": [
-   1.28,
-   5.76
+   1.3,
+   5.78
   ]
  }
 }

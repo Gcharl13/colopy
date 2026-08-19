@@ -240,7 +240,7 @@
   "signal": true
  },
  "0x40": {
-  "duration_s": 5.83,
+  "duration_s": 5.87,
   "file": "sfx_40.wav",
   "first_signal_s": 0.5,
   "id": 64,
@@ -256,7 +256,7 @@
   "signal": true
  },
  "0x42": {
-  "duration_s": 6.83,
+  "duration_s": 6.87,
   "file": "sfx_42.wav",
   "first_signal_s": 0.5,
   "id": 66,
@@ -264,7 +264,7 @@
   "signal": true
  },
  "0x43": {
-  "duration_s": 7.33,
+  "duration_s": 7.39,
   "file": "sfx_43.wav",
   "first_signal_s": 0.5,
   "id": 67,
@@ -272,7 +272,7 @@
   "signal": true
  },
  "0x44": {
-  "duration_s": 6.83,
+  "duration_s": 6.88,
   "file": "sfx_44.wav",
   "first_signal_s": 0.5,
   "id": 68,
@@ -280,7 +280,7 @@
   "signal": true
  },
  "0x45": {
-  "duration_s": 6.83,
+  "duration_s": 6.84,
   "file": "sfx_45.wav",
   "first_signal_s": 0.5,
   "id": 69,
@@ -288,7 +288,7 @@
   "signal": true
  },
  "0x46": {
-  "duration_s": 16.88,
+  "duration_s": 16.83,
   "file": "sfx_46.wav",
   "first_signal_s": null,
   "id": 70,
@@ -296,7 +296,7 @@
   "signal": false
  },
  "0x47": {
-  "duration_s": 5.83,
+  "duration_s": 5.86,
   "file": "sfx_47.wav",
   "first_signal_s": 0.5,
   "id": 71,
@@ -304,7 +304,7 @@
   "signal": true
  },
  "0x48": {
-  "duration_s": 6.83,
+  "duration_s": 6.89,
   "file": "sfx_48.wav",
   "first_signal_s": 0.5,
   "id": 72,
@@ -312,7 +312,7 @@
   "signal": true
  },
  "0x49": {
-  "duration_s": 7.84,
+  "duration_s": 7.85,
   "file": "sfx_49.wav",
   "first_signal_s": 0.5,
   "id": 73,
@@ -320,7 +320,7 @@
   "signal": true
  },
  "0x4A": {
-  "duration_s": 8.34,
+  "duration_s": 8.33,
   "file": "sfx_4a.wav",
   "first_signal_s": 0.5,
   "id": 74,
@@ -328,7 +328,7 @@
   "signal": true
  },
  "0x4B": {
-  "duration_s": 8.85,
+  "duration_s": 8.82,
   "file": "sfx_4b.wav",
   "first_signal_s": 0.5,
   "id": 75,
@@ -336,7 +336,7 @@
   "signal": true
  },
  "0x4C": {
-  "duration_s": 10.87,
+  "duration_s": 10.93,
   "file": "sfx_4c.wav",
   "first_signal_s": 0.5,
   "id": 76,
@@ -344,7 +344,7 @@
   "signal": true
  },
  "0x4D": {
-  "duration_s": 9.35,
+  "duration_s": 9.4,
   "file": "sfx_4d.wav",
   "first_signal_s": 0.5,
   "id": 77,
@@ -352,7 +352,7 @@
   "signal": true
  },
  "0x4E": {
-  "duration_s": 9.35,
+  "duration_s": 9.39,
   "file": "sfx_4e.wav",
   "first_signal_s": 0.5,
   "id": 78,
@@ -360,7 +360,7 @@
   "signal": true
  },
  "0x4F": {
-  "duration_s": 9.35,
+  "duration_s": 9.37,
   "file": "sfx_4f.wav",
   "first_signal_s": 0.5,
   "id": 79,
@@ -368,7 +368,7 @@
   "signal": true
  },
  "0x50": {
-  "duration_s": 9.85,
+  "duration_s": 10.38,
   "file": "sfx_50.wav",
   "first_signal_s": 0.5,
   "id": 80,
@@ -376,7 +376,7 @@
   "signal": true
  },
  "0x51": {
-  "duration_s": 9.35,
+  "duration_s": 9.46,
   "file": "sfx_51.wav",
   "first_signal_s": 0.5,
   "id": 81,
@@ -384,7 +384,7 @@
   "signal": true
  },
  "0x52": {
-  "duration_s": 8.83,
+  "duration_s": 8.84,
   "file": "sfx_52.wav",
   "first_signal_s": 0.5,
   "id": 82,
@@ -392,7 +392,7 @@
   "signal": true
  },
  "0x53": {
-  "duration_s": 10.84,
+  "duration_s": 10.95,
   "file": "sfx_53.wav",
   "first_signal_s": 0.5,
   "id": 83,
@@ -400,7 +400,7 @@
   "signal": true
  },
  "0x54": {
-  "duration_s": 10.86,
+  "duration_s": 10.9,
   "file": "sfx_54.wav",
   "first_signal_s": 0.5,
   "id": 84,
@@ -416,7 +416,7 @@
   "signal": true
  },
  "0x56": {
-  "duration_s": 9.35,
+  "duration_s": 9.84,
   "file": "sfx_56.wav",
   "first_signal_s": 0.5,
   "id": 86,
@@ -424,7 +424,7 @@
   "signal": true
  },
  "0x57": {
-  "duration_s": 9.84,
+  "duration_s": 9.83,
   "file": "sfx_57.wav",
   "first_signal_s": 0.5,
   "id": 87,
@@ -432,7 +432,7 @@
   "signal": true
  },
  "0x58": {
-  "duration_s": 6.34,
+  "duration_s": 6.3,
   "file": "sfx_58.wav",
   "first_signal_s": 0.5,
   "id": 88,
@@ -440,7 +440,7 @@
   "signal": true
  },
  "0x59": {
-  "duration_s": 6.33,
+  "duration_s": 8.37,
   "file": "sfx_59.wav",
   "first_signal_s": 0.5,
   "id": 89,
@@ -448,7 +448,7 @@
   "signal": true
  },
  "0x5A": {
-  "duration_s": 10.85,
+  "duration_s": 10.92,
   "file": "sfx_5a.wav",
   "first_signal_s": 0.5,
   "id": 90,
@@ -456,7 +456,7 @@
   "signal": true
  },
  "0x5B": {
-  "duration_s": 9.34,
+  "duration_s": 9.37,
   "file": "sfx_5b.wav",
   "first_signal_s": 0.5,
   "id": 91,
@@ -464,7 +464,7 @@
   "signal": true
  },
  "0x5C": {
-  "duration_s": 10.85,
+  "duration_s": 10.88,
   "file": "sfx_5c.wav",
   "first_signal_s": 0.5,
   "id": 92,
@@ -472,7 +472,7 @@
   "signal": true
  },
  "0x5D": {
-  "duration_s": 6.84,
+  "duration_s": 6.9,
   "file": "sfx_5d.wav",
   "first_signal_s": 0.5,
   "id": 93,
@@ -480,7 +480,7 @@
   "signal": true
  },
  "0x5E": {
-  "duration_s": 16.88,
+  "duration_s": 16.78,
   "file": "sfx_5e.wav",
   "first_signal_s": null,
   "id": 94,
@@ -488,7 +488,7 @@
   "signal": false
  },
  "0x5F": {
-  "duration_s": 16.88,
+  "duration_s": 16.75,
   "file": "sfx_5f.wav",
   "first_signal_s": null,
   "id": 95,
