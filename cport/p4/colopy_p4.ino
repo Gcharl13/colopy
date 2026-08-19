@@ -222,6 +222,16 @@ static void flush_fb(void) {
  * Because of 2 and 3 this is OFF by default: the shipped build is
  * unaffected and still compiles on cores without hosted BT.
  *
+ * HARDWARE RESULT 2026-08-19, and it is not encouraging.  With this set
+ * to 1 the board PANICS INSIDE BLEDevice::init() — the game never
+ * reached the title screen.  Set back to 0, the same build boots.  So
+ * one of conditions 2 and 3 does not hold on this hardware; which one
+ * is not yet known, and telling them apart needs the panic backtrace.
+ * The bring-up moved out of setup() into bt_begin() so the failure can
+ * no longer cost you the whole game, but moving it did not make the
+ * feature work: turning this on and tapping Scan still panics.  Leave
+ * it at 0 until D6 in docs/REMAINING_WORK.md says otherwise.
+ *
  * Only BLE mice can ever work — the C6 has no Bluetooth Classic radio,
  * so a Classic-only mouse cannot pair at any layer.
  *
