@@ -64,3 +64,10 @@ tools/ino_mock/sketch_test.cpp
 # Sketch zips handed to the user for flashing: regenerable from
 # cport/arduino_p4/colopy_p4 at the commit named in the filename.
 colopy_p4_*.zip
+
+# DOSBox harness working files: shots/ is regenerable via
+# `make census-capture`; the census keeps its own committed baseline under
+# docs/screens/census/.
+tools/dosbox_harness/shots/
+tools/dosbox_harness/dosbox.log
+tools/dosbox_harness/dosbox.conf

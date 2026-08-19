@@ -36,6 +36,13 @@ budget:
 # The staleness gate: the ledger's load-bearing claims, as probes that run.
 records:
 	python3 ../../tools/stale_check.py
+# The ONLY gate that compares the port to the real game.  Deliberately NOT in
+# `test`: --capture drives DOSBox and takes minutes.  The diff pass is seconds
+# and runs off committed captures.
+census:
+	python3 ../../tools/screen_census.py
+census-capture:
+	python3 ../../tools/screen_census.py --capture
 clean:
 	rm -f smoke $(OBJ)
-.PHONY: test budget records clean
+.PHONY: test budget records census census-capture clean

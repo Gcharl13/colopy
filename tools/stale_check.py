@@ -141,6 +141,15 @@ def probe_doi() -> bool:
     return "DECOIND" not in _strip_comments(_js() + _c_text())
 
 
+def probe_census_exists() -> bool:
+    """The census is the ONLY gate comparing the port to the real game. Pinned
+    so it cannot quietly disappear or lose its committed reference frames --
+    a census whose baseline vanishes on a fresh clone is not a gate."""
+    t = ROOT / "tools" / "screen_census.py"
+    base = ROOT / "docs" / "screens" / "census" / "baseline"
+    return t.exists() and base.is_dir() and len(list(base.glob("census_*.png"))) >= 5
+
+
 def probe_ledger_derived() -> bool:
     """G3: PORT_LEDGER's status must stay DERIVED, never a literal. Proxy: the
     generator computes it from C citations and the doc says so."""
@@ -178,6 +187,9 @@ CLAIMS = [
      "per-power scaffolding + father_owned reads the pass's power",
      probe_b36_scaffold),
     ("E-DoI", "docs/REMAINING_WORK.md", "Declaration screen does not exist", probe_doi),
+    ("CENSUS", "tools/screen_census.py",
+     "the DOS-vs-port census and its committed baseline exist",
+     probe_census_exists),
     ("G3", "cport/PORT_LEDGER.md", "ledger status is derived, not declared",
      probe_ledger_derived),
     ("FIXED-2026-08-19a", "cport/core/colopy_rivals.c",
