@@ -12,6 +12,14 @@ finds that region in `/proc/<pid>/maps` (the one carrying the `MADSPACK`+`ORDERS
 and reads it via `/proc/<pid>/mem`. Emulated **physical** address `P` is at region offset `P`,
 so DOS conventional memory (0–1MB) sits at the start of the dump.
 
+> ⚠ **Caveat (RULINGS 2026-08-19):** in DOSBox 0.74-3 (Linux) the region begins **0x10 bytes
+> before phys 0** (BIOS Data Area found at region offset 0x423, not 0x413), so "region offset =
+> phys" is off by 16 bytes there — enough to scramble far-pointer targets like the map planes.
+> DGROUP-*relative* reads (everything anchored on `find_dgroup()`) are unaffected. When absolute
+> phys addresses or far pointers matter, derive phys 0 from the BDA+IVT signature instead
+> (`u16[base+0x413]==640` + populated INT 08h/21h vectors), as
+> `tools/cheat_engine/viceroy_dosbox.lua` does.
+
 ## Verified anchors (2026-06-25)
 - Live **DGROUP base = segment `0x1CFD`** (phys `0x1CFD0`), found automatically by anchoring on
   the contiguous section-name table `UNIT\0ORDERS\0ACTIONS\0` at DGROUP `0x2258`.

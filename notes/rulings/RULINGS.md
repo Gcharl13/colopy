@@ -26,6 +26,64 @@ Format:
 
 ---
 
+## 2026-08-19 — Live driven-game session (DOSBox 0.74-3): MemBase ≠ region base; plane `[0x160]` = unit-presence counts; broad address confirmations
+
+**Conflict**: (a) `tools/runtime_snapshot.py` / `docs/RUNTIME_SNAPSHOT.md` assume
+*emulated phys addr P = region offset P* in the DOSBox emulated-RAM mapping; a live
+session shows the assumption off by 0x10 in this build. (b) The annotated-disasm
+plane labels `g_layer_elev_ptr` (`[0x160]`) / `g_layer_resource_ptr` (`[0x164]`)
+disagree with live plane content.
+
+**Source A** — annotated disasm (`data_extracted/disassembly/VICEROY_annotated.asm`):
+`[0x15C]` terrain / `[0x160]` elev / `[0x164]` resource / `[0x168]` fog (pointer
+*locations* byte-verified via the tile readers `func_005CEA..005D9C`).
+
+**Source B** — live driven game (top of TRUTH_HIERARCHY; headless DOSBox 0.74-3 +
+Xvfb/xdotool per `tools/drive_game.sh`, New World / England / Discoverer, snapshots
+via the `runtime_snapshot` region reader; procedure + full log in
+`tools/cheat_engine/README.md` §Verification):
+- **BIOS Data Area found at region offset 0x423, not 0x413** → emulated phys 0 =
+  region base + 0x10 in this build. With that correction every far-pointer read
+  reconciles: ship tile = Sea Lane 26 (matches HUD label), colony/settlements on
+  land, right-edge column = {24 Arctic, 26 Sea Lane} on a *generated* map (hard
+  rule 2 live), 79/81 units terrain-consistent (2 = passengers aboard the ship),
+  fog plane `[0x168]` gained exactly the `1<<(power+4)` bits (exploration.md) on
+  the tiles revealed by a one-tile ship move. Without the correction the planes
+  appear shifted by 16 bytes (a bogus "(16,1) toroidal displacement").
+- **Plane `[0x160]` content = per-tile unit-presence count** (ship=1, colony
+  garrison=2, settlement braves=2; the count moved with the unit) — not elevation.
+  Plane `[0x164]` carries broad per-power bit-4..7 masks (role open).
+- Confirmations (all matching the specs' byte-cites): `[0x84FC]`=0x8808 active
+  PowerRecord with gold/tax matching the HUD; `[0x8542]`=0x5D46; year/turn/season
+  init + cadence; difficulty=0 as selected; REF start counts 15/5/2/2 = `8d+15 /
+  5d+5 / 3d+2 / 6d+2` at d=0; price seeds all in `random_int(600,1000)`;
+  AIPersonality names + controller(+0x31)=0/1/1/1; UnitRecord base 0x3144 field
+  map (incl. `+0x06` init 0xFF, `+0x12` player sentinel 0xFF, AI char 'X');
+  ColonyRecord[0] layout. **New**: `[0x853E]`/`[0x8540]` = selected-tile Y/X
+  (tracked a ship move), `[0x854C]/[0x854E]` viewport origin, `[0x8550]/[0x8552]`
+  = 240/192 viewport pixels, `[0x8554]` = "AMER2.MP" filename buffer.
+
+**Ruling**: byte evidence wins. (1) Absolute phys/segment claims derived from the
+region-offset assumption carry a ±0x10 caveat — the 2026-06-25 "DGROUP at phys
+0x1CFD0 / seg 0x1CFD" reading is region-relative; under the BDA-anchored origin the
+same session-layout is seg 0x1CFC. DGROUP-relative work (all `DGROUP:0xNNNN`
+citations) is unaffected. MemBase must be derived from the BDA+IVT signature
+(`u16[MB+0x413]==640` + populated INT 08h/21h vectors — unique in the whole space
+this session), as `tools/cheat_engine/viceroy_dosbox.lua` does. (2) `[0x160]` is
+runtime-relabelled *units-present count* (A); the `g_layer_elev_ptr` name is stale
+pending a disasm cross-check of its writers.
+
+**Action taken**:
+- `tools/cheat_engine/` added (CT table + Lua bridge + byte-cited `addresses.json`
+  + generator); README carries the full verification log.
+- `docs/RUNTIME_SNAPSHOT.md` cross-ref note added.
+
+**Follow-up**: byte-verify `[0x160]`/`[0x164]` writer sites to settle both plane
+labels; check whether other DOSBox builds (Windows, Staging, X) share the +0x10
+allocation header.
+
+---
+
 ## 2026-06-19 — Runtime memory dump (`colonization-memory-map (1).md`) reconciled against the static disasm
 
 **Conflict**: a runtime-verified PowerRecord field map (observed in js-dos/DOSBox,
