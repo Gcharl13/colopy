@@ -404,6 +404,33 @@ five 19050 Hz samples today, and this catches it if that changes.
 `data_extracted/data/coldig_slices.json` is retained as a record of the capture
 work, marked superseded in its own `_meta`, and read by nothing.
 
+**F2a. The capture run is NOT blocked on the user's machine. — DONE 2026-08-19.**
+Both this ledger and the sketch banner recorded `COLAUDIO.PAK`'s music as needing
+a DOSBox capture "the user may not have", and that assumption was never tested
+against the session container — which has `dosbox`, `xvfb-run`, `xdotool`, the
+full `tools/dosbox_harness/game/` tree and 28 GB free. All three sets were
+captured here: **30 tunes** (`0x20..0x3B`, `0x3E`, `0x3F`), **8 fanfares**
+(`0x8020..0x8027`), **32 SFX** of which the 4 live FM-only ids are kept. Every
+tune and fanfare carried signal.
+
+Corroboration, since nobody can listen from here: durations reproduce the prior
+run's committed record to within ~0.1 s per tune (captures carry real jitter, so
+that is the tightest agreement available), and tune **`0x34` hit 241.5 s against
+the 240 s cap**, matching the prior 242.18 s — the "overruns and probably loops"
+note is now reproduced by two independent runs, so it is a property of the tune.
+
+`COLAUDIO.PAK` is now **25,929,772 bytes, 67 entries (25 slices + 42 renders),
+`verify_pack.py` 0 failures**. The board needs no code for this: `au_pump`,
+`au_on_new_game`, `au_on_woodcut` and `au_on_event` are already called from the
+sketch and path 1 streams the pack from a `FILE*` on SD, so the 25.9 MB never
+enters RAM. **Copy it to the card beside `COLOPY.PAK` and the board has music.**
+
+This also retired the last artifact still carrying the pre-F2 error:
+`masters_manifest.json` held **13** SFX renders from the empirical slice map,
+including `0x4D`/`0x4E`/`0x4F`/`0x5B` which F2 showed are real bank samples. The
+byte-decoded index lists exactly five ids as not-samples and `0x46` captures
+silent, so **4** is right. Regenerated.
+
 **F3. Then that branch's own open list:** the human A/B listen pass (needs
 speakers); tune `0x34` hit the 240 s capture cap and likely loops; SFX preemption
 modelled not decoded; pending queue depth 1 vs the original's 8-deep ring;
@@ -413,6 +440,13 @@ modelled not decoded; pending queue depth 1 vs the original's 8-deep ring;
 TBD**; the Sound Test and Pick-Music/Sound-Options screens not in cport's input
 layer; play far-call thunk identity untraced; PC-speaker and MT-32 variants not
 reproduced; 25.9 MB is SD-only on both boards.
+
+**F3a. Music is now DATA-complete but EAR-unverified.** `verify_pack.py` proves
+each render survived IMA encoding (SNR per entry) and each slice is bit-identical
+to the bank. It does NOT prove a cue fires the tune the original fired, that the
+scheduler's rotation matches, or that `0x34`'s loop point is right. The human A/B
+listen pass in F3 is the gate for all of that and remains open. Nothing in this
+repo can close it.
 
 **F4. On the fallback COLDIG cue path** (used when no `COLAUDIO.PAK` is on the card): 24 of the 40 `lcall 0x181F:0x4C0` play sites
 stay silent because their event is TBD (four compute the id at runtime); only 12
