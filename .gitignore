@@ -60,3 +60,7 @@ cport/pak/COLAUDIO.PAK
 
 # tools/ino_mock regenerates this from the sketch on every run
 tools/ino_mock/sketch_test.cpp
+
+# Sketch zips handed to the user for flashing: regenerable from
+# cport/arduino_p4/colopy_p4 at the commit named in the filename.
+colopy_p4_*.zip
