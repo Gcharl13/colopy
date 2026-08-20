@@ -1746,6 +1746,69 @@ function ownerColour(u) {
   const t = G.tribes[u.tribe];
   return t ? t.color : 8;
 }
+// func_00386A @0x00386A -- the unit-info panel composite, mode 0x64.
+//
+// Full decode in spec/ui/render_primitives.md §1b. What matters here:
+//
+//   plate w = strwidth(status letter) + 3      (0xC2A:6 @0x003AA8)
+//   plate h = font height + 3                  (@0x003ABC)
+//   dx0     = x + max(0, (W - (pw + sw)) / 2)  (@0x003B23)
+//   dx      = dx0 + sw, less (pw + sw - 16) when that exceeds 16
+//                                              (@0x003BF5-@0x003C07)
+//
+// and then, by unit CLASS (@0x003C09):
+//   0 foot     plate (dx, y + sh - ph)    sprite dx0, drawn AFTER the plate
+//   1 big ship plate (dx, y)              sprite dx0, drawn BEFORE
+//   2 wheeled  plate (dx0 - pw/2 + 9, y)  sprite dx0, drawn BEFORE
+//   4 = 2 with y + 2 (damaged artillery)
+//   3 mounted  plate (dx0, y)             sprite dx0 + pw, pulled back by
+//     + small ships                       (pw + sw - 14) when pw + sw + 2 > 16
+//
+// The plate is a rect of colour 0, a rect inset 1 and 2 smaller in the owner
+// colour, and the letter at +2/+2 (@0x003D1C-@0x003D66, @0x003DF8).
+//
+// STILL APPROXIMATE: the engine takes the sprite's w/h from two sheet-header
+// fields (es:[bx+0x3E] / [bx+0x40]) that have not been decoded, so this uses
+// the port's own trimmed frame size instead. Measured, that is the better of
+// the two candidates -- a fixed 16-wide cell scores worse on every value tried
+// (12..18). It is why F7 lands at 1,100 px rather than 0.
+const F7_PANEL_X = 4;
+function panelClass(type, flags) {
+  switch (DATA.units.findIndex(r => r.name === type)) {
+    case 0x0F: case 0x10: case 0x11: case 0x12: return 1;
+    case 0x0A: case 0x0C:                       return 2;
+    case 0x0B:            return (flags & 0x80) ? 4 : 2;
+    case 0x0D: case 0x0E: case 0x04: case 0x05:
+    case 0x07: case 0x08: case 0x15: case 0x16: return 3;
+    default:                                    return 0;
+  }
+}
+function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame) {
+  const key = (DATA.orders[orders] || DATA.orders[0]).key;
+  const pw = FONT.tiny.width(key) + 3, ph = FONT.tiny.height + 3;
+  const [sw, sh] = frameSize('ICONS', frame);
+  const total = pw + sw;
+  const dx0 = x + (W > total ? Math.floor((W - total) / 2) : 0);
+  let dx = dx0 + sw;
+  if (pw + sw > 16) dx -= (pw + sw - 16);
+  const cls = panelClass(type, flags);
+  let px, py, sx = dx0, after = false;
+  switch (cls) {
+    case 1: px = dx; py = y; break;
+    case 2: px = dx0 - (pw >> 1) + 9; py = y; break;
+    case 4: px = dx0 - (pw >> 1) + 9; py = y + 2; break;
+    case 3:
+      px = dx0; py = y; sx = dx0 + pw;
+      if (pw + sw + 2 > 16) sx -= (pw + sw - 14);
+      break;
+    default: px = dx; py = y + sh - ph; after = true; break;
+  }
+  if (!after) sheetFrame(ctx, 'ICONS', frame, sx, y);
+  ctx.fillStyle = ink(0); ctx.fillRect(px, py, pw, ph);
+  ctx.fillStyle = ink(colourIdx); ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
+  if (after) sheetFrame(ctx, 'ICONS', frame, sx, y);
+  FONT.tiny.draw(ctx, key, px + 2, py + 2, [ink(0), ink(0), ink(0)]);
+}
 function nationPlate(ctx, x, y, colourIdx, orders) {
   ctx.fillStyle = ink(0); ctx.fillRect(x, y, 8, 9);
   ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 1, y + 1, 6, 7);
@@ -10384,17 +10447,15 @@ function drawNavalReport(ctx) {
   ships.slice(0, F7_PER_PAGE).forEach((s, i) => {
     const y = F7_ROW0 + i * F7_PITCH;
     const cu = unit(s.u.type);
-    // Ship cell: the nation plate at the row's own x,y and the hull sprite
-    // right-aligned in a 16-wide box, exactly as drawUnit places them on the
-    // map. Measured on the 1653 frame: plate (2,42) 8x9, Merchantman (ICONS 6,
-    // 13 wide) at x=5 and Galleon (ICONS 7, 14 wide) at x=4 -- i.e. 2+16-w.
-    // The Frigate (ICONS 15, also 13 wide) sits at x=4 there, one pixel left of
-    // what that rule predicts; unexplained, and left as the rule.
-    nationPlate(ctx, 2, y, DATA.nations[G.nation].color, s.u.orders || 0);
-    if (cu) {
-      const [fw] = frameSize('ICONS', cu.icon);
-      sheetFrame(ctx, 'ICONS', cu.icon, 2 + 16 - fw, y);
-    }
+    // Ship cell: the func_00386A composite. The old rule -- plate at a fixed
+    // (2,y), hull right-aligned in a 16-wide box -- could not be right, and the
+    // comment that used to sit here said so: the Frigate landed a pixel off
+    // "unexplained". It is explained now. The plate's SIDE depends on the unit
+    // CLASS: a Galleon or Frigate (class 1) wears it to the RIGHT of the hull,
+    // a Merchantman or Caravel (class 3) to the LEFT. See unitPanel().
+    if (cu) unitPanel(ctx, F7_PANEL_X, y, 0, s.u.type,
+                      s.u.flags || 0, s.u.orders || 0,
+                      DATA.nations[G.nation].color, cu.icon);
     FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK));
     // Cargo: one goods sprite per laden hold, ICONS frame 22 + commodity,
     // first at x=88 and pitch 12, y = row + 3 (template-matched at score 0 on

@@ -327,6 +327,9 @@ static void draw_f6(void) {
 /* ---- F7 Naval: the grid ---- */
 #define F7_ROW0 42
 #define F7_PITCH 20
+#define F7_PANEL_X 4
+#define PW_ADD 4
+#define PH_ADD 3
 #define F7_PER_PAGE 7
 #define F7_GRID_TOP 25
 #define F7_GRID_BOT 180
@@ -336,6 +339,73 @@ static void draw_f6(void) {
 #define F7_CARGO_ICON 22
 static const int16_t F7_COLX[5] = { 2, 82, 162, 242, 314 };
 static const int16_t F7_CENTRE[4] = { 42, 122, 202, 280 };
+/* func_00386A @0x00386A -- the unit-info panel composite, mode 0x64.
+ *
+ * Full decode in spec/ui/render_primitives.md §1b. What matters here:
+ *
+ *   plate w  = strwidth(status letter) + 3      (0xC2A:6 @0x003AA8)
+ *   plate h  = font height + 3                  (@0x003ABC)
+ *   dx0      = x + max(0, (W - (pw + sw)) / 2)  (@0x003B23)
+ *   dx       = dx0 + sw, less (pw + sw - 16) when that exceeds 16
+ *                                                (@0x003BF5-@0x003C07)
+ *
+ * and then, by unit CLASS (@0x003C09):
+ *   0 foot     plate (dx, y + sh - ph)   sprite dx0, drawn AFTER the plate
+ *   1 big ship plate (dx, y)             sprite dx0, drawn BEFORE
+ *   2 wheeled  plate (dx0 - pw/2 + 9, y) sprite dx0, drawn BEFORE
+ *   4 = 2 with y + 2 (damaged artillery)
+ *   3 mounted  plate (dx0, y)            sprite dx0 + pw, pulled back by
+ *              + small ships             (pw + sw - 14) when pw + sw + 2 > 16
+ *
+ * The plate itself is a rect of colour 0, a rect inset 1 and 2 smaller in the
+ * owner colour, and the letter at +2/+2 (@0x003D1C-@0x003D66, @0x003DF8).
+ *
+ * The port drew a fixed 8x9 plate at a fixed x for every unit, which is why
+ * the census caught F7's rows: a Galleon (class 1) wants its plate on the
+ * RIGHT of the sprite, a Merchantman (class 3) on the left. */
+static int panel_class(int type, int flags148) {
+    switch (type) {
+    case 0x0F: case 0x10: case 0x11: case 0x12: return 1;
+    case 0x0A: case 0x0C:                       return 2;
+    case 0x0B:            return (flags148 & 0x80) ? 4 : 2;
+    case 0x0D: case 0x0E: case 0x04: case 0x05:
+    case 0x07: case 0x08: case 0x15: case 0x16: return 3;
+    default:                                    return 0;
+    }
+}
+static void unit_panel(int x, int y, int W, int type, int flags148,
+                       int orders, int colour, int frame) {
+    const char *key = dat_orders[orders >= 0 && orders < DAT_ORDERS_COUNT
+                                 ? orders : 0].key;
+    int pw = rd_text_width(&R_TINY, key) + 3;
+    int ph = R_TINY.cell_h + 3;
+    rd_frame f;
+    if (!rd_sheet_frame(&RD.icons, frame, &f)) return;
+    int sw = f.w, sh = f.h;
+    int total = pw + sw;
+    int dx0 = x + (W > total ? (W - total) / 2 : 0);
+    int dx = dx0 + sw;
+    if (pw + sw > 16) dx -= (pw + sw - 16);
+    int cls = panel_class(type, flags148);
+    int px, py, sx = dx0, after = 0;
+    switch (cls) {
+    case 1:  px = dx;                      py = y;          break;
+    case 2:  px = dx0 - (pw >> 1) + 9;     py = y;          break;
+    case 4:  px = dx0 - (pw >> 1) + 9;     py = y + 2;      break;
+    case 3:
+        px = dx0; py = y; sx = dx0 + pw;
+        if (pw + sw + 2 > 16) sx -= (pw + sw - 14);
+        break;
+    default: px = dx;                      py = y + sh - ph; after = 1; break;
+    }
+    if (!after) rd_blit(&RD.icons, frame, sx, y);
+    rd_fill(px, py, pw, ph, 0);
+    rd_fill(px + 1, py + 1, pw - 2, ph - 2, (uint8_t)colour);
+    if (after) rd_blit(&RD.icons, frame, sx, y);
+    const uint8_t black[4] = { 0xFF, 0, 0, 0 };
+    rd_text(&R_TINY, key, px + 2, py + 2, black);
+}
+
 static void draw_f7(void) {
     for (int y = F7_RULE0; y <= F7_GRID_BOT; y += F7_PITCH)
         rd_fill(F7_COLX[0], y, F7_COLX[4] - F7_COLX[0] + 1, 1,
@@ -354,11 +424,9 @@ static void draw_f7(void) {
         const UnitRecord *u = &CS.units[ui];
         if (dat_units[u->type].hull <= 0) continue;
         int y = F7_ROW0 + row * F7_PITCH;
-        rm_nation_plate(2, y, (int)dat_nations[cs_nation()].color, u->orders);
-        int ic = (int)dat_units[u->type].icon - 1;
-        rd_frame f;
-        rd_sheet_frame(&RD.icons, ic, &f);
-        rd_blit(&RD.icons, ic, 2 + 16 - f.w, y);
+        unit_panel(F7_PANEL_X, y, 0, u->type, u->flags,
+                   u->orders, (int)dat_nations[cs_nation()].color,
+                   (int)dat_units[u->type].icon - 1);
         rd_text(&R_TINY, dat_units[u->type].name, 26, y + 6,
                 rlut(REPORT_VALUE_INK));
         /* JS reads u.cargo — the PASSENGER list; a non-numeric entry
@@ -376,11 +444,9 @@ static void draw_f7(void) {
     for (int q = 0; q < CR.n_europe && row < F7_PER_PAGE; q++) {
         const euro_crossing *e = &CR.europe[q];
         int y = F7_ROW0 + row * F7_PITCH;
-        rm_nation_plate(2, y, (int)dat_nations[cs_nation()].color, 0);
-        int ic = (int)dat_units[e->type].icon - 1;
-        rd_frame f;
-        rd_sheet_frame(&RD.icons, ic, &f);
-        rd_blit(&RD.icons, ic, 2 + 16 - f.w, y);
+        unit_panel(F7_PANEL_X, y, 0, e->type, 0, 0,
+                   (int)dat_nations[cs_nation()].color,
+                   (int)dat_units[e->type].icon - 1);
         rd_text(&R_TINY, dat_units[e->type].name, 26, y + 6,
                 rlut(REPORT_VALUE_INK));
         r_center(dat_nations[cs_nation()].homeport, F7_CENTRE[2], y + 6,
