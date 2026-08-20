@@ -54,6 +54,69 @@ levels map through the 4-entry LUT `[0x269E]:[0x26A0]` (`spec/ui/fonts_and_color
 | `0x181F:0x44E` | *(type-A, overlay)* | load | **load_PIK** — load a `.PIK` background by name. |
 | `0x181F:0x438` | *(type-A, overlay)* | load/blit | PIK/asset blit-by-name (paired with `0x44E`). |
 
+## 1b. `0x181F:0x2BC` = `func_00386A` — the unit-info panel composite (DECODED 2026-08-20)
+
+Five screens draw a unit through this one verb — F7 Naval (`@0x039586`), F6 Colony
+(`@0x039297`), the colony screen (`@0x026639`), the Europe ship rows
+(`func_031366 @0x0313C2`) and the Colonizopedia figures — so one wrong reading of it
+is wrong in five places. What follows is read off `@0x00386A`–`@0x003E3D`
+(`enter 0x46`, `retf 6`).
+
+**Arguments.** Three on the stack plus three in registers:
+
+| where | meaning |
+|---|---|
+| `ax` | unit index (stored via `func_0037BE` into `[bp-0x2A]`) |
+| `bx` | x |
+| `dx` | FLAGS: bit `0x80` = check the AI/debug branch (`@0x00388E`), bit `0x20` = suppress the status letter and use a 4-px pad (`@0x003BDF`, `@0x003D8F`), bit `0x40` masked out early |
+| `[bp+6]` | MODE: `0x64` (100) = the full panel; `0x19` and `0x32` are two smaller variants (`@0x003B3C`) |
+| `[bp+8]` | a width to centre within — surplus over the sprite width is split (`@0x003B23`) |
+| `[bp+0xA]` | y |
+
+**Unit CLASS `[bp-0x12]`**, which decides where the plate sits relative to the sprite
+(prologue `@0x0038B6`–`@0x0039FC`):
+
+| class | unit types |
+|---|---|
+| 1 | `0x0F` Galleon, `0x10` Privateer, `0x11` Frigate, `0x12` Man-O-War |
+| 2 | `0x0A` Treasure, `0x0B` Artillery, `0x0C` Wagon Train |
+| 3 | `0x0D` Caravel, `0x0E` Merchantman, `0x04` Dragoons, `0x05` Scouts, `0x07` Cont. Cav., `0x08` Cavalry, `0x15` Mtd. Braves, `0x16` Mtd. Warriors |
+| 4 | `0x0B` Artillery **with** `+0x3148 & 0x80` (damaged) |
+| 0 | everything else — the foot units |
+
+**The composite**, in draw order (mode `0x64`, `@0x003BDA` onward):
+
+1. the sprite, through `func_00380C` with layer 1 then layer 2, at
+   (`[bp-4]`, `[bp+0xA]`) — class 0 defers layer 1 to after the plate (`@0x003D71`);
+2. **the PLATE**: a rect of colour **0** sized `[bp-0x22] × [bp-0x24]` at
+   (`[bp-2]`, `[bp-6]`), then a second rect inset by 1 in each axis, sized 2 less in
+   each axis, filled with the OWNER colour `[bp-0x0F]` = `[di+0x848]`
+   (`@0x003D1C`–`@0x003D66`, both through `0xB9E:0xA`). A black-outlined plate in the
+   nation's colour — which is what the port's hand-drawn 7×9 `SACK_ROWS` art stands in
+   for today;
+3. **the STATUS LETTER**, one character at (`[bp-2]+2`, `[bp-6]+2`) via `0xC11:0xC`,
+   in `[bp-0x1F]` = the owner colour ±8 (or `0x0F` / `0x0C` in the special cases at
+   `@0x003DBA`–`@0x003DD6`) — skipped entirely when flags bit `0x20` is set;
+4. if `[bp-0x18]` (the `+0x3148 & 0x80` state on a non-Artillery) and mode is `0x64`,
+   sprite **`0x38`** at (`[bp+0xA]+4`, `[bp-4]+4`) (`@0x003E19`).
+
+**Plate size** is derived from the letter, not fixed: `[bp-0x22] = strwidth(letter) + 3`
+(`0xC2A:6` `@0x003AA8`) and `[bp-0x24] = fontheight + 3` (`@0x003ABC`). Flags bit `0x20`
+replaces both with 4.
+
+**The letter** `[bp-1]` comes from `[bx+0x54DE]` indexed by the orders byte — the
+`-STGLFFBPR---` array already cited in `spec/systems/terrain_improvement.md` — with four
+overrides: a non-human owner's ship uses `+0x3150 + 0x30` (`@0x00393B`), a Privateer
+under `[0x53A2] == 0` uses `0x58` (`@0x003955`), the AI-debug branch uses `+0x314B`
+(or `0x45` when `>= 0x80`, `@0x00397B`), and a unit with `+0x3148 & 0x80` shows its
+remaining work as a digit or `+` (`@0x003A3B`–`@0x003A88`).
+
+**Still TBD:** `[bp-0x1A]` and `[bp-0x26]` (`es:[bx+0x3E]`/`[bx+0x40]` off the sheet
+header) are the sprite's measured size, so the exact plate x/y per class needs those two
+sheet fields read as well; and `func_00380C`'s own layer semantics are unread. That is
+what stands between this decode and closing census rows C4.1 (F7, 1,635 px) and C4.27
+(the Europe crossing column, ~326 px) — both of which are this plate.
+
 ## 2. NOT a draw — the `0x35C` correction (B)
 **`0x181F:0x35C` → `func_0048CC` is `clamp(v, lo, hi)`**, not a text/sprite verb. Body
 (`@0x0048CC`): `dx=[bp+6]` (lo), `ax=[bp+8]` (v), `cmp ax,dx; jge …; mov ax,dx` (max), then
