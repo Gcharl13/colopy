@@ -59,7 +59,9 @@ SMOKE = ROOT / "cport" / "host" / "smoke"
 DOS_SLOT = 0
 FIXTURE = "sav1653"
 
-# id -> (F-key, port render args, declared divergence or None)
+# id -> (DOS entry key, port render args, declared divergence or None)
+# The DOS entry key is what `capture()` presses from a known map state. A
+# screen reached by a menu carries its accel path instead (see capture()).
 REPORTS = {
     "F2": ("F2", ["--renderreport", FIXTURE, str(PAK), "{out}", "F2"], None),
     "F3": ("F3", ["--renderreport", FIXTURE, str(PAK), "{out}", "F3"],
@@ -81,6 +83,16 @@ REPORTS = {
            "original does. Fixing it needs the geometry of the shared "
            "per-unit info-panel verb 0x181F:0x2BC (F7 at @0x039586, "
            "spec/ui/advisor_reports.md:166) decoded -- NOT guessed."),
+    "EUROPE": ("EUROPE", ["--rendereurope", FIXTURE, str(PAK), "{out}", "0"],
+           "OPEN (20.0%): two bands -- rows 1-7 (898 px, the top bar) and "
+           "rows 89-199 (11,919 px, the whole lower half: dock, ship rows, "
+           "market). The ship rows draw with the SAME per-unit info-panel "
+           "verb as F7 (0x181F:0x2BC = func_00386A), so C4.1 and this may "
+           "share one cause. Measured BEFORE any fix, deliberately, so the "
+           "fix's effect is provable rather than asserted. Caveat: the "
+           "port's selection state here is (ship 0, dock 0, row 0, market "
+           "0); if DOS enters with a different selection some of this band "
+           "is selection highlight, not layout. Untriaged."),
     "F9": ("F9", ["--renderreport", FIXTURE, str(PAK), "{out}", "F9"],
            "OPEN (5.3%): per-tribe bands at pitch 21. The port draws green "
            "(117,166,77) across x 30-82 where the original has gold "
@@ -120,7 +132,11 @@ def capture() -> None:
     for sid, (fkey, _args, _div) in REPORTS.items():
         drive.key("Escape", delay=0.8)                      # back to a known map
         drive.key("Escape", delay=0.8)
-        drive.key(fkey, delay=2.5)
+        if sid == "EUROPE":                    # VIEW > European Status
+            drive.key("alt+v", delay=1.5)
+            drive.key("E", delay=3.0)
+        else:
+            drive.key(fkey, delay=2.5)
         p = drive.shot("census_%s" % sid)
         if p:
             SHOTS.mkdir(parents=True, exist_ok=True)
