@@ -213,10 +213,21 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
         if (s == euro_ship) rm_hollow_rect(x, 145, 18, 18, 0x0A);
     }
 
-    /* the active ship's cargo row: dark cell per real hold, ICONS 122
-     * beyond capacity */
-    if (ship) {
-        int holds = (int)dat_units[ship->type].cargo;
+    /* The cargo row: a dark cell per real hold, ICONS 122 beyond capacity.
+     *
+     * The grid is BYTE-VERIFIED, func_0314AE @0x0314AE: slot i sits at
+     * x = 12*i + 0x93 (147), y = 0xA5 (165), w = 0x0A (10), h = 0x0C (12) —
+     * the four words the function stores through its out-pointers.
+     *
+     * It is drawn UNCONDITIONALLY, which the port used to get wrong: this
+     * loop hung off `if (ship)`, so an empty harbour left the row showing
+     * bare backdrop.  func_0314DC @0x0314F1 branches the other way — with
+     * no ship selected ([0xFA2] == 0) it walks i = 0..5 through that same
+     * grid and paints EVERY slot from one sprite (@0x03154F, frame 0x7B).
+     * The census caught it on the 1653 frame, where the original reads
+     * "No Ships In Port" over six drawn-empty slots. */
+    {
+        int holds = ship ? (int)dat_units[ship->type].cargo : 0;
         for (int c = 0; c < 6; c++) {
             int x = 147 + 12 * c;
             if (c < holds) rd_fill(x, 165, 10, 12, 0);

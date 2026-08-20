@@ -105,6 +105,54 @@ static int immigrant_band(const immigrant *m) {
  * after import on both sides).  Holds read the record's cargo bytes
  * exactly like the JS import (first two quantity bytes mapped, further
  * slots 100). */
+
+/* The off-map sentinel is not ONE state -- it is five.
+ *
+ * A UnitRecord parked off the map stores x == y == BASE + power, and the
+ * BASE says where in the Atlantic the unit is:
+ *
+ *   0xEC + power  IN EUROPE (harbour + dock).  BYTE-VERIFIED at three
+ *                 independent sites, all testing `unit.x - power == 0xEC`:
+ *                 @0x0421EF (func_042138's per-power recount),
+ *                 @0x035E01 (the immigration accumulator) and
+ *                 @0x058B8F (the REF/war sweep).
+ *   0xF0 + power  BOUND FOR EUROPE ("Expected Soon").  BYTE-VERIFIED:
+ *   0xF4 + power  func_042138 recounts BOTH bases into the same per-power
+ *                 counter [power-0x6BAA] (@0x042455 / @0x04243F), which is
+ *                 the counter the sail-for-Europe path increments
+ *                 @0x041B2F before stamping UnitRecord+0x07 = 0x45
+ *                 @0x041B6D -- and the fixture's only 0xF4-class record
+ *                 (#31) carries exactly that 0x45.  0xEC by contrast feeds
+ *                 the OTHER counter, [power-0x6BA6] (@0x0421F6).
+ *   0xE4 + power  BOUND FOR THE NEW WORLD ("Bound For <region>").
+ *   0xE8 + power  CAPTURE-VERIFIED for 0xE4: sav1653's Dutch Galleon
+ *                 (record #56, x == y == 0xE7 == 0xE4 + 3) is drawn by the
+ *                 ORIGINAL under "Bound For New Netherlands" with its three
+ *                 passengers aboard, while the same screen reads "No Ships
+ *                 In Port" (docs/screens/census/baseline/census_EUROPE.png).
+ *                 0xE8 is the remaining slot and its direction follows from
+ *                 the pairing -- it has NO site of its own.  FLAGGED.
+ *
+ * Before this, the port treated every off-map unit as in-port.  On the
+ * census fixture that parked a crossing Galleon in the harbour and dumped
+ * its three passengers onto the dock; the original shows an empty harbour
+ * and six empty cargo cells (func_0314DC @0x0314F1 takes the no-ship-
+ * selected branch when [0xFA2] == 0, painting all six slots from
+ * func_0314AE's grid: x = 12i + 0x93, y = 0xA5, 10x12).
+ *
+ * NOT decoded: the progress ORDER inside each pair (0xE4 vs 0xE8, 0xF0 vs
+ * 0xF4).  A restored crossing therefore gets a full SAIL_TURNS timer
+ * instead of a guessed remainder -- that is a flagged approximation, not a
+ * reading of the byte. */
+enum { EUSENT_NONE = 0, EUSENT_EUROPE, EUSENT_TO_EUROPE, EUSENT_TO_NEWWORLD };
+static int euro_sentinel(const UnitRecord *u) {
+    if (u->map_x < COLOPY_MAP_W && u->map_y < COLOPY_MAP_H) return EUSENT_NONE;
+    int base = (int)u->map_x - (int)(u->owner_flags & 0x0F);
+    if (base == 0xF0 || base == 0xF4) return EUSENT_TO_EUROPE;
+    if (base == 0xE4 || base == 0xE8) return EUSENT_TO_NEWWORLD;
+    return EUSENT_EUROPE;             /* 0xEC, and any base not in the table */
+}
+
 void europe_seed_from_load(void) {
     CR.n_europe = 0;
     CR.n_dock_units = 0;
@@ -160,7 +208,11 @@ void europe_seed_from_load(void) {
             euro_crossing *e = &CR.europe[CR.n_europe++];
             memset(e, 0, sizeof(*e));
             e->type = u->type;
-            e->state = EURO_PORT;
+            int sent = euro_sentinel(u);
+            e->state = sent == EUSENT_TO_EUROPE   ? EURO_TO_EUROPE
+                     : sent == EUSENT_TO_NEWWORLD ? EURO_TO_NEWWORLD
+                                                  : EURO_PORT;
+            e->turns = e->state == EURO_PORT ? 0 : SAIL_TURNS;
             e->lane_x = e->lane_y = -1;      /* no lane: JS e.lane absent */
             int n = u->cargo_slot_count < 6 ? u->cargo_slot_count : 6;
             for (int k = 0; k < n; k++) {
@@ -169,11 +221,18 @@ void europe_seed_from_load(void) {
                 int qty = k < 2 ? u->cargo_amount[k] : 100;
                 if (qty) hold_add(e->hold, &e->n_hold, good, qty);
             }
-            /* riders disembark to the dock (10484) */
-            for (int r = 0; r < rid_n[i]; r++)
-                if (CR.n_dock_units < (int)(sizeof(CR.dock_units) /
-                                            sizeof(CR.dock_units[0])))
+            /* A ship IN EUROPE unloads: its riders disembark to the dock
+             * (10484).  A ship still AT SEA keeps them aboard -- that is
+             * what the original draws, three figures trailing the Galleon
+             * in the "Bound For" column. */
+            for (int r = 0; r < rid_n[i]; r++) {
+                if (e->state != EURO_PORT) {
+                    if (e->n_pass < EURO_PASS_MAX) e->pass[e->n_pass++] = rid[i][r];
+                } else if (CR.n_dock_units < (int)(sizeof(CR.dock_units) /
+                                                   sizeof(CR.dock_units[0]))) {
                     CR.dock_units[CR.n_dock_units++] = rid[i][r];
+                }
+            }
         } else {
             /* on-map ship: seed its live hold + passenger mirrors */
             int n = u->cargo_slot_count < 6 ? u->cargo_slot_count : 6;

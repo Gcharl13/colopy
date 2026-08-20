@@ -3029,7 +3029,7 @@ function autoExport(c) {
       spoiled.push({ good: i, qty: excess });
       continue;
     }
-    const gross = excess * G.market[i];
+    const gross = excess * bidPrice(i);
     const tax = Math.floor(gross * G.tax / 100);
     G.gold += gross - tax;
     G.kingsFund += tax;
@@ -4613,7 +4613,26 @@ function seedMarket() {
   G.tradeTons = DATA.cargo.map(() => 0);
   G.tradeGold = DATA.cargo.map(() => 0);
 }
-const askPrice = (i) => G.market[i] + DATA.cargo[i].burden + 1;
+// G.market[i] is the record's PRICE LEVEL (+0x4C), and neither quoted number
+// equals it -- they straddle it. BYTE-VERIFIED:
+//
+//   BID  func_030590 @0x030590:  al = power[+0x4C + good]; dec ax;
+//                                jns -> keep, else 0   => max(0, level - 1)
+//   ASK  commodity_current_price @0x030566:  cx = [good*9 - 0x6900];
+//                                al = power[+0x4C + good]; add ax, cx;
+//                                jns -> keep, else 0   => max(0, level + spread)
+//
+// The @CARGO table at [good*9 - 0x6900] (stride 9) holds the spread, which is
+// the number DATA.cargo[i].burden already carries. The port used to quote the
+// level itself as the bid and `burden + 1` as the ask, so BOTH numbers came out
+// one high -- which is exactly what the census measured against the live 1653
+// Europe market bar: DOS 0/8 6/8 4/6 4/6 5/7 ... 1/2 9/10 where the port
+// printed 1/9 7/9 5/7 5/7 6/8 ... 2/3 10/11, all sixteen goods, both halves.
+// Not a new finding either: docs/COLONIZATION_TECHNICAL_REFERENCE.md:1421 has
+// read "Display: sell = level - 1, buy = level + burden" since the PowerRecord
+// table was written, with the worked example at :1433. Neither engine did it.
+const bidPrice = (i) => Math.max(0, G.market[i] - 1);
+const askPrice = (i) => Math.max(0, G.market[i] + DATA.cargo[i].burden);
 function stepPrice(i) {
   const c = DATA.cargo[i];
   const before = G.market[i];
@@ -4628,8 +4647,8 @@ function stepPrice(i) {
   // (func_036574 @0x367FC) and the single-good re-drift after a buy/sell
   // (@0x32902/@0x32D99). Live frames wear MSS2 with the good + number
   // hilited (SESSION_UI_CATALOG frames 1310280609..). FLAGGED reading: the
-  // announced number is the port's bid (sell) price -- whether the engine
-  // prints bid or ask is unread.
+  // announced number is the record's PRICE LEVEL -- whether the engine
+  // prints the level, the bid or the ask is unread.
   if (G.market[i] !== before && G.eventQueue)
     showEvent(G.market[i] > before ? 'PRICEUP' : 'PRICEDOWN',
               { STRING0: c.name, STRING1: DATA.nations[G.nation].homeport,
@@ -4647,7 +4666,7 @@ function driftMarket() {
 const isBoycotted = (i) => G.boycotts.includes(i);
 function sellGoods(i, qty) {
   if (qty <= 0 || isBoycotted(i)) return 0;
-  const gross = G.market[i] * qty;
+  const gross = bidPrice(i) * qty;
   const tax = Math.floor(gross * G.tax / 100);
   G.gold += gross - tax;
   G.kingsFund += tax;
@@ -4766,7 +4785,7 @@ function drawEurope(ctx) {
   DATA.cargo.forEach((g, i) => {
     const [fw] = frameSize('ICONS', 0x16 + i);
     sheetFrame(ctx, 'ICONS', 0x16 + i, 9 + 19 * i - (fw >> 1), 181);
-    FONT.tiny.center(ctx, `${G.market[i]}/${askPrice(i)}`, 9 + 19 * i, 194, lut(0x2F));
+    FONT.tiny.center(ctx, `${bidPrice(i)}/${askPrice(i)}`, 9 + 19 * i, 194, lut(0x2F));
     if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 19, 21, 0x0E);
   });
 
@@ -4871,8 +4890,19 @@ function drawEurope(ctx) {
   // The dark hold is not a sprite I can name: nothing in ICONS matches those two
   // cells better than 0.62, so they are drawn as a plain dark cell here and the
   // real source is left open.
-  if (ship) {
-    const holds = Number((unit(ship.type) || {}).cargo) || 0;
+  //
+  // The grid is now BYTE-VERIFIED too: func_0314AE @0x0314AE stores slot i at
+  // x = 12*i + 0x93 (147), y = 0xA5 (165), w = 0x0A (10), h = 0x0C (12).
+  //
+  // And the row is drawn UNCONDITIONALLY. This loop used to hang off `if
+  // (ship)`, so an empty harbour left the row as bare backdrop; func_0314DC
+  // @0x0314F1 branches the other way -- with no ship selected ([0xFA2] == 0) it
+  // walks i = 0..5 through the same grid and paints EVERY slot from one sprite
+  // (@0x03154F). The census caught it on the 1653 frame, where the original
+  // reads "No Ships In Port" over six drawn-empty slots, and frame 122 matches
+  // the original's cells pixel-for-pixel there.
+  {
+    const holds = ship ? (Number((unit(ship.type) || {}).cargo) || 0) : 0;
     for (let k = 0; k < 6; k++) {
       const x = 147 + 12 * k;
       if (k < holds) { ctx.fillStyle = ink(0); ctx.fillRect(x, 165, 10, 12); }
@@ -4976,7 +5006,7 @@ function dockUnitRows() {
     // What the transaction actually pays -- NOT what the row displays. See the
     // FLAGGED note on armOptionSubs: the section carries one number per good.
     const price = v.buy ? askPrice(v.good) * v.qty
-                : Math.floor(G.market[v.good] * v.qty * (100 - G.tax) / 100);
+                : Math.floor(bidPrice(v.good) * v.qty * (100 - G.tax) / 100);
     rows.push({ label: row(v.row, ''), act: 'arm', verb: v, to,
                 dim: v.buy && (price > G.gold || isBoycotted(v.good)) });
   }
@@ -5142,7 +5172,7 @@ function sellFromShip(i, qty) {
     // = sell_price x 500 @0x333AF; pay -> treasury-, king's fund+, bit
     // cleared @0x3340C..0x33423; can't afford -> not lifted @0x333DD, the
     // @KISSSORRY shortfall). Row 2 pays.
-    const tax = G.market[i] * 500;
+    const tax = bidPrice(i) * 500;
     askEvent('KISSUP', { STRING0: DATA.cargo[i].name,
                          STRING1: DATA.nations[G.nation].homeport,
                          NUMBER0: tax }, (choice) => {
@@ -5166,7 +5196,7 @@ function sellFromShip(i, qty) {
   // An explicit qty (the trade routes' automated stop) sells without asking;
   // the interactive path runs @HOWMUCH5 "sold (at N$) to %STRING2 (0-N)".
   if (qty !== undefined) { finish(Math.min(qty, have)); return; }
-  askAmount('HOWMUCH5', { STRING0: DATA.cargo[i].name, NUMBER1: G.market[i],
+  askAmount('HOWMUCH5', { STRING0: DATA.cargo[i].name, NUMBER1: bidPrice(i),
                           STRING2: DATA.nations[G.nation].homeport },
             have, finish);
 }
@@ -9778,7 +9808,7 @@ const REPORTS = {
                `Paid to the Crown: ${G.kingsFund} gold`, '', 'Market  bid / ask'];
     DATA.cargo.forEach((g, i) => {
       if (i % 2 === 0) l.push('');
-      l[l.length - 1] += `  ${g.name} ${G.market[i]}/${askPrice(i)}`;
+      l[l.length - 1] += `  ${g.name} ${bidPrice(i)}/${askPrice(i)}`;
     });
     return l;
   } },
@@ -10175,7 +10205,7 @@ function drawEconomicReport(ctx) {
     const cells = [
       [String(europeTons(i)), REPORT_GREEN_INK],
       [`${f5Gold(europeGold(i))}$`, REPORT_GREEN_INK],
-      [`${G.market[i]}$`, REPORT_VALUE_INK],
+      [`${bidPrice(i)}$`, REPORT_VALUE_INK],
       [`${askPrice(i)}$`, REPORT_VALUE_INK],
     ];
     cells.forEach(([s, k], c) =>
@@ -10555,6 +10585,42 @@ const SAVE_KEY = 'colonization.save';
 // trade routes, and the diplomacy matrices load empty/at peace, flagged.
 const SAV_PROFESSION = (v) =>
   (v >= 1 && v < (DATA.jobexpert || []).length) ? DATA.jobexpert[v] : null;
+// The off-map sentinel is not ONE state -- it is five.
+//
+// A UnitRecord parked off the map stores x == y == BASE + power, and the BASE
+// says where in the Atlantic the unit is:
+//
+//   0xEC + power  IN EUROPE (harbour + dock). BYTE-VERIFIED at three
+//                 independent sites, all testing `unit.x - power == 0xEC`:
+//                 @0x0421EF (func_042138's per-power recount), @0x035E01 (the
+//                 immigration accumulator) and @0x058B8F (the REF/war sweep).
+//   0xF0 + power  BOUND FOR EUROPE ("Expected Soon"). BYTE-VERIFIED:
+//   0xF4 + power  func_042138 recounts BOTH bases into the same per-power
+//                 counter [power-0x6BAA] (@0x042455 / @0x04243F), the counter
+//                 the sail-for-Europe path increments @0x041B2F before
+//                 stamping UnitRecord+0x07 = 0x45 @0x041B6D -- and the
+//                 fixture's only 0xF4-class record (#31) carries exactly that
+//                 0x45. 0xEC feeds the OTHER counter, [power-0x6BA6]
+//                 (@0x0421F6).
+//   0xE4 + power  BOUND FOR THE NEW WORLD ("Bound For <region>").
+//   0xE8 + power  CAPTURE-VERIFIED for 0xE4: sav1653's Dutch Galleon (record
+//                 #56, x == y == 0xE7 == 0xE4 + 3) is drawn by the ORIGINAL
+//                 under "Bound For New Netherlands" with its three passengers
+//                 aboard, while the same screen reads "No Ships In Port"
+//                 (docs/screens/census/baseline/census_EUROPE.png). 0xE8 is
+//                 the remaining slot; its direction follows from the pairing
+//                 and has NO site of its own. FLAGGED.
+//
+// NOT decoded: the progress ORDER inside each pair (0xE4 vs 0xE8, 0xF0 vs
+// 0xF4). A restored crossing gets a full SAIL_TURNS timer rather than a
+// guessed remainder -- a flagged approximation, not a reading of the byte.
+function euroSentinel(x, power) {
+  const base = x - power;
+  if (base === 0xF0 || base === 0xF4) return 'toEurope';
+  if (base === 0xE4 || base === 0xE8) return 'toNewWorld';
+  return 'port';                 // 0xEC, and any base not in the table
+}
+
 function importSav(bytes) {
   const d = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   const u16 = (o) => d[o] | (d[o + 1] << 8);
@@ -10639,7 +10705,11 @@ function importSav(bytes) {
   G.fathersOwned = (DATA.fathers || [])
     .filter((f, i) => ffbits & (1 << i)).map(f => f.name);
   G.market = [];
-  for (let i = 0; i < 16; i++) G.market.push(Math.max(1, d[pb + 0x4C + i]));
+  // The record byte is the PRICE LEVEL, taken verbatim. The old
+  // Math.max(1, ...) clamped the LEVEL; the original clamps the RESULT
+  // instead (func_030590/func_030566 both `jns` after the arithmetic),
+  // so a level of 0 or 1 is legal and quotes a bid of 0.
+  for (let i = 0; i < 16; i++) G.market.push(d[pb + 0x4C + i]);
   // The whole-game net-trade counters the F5 report reads: +0xBC units,
   // +0x7C value (s32[16] each).
   G.tradeTons = []; G.tradeGold = [];
@@ -10823,16 +10893,23 @@ function importSav(bytes) {
       G.units.push(u);
     }
   }
-  // Ships parked at the off-map sentinel dock in Europe; their riders
-  // disembark to the dock, the way an arriving crossing unloads.
+  // Ships parked off the map. The sentinel coordinate is not ONE state --
+  // it is five, and which one decides whether the ship is in the harbour or
+  // still at sea. See euroSentinel() above for the byte citations; the short
+  // version is 0xEC+power = in Europe, 0xF0/0xF4+power = bound for Europe,
+  // 0xE4/0xE8+power = bound for the New World. A ship in Europe unloads its
+  // riders onto the dock; a ship at sea keeps them aboard.
   for (let i = G.units.length - 1; i >= 0; i--) {
     const u = G.units[i];
     if (u.x < MAP.w && u.y < MAP.h) continue;
     G.units.splice(i, 1);
     if (u.ship) {
-      for (const p of (u.cargo || [])) G.dockUnits.push(p);
-      G.europe.push({ type: u.type, icon: u.icon, hold: u.hold || [],
-                      passengers: [], state: 'port' });
+      const state = euroSentinel(u.x, nation);
+      const e = { type: u.type, icon: u.icon, hold: u.hold || [],
+                  passengers: [], state };
+      if (state === 'port') for (const p of (u.cargo || [])) G.dockUnits.push(p);
+      else { e.passengers = u.cargo || []; e.turns = SAIL_TURNS; }
+      G.europe.push(e);
     }
   }
   G.euroShip = 0;
@@ -11460,7 +11537,7 @@ function moveSel(dx, dy) {
       }
       if (!hold.length) { showEvent('DEFICIT'); return; }
       const h = hold[0];
-      const myVal = G.market[h.good] * h.qty;
+      const myVal = bidPrice(h.good) * h.qty;
       const offerGold = Math.floor(myVal * 5 / 4);
       let og = (h.good + 1) % 16;
       while (og === h.good || askPrice(og) <= 0) og = (og + 1) % 16;
@@ -13342,7 +13419,7 @@ dbgAddTab('Market', () => {
   // tables so both fit the panel without a sideways scroll: what a good is
   // worth right now, then what is moving its price.
   const m = DATA.cargo.map((c, i) => {
-    const bid = G.market[i];
+    const bid = bidPrice(i);
     return {
       c, i, bid,
       ask: typeof askPrice === 'function' ? askPrice(i) : 0,

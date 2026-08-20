@@ -146,6 +146,19 @@ against the game the live 1653 captures came from):
 - **Off-map coordinates** in a UnitRecord (e.g. 231,231) are the engine's
   "in Europe / high seas" state: such ships carry their passengers as
   co-located rider records.
+- **The off-map coordinate is FIVE states, not one — DECODED 2026-08-20.**
+  The record stores `x == y == BASE + power` (power = the owner nibble), and
+  the base says *where in the Atlantic*:
+
+  | base | meaning | evidence |
+  |------|---------|----------|
+  | `0xEC` | **in Europe** (harbour + dock) | BYTE-VERIFIED at three independent sites, all testing `unit.x - power == 0xEC`: `func_042138` `@0x0421EF` (per-power recount, into `[power-0x6BA6]` `@0x0421F6`), the immigration accumulator `@0x035E01`, the REF/war sweep `@0x058B8F` |
+  | `0xF0`, `0xF4` | **bound for Europe** ("Expected Soon") | BYTE-VERIFIED: `func_042138` recounts BOTH into the *other* per-power counter `[power-0x6BAA]` (`@0x042455` / `@0x04243F`) — the one the sail-for-Europe path increments `@0x041B2F` before stamping `UnitRecord+0x07 = 0x45` `@0x041B6D`. `COLONY00.SAV`'s only `0xF4`-class record (#31) carries exactly that `0x45`. |
+  | `0xE4`, `0xE8` | **bound for the New World** ("Bound For …") | CAPTURE-VERIFIED for `0xE4`: the Dutch Galleon at `x == y == 0xE7 == 0xE4 + 3` (record #56) is drawn by the running game under "Bound For New Netherlands" with its three riders aboard, on a screen that simultaneously reads "No Ships In Port" (`docs/screens/census/baseline/census_EUROPE.png`). `0xE8` is the remaining slot and its direction follows from the pairing — **FLAGGED**, it has no site of its own. |
+
+  **Still TBD:** the progress ORDER within each pair (`0xE4` vs `0xE8`,
+  `0xF0` vs `0xF4`). A restored crossing is therefore given a full crossing
+  timer in the port rather than a guessed remainder.
 
 The HTML port's `importSav()` (port/src/game.js) walks this whole layout and
 restores a shipped save into the playable rebuild; `port/tools/test_flow.py`
