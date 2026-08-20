@@ -10519,7 +10519,12 @@ function drawForeignReport(ctx) {
 // cells on the count line, at x=152 and x=209 (one sample each: the Apache row
 // reads "50 Muskets" and "1 Horse Herds").
 const F9_ICON_X = 10, F9_NAME_X = 30, F9_COUNT_X = 40, F9_LEVEL_RX = 311;
-const F9_MUSKET_X = 152, F9_HORSE_X = 209;
+// The sub-line is FOUR cells at pitch 0x38 = 56, decoded from the row loop
+// itself -- `add word ptr [bp-0x68], 0x38` three times, @0x037728, @0x037783,
+// @0x0377D2 -- so the grid is 40 + 56k: settlements 40, missions 96, muskets
+// 152, horse herds 208. The two x's the port already carried came from a
+// capture and landed on 152 and 209; 208 is the decoded one.
+const F9_MUSKET_X = 152, F9_HORSE_X = 208;
 // Seven blocks fill the plate (25 + 7*21 = 172, and the OK box starts at 184),
 // which is why the 1653 frame stops at seven. The spec calls F9 "multi-page via
 // paginator func_039E98"; that paginator is NOT wired up here, so an eighth
@@ -10530,17 +10535,39 @@ const F9_ICON_Y = 25, F9_ROW0 = 28, F9_PITCH = 21, F9_PER_PAGE = 7;
 // no rule derivable from tribe index, tech level or settlement count, which is
 // what an animation counter looks like. UNRESOLVED; 116 is the modal frame.
 const F9_PORTRAIT = 116;
+// The report body's SHADOWED text.
+//
+// The original draws these labels with a black drop shadow at exactly three
+// offsets -- (+1,0), (0,+1) and (+1,+1) -- and the coloured glyph on top. That
+// is not a guess: on the census F9 frame the model reproduces the black pixels
+// EXACTLY on two independent rows, 134/134 and 88/88, with zero missing and
+// zero extra. The 4- and 8-neighbour outlines both over-predict (48 and 83
+// extra pixels on the same row), so the shadow is the down-right quadrant and
+// nothing else. The port drew the glyph alone, so every label on the screen
+// came out thinner and lighter than the original's.
+// FONT.draw's OWN `shadow` argument already draws exactly these three offsets
+// (see the [[1,0],[0,1],[1,1]] loop in the class); F9 simply never passed it.
+const f9Shadow = (ctx, str, x, y, tk) =>
+  FONT.tiny.draw(ctx, str, x, y, tk, ink(0));
 function drawIndianReport(ctx) {
   const black = [ink(0), ink(0), ink(0)];
-  // Only tribes the player has actually run into appear. On the 1653 frame the
-  // Dutch list seven of the eight -- Incas, Aztecs and Tupi are there marked
-  // "Extinct", but the Iroquois are absent entirely, i.e. wiped-out-after-
-  // contact is listed and never-contacted is not. The port has no contact
-  // flag, so "has explored a tile holding one of that tribe's settlements"
-  // stands in for it; that is the port's own rule and is flagged here.
+  // WHICH TRIBES GET A ROW -- byte-verified at @0x03784C-@0x037860. The row
+  // loop calls the relation getter (0x181F:0xA38 = func_007F34) with
+  // (tribe + 4, power) and draws the row when `al & 0x20`; failing that it
+  // falls back on TribeRecord +0x03 bit 0x80, and only if BOTH are clear does
+  // it skip to the next tribe. The pitch in that same loop is
+  // `add [bp-0x5C], 0x15` = 21 (F9_PITCH) and the bound is `cmp [bp-0x64], 8`.
+  //
+  // The port used to list a tribe when it had a village on an EXPLORED tile.
+  // That is a different question, and it got the census frame wrong twice
+  // over: it dropped the three EXTINCT tribes the original lists (Incas,
+  // Aztecs, Tupi -- contacted, then wiped out, drawn as "<name>: Extinct"),
+  // and it agreed about the Iroquois only by accident. The original skips the
+  // Iroquois because their relation byte is 0 -- never contacted -- even
+  // though they own ELEVEN villages on that save.
   const listed = G.tribes
     .map((t, i) => [t, i])
-    .filter(([, i]) => G.villages.some(v => v.tribe === i && isSeen(v.x, v.y)));
+    .filter(([t]) => t.met || (t.recFlags & 0x80));
   listed.slice(0, F9_PER_PAGE).forEach(([t, i], row) => {
     const y = F9_ROW0 + row * F9_PITCH;
     const n = G.villages.filter(v => v.tribe === i).length;
@@ -10553,13 +10580,33 @@ function drawIndianReport(ctx) {
     // green). The spec's "cell colour = @COLORS basic 68" does not hold.
     const tk = lut(t.color);
     if (!n) {
-      FONT.tiny.draw(ctx, `${t.name}: ${DATA.text.misc[130]}`, F9_NAME_X, y, tk);
+      f9Shadow(ctx, `${t.name}: ${DATA.text.misc[130]}`, F9_NAME_X, y, tk);
       return;
     }
-    FONT.tiny.draw(ctx, t.name + ':', F9_NAME_X, y, tk);
-    FONT.tiny.right(ctx, lv.name, F9_LEVEL_RX, y, tk);
+    f9Shadow(ctx, t.name + ':', F9_NAME_X, y, tk);
+    FONT.tiny.right(ctx, lv.name, F9_LEVEL_RX, y, tk, ink(0));
     FONT.tiny.draw(ctx, `${n} ${n === 1 ? lv.one : lv.many}`, F9_COUNT_X, y + 8, black);
-    const muskets = tribeStock(i, 15), horses = tribeStock(i, 8);
+    // MUSKETS (@0x03766D-@0x0376B1): seed from TribeRecord +0x07, add one per
+    // unit of that tribe whose type is 0x14 (Armed Braves) or 0x16 (Mtd.
+    // Warriors) -- `cmp [bx+0x3146], 0x14 / 0x16` @0x03768E and @0x037695 --
+    // then multiply by 50 (`mov ax, 0x32; imul` @0x0376AB). Drawn only when
+    // nonzero (@0x037787).
+    // HORSE HERDS (@0x0377D6): TribeRecord +0x08 verbatim, drawn only when
+    // nonzero. On the census fixture the Apache carry +0x07 = 0 with one Armed
+    // Brave -> "50 Muskets", and +0x08 = 1 -> "1 Horse Herds" -- exactly the
+    // original's row. The port used to read both from a RUNTIME v.stock map
+    // the import leaves empty, so neither cell ever drew.
+    //
+    // NOT implemented: the MISSIONS cell at x = 96 (@0x037650 counts this
+    // tribe's settlements whose mission byte's low nibble equals the power,
+    // drawn with the singular/plural pair [0x2DF0]/[0x2DF2]). The counting
+    // rule is byte-cited; the two STRINGS are not resolved and the census
+    // fixture has no Dutch mission to show them. Flagged, not invented.
+    const armed = G.natives.filter(u => u.tribe === i &&
+      (u.type === (DATA.units[0x14] || {}).name ||
+       u.type === (DATA.units[0x16] || {}).name)).length;
+    const muskets = ((t.recMuskets || 0) + armed) * 50;
+    const horses = t.recHerds || 0;
     if (muskets)
       FONT.tiny.draw(ctx, `${muskets} ${DATA.cargo[15].name}`, F9_MUSKET_X, y + 8, black);
     if (horses)
@@ -10802,7 +10849,33 @@ function importSav(bytes) {
   // table (blocks 11-33). The 1653 save carries 1, the census3 save 0 --
   // exactly the badge difference between their two live colony frames.
   G.colonyNumbers = !!d[tribeBase + 0x270 + 564];
-  G.tribes.forEach(t => { t.met = true; });
+  // CONTACT comes from the record, not from a blanket true.
+  //
+  // This used to read `G.tribes.forEach(t => { t.met = true; })`. The original
+  // does not work that way: TribeRecord + 0x3A + power is the per-(tribe,
+  // power) RELATION byte, and 0 means never contacted. Byte-verified by the
+  // shared accessor func_007F34 @0x007F46 -- for a native party (a >= 4) it
+  // reads `[b + a*0x4E + 0x59D8]`, and the tribe array base is 0x5AD6
+  // (func_0081E6 @0x0081EA `add ax, 0x5ad6`, corroborated by func_00822A
+  // @0x008232 reading the tech level at +0x5AD8 = record+2), so the field
+  // resolves to record + 0x3A + b. func_007F62 @0x007F76 is the setter. For a
+  // European party the same accessor reads the PowerRecord war matrix.
+  //
+  // The F9 row loop tests it directly (@0x03784C get_relation(tribe+4, power),
+  // @0x037854 test al, 0x20), and on the census fixture that predicts the
+  // original's list exactly: seven tribes drawn, the Iroquois skipped despite
+  // owning ELEVEN villages, because their relation byte is 0.
+  //
+  // Only bit 0x20 is decoded. The rest of the 0x60/0x62/0x64/0x66 values the
+  // fixture carries are NOT -- FLAGGED, not guessed.
+  G.tribes.forEach((t, i) => {
+    const tb = tribeBase + i * 0x4E;
+    t.relation = d[tb + 0x3A + nation];
+    t.recFlags = d[tb + 3];
+    t.recMuskets = d[tb + 7];        // F9 muskets seed, x50 (@0x03766D)
+    t.recHerds = d[tb + 8];          // F9 horse herds, verbatim (@0x0377D6)
+    t.met = !!(t.relation & 0x20);
+  });
   // REF strength: [0x53DA/DC/DE/E0] = Regulars / Cavalry / Man-O-War /
   // Artillery (COLONIZATION_TECHNICAL_REFERENCE.md 1117) = g+0x5A..0x60.
   G.ref = { Regulars: u16(g + 0x5A), Cavalry: u16(g + 0x5C),

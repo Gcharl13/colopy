@@ -52,6 +52,26 @@ static const uint8_t *rlut(uint8_t i) {
     l[0] = 0xFF; l[1] = i; l[2] = (uint8_t)(i - 1); l[3] = 0;
     return l;
 }
+/* The report body's SHADOWED text.
+ *
+ * The original draws these labels with a black drop shadow at exactly three
+ * offsets -- (+1,0), (0,+1) and (+1,+1) -- and the coloured glyph on top.
+ * That is not a guess: on the census F9 frame the model reproduces the black
+ * pixels EXACTLY on two independent rows, 134/134 and 88/88, with zero
+ * missing and zero extra. The 4- and 8-neighbour outlines both over-predict
+ * (48 and 83 extra pixels on the same row), so the shadow really is the
+ * down-right quadrant and nothing else.
+ *
+ * The port drew the glyph alone, so every label on the screen was thinner and
+ * lighter than the original's. */
+static void r_text_shadow(const rd_font *f, const char *str, int x, int y,
+                          const uint8_t ink[4]) {
+    static const uint8_t sh[4] = { 0xFF, 0, 0, 0 };
+    rd_text(f, str, x + 1, y,     sh);
+    rd_text(f, str, x,     y + 1, sh);
+    rd_text(f, str, x + 1, y + 1, sh);
+    rd_text(f, str, x,     y,     ink);
+}
 static int rround(int num2) {           /* Math.round(num2/2) */
     int v = num2 + 1;
     return v >= 0 ? v / 2 : -((-v + 1) / 2);
@@ -62,6 +82,11 @@ static void r_center(const char *s, int cx, int y, const uint8_t ink[4]) {
 }
 static void r_right(const char *s, int rx, int y, const uint8_t ink[4]) {
     rd_text(&R_TINY, s, rx - rd_text_width(&R_TINY, s), y, ink);
+}
+static void r_text_shadow(const rd_font *f, const char *str, int x, int y,
+                          const uint8_t ink[4]);
+static void r_right_shadow(const char *s, int rx, int y, const uint8_t ink[4]) {
+    r_text_shadow(&R_TINY, s, rx - rd_text_width(&R_TINY, s), y, ink);
 }
 static int r_fh(void) { return R_TINY.cell_h + 2; }
 
@@ -411,7 +436,7 @@ static void draw_f8(void) {
 #define F9_COUNT_X 40
 #define F9_LEVEL_RX 311
 #define F9_MUSKET_X 152
-#define F9_HORSE_X 209
+#define F9_HORSE_X 208   /* = 40 + 56*3, the decoded grid; was 209 by eye */
 #define F9_ICON_Y 25
 #define F9_ROW0 28
 #define F9_PITCH 21
@@ -428,14 +453,28 @@ static void draw_f9(void) {
     const uint8_t black[4] = { 0xFF, 0, 0, 0 };
     int row = 0;
     for (int ti = 0; ti < 8 && row < F9_PER_PAGE; ti++) {
-        int listed = 0, n = 0;
-        for (int v = 0; v < CS.n_villages; v++) {
-            if (CS.villages[v].owner_tribe - 4 != ti) continue;
-            n++;
-            if (rm_is_seen(CS.villages[v].map_x, CS.villages[v].map_y))
-                listed = 1;
-        }
-        if (!listed) continue;
+        /* WHICH TRIBES GET A ROW -- byte-verified at @0x03784C-@0x037860.
+         *
+         * The row loop calls the relation getter (0x181F:0xA38 =
+         * func_007F34) with (tribe + 4, power) and draws the row when
+         * `al & 0x20`; failing that it falls back on TribeRecord +0x03 bit
+         * 0x80, and only if BOTH are clear does it skip to the next tribe.
+         * The pitch in the same loop is `add [bp-0x5C], 0x15` = 21, which
+         * is F9_PITCH, and the bound is `cmp [bp-0x64], 8`.
+         *
+         * The port used to list a tribe when it had a village on an
+         * EXPLORED tile.  That is a different question and it got the
+         * census frame wrong twice over: it dropped the three EXTINCT
+         * tribes the original lists (Incas, Aztecs, Tupi -- contacted, then
+         * wiped out, drawn as "<name>: Extinct"), and it happened to agree
+         * about the Iroquois only by accident.  The original skips the
+         * Iroquois because their relation byte is 0 -- never contacted --
+         * even though they own ELEVEN villages on that save. */
+        const uint8_t *trec = &CS.tribes[ti * 0x4E];
+        if (!CR.tribe_met[ti] && !(trec[0x03] & 0x80)) continue;
+        int n = 0;
+        for (int v = 0; v < CS.n_villages; v++)
+            if (CS.villages[v].owner_tribe - 4 == ti) n++;
         int y = F9_ROW0 + row * F9_PITCH;
         int lv = tribe_level(ti);
         if (lv < 0) lv = 0;
@@ -447,19 +486,57 @@ static void draw_f9(void) {
         if (!n) {
             snprintf(buf, sizeof(buf), "%s: %s", dat_tribes[ti].name,
                      dat_text_misc[130]);
-            rd_text(&R_TINY, buf, F9_NAME_X, y, tk);
+            r_text_shadow(&R_TINY, buf, F9_NAME_X, y, tk);
             row++;
             continue;
         }
         snprintf(buf, sizeof(buf), "%s:", dat_tribes[ti].name);
-        rd_text(&R_TINY, buf, F9_NAME_X, y, tk);
-        r_right(R_LEVELS[lv].name, F9_LEVEL_RX, y, tk);
+        r_text_shadow(&R_TINY, buf, F9_NAME_X, y, tk);
+        r_right_shadow(R_LEVELS[lv].name, F9_LEVEL_RX, y, tk);
         snprintf(buf, sizeof(buf), "%d %s", n,
                  n == 1 ? R_LEVELS[lv].one : R_LEVELS[lv].many);
         rd_text(&R_TINY, buf, F9_COUNT_X, y + 8, black);
-        /* v.stock is a RUNTIME map the pinned import leaves empty, so
-         * the musket/horse cells never draw here (JS tribeStock over
-         * G.villages[].stock — no record field feeds it at load) */
+        /* The sub-line is FOUR cells at pitch 0x38 = 56, decoded from the
+         * row loop itself: settlements (F9_COUNT_X 40), missions (96),
+         * muskets (F9_MUSKET_X 152) and horse herds (F9_HORSE_X 209) --
+         * `add word ptr [bp-0x68], 0x38` three times, @0x037728,
+         * @0x037783, @0x0377D2.  The two capture-derived x's the port
+         * already carried land exactly on 40 + 56k.
+         *
+         * MUSKETS (@0x03766D-@0x0376B1): seed from TribeRecord +0x07, add
+         * one per unit of that tribe whose type is 0x14 (Armed Braves) or
+         * 0x16 (Mtd. Warriors) -- `cmp [bx+0x3146], 0x14 / 0x16` @0x03768E
+         * and @0x037695 -- then multiply by 50 (`mov ax, 0x32; imul`
+         * @0x0376AB).  Drawn only when nonzero (@0x037787).
+         * HORSE HERDS (@0x0377D6): TribeRecord +0x08 verbatim, drawn only
+         * when nonzero.  On the census fixture the Apache carry +0x07 = 0
+         * with one Armed Brave -> "50 Muskets", and +0x08 = 1 -> "1 Horse
+         * Herds", which is exactly what the original's row shows.
+         *
+         * The port used to read these from a RUNTIME v.stock map that the
+         * import leaves empty, so both cells never drew at all.
+         *
+         * NOT implemented: the MISSIONS cell at x = 96 (@0x037650: count
+         * this tribe's settlements whose mission byte's low nibble equals
+         * the power, drawn with the singular/plural pair [0x2DF0]/[0x2DF2]).
+         * The counting rule is byte-cited; the two STRINGS are not
+         * resolved, and the census fixture has no Dutch mission to show
+         * them.  Flagged rather than invented. */
+        int armed = 0;
+        for (int u = 0; u < CS.n_units; u++)
+            if ((CS.units[u].owner_flags & 0x0F) == ti + 4 &&
+                (CS.units[u].type == 0x14 || CS.units[u].type == 0x16))
+                armed++;
+        int muskets = ((int)trec[0x07] + armed) * 50;
+        if (muskets) {
+            snprintf(buf, sizeof(buf), "%d %s", muskets, dat_cargo[15].name);
+            rd_text(&R_TINY, buf, F9_MUSKET_X, y + 8, black);
+        }
+        if (trec[0x08]) {
+            snprintf(buf, sizeof(buf), "%d %s", (int)trec[0x08],
+                     dat_text_misc[45]);
+            rd_text(&R_TINY, buf, F9_HORSE_X, y + 8, black);
+        }
         row++;
     }
 }

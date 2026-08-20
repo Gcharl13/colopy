@@ -224,8 +224,30 @@ void cr_reset_from_load(void) {
     CR.cur_village = -1;
     CR.cur_visitor = -1;
     memset(CR.tribe_war_with, 0xFF, sizeof(CR.tribe_war_with));  /* -1 */
-    /* the importer marks every tribe met (game.js:10262) */
-    memset(CR.tribe_met, 1, sizeof(CR.tribe_met));
+    /* CONTACT comes from the record, not from a blanket true.
+     *
+     * The importer used to mark every tribe met.  The original does not:
+     * TribeRecord + 0x3A + power is the per-(tribe, power) RELATION byte,
+     * and 0 means never contacted.  Byte-verified by the shared accessor
+     * func_007F34 @0x007F46 -- for a native party (a >= 4) it reads
+     * `[b + a*0x4E + 0x59D8]`, and the tribe array base is 0x5AD6
+     * (func_0081E6 @0x0081EA `add ax, 0x5ad6`, corroborated by
+     * func_00822A @0x008232 reading the tech level at +0x5AD8 = record+2),
+     * so the field resolves to record + 0x3A + b.  func_007F62 @0x007F76
+     * is the matching setter.  For a European party the same accessor
+     * reads the PowerRecord war matrix instead.
+     *
+     * The F9 Indian report's own row loop tests it directly
+     * (@0x03784C: get_relation(tribe+4, power); @0x037854: test al, 0x20),
+     * and on the census fixture that predicts the original's list exactly:
+     * seven tribes drawn, the Iroquois skipped despite owning ELEVEN
+     * villages, because their relation byte is 0.
+     *
+     * Only bit 0x20 is decoded.  The other bits of the 0x60/0x62/0x64/0x66
+     * values the fixture carries are NOT -- FLAGGED, not guessed. */
+    for (int t = 0; t < 8; t++)
+        CR.tribe_met[t] =
+            (uint8_t)((CS.tribes[t * 0x4E + 0x3A + cs_nation()] & 0x20) != 0);
     for (int i = 0; i < CS.n_villages; i++)
         if (CS.villages[i].flags & 0x08) CR.village_flags[i] |= 8;
     /* importer game.js:10285-10288: the artillery price-escalation

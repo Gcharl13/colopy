@@ -63,7 +63,12 @@ FIXTURE = "sav1653"
 # The DOS entry key is what `capture()` presses from a known map state. A
 # screen reached by a menu carries its accel path instead (see capture()).
 REPORTS = {
-    "F2": ("F2", ["--renderreport", FIXTURE, str(PAK), "{out}", "F2"], None),
+    "F2": ("F2", ["--renderreport", FIXTURE, str(PAK), "{out}", "F2"],
+           "OPEN (0.7%): 454 px, of which 82 is the DOS mouse pointer. The "
+           "rest is ONE element the port does not draw at all -- a black "
+           "badge at (10,27)-(46,37) carrying the crosses figure and a cross "
+           "glyph (the original reads \"30 +\" on this save). Same shape as "
+           "the earlier misses: not a placement error, a missing element."),
     "F3": ("F3", ["--renderreport", FIXTURE, str(PAK), "{out}", "F3"],
            "Founding Father portraits: the 25 CC-00..CC-24 sheets are not in "
            "the pack (Part E), so the port lists names as text where the "
@@ -129,9 +134,39 @@ REPORTS = {
            "per SLOT at k=1 and k=2 instead, which is only equivalent while "
            "a column holds one ship. Untriaged."),
     "F9": ("F9", ["--renderreport", FIXTURE, str(PAK), "{out}", "F9"],
-           "OPEN (5.3%): per-tribe bands at pitch 21. The port draws green "
-           "(117,166,77) across x 30-82 where the original has gold "
-           "(199,162,32) and black. Untriaged."),
+           "OPEN (0.3%), down from 5.3%. Four fixes, each measured:\n"
+           "         3,365 -> 1,506  C4.12 WHICH TRIBES get a row. The row "
+           "loop tests the relation byte (@0x03784C, `test al, 0x20`) and "
+           "falls back on TribeRecord +0x03 bit 0x80; the port listed a tribe "
+           "when it had a village on an explored tile, which dropped the "
+           "three EXTINCT tribes the original lists and agreed about the "
+           "Iroquois only by accident (they own ELEVEN villages and are "
+           "skipped because their relation byte is 0)\n"
+           "         1,506 ->   375  C4.13 the labels carry a BLACK DROP "
+           "SHADOW at exactly (+1,0), (0,+1), (+1,+1). Not a guess: the "
+           "model reproduces the original's black pixels 134/134 and 88/88 "
+           "on two rows with zero missing and zero extra, while the 4- and "
+           "8-neighbour outlines over-predict by 48 and 83. The JS FONT class "
+           "already had that exact offset list as its `shadow` argument -- F9 "
+           "never passed it\n"
+           "           375 ->   348  C4.14 the muskets cell: "
+           "(TribeRecord +0x07 + one per Armed Brave / Mtd. Warrior) x 50 "
+           "(@0x03766D-@0x0376B1), and the horse-herds cell: TribeRecord "
+           "+0x08 verbatim (@0x0377D6). The port read both from a runtime "
+           "stock map the import leaves empty, so neither ever drew\n"
+           "           348 ->   220  C4.15 the sub-line grid is 40 + 56k "
+           "(`add [bp-0x68], 0x38` x3), so horse herds sit at 208, not the "
+           "209 the port had by eye\n"
+           "        Rows 0, 1, 2 and 6 are now pixel-exact. What is LEFT: "
+           "82 px of DOS mouse pointer (see `cursor`), ~126 px on the SIOUX "
+           "row where the original inks the name and level in palette index "
+           "12 (255,0,0) while @TRIBES gives that tribe 118 (146,0,0) -- "
+           "every other tribe matches @TRIBES exactly, so this is one tribe, "
+           "cause UNKNOWN and NOT guessed -- and ~10 px inside the Apache and "
+           "Sioux portraits. Also NOT implemented: the MISSIONS cell at "
+           "x = 96 (@0x037650), whose counting rule is byte-cited but whose "
+           "singular/plural strings [0x2DF0]/[0x2DF2] are unresolved and "
+           "which this fixture cannot exercise."),
 }
 
 
@@ -221,6 +256,14 @@ def diff_one(sid: str) -> dict:
             content_px += 1
         else:
             pal_px += 1
+    # The DOSBox pointer. Every capture in this baseline was taken with the
+    # emulated mouse parked at the same spot, so a ~90 px arrow sits at
+    # (158..172, 98..116) on EVERY screen and counts as divergence the port can
+    # never close. It is REPORTED, not subtracted -- a number this tool quietly
+    # edited would be worth less than one it explains. The real fix is to park
+    # the pointer off-screen before shot() on the next --capture run, which
+    # will move every baseline and every figure quoted against it.
+    cursor = int(mask[98:116, 158:173].sum())
     OUT.mkdir(parents=True, exist_ok=True)
     side = Image.new("RGB", (320 * 3 + 8, 200), (24, 24, 24))
     side.paste(Image.fromarray(dos), (0, 0))
@@ -229,6 +272,7 @@ def diff_one(sid: str) -> dict:
                                .astype(np.uint8)), (648, 0))
     side.save(OUT / ("%s.png" % sid))
     return {"id": sid, "px": int(mask.sum()), "pct": round(100 * mask.sum() / mask.size, 2),
+            "cursor": cursor,
             "rows": [int(rows.min()), int(rows.max())] if len(rows) else None,
             "pal": pal_px, "content": content_px, "declared": div}
 
@@ -257,9 +301,10 @@ def main() -> int:
             continue
         tag = ("  [OPEN]" if str(r["declared"]).startswith("OPEN")
                else "  [declared]") if r["declared"] else ""
-        print("  %-7s %6d px  %5.1f%%  rows %-10s  palette %5d / content %5d%s"
+        print("  %-7s %6d px  %5.1f%%  rows %-10s  palette %5d / content %5d"
+              "  cursor %3d%s"
               % (r["id"], r["px"], r["pct"], r["rows"], r["pal"], r["content"],
-                 tag))
+                 r["cursor"], tag))
         if r["declared"]:
             print("        %s" % r["declared"])
     print("\nside-by-side (DOS | port | delta): %s" % OUT)
