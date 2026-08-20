@@ -66,9 +66,25 @@ REPORTS = {
            "Founding Father portraits: the 25 CC-00..CC-24 sheets are not in "
            "the pack (Part E), so the port lists names as text where the "
            "original draws faces."),
-    "F5": ("F5", ["--renderreport", FIXTURE, str(PAK), "{out}", "F5"], None),
-    "F7": ("F7", ["--renderreport", FIXTURE, str(PAK), "{out}", "F7"], None),
-    "F9": ("F9", ["--renderreport", FIXTURE, str(PAK), "{out}", "F9"], None),
+    "F5": ("F5", ["--renderreport", FIXTURE, str(PAK), "{out}", "F5"],
+           "OPEN (0.6%): 398 px spread over x 67-245 in one band, at glyph "
+           "scale rather than in blocks -- reads as text metrics or content, "
+           "not a misplaced element. Untriaged."),
+    "F7": ("F7", ["--renderreport", FIXTURE, str(PAK), "{out}", "F7"],
+           "OPEN (2.5%): the per-row unit ICON is placed differently. Same "
+           "sprite, same colours on both sides (255,113,0 / 195,0,0 / "
+           "85,69,44); the port puts it at x~2-7, the original at x~12-17, "
+           "once per row at F7_PITCH 20. NOT the nation plate: deleting "
+           "rm_nation_plate() moves the count 1635 -> 1605 px, so the plate "
+           "is a rounding error, not the cause. draw_f7 right-aligns with "
+           "`2 + 16 - f.w`, which would have to see f.w = 6 to land where the "
+           "original does. Fixing it needs the geometry of the shared "
+           "per-unit info-panel verb 0x181F:0x2BC (F7 at @0x039586, "
+           "spec/ui/advisor_reports.md:166) decoded -- NOT guessed."),
+    "F9": ("F9", ["--renderreport", FIXTURE, str(PAK), "{out}", "F9"],
+           "OPEN (5.3%): per-tribe bands at pitch 21. The port draws green "
+           "(117,166,77) across x 30-82 where the original has gold "
+           "(199,162,32) and black. Untriaged."),
 }
 
 
@@ -166,7 +182,8 @@ def main() -> int:
         if "error" in r:
             print("  %-4s ERROR %s" % (r["id"], r["error"]))
             continue
-        tag = "  [declared]" if r["declared"] else ""
+        tag = ("  [OPEN]" if str(r["declared"]).startswith("OPEN")
+               else "  [declared]") if r["declared"] else ""
         print("  %-4s %6d px  %5.1f%%  rows %s%s"
               % (r["id"], r["px"], r["pct"], r["rows"], tag))
         if r["declared"]:
