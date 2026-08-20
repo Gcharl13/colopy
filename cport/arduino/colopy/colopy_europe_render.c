@@ -104,7 +104,23 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
 void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
                     int market_sel) {
     eresolve();
-    rd_use_palette("EUROPE.PIK");
+    /* THE MASTER PALETTE, NOT EUROPE.PIK's — census C4.5, 2026-08-19.
+     *
+     * The port used to take EUROPE.PIK's embedded palette here. The DOS
+     * capture says the original does not: at all 22 indices where the two
+     * disagree, the live screen matches VICEROY.PAL. Byte-checked at 54..59
+     * — PIK holds (113,142,198)..(57,69,150), master and DOS both hold
+     * (105,138,195)..(40,56,146).
+     *
+     * Measured, not argued: substituting master for PIK took the census's
+     * EUROPE row from 12,817 px to 5,448 px (57% of its divergence).
+     *
+     * Scoped to Europe on purpose. Whether the engine ignores EVERY PIK's
+     * palette is UNTESTED: the five report screens show 0 px of palette
+     * divergence, so their plates agree with the master anyway and cannot
+     * discriminate. Do not generalise this to rd_use_palette() without a
+     * screen whose palette actually differs. */
+    rd_use_palette(0);
     rd_pik("EUROPE.PIK");
     /* WOODTILE strip clipped to the top 8 rows (ctx.clip 0,0,W,8) */
     rd_entry wt;

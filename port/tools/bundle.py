@@ -15,6 +15,36 @@ SRC = ROOT / "port" / "src"
 DIST = ROOT / "port" / "dist"
 
 
+
+def uri_remapped(p, src_pal, dst_pal):
+    """A PNG re-tabled from one palette to another, pixels untouched.
+
+    mpskit flattens a .PIK to RGB using that file's embedded palette. When the
+    engine actually draws it through a DIFFERENT palette (census C4.5: the DOS
+    Europe screen follows VICEROY.PAL, not EUROPE.PIK's), the baked PNG is
+    wrong in exactly the entries where the two tables differ. This maps each
+    pixel back to its index via src_pal and re-emits it through dst_pal.
+
+    A colour absent from src_pal is left alone rather than guessed at -- that
+    would mean mpskit produced something outside the table it was given, and
+    silently recolouring it would hide the fact."""
+    import io
+    from PIL import Image
+    im = Image.open(p).convert("RGB")
+    lut = {tuple(c): tuple(dst_pal[i]) for i, c in enumerate(src_pal)
+           if i < len(dst_pal)}
+    px = im.load()
+    w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            c = lut.get(px[x, y])
+            if c is not None:
+                px[x, y] = c
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
 def uri(p: Path) -> str:
     return "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()
 
@@ -556,7 +586,26 @@ def main():
 
     assets = {}
     for bg in man["backgrounds"]:
-        assets[bg] = uri(ASSETS / f"{bg}.png")
+        # EUROPE is re-baked against the MASTER palette (census C4.5).
+        #
+        # The C port renders backdrops from PIK pixel INDICES through whatever
+        # palette is current, so pointing it at the master was a one-line fix.
+        # The JS draws a PNG that mpskit already flattened to RGB using the
+        # PIK's own palette, so usePalette() cannot reach it -- the two engines
+        # disagreed at every index where PIK and master differ, and
+        # render_europe_compare went red at (306,129), JS (89,113,178) vs C
+        # (77,101,174), palette index 56.
+        #
+        # Remapping here keeps the pixels and swaps only the colour table, so
+        # it is exactly the C's behaviour. Scoped to EUROPE: it is the only
+        # backdrop measured against a live DOS frame so far, and the report
+        # plates agree with the master anyway.
+        if bg == "EUROPE":
+            assets[bg] = uri_remapped(ASSETS / f"{bg}.png",
+                                      man["backgrounds"][bg]["pal"],
+                                      D["palette"])
+        else:
+            assets[bg] = uri(ASSETS / f"{bg}.png")
     for sh, meta in man["sheets"].items():
         assets["SS_" + sh] = uri(ASSETS / f"{sh}.png")
         if "cycle" in meta:

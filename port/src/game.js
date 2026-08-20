@@ -4739,7 +4739,13 @@ function drawEurope(ctx) {
   // TUTORIAL17: the first European Status visit (binding flagged).
   tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
                 STRING1: DATA.nations[G.nation].country });
-  usePalette('EUROPE');
+  // The MASTER palette, not EUROPE.PIK's — census C4.5, 2026-08-19. The DOS
+  // capture matches VICEROY.PAL at all 22 indices where the two disagree
+  // (checked at 54..59). Measured: 12,817 -> 5,448 px on the census EUROPE
+  // row. Scoped to Europe; the report plates agree with the master anyway so
+  // they cannot tell us whether this generalises. usePalette(null) falls back
+  // to DATA.palette, the master.
+  usePalette(null);
   ctx.drawImage(IMG.EUROPE, 0, 0);
   const [tw2] = frameSize('WOODTILE', 0);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 8); ctx.clip();
