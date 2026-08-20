@@ -4875,10 +4875,16 @@ function drawEurope(ctx) {
   // to DATA.palette, the master.
   usePalette(null);
   ctx.drawImage(IMG.EUROPE, 0, 0);
+  // SEVEN rows of wood, y0..6, then a black separator at y7 --
+  // spec/ui/europe_screen.md:51, measured from capture. Both engines clipped
+  // to 8 and drew no separator, so row 7 was wood instead of black: 320 px
+  // wrong on every visit, invisible to every C-vs-JS gate because both were
+  // wrong the same way. Found by the DOS census 2026-08-19 (C4.6).
   const [tw2] = frameSize('WOODTILE', 0);
-  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 8); ctx.clip();
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 7); ctx.clip();
   for (let x = 0; x < W; x += tw2) sheetFrame(ctx, 'WOODTILE', 0, x, 0);
   ctx.restore();
+  ctx.fillStyle = ink(0); ctx.fillRect(0, 7, W, 1);
   const n = DATA.nations[G.nation];
   const band = `${n.homeport}, ${n.country}. ${DATA.seasons[G.season]}, ${G.year}.` +
                `  Tax:${G.tax}%  Gold: ${G.gold}$`;

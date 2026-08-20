@@ -122,19 +122,31 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
      * screen whose palette actually differs. */
     rd_use_palette(0);
     rd_pik("EUROPE.PIK");
-    /* WOODTILE strip clipped to the top 8 rows (ctx.clip 0,0,W,8) */
+    /* WOODTILE strip: SEVEN rows, y0..6, then a black separator at y7.
+     *
+     * spec/ui/europe_screen.md:51 has said "WOODTILE tiled y0..6 (7px only)
+     * + black separator at y7" (measured from capture, A) since the screen
+     * was specified. Both engines tiled EIGHT rows and drew no separator, so
+     * row 7 came out wood instead of black -- all 320 px of it wrong, and no
+     * gate could see it because C and JS were wrong identically. The census
+     * caught it against the live DOS frame (2026-08-19, C4.6).
+     *
+     * The spec was right and the code never followed it; that is the whole
+     * failure, and it is why "the spec says X" is worth checking against a
+     * capture rather than assuming the implementation read it. */
     rd_entry wt;
     if (rd_pak_find(&RD.pak, "WOODTILE.SS", &wt)) {
         rd_frame f;
         if (rd_sheet_frame(&wt, 0, &f))
             for (int x0 = 0; x0 < RD_W; x0 += f.w)
-                for (int r = 0; r < 8 && r < f.h; r++)
+                for (int r = 0; r < 7 && r < f.h; r++)
                     for (int cx = 0; cx < f.w && x0 + cx < RD_W; cx++) {
                         uint8_t v = f.pix[r * f.w + cx];
                         if (v != RD_TRANSPARENT)
                             RD.fb[r * RD_W + x0 + cx] = v;
                     }
     }
+    rd_fill(0, 7, RD_W, 1, 0);            /* the y7 black separator */
     const dat_nations_t *n = &dat_nations[cs_nation()];
     char band[128];
     snprintf(band, sizeof(band), "%s, %s. %s, %u.  Tax:%d%%  Gold: %ld$",
