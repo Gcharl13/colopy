@@ -98,6 +98,20 @@ static int entry_prof_figure(const immigrant *e) {
 static const int16_t CROSS_BANDS[3] = { 146, 137, 132 };
 static void crossing_cell(const euro_crossing *e, int x, int k) {
     int y = CROSS_BANDS[k < 2 ? k : 2];
+    /* The SACK here is this screen's stand-in for the shared unit-panel
+     * verb's plate (func_00386A, spec/ui/render_primitives.md §1b).  Routing
+     * this column through rm_unit_panel() was TRIED and MEASURED WORSE --
+     * the crossing band went 326 -> 361 px -- so it is not done.
+     *
+     * The reason is instructive rather than discouraging.  The model's
+     * class-0 plate y is `y + sh - ph`, and with this screen's sprites that
+     * lands on exactly the +7 the capture pinned years ago: the vertical
+     * half of the decode is confirmed here.  Its plate X depends on the
+     * sprite width `sw` the engine reads from the undecoded sheet-header
+     * field es:[bx+0x3E], and substituting the port's trimmed frame width
+     * there puts the plate ~5 px right of where the original has it.  Until
+     * that field is read, the capture-derived +5/+7 is the better number and
+     * the measurement says so. */
     rd_blit(&RD.icons, (int)dat_units[e->type].icon - 1, x + 3, y);
     int np = e->n_pass < 3 ? e->n_pass : 3;
     for (int i = 0; i < np; i++) {

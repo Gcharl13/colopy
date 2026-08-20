@@ -164,6 +164,8 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
 /* shared chrome primitives (plaque game.js:795, FRAME_GAME rings) */
 void rm_plaque(int x, int y, int w, int h);
 void rm_hollow_rect(int x, int y, int w, int h, uint8_t c);
+void rm_unit_panel(int x, int y, int W, int type, int flags148,
+                   int orders, int colour, int frame);
 /* the dialog framework (drawEvent game.js:6403 / drawDialog 909):
  * subs = up to 4 STRING + 4 NUMBER substitutions (NULL/unused = empty) */
 typedef struct {
