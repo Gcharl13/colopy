@@ -58,6 +58,25 @@ SMOKE = ROOT / "cport" / "host" / "smoke"
 # size (27,909) and digest (3348C0DC) -- see the module docstring.
 DOS_SLOT = 0
 FIXTURE = "sav1653"
+# NOT IN THE REGISTRY YET: the COLONY screen, and it is worth saying why.
+# Two entry paths were tried and both filed a MAP frame instead:
+#   VIEW > Find Colony > Return          -- Find Colony moves the SELECTION to
+#                                           a colony and scrolls to show it; it
+#                                           does not open the colony screen, and
+#                                           a second Return does nothing.
+#   ...then a click on the colony tile   -- the view Find Colony leaves behind
+#                                           is not stable between runs (the
+#                                           second attempt came back centred on
+#                                           a different colony with a different
+#                                           active unit), so a fixed click
+#                                           coordinate lands on ocean.
+# Both attempts were caught by LOOKING at the capture, which is the whole
+# reason the docstring's "an untriaged row is an open question" rule exists --
+# a map frame filed as a colony baseline would have reported ~100% divergence
+# and read exactly like a catastrophic port bug. The next attempt needs a
+# deterministic way in: either a keyboard path that opens a colony outright,
+# or a plain MAP entry first (no navigation at all) whose frame can be read to
+# place the click.
 
 # id -> (DOS entry key, port render args, declared divergence or None)
 # The DOS entry key is what `capture()` presses from a known map state. A
@@ -168,8 +187,15 @@ def read_ppm(path: Path) -> np.ndarray:
     return np.frombuffer(parts[3][: w * h * 3], dtype=np.uint8).reshape(h, w, 3)
 
 
-def capture() -> None:
+def capture(only: str | None = None) -> None:
     """Drive DOSBox once and file one PNG per registry entry.
+
+    `only` re-grabs a SINGLE screen and leaves every other baseline frame
+    untouched. That matters more than it looks: every "N -> M px" figure in
+    the notes below is quoted against a specific baseline, so a blanket
+    re-capture silently invalidates all of them (the emulated mouse pointer
+    alone lands somewhere new). Add a screen with --capture-only, not by
+    re-running the lot.
 
     Each screen is entered from a KNOWN map state, not from wherever the last
     one left off. The first attempt at this chained F2,Esc,F3,Esc,... and two
@@ -191,6 +217,7 @@ def capture() -> None:
     print("loaded DOS slot %d" % DOS_SLOT)
 
     for sid, (fkey, _args, _div) in REPORTS.items():
+        if only and sid != only: continue
         drive.key("Escape", delay=0.8)                      # back to a known map
         drive.key("Escape", delay=0.8)
         if sid == "EUROPE":                    # VIEW > European Status
@@ -272,11 +299,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--capture", action="store_true",
                     help="boot DOSBox and re-grab every screen (slow)")
+    ap.add_argument("--capture-only", metavar="ID",
+                    help="re-grab ONE screen, leaving the other baselines "
+                         "(and every figure quoted against them) intact")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
-    if args.capture:
-        capture()
+    if args.capture or args.capture_only:
+        capture(args.capture_only)
         return 0
 
     rows = [diff_one(s) for s in REPORTS]
