@@ -153,12 +153,47 @@ static int euro_sentinel(const UnitRecord *u) {
     return EUSENT_EUROPE;             /* 0xEC, and any base not in the table */
 }
 
+/* A ship's manifest is in CHAIN order, not record order.
+ *
+ * UnitRecord +0x18/+0x1A are the alias-confirmed chain links, and a ship is
+ * the HEAD of its own manifest: on the census fixture the Dutch Galleon
+ * (#56) has chain_prev = 0xFFFF and chain_next = 87, #87 links on to 86 and
+ * 86 to 85 -- the reverse of the order those three records appear in the
+ * file.  Corroborated on two other ships in the same save (#28's only rider
+ * #52 carries chain_prev = 28; nation 1's #49 heads #40).
+ *
+ * It matters because the manifest is drawn left to right. The 2026-08-07
+ * capture analysis identified the Galleon's three passengers as Expert
+ * Farmer / Master Distiller / Master Gunsmith in that order, matched 1.0 --
+ * which is professions 0, 9, 15, i.e. records 87, 86, 85. The port collected
+ * them 85, 86, 87 and drew the manifest backwards.
+ *
+ * Riders that are not on the chain keep their relative order behind the ones
+ * that are, rather than being dropped. */
+static void rid_chain_order(int ship, immigrant *e, uint16_t *u, int n) {
+    int rank[EURO_PASS_MAX];
+    for (int k = 0; k < n; k++) rank[k] = 1000 + k;
+    int r = 0, cur = (int)CS.units[ship].chain_next, guard = 0;
+    while (cur != 0xFFFF && cur < CS.n_units && guard++ < COLOPY_MAX_UNITS) {
+        for (int k = 0; k < n; k++)
+            if (u[k] == (uint16_t)cur) { rank[k] = r++; break; }
+        cur = (int)CS.units[cur].chain_next;
+    }
+    for (int a = 1; a < n; a++)
+        for (int b = a; b > 0 && rank[b] < rank[b - 1]; b--) {
+            int tr = rank[b]; rank[b] = rank[b - 1]; rank[b - 1] = tr;
+            immigrant te = e[b]; e[b] = e[b - 1]; e[b - 1] = te;
+            uint16_t tu = u[b]; u[b] = u[b - 1]; u[b - 1] = tu;
+        }
+}
+
 void europe_seed_from_load(void) {
     CR.n_europe = 0;
     CR.n_dock_units = 0;
     /* per-ship rider buffers (JS ship.cargo), filled by pass A */
     static uint8_t rid_n[COLOPY_MAX_UNITS];
     static immigrant rid[COLOPY_MAX_UNITS][EURO_PASS_MAX];
+    static uint16_t rid_u[COLOPY_MAX_UNITS][EURO_PASS_MAX];
     memset(rid_n, 0, sizeof(rid_n));
     for (int i = 0; i < CS.n_units; i++) {
         const UnitRecord *w = &CS.units[i];
@@ -170,8 +205,13 @@ void europe_seed_from_load(void) {
         if (!off && !water) continue;
         immigrant e;
         memset(&e, 0, sizeof(e));
+        /* Profession 0 IS a profession -- Expert Farmers, @JOBEXPERT row 0.
+         * The port's `prof >= 1` guard treated it as "no specialty" and drew
+         * the man as a generic colonist; the no-specialty value is 28, the
+         * row count (spec/systems/save.md, ColonyRecord +0x20: "28 = no
+         * specialty"), which `prof < DAT_JOBEXPERT_COUNT` already excludes. */
         int prof = w->profession;
-        if (prof >= 1 && prof < DAT_JOBEXPERT_COUNT) {
+        if (prof >= 0 && prof < DAT_JOBEXPERT_COUNT) {
             e.kind = 4;                   /* { name: prof, type } */
             e.idx = (uint8_t)prof;
             e.type_ov = (uint8_t)(w->type + 1);
@@ -188,7 +228,10 @@ void europe_seed_from_load(void) {
             if (u->map_x == w->map_x && u->map_y == w->map_y) { si = j; break; }
         }
         if (si >= 0) {
-            if (rid_n[si] < EURO_PASS_MAX) rid[si][rid_n[si]++] = e;
+            if (rid_n[si] < EURO_PASS_MAX) {
+                rid_u[si][rid_n[si]] = (uint16_t)i;
+                rid[si][rid_n[si]++] = e;
+            }
         } else if (off) {
             if (CR.n_dock_units < (int)(sizeof(CR.dock_units) /
                                         sizeof(CR.dock_units[0])))
@@ -201,6 +244,7 @@ void europe_seed_from_load(void) {
         if ((u->owner_flags & 0x0F) != cs_nation()) continue;
         if (u->type >= DAT_UNITS_COUNT || dat_units[u->type].hull <= 0)
             continue;
+        rid_chain_order(i, rid[i], rid_u[i], rid_n[i]);
         int off = u->map_x >= COLOPY_MAP_W || u->map_y >= COLOPY_MAP_H;
         if (off) {
             if (CR.n_europe >= (int)(sizeof(CR.europe) / sizeof(CR.europe[0])))

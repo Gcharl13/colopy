@@ -75,7 +75,18 @@ static void draw_sack(int x, int y) {
  * @JOBEXPERT row's figure, or -1 when the name is not a profession
  * (a @UNIT type string / an armed entry draws its unit sprite). */
 static int entry_prof_figure(const immigrant *e) {
-    if (e->type_ov) return -1;                 /* armed: {name,type} */
+    /* A professioned entry is {name, type}: name is what the man IS, type
+     * what he is EQUIPPED as.  The port bailed out on ANY type override, so
+     * every professioned passenger drew as the generic Colonists sprite --
+     * three identical grey figures where the original draws three different
+     * ones.  type_ov holds type + 1, so type_ov == 1 is a plain colonist and
+     * his PROFESSION decides the figure.
+     *
+     * FLAGGED: an entry equipped as something else (Soldiers, Dragoons,
+     * Pioneers) still falls through to its unit sprite.  No frame available
+     * shows an armed crossing passenger, so which of the two the original
+     * picks in that case is untested. */
+    if (e->type_ov && e->type_ov != 1) return -1;
     const char *name = immigrant_name(e);
     for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
         if (strcmp(dat_jobexpert[i], name) == 0)
@@ -169,7 +180,13 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     for (int i = 0; i < DAT_CARGO_COUNT; i++) {
         rd_frame f;
         rd_sheet_frame(&RD.icons, 0x16 + i, &f);
-        rd_blit(&RD.icons, 0x16 + i, 9 + 19 * i - (f.w >> 1), 181);
+        /* The market cell CENTRE is 19i + 10, byte-verified: the price
+         * drawer computes it as `imul ax, [bp+6], 0x13; add ax, 0xa`
+         * @0x030ED4-@0x030ED8, and stores the icon row's y in the same
+         * frame as 0xB5 = 181 @0x030ECF.  The port centred on 9 -- one
+         * pixel left, on every one of the sixteen icons.  Measured: that
+         * band 1,030 -> 59 px. */
+        rd_blit(&RD.icons, 0x16 + i, 10 + 19 * i - (f.w >> 1), 181);
         char pr[16];
         snprintf(pr, sizeof(pr), "%d/%d", market_bid(i), market_ask(i));
         e_center(pr, 9 + 19 * i, 194, elut(0x2F));

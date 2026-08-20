@@ -4789,10 +4789,20 @@ function drawEurope(ctx) {
                `  Tax:${G.tax}%  Gold: ${G.gold}$`;
   FONT.tiny.center(ctx, band, 160, 1, lut(HUD_INK));
 
-  // Market bar: icons centred on 9+19i at y=181, bid/ask at y=194.
+  // Market bar: icons centred on 19i + 10 at y=181, bid/ask at y=194.
+  //
+  // The cell CENTRE is 19i + 10, byte-verified in the price drawer:
+  // `imul ax, [bp+6], 0x13; add ax, 0xa` @0x030ED4-@0x030ED8, with the icon
+  // row's y stored in the same frame as 0xB5 = 181 @0x030ECF. The port centred
+  // on 9 -- one pixel left, on every one of the sixteen icons. Measured: that
+  // band 1,030 -> 59 px.
+  //
+  // Scoped to EUROPE. The colony screen has its own market strip drawn by a
+  // different function, and no census capture of that screen exists yet, so it
+  // keeps its capture-derived 9 until one does.
   DATA.cargo.forEach((g, i) => {
     const [fw] = frameSize('ICONS', 0x16 + i);
-    sheetFrame(ctx, 'ICONS', 0x16 + i, 9 + 19 * i - (fw >> 1), 181);
+    sheetFrame(ctx, 'ICONS', 0x16 + i, 10 + 19 * i - (fw >> 1), 181);
     FONT.tiny.center(ctx, `${bidPrice(i)}/${askPrice(i)}`, 9 + 19 * i, 194, lut(0x2F));
     if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 19, 21, 0x0E);
   });
@@ -4821,7 +4831,20 @@ function drawEurope(ctx) {
       // side (fig2 (110,146) / sack (115,153) in the capture -> +5/+7;
       // the sack draws first so the figure overlaps it, as observed).
       drawSack(ctx, px + 5, y + 7);
-      const fig = typeof p === 'string' ? professionIconByName(p) : null;
+      // A professioned entry is {name, type}: name is what the man IS, type
+      // what he is EQUIPPED as. The port only looked the profession up for a
+      // plain STRING entry, so every professioned passenger drew as the
+      // generic Colonists sprite -- three identical grey figures where the
+      // original draws three different ones. The comment eight lines up had
+      // already identified them (Expert Farmer 81 / Master Distiller 90 /
+      // Master Gunsmith 96, matched 1.0) and the code never used it.
+      //
+      // FLAGGED: an entry equipped as something other than a plain colonist
+      // (Soldiers, Dragoons, Pioneers) draws its UNIT sprite here. No frame
+      // available shows an armed crossing passenger, so which of the two the
+      // original picks in that case is untested.
+      const fig = entryType(p) === 'Colonists'
+        ? professionIconByName(entryName(p)) : null;
       const u = unit(entryType(p)) || unit('Colonists');
       sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
                  px, y);
@@ -4897,7 +4920,13 @@ function drawEurope(ctx) {
     // The nation sack at his side (slot2 figure (269,138) / sack (275,145)
     // in europe_dock_3units.png -> cell+9/+8), then the figure over it.
     drawSack(ctx, x + 9, EURO_DOCK.y + 8);
-    const fig = typeof e === 'string' ? professionIconByName(e) : null;
+    // Same rule as the crossing manifest: a {name, type} entry still shows his
+    // PROFESSION figure while he is equipped as a plain colonist, and only
+    // switches to the @UNIT sprite once Europe arms him as something else.
+    // Kept in step with the C, whose entry_prof_figure() is shared by the dock
+    // and the crossings.
+    const fig = entryType(e) === 'Colonists'
+      ? professionIconByName(entryName(e)) : null;
     sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
                x + 3, EURO_DOCK.y + 1);
     if (k === G.euroDockSel)
@@ -10686,6 +10715,25 @@ const SAVE_KEY = 'colonization.save';
 // trade routes, and the diplomacy matrices load empty/at peace, flagged.
 const SAV_PROFESSION = (v) =>
   (v >= 1 && v < (DATA.jobexpert || []).length) ? DATA.jobexpert[v] : null;
+// ...and the same byte, read for a EUROPE MANIFEST entry, where row 0 counts.
+//
+// Profession 0 IS a profession -- Expert Farmers, @JOBEXPERT row 0 -- and the
+// census frame proves it: the Galleon's three riders are records 85/86/87 with
+// bytes 15/9/0, and the 2026-08-07 capture analysis matched their figures 1.0
+// as Expert Farmer / Master Distiller / Master Gunsmith, which only works if 0
+// is the farmer. The no-specialty value is 28, the row count
+// (spec/systems/save.md, ColonyRecord +0x20: "28 = no specialty"), and the
+// fixture agrees: byte 28 appears 47 times on braves, artillery and plain
+// colonists, byte 0 appears 22 times and on only TWO colonist records in the
+// whole save.
+//
+// SCOPED to the manifest ON PURPOSE. The same reading almost certainly applies
+// to isExpert, scoutLevel and the ColonyRecord specialty array, all of which
+// carry the same `>= 1` guard -- but relaxing it there changes production and
+// combat numbers, and nothing available tests those against the original. A
+// colony-screen census entry would. Tracked as C4.26.
+const SAV_PROFESSION0 = (v) =>
+  (v >= 0 && v < (DATA.jobexpert || []).length) ? DATA.jobexpert[v] : null;
 // The off-map sentinel is not ONE state -- it is five.
 //
 // A UnitRecord parked off the map stores x == y == BASE + power, and the BASE
@@ -10995,14 +11043,17 @@ function importSav(bytes) {
       // aboard as passengers, and a landless walker waits on the dock.
       const offMap = x >= MAP.w || y >= MAP.h;
       if (!isShip && (offMap || tileWater(at(x, y)))) {
-        const prof = SAV_PROFESSION(d[b + 0x17]);
+        const prof = SAV_PROFESSION0(d[b + 0x17]);
         const entry = prof ? { name: prof, type: type.name } : type.name;
         const ship = G.units.find(s => s.ship && s.x === x && s.y === y);
-        if (ship) ship.cargo.push(entry);
+        // The record index rides along so the manifest can be put in CHAIN
+        // order below; it is deleted once that is done.
+        if (ship) { ship.cargo.push(entry); (ship.__ridx || (ship.__ridx = [])).push(i); }
         else if (offMap) G.dockUnits.push(entry);
         continue;
       }
       const u = mkUnit(type.name, x, y);
+      u.__rec = i;                       // for the chain-order pass below
       const prof = SAV_PROFESSION(d[b + 0x17]);
       if (prof) u.profession = prof;
       if (d[b + 0x15]) u.tools = d[b + 0x15];
@@ -11020,6 +11071,37 @@ function importSav(bytes) {
       G.units.push(u);
     }
   }
+  // A ship's MANIFEST is in CHAIN order, not record order.
+  //
+  // UnitRecord +0x18/+0x1A are the alias-confirmed chain links, and a ship is
+  // the HEAD of its own manifest: on the census fixture the Dutch Galleon (#56)
+  // has chain_prev = 0xFFFF and chain_next = 87, #87 links on to 86 and 86 to
+  // 85 -- the reverse of the order those three records appear in the file.
+  // Corroborated on two other ships in the same save (#28's only rider #52
+  // carries chain_prev = 28; nation 1's #49 heads #40).
+  //
+  // It matters because the manifest is drawn left to right. The 2026-08-07
+  // capture analysis identified the Galleon's three passengers as Expert Farmer
+  // / Master Distiller / Master Gunsmith in that order, matched 1.0 -- which is
+  // professions 0, 9, 15, i.e. records 87, 86, 85. The port collected them 85,
+  // 86, 87 and drew the manifest backwards.
+  //
+  // Riders not on the chain keep their relative order behind the ones that are,
+  // rather than being dropped.
+  for (const sh of G.units) {
+    if (!sh.__ridx || sh.__rec === undefined) { delete sh.__rec; continue; }
+    const rank = sh.__ridx.map((_, k) => 1000 + k);
+    let r = 0, cur = u16(unitBase + sh.__rec * 0x1C + 0x1A), guard = 0;
+    while (cur !== 0xFFFF && cur < nunit && guard++ < nunit) {
+      const k = sh.__ridx.indexOf(cur);
+      if (k >= 0) rank[k] = r++;
+      cur = u16(unitBase + cur * 0x1C + 0x1A);
+    }
+    const order = sh.__ridx.map((_, k) => k).sort((p, q) => rank[p] - rank[q]);
+    sh.cargo = order.map(k => sh.cargo[k]);
+    delete sh.__ridx; delete sh.__rec;
+  }
+
   // Ships parked off the map. The sentinel coordinate is not ONE state --
   // it is five, and which one decides whether the ship is in the harbour or
   // still at sea. See euroSentinel() above for the byte citations; the short
