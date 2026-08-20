@@ -4777,7 +4777,15 @@ function drawEurope(ctx) {
   ctx.restore();
   ctx.fillStyle = ink(0); ctx.fillRect(0, 7, W, 1);
   const n = DATA.nations[G.nation];
-  const band = `${n.homeport}, ${n.country}. ${DATA.seasons[G.season]}, ${G.year}.` +
+  // TWO spaces after the country, not one. The census caught it as a clean
+  // 2 px width difference: the top bar matched the original EXACTLY either
+  // side of one point -- every 8-px window left of x=136 fit at shift +1 with
+  // zero differing pixels, every window right of x=144 fit at shift -1 with
+  // zero -- and the gap between "Netherlands." and "Autumn" measured 7 px on
+  // the original against the port's 5, which is precisely the difference
+  // between the double space this string already uses after the year (7 px on
+  // both sides) and a single one. One character; 578 px of the screen.
+  const band = `${n.homeport}, ${n.country}.  ${DATA.seasons[G.season]}, ${G.year}.` +
                `  Tax:${G.tax}%  Gold: ${G.gold}$`;
   FONT.tiny.center(ctx, band, 160, 1, lut(HUD_INK));
 
@@ -4819,7 +4827,33 @@ function drawEurope(ctx) {
                  px, y);
     });
   };
-  FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
+  // THE THREE PANEL HEADINGS -- centred, ink 69, and the port had all three
+  // wrong.
+  //
+  // Ink: every heading is palette 69, not the 68 the top bar uses. Measured on
+  // four independent captures (the census baseline plus the three 2026-08-07
+  // Europe frames). 69 is not a @COLORS slot, so the VALUE comes from the
+  // frames and its SOURCE is unidentified -- flagged.
+  //
+  // Centring, and why it has to be centring rather than the fixed x's the port
+  // carried: panel 3's heading MOVES with its content. Across those frames "No
+  // Ships In Port" sits at 156..209 while "Loading:" sits at 168..194 with the
+  // ship's name on a SECOND line at 160..205 -- so the port was wrong twice
+  // there, once about the x and once about putting the ship name on the same
+  // line. Panel 2 settles the convention: "Bound For" (ink 33) at 91 and the
+  // region name (ink 56) at 79 are two strings of different widths that solve
+  // to the SAME centre under FONT.center's own rule, cx = 107 -- and they must
+  // be centred anyway, because DATA.regionname varies by nation and a fixed x
+  // could only ever be right for one. Panel 3's two strings likewise both
+  // solve to cx = 183.
+  //
+  // FLAGGED: "Loading:" alone solves to cx = 181..181.5, ~1.5 px off the 183
+  // its own second line gives. A trailing space in the engine's string would
+  // close it exactly -- that is a guess, and is not made here. Panel 1's
+  // heading never changes, so its cx = 36 is a one-string fit,
+  // indistinguishable from a fixed x = 12 on every frame available.
+  const EU_PANEL_INK = 69;
+  FONT.tiny.center(ctx, 'Expected Soon', 36, 120, lut(EU_PANEL_INK));
   G.europe.filter(e => e.state === 'toEurope').slice(0, 2).forEach((e, k) =>
     crossingCell(e, 13, k));
   // While a ship is being dragged, the Bound For panel lights up as the drop
@@ -4827,14 +4861,15 @@ function drawEurope(ctx) {
   if (G.drag && G.drag.kind === 'ship' &&
       hit(PTR.x, PTR.y, { x: 72, y: 118, w: 70, h: 51 }))
     hollowRect(ctx, 72, 118, 70, 51, 0x0F);
-  FONT.tiny.draw(ctx, 'Bound For', 87, 120, lut(HUD_INK));
-  FONT.tiny.draw(ctx, DATA.regionname[G.nation], 87, 127, lut(HUD_INK));
+  FONT.tiny.center(ctx, 'Bound For', 107, 120, lut(EU_PANEL_INK));
+  FONT.tiny.center(ctx, DATA.regionname[G.nation], 107, 127, lut(EU_PANEL_INK));
   G.europe.filter(e => e.state === 'toNewWorld').slice(0, 2).forEach((e, k) =>
     crossingCell(e, 72, k));
 
   const ship = activeShip();
-  FONT.tiny.draw(ctx, ship ? 'Loading:' : 'No Ships In Port', 150, 120, lut(HUD_INK));
-  if (ship) FONT.tiny.draw(ctx, ship.type, 186, 120, lut(HUD_INK));
+  FONT.tiny.center(ctx, ship ? 'Loading:' : 'No Ships In Port', 183, 120,
+                   lut(EU_PANEL_INK));
+  if (ship) FONT.tiny.center(ctx, ship.type, 183, 127, lut(EU_PANEL_INK));
 
   // Dock units and ships in port, REBUILT 2026-08-06 from the live frame
   // (docs/screens/live_2026-08-05/30_europe.png). Measured there:
@@ -4918,10 +4953,29 @@ function drawEurope(ctx) {
   // against the capture once its 10px/29px letterbox offsets are taken out.
   EURO_ROWS.forEach((r, k) => {
     const y = 89 + 11 * k;
-    hollowRect(ctx, 281, y, 37, 9, k === G.euroRow ? 0x0F : 0x7D);
+    // The frame is a BEVEL, not a one-colour hollow rect: top edge and left
+    // column 0x39, bottom edge and right column 0x30. Read straight off the
+    // census frame, where all three buttons carry it identically -- rows 89
+    // and 97 are 37 px of 0x39 and 0x30 respectively, and rows 90..96 have
+    // 0x39 at x=281 and 0x30 at x=317. The port drew a flat 0x7D box, which
+    // is why the two edge rows differed across their whole width.
+    //
+    // FLAGGED: the original shows NO selected row on any Europe frame
+    // available, so the 0x0F highlight is the port's own affordance for a
+    // click cursor the original may not have.
+    if (k === G.euroRow) hollowRect(ctx, 281, y, 37, 9, 0x0F);
+    else {
+      ctx.fillStyle = ink(0x39); ctx.fillRect(281, y, 37, 1);
+      ctx.fillRect(281, y, 1, 9);
+      ctx.fillStyle = ink(0x30); ctx.fillRect(281, y + 8, 37, 1);
+      ctx.fillRect(317, y, 1, 9);
+    }
     const w = FONT.tiny.width(r), x0 = 281 + (37 - w) / 2;
     FONT.tiny.draw(ctx, r[0], x0, y + 2, lut(0x0E));
-    FONT.tiny.draw(ctx, r.slice(1), x0 + FONT.tiny.width(r[0]), y + 2, lut(0x10));
+    // The tail of the label is 0x0F (white), not 0x10 -- measured on the
+    // census frame, where "ECRUIT"/"URCHASE"/"RAIN" are all 0x0F while only
+    // the accelerator letter is 0x0E.
+    FONT.tiny.draw(ctx, r.slice(1), x0 + FONT.tiny.width(r[0]), y + 2, lut(0x0F));
   });
 
   if (G.euroMenu) drawEuroMenu(ctx);

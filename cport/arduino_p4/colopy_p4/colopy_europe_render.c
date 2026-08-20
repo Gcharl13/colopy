@@ -31,6 +31,7 @@
 #include "colopy_render.h"
 
 #define HUD_INK 68
+#define PANEL_INK 69
 
 static rd_font E_TINY;
 static void eresolve(void) {
@@ -149,7 +150,16 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     rd_fill(0, 7, RD_W, 1, 0);            /* the y7 black separator */
     const dat_nations_t *n = &dat_nations[cs_nation()];
     char band[128];
-    snprintf(band, sizeof(band), "%s, %s. %s, %u.  Tax:%d%%  Gold: %ld$",
+    /* TWO spaces after the country, not one.  The census caught it as a
+     * clean 2 px width difference: the top bar matched the original EXACTLY
+     * either side of one point -- every 8-px window left of x=136 fit at
+     * shift +1 with zero differing pixels, every window right of x=144 fit at
+     * shift -1 with zero -- and the gap between "Netherlands." and "Autumn"
+     * measured 7 px on the original against the port's 5, which is exactly
+     * the difference between the double space this string already uses after
+     * the year (7 px on both sides) and a single one.  One character, and it
+     * was 578 px of the screen: rows 0-6 now diff to ZERO. */
+    snprintf(band, sizeof(band), "%s, %s.  %s, %u.  Tax:%d%%  Gold: %ld$",
              n->homeport, n->country, dat_seasons[cs_season()], cs_year(),
              (int)CS.powers[cs_nation()].tax_rate,
              (long)CS.powers[cs_nation()].gold);
@@ -167,14 +177,39 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
             rm_hollow_rect(19 * i, 179, 19, 21, 0x0E);
     }
 
-    /* panels */
-    rd_text(&E_TINY, "Expected Soon", 16, 120, elut(HUD_INK));
+    /* THE THREE PANEL HEADINGS -- centred, ink 69, and the port had all
+     * three wrong.
+     *
+     * Ink: every heading is palette 69, not the 68 the top bar uses.
+     * Measured on four independent captures (the census baseline plus the
+     * three 2026-08-07 Europe frames). 69 is not a @COLORS slot, so the
+     * VALUE comes from the frames and its SOURCE is unidentified -- flagged.
+     *
+     * Centring, and why it has to be centring rather than the fixed x's the
+     * port carried: panel 3's heading MOVES with its content. Across those
+     * frames "No Ships In Port" sits at 156..209 while "Loading:" sits at
+     * 168..194 with the ship's name on a SECOND line at 160..205 -- so the
+     * port was wrong twice there, once about the x and once about putting
+     * the ship name on the same line. Panel 2 settles the convention:
+     * "Bound For" (ink 33) at 91 and the region name (ink 56) at 79 are two
+     * strings of different widths that solve to the SAME centre under
+     * e_center's own rule, cx = 107 -- and they must be centred anyway,
+     * because dat_regionname varies by nation and a fixed x could only ever
+     * be right for one. Panel 3's two strings likewise both solve to
+     * cx = 183.
+     *
+     * FLAGGED: "Loading:" alone solves to cx = 181..181.5, ~1.5 px off the
+     * 183 its own second line gives. A trailing space in the engine's string
+     * would close it exactly -- that is a guess, and is not made here.
+     * Panel 1's heading never changes, so its cx = 36 is a one-string fit,
+     * indistinguishable from a fixed x = 12 on every frame available. */
+    e_center("Expected Soon", 36, 120, elut(PANEL_INK));
     int k = 0;
     for (int q = 0; q < CR.n_europe && k < 2; q++)
         if (CR.europe[q].state == 1)
             crossing_cell(&CR.europe[q], 13, k++);
-    rd_text(&E_TINY, "Bound For", 87, 120, elut(HUD_INK));
-    rd_text(&E_TINY, dat_regionname[cs_nation()], 87, 127, elut(HUD_INK));
+    e_center("Bound For", 107, 120, elut(PANEL_INK));
+    e_center(dat_regionname[cs_nation()], 107, 127, elut(PANEL_INK));
     k = 0;
     for (int q = 0; q < CR.n_europe && k < 2; q++)
         if (CR.europe[q].state == 2)
@@ -187,11 +222,10 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     const euro_crossing *ship =
         (euro_ship >= 0 && euro_ship < nport) ? &CR.europe[port[euro_ship]]
                                               : 0;
-    rd_text(&E_TINY, ship ? "Loading:" : "No Ships In Port", 150, 120,
-            elut(HUD_INK));
+    e_center(ship ? "Loading:" : "No Ships In Port", 183, 120,
+             elut(PANEL_INK));
     if (ship)
-        rd_text(&E_TINY, dat_units[ship->type].name, 186, 120,
-                elut(HUD_INK));
+        e_center(dat_units[ship->type].name, 183, 127, elut(PANEL_INK));
 
     /* dock units (EURO_DOCK 232,137 pitch 17) */
     for (int d = 0; d < CR.n_dock_units && d < 6; d++) {
@@ -235,18 +269,40 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
         }
     }
 
-    /* recruit-menu rows: @EUROLABEL first 3 at (281, 89+11r, 37, 9) */
+    /* Recruit-menu rows: @EUROLABEL first 3 at (281, 89+11r, 37, 9).
+     *
+     * The frame is a BEVEL, not a one-colour hollow rect: top edge and left
+     * column in 0x39, bottom edge and right column in 0x30. Read straight off
+     * the census frame, where all three buttons carry it identically -- rows
+     * 89 and 97 are 37 px of 0x39 and 0x30 respectively, and rows 90..96 have
+     * 0x39 at x=281 and 0x30 at x=317. The port drew a flat 0x7D box, which
+     * is why the two edge rows differed across their whole width.
+     *
+     * FLAGGED: the original shows NO selected row on any Europe frame
+     * available, so the 0x0F highlight below is the port's own affordance for
+     * a click cursor the original may not have. It is kept, and the census
+     * renders with euro_row = -1 to match the state the captures are in. */
     for (int r = 0; r < 3; r++) {
         int y = 89 + 11 * r;
-        rm_hollow_rect(281, y, 37, 9, r == euro_row ? 0x0F : 0x7D);
+        if (r == euro_row) {
+            rm_hollow_rect(281, y, 37, 9, 0x0F);
+        } else {
+            rd_fill(281, y, 37, 1, 0x39);          /* top    */
+            rd_fill(281, y, 1, 9, 0x39);           /* left   */
+            rd_fill(281, y + 8, 37, 1, 0x30);      /* bottom */
+            rd_fill(281 + 36, y, 1, 9, 0x30);      /* right  */
+        }
         const char *lbl = dat_eurolabel[r];
         int w = rd_text_width(&E_TINY, lbl);
         /* x0 = 281 + (37-w)/2, fractional — FONT.draw rounds it */
         int x0 = eround(2 * 281 + 37 - w);
         char first[2] = { lbl[0], 0 };
         rd_text(&E_TINY, first, x0, y + 2, elut(0x0E));
+        /* The tail of the label is 0x0F (white), not 0x10 -- measured on the
+         * census frame, where "ECRUIT"/"URCHASE"/"RAIN" are all 0x0F while
+         * only the accelerator letter is 0x0E. */
         rd_text(&E_TINY, lbl + 1, x0 + rd_text_width(&E_TINY, first), y + 2,
-                elut(0x10));
+                elut(0x0F));
     }
 
     rd_text(&E_TINY, "Exit", 306, 181, elut(0x0F));
