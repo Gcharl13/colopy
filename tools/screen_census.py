@@ -157,13 +157,35 @@ def diff_one(sid: str) -> dict:
     if r.returncode != 0 or not out.exists():
         return {"id": sid, "error": "port render failed"}
 
-    dos = np.array(Image.open(dos_png).convert("RGB"))
+    dos_img = Image.open(dos_png)
+    dos = np.array(dos_img.convert("RGB"))
     port = read_ppm(out)[:200]                              # drop the chrome band
     if dos.shape != port.shape:
         return {"id": sid, "error": "shape %s vs %s" % (dos.shape, port.shape)}
 
     mask = (dos != port).any(axis=2)
     rows = np.where(mask.any(axis=1))[0]
+
+    # Split the divergence by KIND, because "20% differs" is not one fact.
+    #
+    # The DOS capture is an indexed PNG, so its palette is the set of colours
+    # the original could possibly have drawn on this screen. A port pixel whose
+    # colour is NOT in that set cannot be a content difference -- the port drew
+    # some index with the WRONG RGB, i.e. it is using a different palette. A
+    # port pixel whose colour IS in the set but in the wrong place is a genuine
+    # content difference.
+    #
+    # This is what separated the Europe screen's 20% into 61% palette + 39%
+    # content, and showed the palette half is Europe-only: all five reports
+    # come back 0% palette. Without the split, one number invited one wrong
+    # explanation for two unrelated faults.
+    known = {tuple(dos_img.getpalette()[3 * i:3 * i + 3]) for i in range(256)}
+    pal_px = content_px = 0
+    for y, x in zip(*np.where(mask)):
+        if tuple(int(v) for v in port[y, x]) in known:
+            content_px += 1
+        else:
+            pal_px += 1
     OUT.mkdir(parents=True, exist_ok=True)
     side = Image.new("RGB", (320 * 3 + 8, 200), (24, 24, 24))
     side.paste(Image.fromarray(dos), (0, 0))
@@ -173,7 +195,7 @@ def diff_one(sid: str) -> dict:
     side.save(OUT / ("%s.png" % sid))
     return {"id": sid, "px": int(mask.sum()), "pct": round(100 * mask.sum() / mask.size, 2),
             "rows": [int(rows.min()), int(rows.max())] if len(rows) else None,
-            "declared": div}
+            "pal": pal_px, "content": content_px, "declared": div}
 
 
 def main() -> int:
@@ -200,8 +222,9 @@ def main() -> int:
             continue
         tag = ("  [OPEN]" if str(r["declared"]).startswith("OPEN")
                else "  [declared]") if r["declared"] else ""
-        print("  %-4s %6d px  %5.1f%%  rows %s%s"
-              % (r["id"], r["px"], r["pct"], r["rows"], tag))
+        print("  %-7s %6d px  %5.1f%%  rows %-10s  palette %5d / content %5d%s"
+              % (r["id"], r["px"], r["pct"], r["rows"], r["pal"], r["content"],
+                 tag))
         if r["declared"]:
             print("        %s" % r["declared"])
     print("\nside-by-side (DOS | port | delta): %s" % OUT)
