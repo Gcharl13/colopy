@@ -11323,8 +11323,12 @@ function importSav(bytes) {
                 // ink reads bits 4/2 (func_004314 @0x00448B-@0x0044A4).
                 recFlags1c: d[b + 0x1C],
                 building: (DATA.buildings[bip] || {}).name || null,
+                // FLOOR, not round: the DOS colony screen prints 36% for
+                // Isabella (107/292 = 36.64) and 5% for Vlissingen
+                // (64/1082 = 5.92) -- the engine's integer division
+                // truncates. Round read both one high.
                 sol: divisor > 0 ? Math.max(0, Math.min(100,
-                     Math.round(100 * dividend / divisor))) : 0 };
+                     Math.floor(100 * dividend / divisor))) : 0 };
     // custom_house_flags @+0x8A: bit i = good i EXPORTED (smcol hint; the
     // port stores the inverse "off" map). Dormant until a Custom House stands.
     const chf = u16(b + 0x8A);

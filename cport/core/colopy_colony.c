@@ -202,10 +202,15 @@ int workplace_job_for_name(const char *building_name) {
     return -1;
 }
 
-/* SoL % from the record's EMA pair (importer: game.js:10395-10405). */
+/* SoL % from the record's EMA pair (importer: game.js:10395-10405).
+ * FLOOR, not round: the DOS colony screen prints 36%% for Isabella
+ * (107/292 = 36.64) and 5%% for Vlissingen (64/1082 = 5.92) on the
+ * census fixture -- two independent live frames, and the engine's
+ * integer division truncates.  The old +divisor/2 rounding read both
+ * one high. */
 int colony_sol(const ColonyRecord *c) {
     if (c->rebel_divisor <= 0) return 0;
-    long v = (100l * c->rebel_dividend + c->rebel_divisor / 2) / c->rebel_divisor;
+    long v = (100l * c->rebel_dividend) / c->rebel_divisor;
     if (v < 0) v = 0;
     if (v > 100) v = 100;
     return (int)v;
