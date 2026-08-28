@@ -200,7 +200,15 @@ void cr_reset_from_load(void) {
         CR.unit_rival_born[i] = (uint8_t)(own < 4 && own != (int)cs_nation());
         CR.unit_no_moves[i] = CR.unit_rival_born[i];
     }
-    CR.map_seed = 1653;
+    /* The engine's [0x190] map-detail salt is NOT among the save's 43
+     * serialized blocks, so a load cannot restore it exactly.  Its LOW
+     * NIBBLE is what places the fish/detail sprites (the hash reads
+     * seed & 0xF), and that nibble is MEASURED: sweeping 0..15 against
+     * the census MAP baseline, nibble 9 is the unique minimum (7,530 px;
+     * runner-up 3 at 7,989; the old 1653 = nibble 5 scored 8,842).
+     * 1657 = nibble 9.  The full seed value stays unknowable from one
+     * frame -- only the nibble is evidence-backed. */
+    CR.map_seed = 1657;
     CR.plot_seed = 1653;             /* loads pin the layout seed too */
     CR.wc_show = -1;
     CR.ui_select = -1;

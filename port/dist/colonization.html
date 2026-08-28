@@ -11182,6 +11182,12 @@ function importSav(bytes) {
   beginGame();
   G.year = year; G.season = season; G.turn = turn; G.difficulty = diff;
   G.landHo = true; G.builtColony = true; G.metAnyone = true;
+  // The [0x190] map-detail salt is not among the save's 43 serialized
+  // blocks; the load pins it like the C's cr_reset_from_load does. The LOW
+  // NIBBLE places the fish/detail sprites and is MEASURED against the MAP
+  // census baseline (nibble 9 = the unique sweep minimum); the full value
+  // stays unknowable from one frame.
+  G.mapSeed = 1657;
   // The globals block (0x5380, 0x8E bytes -- the serializer's block 3,
   // func_0734F8 @0x073562, full 43-block order read 2026-08-07) carries the
   // engine's own once-flags at fixed offsets; restore them verbatim:
