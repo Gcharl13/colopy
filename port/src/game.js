@@ -480,11 +480,12 @@ function detailClass(v) {
 }
 function detailFrame(mx, my, v) {
   if (!G.mapSeed) return -1;                  // word [0x190] == 0 disables @0x60A9
-  // A PRIME-RESOURCE tile shows its resource, never a detail: func_005F82
-  // (improve bit 2 + resource nibble >= 4, 0xF = none) must return -1 for
-  // the hash to run (@0x0060B3-@0x0060C4).
-  const imp = impAt(mx, my), res = resAt(mx, my);
-  if ((imp & 2) && res !== 0x0F && res >= 4) return -1;
+  // The prime-resource pre-gate (func_005F82, @0x0060B3-@0x0060C4) is
+  // byte-read but NOT WIRED: the saved third plane's high nibble holds
+  // region-id bits, not resources (Vlissingen's whole neighbourhood reads
+  // 3), so the runtime [0x164] plane must be rebuilt at load by a rule
+  // still unread. Measured: gating on the saved bytes changes nothing.
+  const imp = impAt(mx, my);
   const forest = forestConnects(v) || isScrub(v) ? 1 : 0;
   const q = (mx & 3) * 4 + (my & 3);
   const h = ((my >> 2) * 3 + (mx >> 2) + (G.mapSeed & 0xF) - forest) & 0xF;
@@ -519,11 +520,15 @@ const at = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) ? 25 : MAP.til
 // It is a separate plane from the terrain byte, which is why plow's 0x40 does
 // not collide with the terrain plane's river bit of the same value.
 const IMPROVE = new Uint8Array(MAP.w * MAP.h);
-// Plane 3's HIGH nibble is the PRIME-RESOURCE id (func_005DF0 = layer [0x164]
-// byte >> 4, 0xF = none); the low nibble is the region id.
+// Plane 3's HIGH nibble: the engine's RUNTIME [0x164] high nibble is the
+// prime-resource id (func_005DF0), but the SAVED bytes hold region-id bits
+// there (a whole neighbourhood reads 3), so the runtime plane must be
+// rebuilt at load by a rule still unread. The array carries the saved
+// nibble verbatim for future decoding; nothing gameplay reads it yet.
 const RESOURCE = new Uint8Array(MAP.w * MAP.h).fill(0x0F);
 const resAt = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h)
   ? 0x0F : RESOURCE[y * MAP.w + x];
+void resAt;
 // The REGION plane: map layer 3 ([0x164]), whose LOW NIBBLE is a landmass/
 // region id -- byte-read at func_005D9C (the reader behind 0x181F:0x722,
 // resolved 2026-08-07f). A shipped save carries the plane verbatim; a fresh
@@ -2912,11 +2917,14 @@ function fieldYield(c, p) {
   y += toryPenalty(c);
   // The expert match: the "era" goods Food and Horses take a flat +2, every
   // other good DOUBLES (@0x9DAD..0x9DD2).
+  // The expert match: the "era" goods Food and Horses take a flat +2, every
+  // other good DOUBLES (@0x9DAD..0x9DD2).
   if (isExpert(p, job)) {
     if (g === GOOD.FOOD || g === GOOD.HORSES) y += 2; else y *= 2;
   }
   return Math.max(0, y);
 }
+
 // The list a native village will teach from (§19.4). Whether Scout (row 22)
 // belongs here is UNCITED -- JOB_GOOD has no entry for it and fieldYield returns
 // 0, so it is inert as a field job, and spec/systems/natives.md has no entry

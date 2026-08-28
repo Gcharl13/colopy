@@ -110,16 +110,16 @@ static int detail_class(int v) {
 /* the salt is word [0x190] = CR.map_seed (RULINGS.md 2026-08-07) */
 static int detail_frame(int mx, int my, int v) {
     if (!CR.map_seed) return -1;             /* gate @0x60A9 */
-    /* a PRIME-RESOURCE tile shows its resource, never a detail:
-     * func_005F82 (improve bit 2 + the region plane's HIGH nibble --
-     * func_005DF0 = [0x164] byte >> 4, 0xF none -- >= 4) must return -1
-     * for the hash to run (@0x0060B3-@0x0060C4) */
+    /* The prime-resource pre-gate (func_005F82: improve bit 2 + the
+     * runtime [0x164] high nibble >= 4, @0x0060B3-@0x0060C4) is byte-read
+     * but NOT WIRED: the SAVED third plane's high nibble holds region-id
+     * bits, not resources (Vlissingen's whole neighbourhood reads 3), so
+     * the runtime plane must be rebuilt at load by a rule still unread.
+     * Measured: gating on the saved bytes changes nothing on this
+     * fixture. */
     int idx = my * COLOPY_MAP_W + mx;
     int imp = (mx >= 0 && my >= 0 && mx < COLOPY_MAP_W &&
                my < COLOPY_MAP_H) ? CS.improve[idx] : 0;
-    int res = (mx >= 0 && my >= 0 && mx < COLOPY_MAP_W &&
-               my < COLOPY_MAP_H) ? (CS.region[idx] >> 4) : 0x0F;
-    if ((imp & 2) && res != 0x0F && res >= 4) return -1;
     int forest = (forest_connects(v) || is_scrub(v)) ? 1 : 0;
     int q = (mx & 3) * 4 + (my & 3);
     int h = ((my >> 2) * 3 + (mx >> 2) + (CR.map_seed & 0xF) - forest) & 0xF;

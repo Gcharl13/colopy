@@ -284,6 +284,16 @@ int field_yield(const ColonyRecord *c, int sol, int job,
     if (is_expert(prof, job)) {
         if (g == FOOD || g == HORSES) yld += 2; else yld *= 2;
     }
+    /* PRIME RESOURCES: the bonus table func_009AAA (@0x9AAA-@0x9B9A) and
+     * its application at func_009B9C @0x9DD5-@0x9E10 are BYTE-READ --
+     * bonus = table[res][col], negative doubles, expert doubles the
+     * bonus -- but NOT WIRED: the resource id comes from the runtime
+     * [0x164] plane's high nibble (func_005DF0), and after a LOAD that
+     * plane's saved bytes hold region ids (Vlissingen's whole
+     * neighbourhood reads high-nibble 3), so the engine must rebuild it
+     * procedurally at load.  Wiring the saved bytes in would double
+     * cotton on every 0x3X-region tile.  The term waits for the rebuild
+     * rule. */
     return yld > 0 ? yld : 0;
 }
 
