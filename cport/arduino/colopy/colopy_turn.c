@@ -29,6 +29,9 @@
 #include "colopy_sim.h"
 #include "colopy_data.h"
 
+/* BYTE_VERIFIED: func_0098B4 returns the constant 0xC8 (@0x98BD) as the
+ * growth threshold, fetched by the turn processor through thunk
+ * 0x181F:0xCB8 (@0x2E10E) and compared/deducted @0x2E11D/@0x2E123. */
 #define FOOD_FOR_COLONIST 200
 #define REBEL_DIVISOR_SEED 200
 
@@ -345,12 +348,16 @@ static int unit_type_for_profession(uint8_t prof);
  * Refuses to empty a colony: the engine's behaviour when the LAST colonist
  * leaves is unread, and abandonment has its own command (@ABANDON), so
  * this does not invent a second path to it.  FLAGGED. */
-int colonist_to_fence(int ci, int k) {
+/* Remove colonist k from the record, closing the index-packed arrays.
+ * BYTE_VERIFIED as the engine's own removal primitive func_008FB4 (thunk
+ * 0x181F:0xA9C): shift occupation (+0x20) / profession (+0x40) and the
+ * work nibbles (+0x60) down over k (@0x8FC2..@0x8FE8), then walk the
+ * field-claim array (+0x70): a claim equal to k is cleared to 0xFF
+ * (@0x9023), a claim above k is decremented (@0x9008); finally the size
+ * byte drops and the SoL divisor gives back its 100 (@0x902E/@0x9031). */
+void colonist_remove_at(int ci, int k) {
     ColonyRecord *c = &CS.colonies[ci];
-    if (k < 0 || k >= c->population || c->population <= 1) return -1;
-    uint8_t prof = c->profession[k];
-    /* the record's colonist arrays are index-packed, so removing one in the
-     * middle shifts the tail and every tiles[] reference past it */
+    if (k < 0 || k >= c->population) return;
     for (int i = k; i + 1 < c->population; i++) {
         c->occupation[i] = c->occupation[i + 1];
         c->profession[i] = c->profession[i + 1];
@@ -365,6 +372,13 @@ int colonist_to_fence(int ci, int k) {
         else if ((uint8_t)c->tiles[q] != 0xFF && (uint8_t)c->tiles[q] > (uint8_t)k)
             c->tiles[q] = (int8_t)((uint8_t)c->tiles[q] - 1);
     }
+}
+
+int colonist_to_fence(int ci, int k) {
+    ColonyRecord *c = &CS.colonies[ci];
+    if (k < 0 || k >= c->population || c->population <= 1) return -1;
+    uint8_t prof = c->profession[k];
+    colonist_remove_at(ci, k);
     /* mkUnit(p.profession || p.type || 'Colonists'): a specialty maps to its
      * carrier unit type, a plain colonist to Colonists */
     int type = unit_type_for_profession(prof);
@@ -747,7 +761,9 @@ static void run_school(int ci) {
  *     for a Criminal (@0x2E080..@0x2E098);
  *   - success sets profession := the job id (0x181F:0xCAE — which is
  *     what makes him the job's expert under the byte-equality rule) and
- *     emits @TRAINPROFESSION (string 0xE1F) with the specialty name. */
+ *     emits @TRAINPROFESSION (string 0xE1F — the key-name table holds
+ *     TRAINPROFESSION TWICE, @0x1E7AF and @0x1E7BF; 0xE1F is the second
+ *     copy, so the id is byte-verified) with the specialty name. */
 static int prof_owned(int prof) {
     int n = 0;
     for (int ci = 0; ci < CS.n_colonies; ci++) {
@@ -866,6 +882,9 @@ void colony_turn(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
     colony_rt *r = &CR.col[ci];
     colony_output o;
+    /* the start-of-turn food stock, captured before anything banks
+     * ([bp-0x6a] @0x2D6BF) — the starvation-death gate below reads it */
+    int start_food = c->stock[FOOD];
     colony_produce(ci, &o);
     /* colonyBesieged (game.js:2995): REF + at-war rival land units within
      * 1 of the colony outnumbering the player's attack-capable land units
@@ -920,31 +939,73 @@ void colony_turn(int ci) {
         int32_t f = (int32_t)c->stock[FOOD] - o.eaten;
         c->stock[FOOD] = (uint16_t)(f < 0 ? 0 : f);
     }
-    int pre_winter = cs_year() >= 1600 && cs_season() == 1;
-    if (o.net_food < 0 && c->stock[FOOD] == 0) {
-        if (!r->food_depleted) {
-            r->food_depleted = 1;
-            cev(pre_winter ? "FOOD2" : "FOOD1", 0, 0, c->name, 0);
-        } else if (c->population > 1) {
-            colonist_remove_last(ci);
-            cev(pre_winter ? "STARVE2" : "STARVE1", 0, 0, c->name, 0);
-            r->food_warned = 0;
-        } else {
-            r->vanished = 1;
-            cev("VANISH", 0, 0, c->name, 0);
-        }
-    } else if (o.net_food < 0 && c->stock[FOOD] < FOOD_FOR_COLONIST &&
-               !r->food_warned) {
-        r->food_warned = 1;
-        cev("FOODLOW", c->stock[FOOD], 0, c->name, 0);
-    } else if (o.net_food >= 0) {
-        r->food_warned = 0;
-        r->food_depleted = 0;
-    }
+    /* FOOD MESSAGES + GROWTH — the byte model, func_02D658 @0x2E10A..
+     * @0x2E36C (read 2026-08-28), replacing the port's latch-based
+     * reading.  The engine's order is growth, then starvation, then the
+     * low-food warning, and the seasonal message variant is picked by the
+     * season word [0x538C] (0 = spring @0x2E19A), which only ever goes
+     * nonzero from 1600 (spec/systems/turn_dispatch.md @0x5ABB).
+     *
+     * GROWTH @0x2E10A: threshold = thunk 0x181F:0xCB8 -> func_0098B4
+     * called with two null out-args, and that function returns the
+     * CONSTANT 0xC8 = 200 (@0x98BD) — the long-flagged 200-food rule is
+     * now byte-verified (@0x2E11D compare, @0x2E123 deduct).  The child
+     * is NOT a colony member: the engine spawns a type-0 (Colonists)
+     * UNIT on the colony square via 0x181F:0x95C -> func_006D24
+     * (0, owner, x, y) (@0x2E136) — he waits at the fence, exactly what
+     * @NEWCOLONIST says: "New colonist now available." (id 0xE2F
+     * @0x2E156). */
     if (c->stock[FOOD] >= FOOD_FOR_COLONIST) {
         c->stock[FOOD] = (uint16_t)(c->stock[FOOD] - FOOD_FOR_COLONIST);
-        colonist_add(c);
+        int ut = unit_row_named("Colonists");
+        unit_append(ut < 0 ? 0 : ut, c->owner_power & 0x0F,
+                    c->map_x, c->map_y);
         cev("NEWCOLONIST", 0, 0, c->name, 0);
+    }
+    int autumn = cs_season() != 0;
+    /* STARVATION @0x2E164: the trigger is the food OUTAGE plane [0x8E5A]
+     * (max(0, eaten − start-stock − produced), func_008E02 @0x8E5A) — not
+     * the banked stock.  AI powers (owner >= 4, or an AIPersonality
+     * controller @0x2E170) are forgiven an outage below 3 (@0x2E177).  A
+     * colonist DIES only when the colony ENTERED the turn with no food at
+     * all ([bp-0x6a], captured @0x2D6BF, tested @0x2E1AD); on difficulty
+     * <= 1 the death is waived outright before 1520 (@0x2E1C0) and
+     * afterwards survives only a random_int(0, 2−diff) == 0 roll
+     * (@0x2E1D4).  No death -> @FOOD1/@FOOD2; a death that empties the
+     * colony -> @VANISH (@0x2E265, then the removal still runs and the
+     * empty colony is destroyed @0x2E2F8); otherwise @STARVE1/@STARVE2.
+     * Each death removes a RANDOM colonist random_int(0, size−1) via
+     * func_008FB4 (@0x2E2C6). */
+    int outage = o.outage_amt[FOOD];
+    int is_ai = (c->owner_power & 0x0F) >= 4 ||
+                (int)(c->owner_power & 0x0F) != (int)cs_nation();
+    if (is_ai && outage < 3) outage = 0;
+    if (outage > 0) {
+        int deaths = start_food == 0 ? 1 : 0;
+        if (deaths && cs_difficulty() <= 1) {
+            if (cs_year() < 1520) deaths = 0;
+            else if (rng_range(0, 2 - cs_difficulty()) != 0) deaths = 0;
+        }
+        if (deaths == 0)
+            cev(autumn ? "FOOD2" : "FOOD1", 0, 0, c->name, 0);
+        else if (c->population == deaths)
+            cev("VANISH", 0, 0, c->name, 0);
+        else
+            cev(autumn ? "STARVE2" : "STARVE1", 0, 0, c->name, 0);
+        for (int d = 0; d < deaths; d++)
+            colonist_remove_at(ci, rng_range(0, c->population - 1));
+        if (c->population == 0) r->vanished = 1;   /* destroy @0x2E2F8 */
+    } else {
+        /* @FOODLOW @0x2E30A: fires (no latch) while the OVERDRAW plane
+         * [0x8E32] (max(0, eaten − produced)) is nonzero and the banked
+         * stock covers fewer than 4 such turns (stock < 4×overdraw,
+         * @0x2E314/@0x2E31B), with the stock as %NUMBER (@0x2E33D).
+         * Gate: colony-report option "Report food shortages" ([0x5384]
+         * bit 0x40, set = suppress, @0x2E321) — the port has no options
+         * dialog yet, so the default all-on applies. */
+        int overdraw = o.net_food < 0 ? (int)-o.net_food : 0;
+        if (overdraw > 0 && 4 * overdraw > (int)c->stock[FOOD])
+            cev("FOODLOW", c->stock[FOOD], 0, c->name, 0);
     }
     resolve();
     /* tutorial bindings: NOT ported (see header) */

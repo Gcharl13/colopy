@@ -3617,6 +3617,9 @@ function colonyBesieged(c) {
   return enemies > friends;
 }
 function colonyTurn(c) {
+  // The start-of-turn food stock, captured before anything banks ([bp-0x6a]
+  // @0x2D6BF) -- the starvation-death gate below reads it.
+  const startFood = c.stock[GOOD.FOOD];
   const r = colonyProduce(c);
   if (colonyBesieged(c)) {
     if (!c.sieged) { c.sieged = true; showEvent('SIEGE'); }
@@ -3642,39 +3645,61 @@ function colonyTurn(c) {
   // (@FOODLOW, once, while stores are thin), then STARVATION (@STARVE1) when a
   // colonist is lost, and a BIRTH (@NEWCOLONIST) on growth.
   c.stock[GOOD.FOOD] = Math.max(0, c.stock[GOOD.FOOD] - r.eaten);
-  // The winter split: from the 1600 time-scale change the FALL turn is the
-  // "winter is coming soon" variant of each food message (@FOOD2/@STARVE2 vs
-  // @FOOD1/@STARVE1). Which turn the engine treats as pre-winter is unread --
-  // fall-after-1600 is the port's reading of the seasons, flagged.
-  const preWinter = G.year >= 1600 && G.season === 1;
-  if (r.netFood < 0 && c.stock[GOOD.FOOD] === 0) {
-    if (!c.foodDepleted) {
-      // The turn stores hit bottom: @FOOD1/@FOOD2 ("we MAY starve"), latched.
-      // Death starts the NEXT hungry turn -- the depletion warning first,
-      // then starvation, is the port's reading of the two keys' tenses.
-      c.foodDepleted = true;
-      showEvent(preWinter ? 'FOOD2' : 'FOOD1', { STRING0: c.name });
-    } else if (c.colonists.length > 1) {
-      c.colonists.pop();
-      showEvent(preWinter ? 'STARVE2' : 'STARVE1', { STRING0: c.name });
-      c.foodWarned = false;
-    } else {
-      // @VANISH: the LAST colonist starves and the colony is gone. Flagged
-      // for removal after the colony loop (endTurn), not mid-iteration.
-      c.vanished = true;
-      showEvent('VANISH', { STRING0: c.name });
-    }
-  } else if (r.netFood < 0 && c.stock[GOOD.FOOD] < FOOD_FOR_COLONIST && !c.foodWarned) {
-    c.foodWarned = true;
-    showEvent('FOODLOW', { STRING0: c.name, NUMBER0: c.stock[GOOD.FOOD] });
-  } else if (r.netFood >= 0) {
-    c.foodWarned = false;
-    c.foodDepleted = false;
-  }
+  // FOOD MESSAGES + GROWTH -- the byte model, func_02D658 @0x2E10A..@0x2E36C
+  // (read 2026-08-28), replacing the port's latch-based reading. The engine's
+  // order is growth, then starvation, then the low-food warning, and the
+  // seasonal message variant is picked by the season word [0x538C]
+  // (0 = spring @0x2E19A), which only goes nonzero from 1600 -- G.season
+  // mirrors it exactly.
+  //
+  // GROWTH @0x2E10A: threshold = thunk 0x181F:0xCB8 -> func_0098B4 with two
+  // null out-args, and that function returns the CONSTANT 0xC8 = 200
+  // (@0x98BD) -- the long-flagged 200-food rule is now byte-verified
+  // (@0x2E11D compare, @0x2E123 deduct). The child is NOT a colony member:
+  // the engine spawns a type-0 (Colonists) UNIT on the colony square via
+  // 0x181F:0x95C -> func_006D24 (0, owner, x, y) (@0x2E136) -- he waits at
+  // the fence, exactly what @NEWCOLONIST says: "New colonist now
+  // available." (id 0xE2F @0x2E156).
   if (c.stock[GOOD.FOOD] >= FOOD_FOR_COLONIST) {
     c.stock[GOOD.FOOD] -= FOOD_FOR_COLONIST;
-    c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
+    G.units.push(mkUnit('Colonists', c.x, c.y));
     showEvent('NEWCOLONIST', { STRING0: c.name });
+  }
+  const autumn = G.season !== 0;
+  // STARVATION @0x2E164: the trigger is the food OUTAGE plane [0x8E5A]
+  // (max(0, eaten - start-stock - produced), func_008E02 @0x8E5A) -- not the
+  // banked stock. AI powers are forgiven an outage below 3 (@0x2E177; player
+  // colonies only here, so no forgiveness). A colonist DIES only when the
+  // colony ENTERED the turn with no food at all ([bp-0x6a] @0x2D6BF, tested
+  // @0x2E1AD); on difficulty <= 1 the death is waived before 1520 (@0x2E1C0)
+  // and afterwards survives only a random_int(0, 2-diff) == 0 roll
+  // (@0x2E1D4). No death -> @FOOD1/@FOOD2; a death that empties the colony
+  // -> @VANISH (@0x2E265, the removal then empties it and the colony is
+  // destroyed @0x2E2F8); otherwise @STARVE1/@STARVE2. Each death removes a
+  // RANDOM colonist random_int(0, size-1) via func_008FB4 (@0x2E2C6).
+  const outage = r.outageAmt[GOOD.FOOD];
+  if (outage > 0) {
+    let deaths = startFood === 0 ? 1 : 0;
+    if (deaths && G.difficulty <= 1) {
+      if (G.year < 1520) deaths = 0;
+      else if (Math.floor(Math.random() * (3 - G.difficulty)) !== 0) deaths = 0;
+    }
+    if (deaths === 0) showEvent(autumn ? 'FOOD2' : 'FOOD1', { STRING0: c.name });
+    else if (c.colonists.length === deaths) showEvent('VANISH', { STRING0: c.name });
+    else showEvent(autumn ? 'STARVE2' : 'STARVE1', { STRING0: c.name });
+    for (let d = 0; d < deaths; d++)
+      c.colonists.splice(Math.floor(Math.random() * c.colonists.length), 1);
+    if (c.colonists.length === 0) c.vanished = true;   // destroy @0x2E2F8
+  } else {
+    // @FOODLOW @0x2E30A: fires (no latch) while the OVERDRAW plane [0x8E32]
+    // (max(0, eaten - produced)) is nonzero and the banked stock covers fewer
+    // than 4 such turns (stock < 4*overdraw, @0x2E314/@0x2E31B), with the
+    // stock as %NUMBER (@0x2E33D). Gate: colony-report option "Report food
+    // shortages" ([0x5384] bit 0x40, set = suppress, @0x2E321) -- the port
+    // has no options dialog yet, so the default all-on applies.
+    const overdraw = r.netFood < 0 ? -r.netFood : 0;
+    if (overdraw > 0 && 4 * overdraw > c.stock[GOOD.FOOD])
+      showEvent('FOODLOW', { STRING0: c.name, NUMBER0: c.stock[GOOD.FOOD] });
   }
   // Tutorial bindings: TUTORIAL6 (func_02D658 @0x2EA4C) when a sellable
   // cargo has built up; 7 (func_02883E @0x28D41) when the colony can use a

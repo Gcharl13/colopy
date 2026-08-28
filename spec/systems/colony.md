@@ -183,7 +183,11 @@ Criminal, `@0x2E080..@0x2E098`); success sets `profession := job id`
 (`0x181F:0xCAE` — the byte-equality expert rule makes him the job's expert;
 the setter also remaps Veteran Dragoons→Veteran Soldiers `@0x9141`) and
 emits `@TRAINPROFESSION` (string 0xE1F) with the specialty name, registering
-the new expert in the census (`@0x2E0B4`).
+the new expert in the census (`@0x2E0B4`).  The 0xE1F id is now
+**byte-verified**, not flagged: the key-name table holds `TRAINPROFESSION`
+**twice** (`@0x1E7AF` and `@0x1E7BF` in the EXE string block), and the
+name-table delta from `TRAINFAIL` (`@0x1E787` = id 0xDE7) lands 0xE1F exactly
+on the second copy.
 
 ### Mine depletion — **BYTE_VERIFIED** (accrual `@0x9E13`, consumer `@0x2EA62..@0x2EA9D`, action `func_02D30A`)
 Field yields accrue `[0xA896]` (ore on Minerals +1, silver on Minerals +2,
@@ -194,6 +198,51 @@ ore/silver cell whose detail id is 6 or 12 with improve bit **0x04**
 (`@0x2D383`) — killing the resource bonus and switching the sprite to the
 Depleted Mine through `map_detail_id`'s `imp&4` gate — and emits
 `@DEPLETION` (string 0xD75) once per turn.
+
+### Growth, starvation & the food warning — **BYTE_VERIFIED** (`func_02D658 @0x2E10A..@0x2E36C`, read 2026-08-28)
+The message ids pin by name-table delta from `@TRAINFAIL` (`@0x1E787` = id
+0xDE7): `@NEWCOLONIST` 0xE2F, `@FOOD1` 0xE3B, `@FOOD2` 0xE41, `@VANISH`
+0xE47, `@STARVE1` 0xE4E, `@STARVE2` 0xE56, `@FOODLOW` 0xE5E — and the same
+walk proves the table holds `TRAINPROFESSION` **twice** (`@0x1E7AF`,
+`@0x1E7BF`), closing the old 0xE1F flag.  The engine's order is growth →
+starvation → warning, and every seasonal variant is picked by the season
+word `[0x538C]` (0 = spring → the `1` variant, `@0x2E19A`).
+
+1. **Growth** `@0x2E10A`: threshold = thunk `0x181F:0xCB8` → `func_0098B4`
+   called with two null out-args; the function **returns the constant
+   0xC8 = 200** (`@0x98BD`; its out-args, when non-null, expose the
+   20-food-per-unit rate and a `min((cap+1)·20−1, 118)` figure for other
+   callers).  `stock[FOOD] >= 200` → deduct 200 (`@0x2E123`) and spawn a
+   **type-0 (Colonists) unit on the colony square** via `0x181F:0x95C` →
+   `func_006D24 (0, owner, x, y)` (`@0x2E136`) — the child waits at the
+   fence, he is *not* a colony member — then `@NEWCOLONIST` (`@0x2E156`).
+2. **Starvation** `@0x2E164`: trigger is the food **outage plane
+   `[0x8E5A]`** (`max(0, eaten − start-stock − produced)`, `func_008E02`),
+   not the banked stock.  AI powers (power ≥ 4, or an `AIPersonality`
+   controller `@0x2E170`) are forgiven an outage below 3 (`@0x2E177`).
+   deaths = 1 **only when the colony entered the turn with zero food**
+   (`[bp-0x6a]` captured `@0x2D6BF`, tested `@0x2E1AD`); on difficulty ≤ 1
+   a death is waived before 1520 (`@0x2E1C0`) and afterwards survives only
+   `random_int(0, 2−diff) == 0` (`@0x2E1D4`).  deaths = 0 →
+   `@FOOD1`/`@FOOD2`; deaths = size → `@VANISH` (`@0x2E265`); else
+   `@STARVE1`/`@STARVE2`.  Each death removes a **random** colonist
+   `random_int(0, size−1)` via `func_008FB4` (`@0x2E2C6`) — the engine's
+   removal primitive: shift the +0x20/+0x40 arrays and +0x60 nibbles, clear
+   field claims equal to the index and decrement those above it, size−−,
+   SoL divisor −100 (`@0x902E/@0x9031`).  Size 0 destroys the colony
+   (`@0x2E2F8`).
+3. **`@FOODLOW`** `@0x2E30A` (only when the outage is zero): fires — no
+   latch — while the **overdraw plane `[0x8E32]`** (`max(0, eaten −
+   produced)`) is nonzero and `stock < 4·overdraw`
+   (`@0x2E314/@0x2E31B`), with the stock as `%NUMBER` (`@0x2E33D`); gated
+   by colony-report option "Report food shortages" (`[0x5384]` bit 0x40,
+   set = suppress, `@0x2E321`).
+
+Both engines carry this model verbatim (`cport/core/colopy_turn.c`
+`colony_turn`, `port/src/game.js` `colonyTurn`); the port's old
+latch-based warning/depletion states (`foodWarned`/`foodDepleted`) are
+gone.  The cheat handler's own size++ site is `@0x2C12B` (debug key), and
+colony creation zeroes size `@0x2EC17` — neither is the growth site.
 
 ### The centre tile — **BYTE_VERIFIED** (`func_00A222 @0xA222..@0xA3D1`)
 FOOD band by classifier id — arctic 0; desert family {1, 9, 0x11} 1; forested

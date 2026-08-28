@@ -129,7 +129,7 @@ mechanic behind it is not:
 
 | Key | What is missing |
 |---|---|
-| `@NEWCOLONIST` | Fires as a popup and the population cap (32, `@0x009432`) is enforced by `colonist_add`; the **200-food threshold is still tier R (manual), not byte-located** — flagged in both engines. The "25/50 evidence mis-attributed to horses" claim was itself wrong and is **withdrawn 2026-08-17**: that pair belongs to horse breeding, byte-proved (RULINGS 2026-08-17). The real per-turn food-growth store is unlocated. |
+| `@NEWCOLONIST` | **CLOSED 2026-08-28** — the 200-food threshold is byte-verified: `func_0098B4` returns the constant `0xC8` (`@0x98BD`), fetched via thunk `0x181F:0xCB8` and compared/deducted `@0x2E11D/@0x2E123`; growth spawns a type-0 (Colonists) **unit at the fence** (`@0x2E136`), it does not add a member — both engines now do the same. (The "25/50 mis-attributed to horses" claim stayed withdrawn — that pair belongs to horse breeding, RULINGS 2026-08-17.) |
 | REF growth cadence | `func_03E162`: accrual timing opposite the bytes; tax->REF-fund loop unwired; ratio ladder approximated. `@KINGBUY`/`@KINGMOBILIZE` both emit, so the census reads this row as wired. |
 
 ### B.2 The 74 MEDIUM popup rows, by family
@@ -221,12 +221,19 @@ colonist and persist in the save, flat 3-graduations cap, RANDOM student
 from the unskilled pool, @TRAINFAIL only on an empty pool, unskilled
 teachers teach at the Servant class via the 0x1C->0x19 remap; the old
 first-student/per-student-counter model is gone); school-guard timing
-(`:2838`); 199-cap / 200-food-per-colonist
-are the manual's, not byte-located (`:2919`); Custom-House gate on over-100
+(`:2838`); the 200-food growth threshold BYTE-LOCATED 2026-08-28
+(func_0098B4 returns the constant 0xC8 @0x98BD; the whole
+growth/starvation/@FOODLOW block rewritten to func_02D658
+@0x2E10A..@0x2E36C — growth spawns a UNIT at the fence, starvation keys off
+the outage plane [0x8E5A] with the start-of-turn-empty death gate and
+easy-difficulty leniency, @FOODLOW is latchless at stock < 4x overdraw; see
+spec/systems/colony.md); Custom-House gate on over-100
 disposal open (`:2930`); `@CARGOREADY1/2` and `@SPOIL1-4` selectors unread
 (`:2958`, `:2987`); x32 hammer scale for buildable units inferred from six ship
-costs (`:3059`); `@SIEGE` radius 1, no blockade (`:3091`); pre-winter turn
-(`:3128`); herd-growth cap (`:3168`); `@DEPLETION` 1/50 (`:3181`);
+costs (`:3059`); `@SIEGE` radius 1, no blockade (`:3091`); the pre-winter
+variant CLOSED 2026-08-28 — the engine picks @FOOD2/@STARVE2 off the season
+word [0x538C] != 0 (@0x2E19A), which is exactly `G.season === 1`;
+herd-growth cap (`:3168`); `@DEPLETION` 1/50 (`:3181`);
 `@MERCANTILISM` rate (`:3269`); Custom House picker format (`:3292`);
 FIELD LEARN-BY-DOING added 2026-08-28 (was entirely absent): byte-read
 @0x2E01C..@0x2E107 — planter/trapper jobs 1..4, unskilled tiers only

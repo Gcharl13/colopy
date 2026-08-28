@@ -202,6 +202,7 @@ void score_parts(score_parts_t *s);  /* firstTribeContact's woodcut callback
 extern int colopy_front_live;
 int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
 void colonist_remove_last(int ci);
+void colonist_remove_at(int ci, int k);  /* func_008FB4 (0x181F:0xA9C) */
 int  colonist_to_fence(int ci, int k);  /* colonistToFence; unit idx or -1 */
 void colonist_add(ColonyRecord *c);   /* the record-slot push */
 void ev_emit(const char *key, int32_t p0, int32_t p1,
@@ -316,7 +317,7 @@ typedef struct {
     uint8_t  sol_band;           /* 0xFF = unset */
     uint8_t  latch;              /* 0x04 majority / 0x02 unanimous */
     int32_t  rebelA, rebelB;     /* EMA pair; 0 = unseeded */
-    uint8_t  food_depleted, food_warned, ineff, sieged;
+    uint8_t  ineff, sieged;
     uint8_t  tool_warned, cap_warned, vanished;
     uint16_t cargo_ready, outage_latch;
     int32_t  crosses_turn, bells_turn;
