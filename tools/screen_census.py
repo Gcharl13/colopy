@@ -202,8 +202,8 @@ REPORTS = {
     # the render matches that half rather than declaring the whole unit.
     "MAP": (None, ["--rendermap", FIXTURE, str(PAK), "{out}", "37", "23", "6",
                    "-1", "0", "0"],
-            "OPEN (9.4%), captured 2026-08-28 and taken 9,855 -> 6,049 "
-            "the same day (content 2,875 + cycle 3,119 + pointer 98). The view origin (37, 23) is the sweep's unique "
+            "OPEN (8.2%), captured 2026-08-28 and taken 9,855 -> 5,263 "
+            "the same day (content 2,132 + cycle 3,119 + pointer 98). The view origin (37, 23) is the sweep's unique "
             "minimum (every neighbour >= 16,428), confirming the centring "
             "model clamp(unit - (7, 6)). The fixes, each measured:\n"
             "         MAP UNITS draw through the shared func_00386A "

@@ -2233,10 +2233,13 @@ function drawSidebar(ctx) {
 
   // Sidebar B (240,72,80,64): season/year, gold, tax. All HUD text is the
   // green ink 68, pixel-measured from docs/screens/06_ingame_map.png.
+  // Measured off the MAP baseline: x = 242 (not 244), gold row y = 58,
+  // and the black minimap backdrop runs one row below the frame (y = 49).
+  ctx.fillStyle = ink(0); ctx.fillRect(241, 49, 79, 1);
   const season = DATA.seasons[G.season];
-  FONT.tiny.draw(ctx, `${season} ${G.year}`, 244, 51, lut(HUD_INK));
-  FONT.tiny.draw(ctx, `Gold: ${G.gold}`, 244, 59, lut(HUD_INK));
-  FONT.tiny.draw(ctx, `Tax: ${G.tax}%`, 290, 59, lut(HUD_INK));
+  FONT.tiny.draw(ctx, `${season} ${G.year}`, 242, 51, lut(HUD_INK));
+  FONT.tiny.draw(ctx, `Gold: ${G.gold}`, 242, 58, lut(HUD_INK));
+  FONT.tiny.draw(ctx, `Tax: ${G.tax}%`, 288, 58, lut(HUD_INK));
 
   // Sidebar C (240,136,80,64): selected-unit panel.
   const u = G.units[G.sel];

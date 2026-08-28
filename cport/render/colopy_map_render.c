@@ -638,7 +638,9 @@ static void draw_sidebar(const rm_view *vw) {
     mm_build();
     /* backdrop fill is (241, 8) 79x41 (@0x066CF8), the frame (251, 8)-
      * (308, 48) colour 6 (@0x066D4F) */
-    rd_fill(241, 8, 79, 41, 0);
+    /* the black backdrop runs one row BELOW the frame too -- the
+     * baseline has a full-width black row at y = 49 */
+    rd_fill(241, 8, 79, 42, 0);
     rm_hollow_rect(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 6);
     /* the WINDOW (verb 0x181F:0x59A = @0x066928): anchored to the map
      * CURSOR [0x17C]/[0x17E] -- the active unit after a load -- with
@@ -736,13 +738,15 @@ static void draw_sidebar(const rm_view *vw) {
     rm_hollow_rect(mmx + (vw->view_x - sx), mmy + (vw->view_y - sy),
                 VIEW_COLS << cur_zoom, VIEW_ROWS << cur_zoom, 0x0F);
 
+    /* season/gold lines measured off the baseline: x = 242 (not 244),
+     * gold row y = 58 (not 59), tax right-block shifted with it */
     char buf[64];
     snprintf(buf, sizeof(buf), "%s %u", dat_seasons[cs_season()], cs_year());
-    rd_text(&TINY, buf, 244, 51, lut_of(HUD_INK));
+    rd_text(&TINY, buf, 242, 51, lut_of(HUD_INK));
     snprintf(buf, sizeof(buf), "Gold: %ld", (long)CS.powers[cs_nation()].gold);
-    rd_text(&TINY, buf, 244, 59, lut_of(HUD_INK));
+    rd_text(&TINY, buf, 242, 58, lut_of(HUD_INK));
     snprintf(buf, sizeof(buf), "Tax: %u%%", CS.powers[cs_nation()].tax_rate);
-    rd_text(&TINY, buf, 290, 59, lut_of(HUD_INK));
+    rd_text(&TINY, buf, 288, 58, lut_of(HUD_INK));
 
     if (vw->sel >= 0 && vw->sel < CR.n_units_order) {
         int ui = CR.units_order[vw->sel];
