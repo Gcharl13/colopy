@@ -196,9 +196,11 @@ int rm_profession_icon(int job) {
     return -1;
 }
 static int colonist_figure(uint8_t prof) {
-    /* the sav byte indexes @JOBEXPERT directly (SAV_PROFESSION,
-     * game.js:10207: v>=1 -> jobexpert[v]); 0 = no specialty -> 100 */
-    if (prof >= 1 && prof <= 27) {
+    /* the sav byte indexes @JOBEXPERT directly; byte 0 IS the Expert
+     * Farmer (C4.26 resolved 2026-08-28 — the DOS expert test @0x9CDC is
+     * plain byte equality and the Vlissingen scene badges prove prof-0
+     * farmers expert); 28 = no specialty -> the plain figure 100 */
+    if (prof <= 27) {
         int f = rm_profession_icon(prof);
         if (f >= 0) return f;
     }
@@ -340,34 +342,14 @@ static void gauge_strip(int frame, int drawn, int sub, int slots, int x,
     if (mark_x >= 0) rm_count_badge(sub, mark_x + 2, y, 0x0C);
 }
 
-/* centreYield (game.js:3735) */
+/* centreYield — now the core's byte model (compute_colony_center_yields
+ * func_00A222, read end to end @0xA222..@0xA3D1; see colopy_colony.c).
+ * Isabella: savannah sugar 3 + the difficulty +1 = the baseline's 4;
+ * Vlissingen: rain-forest ore 1 + Minerals 3 + 1 = 5 (the "(Minerals)"
+ * sidebar line, runtime-captured 2026-08-28). */
 static void centre_yield(const ColonyRecord *c, int *food, int *good,
                          int *amount) {
-    uint8_t v = map_at(c->map_x, c->map_y);
-    int f = tile_yield(v, 0);
-    if (cs_difficulty() == 0) f += 2;
-    else if (cs_difficulty() == 1) f += 1;
-    if (tile_river(v)) f += 1;
-    f += improvement_bonus(c->map_x, c->map_y, FOOD);
-    /* the SECONDARY row, byte-read off func_00A222's tail
-     * (@0xA34D-@0xA3D1): best yield over columns 1..7 SKIPPING column 5
-     * (@0xA375, the lumberjack), then +1 at difficulty 0 (@0xA3AB),
-     * +1 per SoL latch flag (record +0x1C bits 4/2, @0xA3C1/@0xA3CB).
-     * Isabella: tobacco 3 + the difficulty +1 = the baseline's 4.
-     * FLAGGED unread: the 0x9AAA resource add-or-double term and the
-     * [bp-0x12] extra. */
-    int g = -1, a = 0;
-    for (int col = 1; col <= 7; col++) {
-        if (col == 5) continue;
-        int y = tile_yield(v, col);
-        if (y > a) { a = y; g = RJOB_GOOD[col]; }
-    }
-    if (g >= 0) {
-        if (cs_difficulty() == 0) a += 1;
-        if (c->colony_flags & 4) a += 1;
-        if (c->colony_flags & 2) a += 1;
-    }
-    *food = f; *good = g; *amount = a;
+    colony_centre_yield((int)(c - CS.colonies), food, good, amount);
 }
 
 /* worker-slot cell offsets (game.js:10338, colopy_colony.c) */
@@ -812,33 +794,47 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                      BB[b].y + 3, clut(15));
         }
     }
-    /* right panel: the production strips (view 0 — func_0275CE) */
+    /* right panel: the production strips (view 0 — func_0275CE), fed by
+     * the engine's band planes (func_008E02): a raw good shows its
+     * PRODUCTION (Vlissingen ore 13 = miners 8 + centre secondary 5) and
+     * consumption is invisible while stock+intake covers it — only the
+     * OUTAGE crosses out (Vlissingen's 4 lumber); a product cell shows
+     * its post-outage output; the horses cell shows the bred WANT with
+     * the unfed foals crossed (the baseline's 1 white + 3 red badges). */
     if (view == 0) {
         rm_crow_cell row0[8], row1[8], row2[4];
         int n0 = 0, n1 = 0, n2 = 0;
+        /* row 0 (@0x027604): count = produced + [0x8E32] (the warehouse
+         * overdraw, max(0, consumed - produced)), sub = that overdraw; a
+         * good with NOTHING produced is skipped even if consumed. */
         for (int i = 1; i <= 7; i++) {
             if (i == 5 || r.gross[i] == 0) continue;
-            row0[n0++] = (rm_crow_cell){ 22 + i, r.gross[i] + r.consumed[i],
-                                      r.consumed[i], 0 };
+            row0[n0++] = (rm_crow_cell){ 22 + i,
+                                      r.gross[i] + r.over_amt[i],
+                                      r.over_amt[i], 0 };
         }
-        static const int8_t RAW_FOR[16] = { -1, -1, -1, -1, -1, -1, -1, -1,
+        /* row 1 (@0x027646): each manufacture pairs with byte[0x2A2+i] and
+         * crosses out [0x8E5A + src*2] -- the source's OUTAGE (horses
+         * source themselves: [0x8E6A] = foals that found no food). */
+        static const int8_t RAW_SRC[16] = { -1, -1, -1, -1, -1, -1, -1, -1,
                                             8, 1, 2, 3, 4, -1, 6, 14 };
         for (int i = 8; i <= 15; i++) {
-            /* every manufacture enqueued; zero-count cells drop in the
-             * layout's own count>0||sub>0 filter (game.js:9789) */
-            int src = RAW_FOR[i];
-            int fed = 0;
-            if (src >= 0)
-                fed = r.consumed[src] < r.gross[src] ? r.consumed[src]
-                                                     : r.gross[src];
-            int cnt = r.gross[i] > fed ? r.gross[i] : fed;
-            row1[n1++] = (rm_crow_cell){ 22 + i, cnt, fed, 0 };
+            int src = RAW_SRC[i];
+            int amt = src >= 0 ? r.outage_amt[src] : 0;
+            int cnt = r.gross[i] > amt ? r.gross[i] : amt;
+            row1[n1++] = (rm_crow_cell){ 22 + i, cnt, amt, 0 };
         }
-        /* row 2 (@0x0276AF): lumber PRODUCED plain, lumber CONSUMED as its
-         * own 0x8000-marked run, then hammers */
+        /* row 2 (@0x0276AF): FOUR cells, each surplus-then-shortfall --
+         * lumber PRODUCED plain, the lumber OUTAGE ([0x8E64]) as its own
+         * 0x8000-marked run, the POST-OUTAGE hammers plain, then the
+         * hammer shortfall as another marked run (the Vlissingen baseline
+         * draws [8 planks][4X][8 hammers][4X] as four separate groups). */
         row2[n2++] = (rm_crow_cell){ 22 + LUMBER, r.gross[LUMBER], 0, 0 };
-        row2[n2++] = (rm_crow_cell){ 22 + LUMBER, r.consumed[LUMBER], 0, 0x8000 };
+        row2[n2++] = (rm_crow_cell){ 22 + LUMBER, r.outage_amt[LUMBER], 0,
+                                     0x8000 };
         row2[n2++] = (rm_crow_cell){ PROD_HAMMER_ICON, r.hammers, 0, 0 };
+        row2[n2++] = (rm_crow_cell){ PROD_HAMMER_ICON,
+                                     r.outage_amt[LUMBER], 0, 0x8000 };
         rm_draw_count_row(row0, n0, 213, 134, 89, 2, numbers);
         rm_draw_count_row(row1, n1, 213, 148, 89, 2, numbers);
         rm_draw_count_row(row2, n2, 213, 162, 89, 4, numbers);

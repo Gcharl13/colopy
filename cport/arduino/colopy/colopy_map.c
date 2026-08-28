@@ -79,10 +79,21 @@ int tile_hills(uint8_t v)     { return !tile_water(v) && (v & 0xA0) == 0x20; }
 int tile_mountains(uint8_t v) { return !tile_water(v) && (v & 0xA0) == 0xA0; }
 int tile_river(uint8_t v)     { return (v & 0x40) ? ((v & 0x80) ? 2 : 1) : 0; }
 
-/* tileYield (game.js:2415): fold forested 16..23 onto 8..15, then the three
- * band tables; col 8 is the water/fisherman column. */
+/* The engine's terrain classifier for yields — BYTE_VERIFIED
+ * `func_00624E @0x624E` (the 0x3E4:0xE thunk target): bit5 set means the
+ * tile IS hills (0x1C) or, with bit7 also set, mountains (0x1B), and the
+ * yield row is the @OTHER Mountains/Hills row — NOT the base terrain in
+ * bits 0..4.  This is what pays ore miners 4 on mountain tiles (the
+ * COLONY_SHIP baseline's Vlissingen scene badges, 2026-08-28). */
+int tile_yield_class(uint8_t v) {
+    if (v & 0x20) return (v & 0x80) ? 27 : 28;   /* @0x6254..@0x6266 */
+    return v & 0x1F;
+}
+
+/* tileYield: classify per func_00624E, fold forested 16..23 onto 8..15,
+ * then the three band tables; col 8 is the water/fisherman column. */
 int tile_yield(uint8_t v, int col) {
-    int t = v & 0x1F;
+    int t = tile_yield_class(v);
     if (t >= 16 && t <= 23) t = (t & 7) | 8;
     const int32_t *row;
     if (t <= 7)       row = dat_yields_unforested[t];
@@ -90,6 +101,32 @@ int tile_yield(uint8_t v, int col) {
     else if (t >= 24 && t - 24 < DAT_YIELDS_OTHER_COUNT) row = dat_yields_other[t - 24];
     else return 0;
     return (col >= 0 && col < 9) ? row[col] : 0;
+}
+
+/* The raw improvement byte — the DOS yield code tests bits the masked
+ * map_improve() drops: roads are `al & 0x0A` (@0x9C9B/@0x9F01), plow
+ * `al & 0x40` (@0x9F1F), the silver-mine bit `al & 4` (@0x9E5D). */
+uint8_t map_improve_raw(int x, int y) {
+    if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 0;
+    return CS.improve[y * COLOPY_MAP_W + x];
+}
+
+/* count of the 8 neighbours whose base terrain id lies in [lo,hi] —
+ * BYTE_VERIFIED `func_0099EE @0x99EE` (per-neighbour test @0x99AE:
+ * in-bounds, then `(v & 0x1F)` between the two bounds).  The fisherman
+ * ladder calls it with (0x19,0x1A) = ocean/sea-lane. */
+int map_count8_terr(int x, int y, int lo, int hi) {
+    static const int8_t NDX[8] = { 0, 1, 0, -1, -1, 1, 1, -1 };
+    static const int8_t NDY[8] = { -1, 0, 1, 0, -1, -1, 1, 1 };
+    int n = 0;
+    for (int k = 0; k < 8; k++) {
+        int tx = x + NDX[k], ty = y + NDY[k];
+        if (tx < 0 || ty < 0 || tx >= COLOPY_MAP_W || ty >= COLOPY_MAP_H)
+            continue;
+        int t = CS.terrain[ty * COLOPY_MAP_W + tx] & 0x1F;
+        if (t >= lo && t <= hi) n++;
+    }
+    return n;
 }
 
 /* ---- fog of war (game.js:8571..8600) ----

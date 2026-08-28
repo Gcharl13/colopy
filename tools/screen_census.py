@@ -308,11 +308,30 @@ REPORTS = {
                "dock in both engines, the ship strip now goes through the "
                "shared func_00386A composite (@0x28049 mode 0x64 W=0x10), "
                "and the headline/crate placement follows the bytes "
-               "(163,132 / x+5-w/2 at y=165). The bulk of what remains is "
-               "the DECLARED RNG building placement plus Vlissingen's "
-               "production strips, untriaged. (The SoL split 6%/94% vs "
+               "(163,132 / x+5-w/2 at y=165). (The SoL split 6%/94% vs "
                "DOS 5%/95% was the rounding bug fixed via the COLONY "
-               "entry: the engine floors -- 64/1082 = 5.92 prints 5.)"),
+               "entry: the engine floors -- 64/1082 = 5.92 prints 5.) "
+               "2026-08-28 PRODUCTION DECODE (42.4% -> 35.2%): this "
+               "frame's strips forced the full byte read of the yield "
+               "chain -- func_009B9C (field), func_009FFC (indoor jump "
+               "table at cs 0x82B0), func_00A222 (centre + secondary), "
+               "func_008E02/8E84 (the band planes) -- and every scene "
+               "badge now reproduces: farmers 6/5 (prof-0 IS the Expert "
+               "Farmer, C4.26), lumberjacks 4/4 (the LUMBER column "
+               "doubles @0x9EAB), miners 4/4 (mountains classify to the "
+               "@OTHER row via func_00624E), fisherman 4 (ocean-neighbour "
+               "ladder + Docks gate), and the ore row's 13 = 8 + the "
+               "centre's Minerals secondary 5 -- confirmed at RUNTIME by "
+               "the view-mode sidebar printing '(Minerals)' on (25,34), "
+               "which independently validates the detail hash AND the "
+               "pinned seed 1657. The crossed runs are the OUTAGE plane "
+               "[0x8E5A] (lumber 4 = 12 wanted - 8 made), row 0 crosses "
+               "the warehouse overdraw [0x8E32] (ore crosses NOTHING "
+               "against a 161 stock), and the horses cell is want 4 with "
+               "[0x8E6A] = 3 unfed foals crossed. The production panel "
+               "region is now ~123 px from DOS (X-mark pixel offsets); "
+               "the remaining bulk is the DECLARED RNG building "
+               "placement."),
     "COLONY": (("KEYS", "v", "Left", "Return"),
                ["--rendercolony", FIXTURE, str(PAK), "{out}", "1"],
                "NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "
@@ -325,7 +344,12 @@ REPORTS = {
                "reason this screen must never be marked COMPLETE -- "
                "2026-06-24). Also visible and OPEN: the area-view map crop "
                "is offset from DOS, and two counters read 372/632 against "
-               "DOS 362/642."),
+               "DOS 362/642. 2026-08-28: the production decode (see "
+               "COLONY_SHIP) also fixed THIS frame's rows -- Isabella's "
+               "row 0 'tobacco' was really the centre's savannah SUGAR "
+               "secondary 4, and her rum row is 4 = criminal 1 + free 3 "
+               "(the indoor class rates @0xA0D7), with the consumed sugar "
+               "crossing nothing because stock covers it."),
 }
 
 

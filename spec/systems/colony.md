@@ -104,33 +104,83 @@ Production inputs are primary game data:
 
 ## 3. Formulas & rules
 
-### Per-tile production — **BYTE_VERIFIED** (`compute_terrain_yield`, file `0x9B9C..0x9FFB`)
-Full body byte-traced in `viceroy_source/src/colony/turn_update.c`. For a worker
-on a tile producing good *g*:
+### Per-tile production — **BYTE_VERIFIED end to end** (`compute_terrain_yield`, file `0x9B9C..0x9FFB`; re-read 2026-08-28)
+The 2026-08-28 read replaced several earlier glosses (marked ✝ below) and is
+cross-checked against every per-tile badge in the COLONY_SHIP census baseline
+(Vlissingen: farmers 6/5, lumberjacks 4/4, miners 4/4, fisherman 4). The
+COLUMN is the worker's `@JOB` row 0..8 (`func_009974`: occupation byte), and
+the terrain row comes from the classifier `func_00624E` (0x3E4:0xE): **bit5
+set → Hills (0x1C), bit5+bit7 → Mountains (0x1B)** — a mountain ore miner
+reads the `@OTHER` Mountains row (ore 4), never the base-terrain row.
 ```
-yield = terrain_yield_table[terrain_id*16 + g]   # DGROUP:0x2F7B, @0x9C1E (loaded from NAMES @terrain)
-if yield > 0:
-    # adjacency nudge (manufactured/secondary goods g>=8): +1, or −1/−2 if 6/8 like-neighbours  @0x9C3E
-    # special feature bumps (furs+feature, river bits)                                            @0x9C87
-    # --- Sons-of-Liberty / Tory production penalty (@0x9D14..0x9D98) ---
-    tory_cnt = round(population * (100 - sol_pct) / 100)
-    divisor  = (owner < 4 and active) ? (10 - difficulty) : 10     # @0x9D49 (= 10−diff)
-    yield   += -(tory_cnt / divisor)            # plus +1 each for rebel-majority / rebel-unanimous latches
-    # --- profession (expert) match (@0x9DAD..0x9DD2) ---
-    if colonist_skill(tile) == g:
-        if g in {Food(0), Horses(8)}:  yield += 2          # "era" goods: flat +2
-        else:                          yield *= 2          # @0x9DD2 SHL — expert DOUBLES manufactured goods
-    yield += feature_yield_bonus(resource, g)   # @0x9AAA: penalty-resource ×2; else +bonus (×2 if expert)
-    # --- building gates (@0x9F4F..0x9F83) ---
-    if g >= 8 and not building_bit(6):  yield = 0          # needs the manufacturing building
-    if g == Furs(4) and FF_op(8):       yield *= 2
-yield = max(yield, 0)
+yield = terrain_yield_table[classify(v)*16 + col]     # DGROUP:0x2F7B, @0x9C1E (from NAMES)
+if yield != 0:
+    # ✝ the "adjacency nudge" was the FISHERMAN ladder (col >= 8): n = 8-neighbour
+    # count of ocean/sea-lane (func_0099EE with lo/hi 0x19/0x1A):
+    #   n>=8: −2   n in 6..7: −1   n<6: +1                          @0x9C33..@0x9C87
+    # furs (col 4): +1 road (imp&0x0A), +1 river (v&0x40), +1 more major (v&0x80)
+yield = max(yield, 0)                                               @0x9CB4
+pen = tory penalty:                                                 @0x9D13..@0x9D98
+    tories  = (pop*(100−sol)+50)/100
+    divisor = human colony ? 10−difficulty : (tories forced 0)      @0x9D43/@0x9D73
+    pen     = −(tories/divisor) + 1 per RECORD flag +0x1C bit2/bit1 (NOT runtime sol)
+if yield != 0 and pen > 0: yield += pen        # positive pen EARLY @0x9D9B
+expert = (profession byte == col)              # plain byte equality @0x9CDC — prof 0 IS Expert Farmers
+if expert and yield != 0:
+    if col in {0, 8}: yield += 2 (+pen again if pen>0)              @0x9DB9..@0x9DC9
+    else:             yield <<= 1                                   @0x9DD2
+bonus = func_009AAA[detail_id][col]            # detail hash = prime resource; res 7 with
+if bonus < 0: yield <<= 1                      # yield<=0 → 0; negative DOUBLES,
+else: yield += expert ? 2*bonus : bonus        # expert doubles the bonus  @0x9DD5..@0x9E10
+# silver (col 7) with no detail and no mine bit (imp&4): 1 if road/expert else 0,
+# and the improvement block below is skipped                        @0x9E41..@0x9EA6
+if col == 5: yield <<= 1                       # the LUMBER column DOUBLES @0x9EAB
+if yield > 0:                                  # improvements @0x9EBD..@0x9F4C
+    b = ((expert and col not in {0,8}) or col == 5) ? 2 : 1
+    if col == 0:               yield += b      # the farmer's inherent +b
+    if (imp & 0x0A) and col>3: yield += b      # road
+    if (imp & 0x40) and col<=3: yield += b     # plow
+    if v & 0x40: yield += b; and another +b for a MAJOR river only when the
+                 river was the sole bonus collected                 @0x9F3B..@0x9F46
+if col >= 8 and not colony_has(row 6 = DOCKS): yield = 0            @0x9F4F  (✝ not "manufacturing building")
+if col == 4 and father 8 (Henry Hudson) owned: yield <<= 1          @0x9F65
+if profession == 27 (Indian Convert) and yield > 0 and col in {0..4, 8+}: yield += 1  @0x9F86
+yield = max(yield, 0); if yield != 0 and pen < 0: yield = max(0, yield + pen)  # negative pen LAST @0x9FD8
 ```
-The lookup table value is **data-driven** (NAMES, not hardcoded); the arithmetic,
-multipliers, the `10−difficulty` divisor, and the gates are byte-verified from the
-operand bytes. The per-turn driver `colony_turn_update` (file `0xA222..0xA6A1`)
-zeroes the 20-good accumulator, runs the 3×3 ring through `compute_terrain_yield`,
-then applies the 5 raw→finished chains (Ore→Tools, etc.).
+✝ The port's old capture-fitted easy-difficulty +2/+1 field bonus is **not in
+the bytes** and is gone (difficulty enters field yields only through the tory
+divisor). Side effects while computing: `[0xA896]` accrues depletion pressure
+(+1 detail-6 ore, +2 detail-6 silver, +1 detail-12 silver, `@0x9E13..@0x9E41`)
+and the producer sums fisher yields into `[0xA895]`.
+
+### Indoor production — **BYTE_VERIFIED** (`func_009FFC`, file `0x9FFC..0xA221`)
+expert = profession byte == occupation byte (`@0xA01A`). Class rate from the
+PROFESSION (`@0xA0D7..@0xA0FD`): Indentured Servant (25) → 2, Petty Criminal
+(26) / Indian Convert (27) → 1, else 3. Tory pen identical to the field's.
+Per job (jump table `@0xA1F4`, cs base 0x82B0):
+- **Carpenter 13** `@0xA100`: `(expert?6:class)+pen`, **×2 with the Lumber
+  Mill** (row 0x24).
+- **Preacher 16** `@0xA132`: `(expert?6:class)+pen`, ×2 with the Cathedral
+  (row 0x26), +50% with William Penn (father 21).
+- **Statesman 17** `@0xA1C8`: `class+pen`, ×2 if expert. (The Printing
+  Press/Newspaper act on the bell TOTAL, not here.)
+- **Teacher 18** (default `@0xA0AF`): `expert?3:1`.
+- **Converters 9-12, 14, 15** `@0xA188`: `class+pen`, **+class** with the 2nd
+  link, **+50%** with the 3rd (factory), ×2 if expert. (Isabella's census rum
+  row 4 = criminal 1 + free 3.)
+
+### The centre tile — **BYTE_VERIFIED** (`func_00A222 @0xA222..@0xA3D1`)
+FOOD band by classifier id — arctic 0; desert family {1, 9, 0x11} 1; forested
+8..23 and Hills/Mountains 2; other land 3 (`@0xA247..@0xA290`; **no
+auto-clear fold** — a rain-forest centre is band 2); +2/+1 at difficulty 0/1;
++2 when the centre's prime resource is 1, 2 or 9 (`@0xA314`); +1 per record
+flag +0x1C bit2/bit1. **SECONDARY** (`@0xA343..@0xA3D1`): best of columns 1..7
+skipping 5 on the same classified row, resource bonus per column (negative
+doubles), strict `>` so the FIRST max wins; the winner gets +1 at difficulty
+0, the river bonus (minor 1 / major 2), +1 per flag bit — and the amount is
+**added to production** (`@0xA3F7..@0xA409`). Vlissingen: rain-forest ore 1 +
+Minerals 3 = 4 wins, +1 → 5 (runtime-confirmed by the sidebar's "(Minerals)"
+line, which also independently validates the detail hash and map seed 1657).
 
 ### Per-turn driver sequence — `colony_turn_update @0xA222` (traced 2026-06-26)
 The ordered per-turn colony pipeline (call sites byte-read):
@@ -139,16 +189,24 @@ The ordered per-turn colony pipeline (call sites byte-read):
 2. **Tile production**: loop over the 3×3 ring / goods (bounds `cmp [bp-0x1c],0x14`=20
    `@0xA3E8`), `call 0x9AAA` (feature bonus) + **`call 0x9B9C` = `compute_terrain_yield`**
    `@0xA42A`, accumulating per-good into the produced table `[good·2 + 0x8DC8]`.
-3. **Raw→finished chains**: **`call 0x8E84` ×5** (`@0xA660..0xA68C`, args `(finished, raw)`):
-   Ore6→Tools14, Tobacco2→Cigars10, Cotton3→Cloth11, Furs4→Coats12, Sugar1→Rum9.
-   **Conversion ratio = 1:1 (BYTE_VERIFIED 2026-06-27)** — `func_008E84` takes the raw the tile
-   loop gathered (`produced[finished]`) and converts it unchanged, **except a ×2/3 throttle** when
-   the finished good's **building-chain count > 2**: `if func_00864E(finished) > 2: amount =
-   amount·2/3` (`shl;mov cx,3;idiv` `@0x8EB1`). The gate counts how many buildings in the finished
-   good's requirement chain (chain table `DS:0x8F86`; link ids `byte[good+0x2F4]`) the colony owns,
-   via the building bitfield `ColonyRecord+0x84` (`func_00860E`: `imul si,colony,0xCA;
-   al=[si+(b>>3)+0x5DCA]; bit b&7`). **Tools (14)** additionally subtract the per-turn
-   tools-from-horses offset `[0x8E66]` (`@0x8E61`). Commit `func_008E46`→`func_008E02`. **B.**
+3. **Raw→finished chains — RE-READ 2026-08-28 (the outage model).** The indoor
+   wants accumulate **uncapped** (`@0xA480..@0xA4A0`); the resolution runs at
+   the tail: `call 0x8E46(5, hammers)` then **`call 0x8E84` ×5**
+   (`@0xA64E..0xA68C`, args `(raw, finished)`: Ore6→Tools14, Tobacco2→Cigars10,
+   Cotton3→Cloth11, Furs4→Coats12, Sugar1→Rum9), then `0x8E46(14, muskets)`.
+   `func_008E84` records the finished good's raw COST (×2/3 with the factory
+   tier: `func_00864E(finished) > 2`, `@0x8EA9/@0x8EB1`) and `func_008E02`
+   fills three per-good planes: consumed `[0x8E0A]`, the warehouse OVERDRAW
+   `[0x8E32]` = max(0, consumed − produced), and the **OUTAGE** `[0x8E5A]` =
+   max(0, consumed − stock − produced) — which `func_008E84`'s tail converts
+   to product units for a factory (everything when nothing was affordable,
+   else ×3/2, `@0x8EC9..@0x8EFC`). The product is short by the outage.
+   ✝ **Tools' `[0x8E66]` subtract (`@0x8E5A..@0x8E61`) is not a
+   "tools-from-horses offset"** — `0x8E66 = 0x8E5A + 2·6` is the ORE outage:
+   the gunsmith sees the toolsmith's post-outage output. **HORSES**
+   (`@0xA5B0..@0xA63B`): want = 2·ceil(herd/(Stable?25:50)), fed by
+   ceil(surplus/2), stored bounded by warehouse room; `goods[8] += want` and
+   `[0x8E6A]` (the outage slot) = want − stored, the crossed foals. **B.**
 4. **Food consumption — BYTE_VERIFIED: `eaten = 2·pop`** (`@0xA5F2` `mov al,[bx+0x1F]; shl
    ax,1`); `net_food = max(food_produced[0x8DC8] − 2·pop, 0)` (`@0xA5F7 sub/neg`, clamp
    `@0xA5FD`). Net food feeds the **`+0xAA` food-growth store** (read `@0xA5D6`/`@0xA61F`;

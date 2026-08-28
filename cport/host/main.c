@@ -790,7 +790,8 @@ int main(int argc, char **argv) {
     /* Phase 2 slice 1: colony production. The full oracle is
      * tools/sim_compare.py (17 colonies, JS vs C, exact); this in-harness
      * check pins one value so `make test` alone catches a regression:
-     * savnewcolony's pop-1 Jamestown = centre-only food 5 (JS-verified). */
+     * savnewcolony's pop-1 Jamestown = centre-only food 4 (the func_00A222
+     * band model: forested centre band 2 + easy-difficulty 2). */
     colopy_load_sav(savnewcolony, sizeof(savnewcolony));
     {
         int found = 0;
@@ -804,8 +805,8 @@ int main(int argc, char **argv) {
             printf("  Jamestown pop %u  food %d (centre %d) hammers %d "
                    "bells %d crosses %d\n", c->population, r.out[FOOD],
                    r.centre, r.hammers, r.bells, r.crosses);
-            CHECK(r.out[FOOD] == 5 && r.centre == 5,
-                  "Jamestown food/centre: %d/%d != 5/5", r.out[FOOD], r.centre);
+            CHECK(r.out[FOOD] == 4 && r.centre == 4,
+                  "Jamestown food/centre: %d/%d != 4/4", r.out[FOOD], r.centre);
         }
         CHECK(found, "Jamestown present in savnewcolony");
     }

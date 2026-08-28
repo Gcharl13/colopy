@@ -37,6 +37,9 @@ int  tile_water(uint8_t v);
 int  tile_hills(uint8_t v);
 int  tile_mountains(uint8_t v);
 int  tile_river(uint8_t v);                 /* 0 none / 1 minor / 2 major */
+int  tile_yield_class(uint8_t v);           /* func_00624E: hills/mtn rows */
+uint8_t map_improve_raw(int x, int y);      /* unmasked plane 2 byte */
+int  map_count8_terr(int x, int y, int lo, int hi); /* func_0099EE */
 int  tile_yield(uint8_t v, int col);        /* the nine-column terrain tables */
 
 /* ---- goods & job tallies ---------------------------------------------- */
@@ -53,6 +56,17 @@ typedef struct {
     int32_t horses_bred;        /* this turn's foals, BYTE_VERIFIED @0x0A5B4.. */
     int32_t net_food;
     uint16_t outages;           /* bit per raw good that starved a converter */
+    /* the engine's outage plane [-0x71A6] (set_commodity_band @0x8E32):
+     * per RAW good, max(0, consumed - stock - produced); for a factory
+     * chain converted to PRODUCT units (@0x8EC9..@0x8EFC).  This is the
+     * crossed-out run the colony panel draws (Vlissingen's 4 lumber),
+     * and it is what the product output was reduced by. */
+    int32_t outage_amt[N_GOODS];
+    /* the engine's [-0x71CE] plane (@0x8E20): max(0, consumed - produced)
+     * per raw good = the part drawn from the warehouse; row 0 of the
+     * production panel appends THIS as its crossed run (@0x027604). */
+    int32_t over_amt[N_GOODS];
+    int32_t sec_good, sec_amount; /* the centre's secondary yield (@0xA343) */
 } colony_output;
 
 /* colonyProduce (game.js:2630) over the RECORD form; ci indexes CS.colonies
@@ -97,6 +111,7 @@ int  improvement_bonus(int x, int y, int g);
 int  field_yield(const ColonyRecord *c, int sol, int job,
                  uint8_t prof, int dx, int dy);
 int  indoor_yield(int ci, int sol, int job, uint8_t prof);
+void colony_centre_yield(int ci, int *food, int *good, int *amount);
 
 /* ---- movement (colopy_move.c) ------------------------------------------ */
 int move_cost(int is_ship, int fx, int fy, int tx, int ty);   /* in thirds */

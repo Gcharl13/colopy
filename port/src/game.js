@@ -2768,14 +2768,37 @@ function spendTools(u) {
 // bands are indexed by the folded terrain id: 0..7 unforested, 8..15 forested
 // (16..23 fold into it, CLAUDE.md rule 3), 24..26 the @OTHER rows.
 const JOB_FARMER = 0;
+// The engine's terrain classifier for yields -- BYTE_VERIFIED func_00624E
+// @0x624E (the 0x3E4:0xE thunk target): bit5 set means the tile IS Hills
+// (28) or, with bit7 also set, Mountains (27), and the yield row is the
+// @OTHER Mountains/Hills row -- NOT the base terrain in bits 0..4. This
+// is what pays ore miners 4 on mountain tiles (the COLONY_SHIP baseline's
+// Vlissingen scene badges, 2026-08-28).
+function tileYieldClass(v) {
+  if (v & 0x20) return (v & 0x80) ? 27 : 28;    // @0x6254..@0x6266
+  return v & 0x1F;
+}
 function tileYield(v, job) {
-  let t = v & 0x1F;
+  let t = tileYieldClass(v);
   if (t >= 16 && t <= 23) t = (t & 7) | 8;
   const y = DATA.yields;
   const row = t <= 7 ? y.unforested[t]
             : t <= 15 ? y.forested[t - 8]
             : y.other[t - 24];
   return row ? (row[job] || 0) : 0;
+}
+// count of the 8 neighbours whose base terrain id lies in [lo,hi] --
+// BYTE_VERIFIED func_0099EE @0x99EE (per-neighbour test @0x99AE). The
+// fisherman ladder calls it with (0x19,0x1A) = ocean/sea-lane.
+function count8Terr(x, y, lo, hi) {
+  let n = 0;
+  for (const [dx, dy] of [[0,-1],[1,0],[0,1],[-1,0],[-1,-1],[1,-1],[1,1],[-1,1]]) {
+    const tx = x + dx, ty = y + dy;
+    if (tx < 0 || ty < 0 || tx >= MAP.w || ty >= MAP.h) continue;
+    const t = MAP.tiles[ty * MAP.w + tx] & 0x1F;
+    if (t >= lo && t <= hi) n++;
+  }
+  return n;
 }
 // The 16 @CARGO goods, by id.
 const GOOD = { FOOD: 0, SUGAR: 1, TOBACCO: 2, COTTON: 3, FURS: 4, LUMBER: 5,
@@ -2854,34 +2877,41 @@ function payUpkeep() {
   G.upkeepUnpaid = true;
   showEvent('UPKEEP', { NUMBER0: due });
 }
-// The base an indoor worker converts per turn. NOT in the evidence: no
-// production-rate column exists in @BUILDING (its `size` column is the colony
-// screen's category slot, 0..4), and no rate is quoted in PEDIA. The port uses
-// the original game's familiar 3 at the base tier and 6 once the second link is
-// built; the FACTORY behaviour on top of that IS byte-verified -- the third
-// link makes the same output cost only 2/3 of the raw (@0x8EB1).
-const INDOOR_BASE = 3;
-function indoorRate(c, job) {
-  const n = chainCount(c, job);
-  return n >= 2 ? INDOOR_BASE * 2 : INDOOR_BASE;
-}
-// The Sons-of-Liberty / Tory production penalty, byte-verified at
-// @0x9D14..0x9D98: every `10 - difficulty` Tories costs one unit of every
-// worker's output, and the rebel-majority / rebel-unanimous latches give one
-// back each.
+// The Sons-of-Liberty / Tory production penalty -- BYTE_VERIFIED
+// @0x9D13..@0x9D98 (and the identical indoor block @0xA029..@0xA0AF):
+//   tories = (pop*(100-sol)+50)/100; divisor = 10 - difficulty for a
+//   HUMAN colony (an AI colony pays no penalty, @0x9D73);
+//   +1 per RECORD flag +0x1C bit2 / bit1 -- NOT the runtime sol.
+// A POSITIVE pen is added early in the yield chain (@0x9D9B), a NEGATIVE
+// one at the very end (@0x9FD8) -- fieldYield handles the split.
 function toryPenalty(c) {
   const pop = c.colonists.length;
-  const tories = Math.round(pop * (100 - c.sol) / 100);
+  const tories = Math.floor((pop * (100 - c.sol) + 50) / 100);
   let d = -Math.floor(tories / (10 - G.difficulty));
-  if (c.sol >= 50) d += 1;
-  if (c.sol >= 100) d += 1;
+  const f = c.recFlags1c || 0;
+  if (f & 4) d += 1;
+  if (f & 2) d += 1;
   return d;
 }
-// Does this colonist master the job they are doing? @JOB's expert column is the
-// title; a colonist carries it as their profession.
+// Does this colonist master the job they are doing? BYTE_VERIFIED @0x9CDC
+// (field) and @0xA01A (indoor): plain byte equality between the profession
+// byte and the job id -- profession row 0 IS the Expert Farmer (the
+// Vlissingen scene badges 6/5 against the port's old 5/4 were the tell;
+// C4.26 resolved 2026-08-28).
 function isExpert(p, job) {
   const i = jobIndex(job);
-  return i >= 0 && p.profession === DATA.jobexpert[i];
+  return i >= 0 && p.profession != null &&
+         DATA.jobexpert.indexOf(p.profession) === i;
+}
+// The indoor class rate keys off the PROFESSION byte (@0xA0D7..@0xA0FD):
+// Indentured Servants (25) -> 2, Petty Criminals (26) / Indian Converts
+// (27) -> 1, everyone else 3. The Isabella baseline's rum row 4 =
+// criminal 1 + free 3.
+function indoorClassRate(p) {
+  const i = p.profession ? DATA.jobexpert.indexOf(p.profession) : -1;
+  if (i === 25) return 2;
+  if (i === 26 || i === 27) return 1;
+  return 3;
 }
 // The plow/road yield deltas, byte-verified in compute_terrain_yield: the ROAD
 // bit adds `bonus` iff the good index is > 3 (@0x9F01/@0x9F05 -- ore, furs,
@@ -2896,57 +2926,76 @@ function improvementBonus(x, y, g) {
   if ((imp & PLOW_BIT) && g <= 3) return bonus;
   return 0;
 }
-// compute_terrain_yield for one field worker.
+// compute_terrain_yield for one field worker -- the FULL func_009B9C chain,
+// byte-read end to end @0x9B9C..@0x9FFB and cross-checked against every
+// per-tile badge in the COLONY_SHIP baseline's worked-tile grid
+// (Vlissingen: farmers 6/5, lumberjacks 4/4, miners 4/4, fisherman 4,
+// 2026-08-28). Order matters -- see the numbered steps inline; the old
+// capture-fitted easy-difficulty bonus is NOT in the bytes and is gone.
 function fieldYield(c, p) {
-  const job = p.job, g = JOB_GOOD[jobIndex(job)];
-  if (g === undefined || g < 0) return 0;
-  const v = at(c.x + p.cell[0], c.y + p.cell[1]);
-  // The Fisherman column (8) is the water column; everyone else reads the
-  // column that matches the good.
-  const col = tileWater(v) ? 8 : g;
-  let y = tileYield(v, col);
-  if (y <= 0) return 0;
-  // @DEPLETION: a depleted mine (port bit IMPROVE 0x80; the engine's
-  // resource plane is unread, flagged) yields 1 silver at most.
-  if (g === GOOD.SILVER &&
-      (IMPROVE[(c.y + p.cell[1]) * MAP.w + (c.x + p.cell[0])] & 0x80)) y = 1;
-  y += improvementBonus(c.x + p.cell[0], c.y + p.cell[1], g);
-  // The easy-difficulty bonus reaches the worked fields too, on the PLOW
-  // GROUP (good index <= 3 -- food and the three planter crops): the census3
-  // Jamestown strip only sums to the engine's 9 with the Explorer farmers at
-  // NAMES+1 (Rain 1->2, Tropical 2->3), and its production panel shows the
-  // plowed-swamp sugar at 4 = 2+1(plow)+1(diff). The ROAD group is exempt:
-  // the live Curacao panel (Discoverer) matches the bare columns for
-  // furs/ore/silver. Mirrors the centre's +2/+1 term; the field-yield
-  // helper is unread -- capture-fitted, FLAGGED.
-  if (g <= 3) {
-    if (G.difficulty === 0) y += 2; else if (G.difficulty === 1) y += 1;
-  }
-  y += toryPenalty(c);
-  // The expert match: the "era" goods Food and Horses take a flat +2, every
-  // other good DOUBLES (@0x9DAD..0x9DD2).
-  // The expert match: the "era" goods Food and Horses take a flat +2, every
-  // other good DOUBLES (@0x9DAD..0x9DD2).
-  const expert = isExpert(p, job);
-  if (expert) {
-    if (g === GOOD.FOOD || g === GOOD.HORSES) y += 2; else y *= 2;
-  }
-  // PRIME RESOURCES -- the engine's last field-yield term, byte-read at
-  // func_009B9C @0x9DD5-@0x9E10 with the bonus table func_009AAA
-  // (@0x9AAA-@0x9B9A). The "resource id" argument is the tile's DETAIL ID:
-  // the getter 0x37F:0x4B0 resolves to tile_terrain_variant_hash @0x60A0
-  // itself -- the seeded detail sprites ARE the prime resources. bonus =
-  // table[id][col]; id 7 (fish) with no base yield gives 0; a NEGATIVE
-  // entry DOUBLES the yield; otherwise an EXPERT doubles the bonus.
+  const job = p.job, col = jobIndex(job);
+  if (col < 0 || col > 8) return 0;      // @JOB rows 0..8 are the columns
   const tx = c.x + p.cell[0], ty = c.y + p.cell[1];
+  const v = at(tx, ty);
+  const imp = IMPROVE[ty * MAP.w + tx] || 0;
+  let y = tileYield(v, col);
+  const expert = isExpert(p, job);
+  const foodish = (col === 0 || col === 8);
+  if (y !== 0) {
+    if (col >= 8) {                      // fisher ladder @0x9C33..@0x9C87
+      const n = count8Terr(tx, ty, 0x19, 0x1A);
+      if (n >= 8) y -= 2; else if (n >= 6) y -= 1; else y += 1;
+    }
+    if (col === 4) {                     // furs: road/river @0x9C87
+      if (imp & 0x0A) y += 1;
+      if (v & 0x40) { y += 1; if (v & 0x80) y += 1; }
+    }
+  }
+  if (y < 0) y = 0;                      // @0x9CB4
+  const pen = toryPenalty(c);
+  if (y !== 0 && pen > 0) y += pen;      // @0x9D9B
+  if (expert && y !== 0) {               // @0x9DAD..@0x9DD2
+    if (foodish) { y += 2; if (pen > 0) y += pen; }
+    else y *= 2;
+  }
+  // PRIME RESOURCES (@0x9DD5..@0x9E10, table func_009AAA; the detail hash
+  // IS the resource id -- runtime-confirmed by the "(Minerals)" sidebar
+  // line on Vlissingen's centre, 2026-08-28).
   const res = detailId(tx, ty, v);
-  if (res >= 0) {
-    let bonus = RES_BONUS[res * 16 + col] || 0;
+  {
+    let bonus = res >= 0 ? (RES_BONUS[res * 16 + col] || 0) : 0;
     if (res === 7 && y <= 0) bonus = 0;
     if (bonus < 0) y *= 2;
     else { if (expert) bonus *= 2; y += bonus; }
   }
-  return Math.max(0, y);
+  // silver with no detail and no mine bit (imp&4): 1 with a road or an
+  // expert, else 0, and the improvement block is skipped (@0x9E41..@0x9EA6;
+  // the port's own 0x80 depletion marker stays on top).
+  let noMine = false;
+  if (col === 7) {
+    if (imp & 0x80) y = 1;
+    if (res === -1 && !(imp & 4)) {
+      noMine = true;
+      if (y !== 0) y = ((imp & 0x0A) || expert) ? 1 : 0;
+    }
+  }
+  if (col === 5) y *= 2;                 // the LUMBER column doubles @0x9EAB
+  if (y > 0 && !noMine) {                // improvements @0x9EBD..@0x9F4C
+    const b = ((expert && !foodish) || col === 5) ? 2 : 1;
+    let add = 0;
+    if (col === 0) add = b;              // the farmer's inherent +b
+    if ((imp & 0x0A) && col > 3) add += b;
+    if ((imp & 0x40) && col <= 3) add += b;
+    if (v & 0x40) { add += b; if ((v & 0x80) && add === b) add += b; }
+    y += add;
+  }
+  if (col >= 8 && !c.buildings.includes('Docks')) y = 0;   // @0x9F4F
+  if (col === 4 && G.fathersOwned.includes('Henry Hudson')) y *= 2;
+  if (p.profession === 'Indian Converts' && y > 0 &&
+      (col <= 4 || col >= 8)) y += 1;    // @0x9F86..@0x9FB6
+  if (y < 0) y = 0;
+  if (y !== 0 && pen < 0) y = Math.max(0, y + pen);        // @0x9FD8
+  return y;
 }
 // func_009AAA verbatim: RES_BONUS[id*16 + col]; -1 = double.
 // (9,0)+2 (1,0)+2 (2,0)+2 (9,4)+2 (8,4)+3 (3,3)dbl (4,2)dbl (5,1)dbl
@@ -3000,13 +3049,44 @@ function bestFieldJob(c, p) {
   void cell;
   return best;
 }
-// One colonist inside a building. Returns what they COULD make; the raw check
-// happens in the chain step.
+// One colonist inside a building -- the FULL func_009FFC, byte-read
+// @0x9FFC..@0xA221. Returns what they WANT to make; the raw shortage
+// resolves afterwards through the outage plane. Per job (@0xA1E4 jump
+// table, cs base 0x82B0):
+//   Carpenter 13 @0xA100: (expert?6:class)+pen, x2 with the Lumber Mill
+//   Preacher 16 @0xA132:  (expert?6:class)+pen, x2 with the Cathedral,
+//                          +50% with William Penn (father 21)
+//   Statesman 17 @0xA1C8: class+pen, x2 if expert (press/newspaper act on
+//                          the bell TOTAL, @0xA587)
+//   Teacher 18 (default @0xA0AF): expert?3:1
+//   converters 9-12,14,15 @0xA188: class+pen, +class with the 2nd link,
+//                          +50% with the 3rd (factory), x2 if expert
 function indoorYield(c, p) {
-  const job = p.job, g = JOB_GOOD[jobIndex(job)];
-  if (g === undefined) return 0;
-  let y = indoorRate(c, job) + toryPenalty(c);
-  if (isExpert(p, job)) y *= 2;
+  const job = p.job, ji = jobIndex(job);
+  if (JOB_GOOD[ji] === undefined) return 0;
+  const expert = isExpert(p, job);
+  const pen = toryPenalty(c);
+  const cls = indoorClassRate(p);
+  let y;
+  if (ji === 13) {
+    y = (expert ? 6 : cls) + pen;
+    if (c.buildings.includes('Lumber Mill')) y *= 2;
+  } else if (ji === 16) {
+    y = (expert ? 6 : cls) + pen;
+    if (c.buildings.includes('Cathedral')) y *= 2;
+    if (G.fathersOwned.includes('William Penn')) y += Math.floor(y / 2);
+  } else if (ji === 17) {
+    y = cls + pen;
+    if (expert) y *= 2;
+  } else if (ji >= 9 && ji <= 15) {
+    y = cls + pen;
+    const n = chainCount(c, job);
+    if (n > 1) y += cls;
+    if (n > 2) y += Math.floor(y / 2);
+    if (expert) y *= 2;
+  } else {
+    y = expert ? 3 : 1;                  // teacher & the rest @0xA0AF
+  }
   // @UPKEEP: with the bill unpaid, colonists in the buildings work at half.
   if (G.upkeepUnpaid) y = Math.floor(y / 2);
   return Math.max(0, y);
@@ -3021,72 +3101,146 @@ function colonyProduce(c) {
   // plaza strip (census3_colony). The base cross lives in the tally so the
   // strip and the immigration sum read the same number.
   const tally = { [HAMMERS]: 0, [BELLS]: 0, [CROSSES]: 1, [TEACHING]: 0 };
-  // The CENTRE TILE produces with no worker. compute_colony_center_yields
-  // (func_00A222) is now READ END TO END (@0x00A247..0x00A33F): base = a
-  // terrain BAND -- Arctic 0; Desert/Scrub/Boreal 1; forested 8..23 and
-  // Hills/Mountains 2; every other land 3 -- then +2 at difficulty 0 / +1 at
-  // difficulty 1 (@0xA29C/@0xA2A8), +1 if the tile is PLOWED (mask-plane
-  // 0x40, @0xA2C1), +2 for prime-resource types 1/2/9 (@0xA314..0xA326; the
-  // port has no prime-resource model -- TBD), +1 per SoL latch flag
-  // (ColonyRecord +0x1C bits 2/1, "received at 50%/100%", @0xA32F/@0xA339).
-  // The census3 Jamestown frame (view-panel 4 corn on the centre + a 9-corn
-  // strip over a FORESTED byte) fits only if the city tile's band resolves as
-  // CLEARED land -- the engine auto-clears forest at founding, so a colony
-  // centre is band 3 in real play. The fold is FLAGGED (helper 0x3e4:0x3a's
-  // body unread).
-  const cv = at(c.x, c.y);
-  let ct = tileTerrain(cv);
-  if (ct >= 8 && ct <= 23) ct = ct >= 16 ? ct - 16 : ct - 8;   // city = cleared
-  // The @0xA247 band ladder on the (folded) id: Arctic 0; Desert 1 (the
-  // ladder's 17/9 forest ids cannot survive the fold); Hills/Mountains 2;
-  // everything else 3.
-  const band = ct === 24 ? 0 : ct === 1 ? 1 : (ct === 27 || ct === 28) ? 2 : 3;
-  let centre = band;
-  if (G.difficulty === 0) centre += 2; else if (G.difficulty === 1) centre += 1;
-  centre += improvementBonus(c.x, c.y, GOOD.FOOD);
-  if (c.sol >= 50) centre += 1;
-  if (c.sol >= 100) centre += 1;
+  // The CENTRE TILE produces with no worker -- and a SECONDARY good that
+  // goes straight into production (@0xA3F7..@0xA409). See centreYieldCore.
+  const cyc = centreYieldCore(c);
+  const centre = cyc.food;
   out[GOOD.FOOD] += centre;
+  if (cyc.good >= 0) out[cyc.good] += cyc.amount;
   const indoor = [];
   for (const p of c.colonists) {
     if (!p.job) continue;
     if (p.cell) { const g = JOB_GOOD[jobIndex(p.job)]; if (g >= 0) out[g] += fieldYield(c, p); }
     else indoor.push(p);
   }
-  // The chains. Each indoor worker's output is capped by the raw on hand plus
-  // whatever the fields brought in this turn; the factory tier (3rd link) buys
-  // the same output for 2/3 of the raw.
+  // The chains: every want accumulates UNCAPPED (@0xA480..@0xA4A0); the
+  // raw costs are recorded in full (a factory pays 2/3, @0x8EB1) and the
+  // shortages resolve afterwards through the outage plane (func_008E02).
   const consumed = DATA.cargo.map(() => 0);
-  const outages = new Set();
+  const factoryOf = DATA.cargo.map(() => false);
   for (const p of indoor) {
     const job = p.job, g = JOB_GOOD[jobIndex(job)];
     if (g === undefined) continue;
-    let want = indoorYield(c, p);
+    const want = indoorYield(c, p);
     const raw = RAW_FOR[g];
     if (raw !== undefined) {
       const factory = chainCount(c, job) > 2;
-      const avail = c.stock[raw] + out[raw] - consumed[raw];
-      const cost = (n) => factory ? Math.floor(n * 2 / 3) : n;
-      // A manned converter starved to a standstill is a per-good outage --
-      // colonyTurn latches it into the @CANESUGAR/.../@TOOLS notice.
-      const potential = want;
-      while (want > 0 && cost(want) > avail) want -= 1;
-      if (potential > 0 && want === 0) outages.add(raw);
-      consumed[raw] += cost(want);
+      if (g >= 0) factoryOf[g] = factory;
+      consumed[raw] += factory ? Math.floor(want * 2 / 3) : want;
     }
     if (g >= 0) out[g] += want; else tally[g] += want;
   }
-  // The colony panels want the two halves separately, not just the net: the
-  // engine keeps a produced table (`[0x8DC8]`) and a consumed table (`[0x8E32]`)
-  // and draws BOTH -- the consumed run is the part that gets the red overlay
-  // (spec/ui/colony_screen.md §3.6). Snapshot `gross` before netting.
+  // crosses: +1 per Church / Cathedral on top of the base 1 (@0xA4B0..);
+  // bells: base 1 (@0xA4DB), Jefferson +50% (father 15), Paine +tax%
+  // (father 17), then Newspaper x2 else Printing Press +50% (@0xA587..).
+  if (c.buildings.includes('Church')) tally[CROSSES] += 1;
+  if (c.buildings.includes('Cathedral')) tally[CROSSES] += 1;
+  tally[BELLS] += 1;
+  if (G.fathersOwned.includes('Thomas Jefferson'))
+    tally[BELLS] += Math.floor(tally[BELLS] / 2);
+  if (G.fathersOwned.includes('Thomas Paine'))
+    tally[BELLS] += Math.floor(G.taxRate * tally[BELLS] / 100);
+  if (c.buildings.includes('Newspaper')) tally[BELLS] *= 2;
+  else if (c.buildings.includes('Printing Press'))
+    tally[BELLS] += Math.floor(tally[BELLS] / 2);
   const gross = out.slice();
+  // outage resolution -- set_commodity_band func_008E02 per (raw, product)
+  // pair in the engine's order (@0xA64E..@0xA69C): outage[raw] = max(0,
+  // consumed - stock - produced); the product loses that many units (a
+  // factory loses 3/2 per missing raw pair, or everything when nothing was
+  // affordable, @0x8EC9..@0x8EFC). The gunsmith sees the toolsmith's
+  // post-outage output (@0x8E5A). The crossed run the panel draws is THIS
+  // array, not the consumption -- ore eaten out of a 161-crate warehouse
+  // crosses nothing (the Vlissingen baseline).
+  const outageAmt = DATA.cargo.map(() => 0);
+  const overAmt = DATA.cargo.map(() => 0);
+  const outages = new Set();
+  const resolve = (raw, product, factory) => {
+    const cost = consumed[raw];
+    if (cost <= 0) return product;
+    overAmt[raw] = Math.max(0, cost - gross[raw]);
+    const sh = cost - (c.stock[raw] + out[raw]);
+    if (sh <= 0) return product;
+    outages.add(raw);
+    consumed[raw] = cost - sh;           // only what stock+intake covered
+    const loss = factory ? (sh === cost ? product : Math.floor(3 * sh / 2))
+                         : sh;
+    outageAmt[raw] = loss;
+    return Math.max(0, product - loss);
+  };
+  tally[HAMMERS] = resolve(GOOD.LUMBER, tally[HAMMERS], false);
+  for (const [raw, g] of [[GOOD.ORE, GOOD.TOOLS], [GOOD.TOBACCO, GOOD.CIGARS],
+                          [GOOD.COTTON, GOOD.CLOTH], [GOOD.FURS, GOOD.COATS],
+                          [GOOD.SUGAR, GOOD.RUM], [GOOD.TOOLS, GOOD.MUSKETS]])
+    out[g] = resolve(raw, out[g], factoryOf[g]);
   for (let i = 0; i < consumed.length; i++) out[i] -= consumed[i];
   let eaten = 2 * c.colonists.length;                     // BYTE_VERIFIED @0xA5F2
   const horsesBred = horsesBredThisTurn(c, gross[GOOD.FOOD], eaten);
+  // the panel's horses cell: the bred WANT into production, the unfed rest
+  // crossed out (@0xA632..@0xA63B goods_out[8] += want, [0x8E6A] lost)
+  {
+    const herd = c.stock[GOOD.HORSES];
+    let want = 0;
+    if (herd >= 2) {
+      const t = c.buildings.includes('Stable') ? 25 : 50;
+      want = 2 * Math.ceil(herd / t);
+    }
+    gross[GOOD.HORSES] += want;   // panel only -- colonyTurn banks horsesBred
+    outageAmt[GOOD.HORSES] = want - horsesBred;
+  }
   eaten += horsesBred;                                    // BYTE_VERIFIED @0x0A63F
+  // the food row's own outage (starvation display, @0xA642)
+  {
+    const sh = eaten - c.stock[GOOD.FOOD] - gross[GOOD.FOOD];
+    if (sh > 0) { outageAmt[GOOD.FOOD] = sh; outages.add(GOOD.FOOD); }
+  }
   return { out, gross, consumed, tally, centre, eaten, horsesBred, outages,
+           outageAmt, overAmt, secGood: cyc.good, secAmount: cyc.amount,
            netFood: out[GOOD.FOOD] - eaten };
+}
+// The centre tile -- compute_colony_center_yields func_00A222, byte-read
+// END TO END @0xA222..@0xA3D1 (2026-08-28; the old plow/river/runtime-SoL
+// model was capture-fitted and wrong):
+//   FOOD: band by the CLASSIFIER id (hills/mountains and forested ids keep
+//   their own rows -- NO auto-clear fold): Arctic 0; desert family
+//   {1,9,17} 1; forested 8..23 and Hills/Mountains 2; else 3
+//   (@0xA247..@0xA290); +2/+1 at difficulty 0/1; +2 when the centre's
+//   prime resource is 1, 2 or 9 (@0xA314); +1 per record flag bit2/bit1.
+//   SECONDARY (@0xA343..@0xA3D1): best of columns 1..7 skipping 5 on the
+//   SAME classified row, resource bonus per column (negative doubles),
+//   strict > so the FIRST max wins; the winner gets +1 at difficulty 0,
+//   the river bonus (minor 1 / major 2), +1 per flag bit. Vlissingen:
+//   rain-forest ore 1 + Minerals 3 = 4 wins, +1 -> 5, closing the panel's
+//   ore row at 4+4+5 = 13 (the "(Minerals)" sidebar line, runtime-captured
+//   2026-08-28).
+function centreYieldCore(c) {
+  const cv = at(c.x, c.y);
+  const ct = tileYieldClass(cv);
+  const cres = detailId(c.x, c.y, cv);
+  const band = ct === 24 ? 0
+             : (ct === 1 || ct === 9 || ct === 17) ? 1
+             : (ct === 27 || ct === 28 || (ct >= 8 && ct <= 23)) ? 2 : 3;
+  let food = band;
+  if (G.difficulty === 0) food += 2; else if (G.difficulty === 1) food += 1;
+  if (cres === 1 || cres === 2 || cres === 9) food += 2;
+  const f1c = c.recFlags1c || 0;
+  if (f1c & 4) food += 1;
+  if (f1c & 2) food += 1;
+  let good = -1, amount = 0;
+  for (let cc = 1; cc <= 7; cc++) {
+    if (cc === 5) continue;
+    let yv = tileYield(cv, cc);
+    const bb = cres >= 0 ? (RES_BONUS[cres * 16 + cc] || 0) : 0;
+    if (bb < 0) yv *= 2; else yv += bb;
+    if (yv > amount) { amount = yv; good = cc; }
+  }
+  if (good >= 0) {
+    if (G.difficulty === 0) amount += 1;
+    amount += tileRiver(cv);
+    if (f1c & 4) amount += 1;
+    if (f1c & 2) amount += 1;
+  }
+  return { food, good, amount: good >= 0 ? amount : 0 };
 }
 // Warehouse capacity -- BYTE_VERIFIED func_008D00 @0x08D00: 100 flat while
 // warehouse_level (+0x95) is 0, else (level + 1) * 100 (cmp byte [bx+0x95],0
@@ -4154,38 +4308,11 @@ function drawColonyTiles(ctx, c) {
   }
 }
 
-// What the colony's own tile makes with nobody on it: food, plus one other
-// good. Both are live-read for Curacao (`[0xA891]`=4 food, `[0xA893]`=4 furs
-// with `[0xA894]`=3), and its `[0x8DC8]` shows those 3 furs entering the
-// colony's output -- so the centre tile really does produce a second good, not
-// just food. WHICH good is not cited anywhere: the best-yielding non-food
-// column is used, which fits the live frame but is inferred, not derived.
-function centreYield(c) {
-  const v = at(c.x, c.y);
-  let food = tileYield(v, JOB_FARMER);
-  if (G.difficulty === 0) food += 2; else if (G.difficulty === 1) food += 1;
-  if (tileRiver(v)) food += 1;
-  food += improvementBonus(c.x, c.y, GOOD.FOOD);
-  // The SECONDARY row, byte-read off func_00A222's tail (@0xA34D-@0xA3D1):
-  // best yield over columns 1..7 SKIPPING column 5 (@0xA375, the
-  // lumberjack), then +1 at difficulty 0 (@0xA3AB), +1 per SoL latch flag
-  // (record +0x1C bits 4/2, @0xA3C1/@0xA3CB). Isabella: tobacco 3 + the
-  // difficulty +1 = the baseline's 4. FLAGGED unread: the 0x9AAA resource
-  // add-or-double term and the [bp-0x12] extra.
-  let good = -1, amount = 0;
-  for (let col = 1; col <= 7; col++) {
-    if (col === 5) continue;
-    const y = tileYield(v, col);
-    if (y > amount) { amount = y; good = JOB_GOOD[col]; }
-  }
-  if (good >= 0) {
-    if (G.difficulty === 0) amount += 1;
-    const f1c = c.recFlags1c || 0;
-    if (f1c & 4) amount += 1;
-    if (f1c & 2) amount += 1;
-  }
-  return { food, good, amount };
-}
+// What the colony's own tile makes with nobody on it: the byte model
+// (compute_colony_center_yields func_00A222, read end to end -- see
+// centreYieldCore). Isabella: savannah sugar 3 + the difficulty +1 = the
+// baseline's 4; Vlissingen: rain-forest ore 1 + Minerals 3 + 1 = 5.
+function centreYield(c) { return centreYieldCore(c); }
 
 // ---- the plaza panel: `func_0270D0 @0x0270D0` ----------------------------
 // Fill (0,130,120,48) (`push 0x30,0x78,0x82,0` @0x0270D6), then three things.
@@ -4830,60 +4957,50 @@ function drawProductionStrips(ctx, c) {
 function productionRows(r) {
   const cell = (i, count, sub, flags) =>
     ({ frame: PROD_GOOD_ICON + i, count, sub, flags: flags || 0 });
-  // Row 0: raw goods. count = produced + consumed, sub = consumed, so the
-  // consumed tail is what takes the red mark (`dx = [0x8DC8+i] + [0x8E32+i]`,
-  // `bx = [0x8E32+i]`, @0x027604-0x027612). A good with NOTHING produced is
-  // skipped outright even if it was consumed (`cmp word[bx-0x7238],0 / je`
-  // @0x0275F1) -- live Curacao eats 6 cotton and shows no cotton entry at all.
+  // Row 0 (@0x027604-0x027612): count = produced + [0x8E32], sub = [0x8E32].
+  // [0x8E32] is the [-0x71CE] plane (set_commodity_band @0x8E20): max(0,
+  // consumed - produced) = the part drawn from the WAREHOUSE -- which is why
+  // Vlissingen's 13 ore (miners 8 + centre Minerals secondary 5) crosses
+  // nothing while its toolsmith eats 6 out of a 161-crate store. A good with
+  // NOTHING produced is skipped even if consumed (`cmp word[bx-0x7238],0 /
+  // je` @0x0275F1) -- live Curacao eats 6 cotton and shows no cotton entry.
   const raw = [];
   for (let i = 1; i <= 7; i++) {
     if (i === 5 || r.gross[i] === 0) continue;          // lumber has its own row
-    raw.push(cell(i, r.gross[i] + r.consumed[i], r.consumed[i]));
+    const over = r.overAmt ? r.overAmt[i] : 0;
+    raw.push(cell(i, r.gross[i] + over, over));
   }
-  // Row 1: manufactures. Each good i names a source good in `byte[0x2A2+i]` and
-  // reads an amount from `word[0x8E5A + src*2]`; count = max(made, that), sub =
-  // that (@0x027646-0x027688). The source table is RAM-read below and matches
-  // the port's own chain map -- except slot 8, where Horses source THEMSELVES.
-  //
-  // `[0x8E5A]` RESOLVED 2026-08-06 by a second live colony. It is the part of a
-  // raw's consumption met from THIS TURN'S output, not the total consumed:
-  //   Curacao   lumber produced 0, consumed 6 -> reads 0
-  //   Vlissingen lumber produced 8, consumed 4 -> reads 4
-  //   Curacao   cotton produced 0, consumed 6 -> reads 0 (cloth draws unmarked)
-  // i.e. min(consumed, produced), which fits all three.
-  //
-  // The Horses slot -- the one good that sources itself -- does NOT fit that
-  // rule: it reads 4 against produced 4 in Curacao but 3 against produced 4 in
-  // Vlissingen, so its filler is still unknown and this rule under-marks that
-  // one entry rather than inventing a second rule for it.
+  // Row 1: manufactures. Each good i names a source good in `byte[0x2A2+i]`
+  // and crosses out `word[0x8E5A + src*2]`; count = max(want, that), sub =
+  // that (@0x027646-0x027688). [0x8E5A] is the OUTAGE plane ([-0x71A6],
+  // @0x8E32-0x8E40): max(0, consumed - stock - produced), factory-converted
+  // to product units -- re-resolved 2026-08-28, and every live read fits:
+  //   Curacao   lumber consumed 6, stock covered      -> 0
+  //   Vlissingen lumber want 12, stock 0, produced 8  -> 4
+  //   Curacao   cotton consumed 6 from stock          -> 0
+  // and the Horses slot (which sources ITSELF, [0x8E6A]) is the foals that
+  // found no food: Curacao 4 of 4 lost, Vlissingen 3 of 4 -- the old
+  // "unknown filler" resolved.
   const SRC = { 8: 8, 9: GOOD.SUGAR, 10: GOOD.TOBACCO, 11: GOOD.COTTON,
                 12: GOOD.FURS, 14: GOOD.ORE, 15: GOOD.TOOLS };
   const made = [];
   for (let i = 8; i < r.gross.length; i++) {
     const src = SRC[i];
-    const amt = src === undefined ? 0
-              : Math.min(r.consumed[src] || 0, r.gross[src] || 0);
+    const amt = src === undefined ? 0 : (r.outageAmt ? r.outageAmt[src] : 0);
     made.push(cell(i, Math.max(r.gross[i], amt), amt));
   }
   // Row 2: lumber then hammers. Bit 15 marks every icon of a consumed run and
   // reddens its badge (`ax=0x801c` @0x0276F1, `ax=0x8037` @0x02771F).
-  //
-  // `[0x8E14]` RESOLVED 2026-08-06: it is HAMMERS PRODUCED -- it reads 6 against
-  // 6 hammers in Curacao and 12 against 12 in Vlissingen. The branch at
-  // @0x0276AF compares it with lumber produced and, in the common case where
-  // hammers >= lumber, enqueues the lumber PRODUCED figure whole. So the plain
-  // run is lumber produced, not produced-minus-consumed as the port had it:
-  // Vlissingen shows 8 plain lumber and 4 marked, having produced 8 and eaten 4.
-  const lumberUsed = r.consumed[GOOD.LUMBER];
-  const hammers = r.tally[HAMMERS];
+  // FOUR cells, each surplus-then-shortfall: lumber PRODUCED plain, the
+  // lumber OUTAGE ([0x8E64]) marked, the POST-OUTAGE hammers plain, then
+  // the hammer shortfall marked -- the Vlissingen baseline draws
+  // [8 planks][4X][8 hammers][4X] as four separate groups.
+  const lumberOut = r.outageAmt ? r.outageAmt[GOOD.LUMBER] : 0;
   const work = [
     cell(GOOD.LUMBER, r.gross[GOOD.LUMBER], 0),
-    cell(GOOD.LUMBER, lumberUsed, 0, 0x8000),
-    // Hammers split the same way against `[0x8E64]`, which read 0 in Curacao and
-    // 4 in Vlissingen -- hammers spent on construction this turn. The port banks
-    // hammers rather than spending them per turn and has no equivalent, so the
-    // whole run draws plain and the marked part is left out rather than faked.
-    { frame: PROD_HAMMER_ICON, count: hammers, sub: 0, flags: 0 },
+    cell(GOOD.LUMBER, lumberOut, 0, 0x8000),
+    { frame: PROD_HAMMER_ICON, count: r.tally[HAMMERS], sub: 0, flags: 0 },
+    { frame: PROD_HAMMER_ICON, count: lumberOut, sub: 0, flags: 0x8000 },
   ];
   return [raw, made, work];
 }
@@ -11390,7 +11507,12 @@ function importSav(bytes) {
     for (let k = 0; k < pop; k++) {
       const occ = d[b + 0x20 + k];
       colonists.push({ type: 'Colonists',
-                       profession: SAV_PROFESSION(d[b + 0x40 + k]),
+                       // profession byte 0 = Expert Farmers here too: the
+                       // DOS field-yield expert test is plain byte equality
+                       // (@0x9CDC) and the Vlissingen scene badges 6/5 only
+                       // fit with prof-0 farmers as experts (C4.26 resolved
+                       // 2026-08-28).
+                       profession: SAV_PROFESSION0(d[b + 0x40 + k]),
                        job: occ < (DATA.jobs || []).length ? DATA.jobs[occ] : null,
                        cell: null });
     }
