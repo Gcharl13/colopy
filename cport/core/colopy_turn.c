@@ -697,7 +697,9 @@ static void run_school(int ci) {
             c->profession[student] = (uint8_t)TIER_ROW[1];
             cev("TRAINCRIMINAL", 0, 0, c->name, 0);
         } else if (rung == 1) {
-            c->profession[student] = (uint8_t)TIER_ROW[2];
+            /* the engine writes profession 0x1C = NONE (@0x2DF35
+             * `push 0x1c`), not the Free Colonists row */
+            c->profession[student] = 28;
             cev("TRAININDENTURED", 0, 0, c->name, 0);
         } else {
             c->profession[student] = c->profession[teacher];

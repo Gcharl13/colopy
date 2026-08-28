@@ -3384,7 +3384,10 @@ function runSchool(c) {
       student.profession = STUDENT_TIERS[1];
       showEvent('TRAINCRIMINAL', { STRING0: c.name });
     } else if (rung === 1) {
-      student.profession = STUDENT_TIERS[2];
+      // the engine writes profession 0x1C = NONE (@0x2DF35 `push 0x1c`),
+      // not the Free Colonists row -- a graduated servant carries no
+      // specialty byte at all
+      student.profession = null;
       showEvent('TRAININDENTURED', { STRING0: c.name });
     } else {
       student.profession = teacher.profession;
