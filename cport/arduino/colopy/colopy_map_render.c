@@ -496,20 +496,40 @@ static void tiny_center(const char *s, int cx, int y, const uint8_t ink[4]) {
     if (2 * cx - (w - 1) < 0 && (2 * cx - (w - 1)) % 2) x--;  /* round() */
     rd_text(&TINY, s, x, y, ink);
 }
-static void tiny_center_shadow(const char *s, int cx, int y,
-                               const uint8_t ink[4], uint8_t shadow) {
+static rd_font M_INTR;
+static void intr_left_shadow(const char *s, int x, int y,
+                             const uint8_t ink[4], uint8_t shadow) {
+    if (!M_INTR.payload) rd_font_open(&RD.pak, "FONTINTR.FF", &M_INTR);
     const uint8_t sh[4] = { 0xFF, shadow, shadow, shadow };
-    int w = rd_text_width(&TINY, s);
-    int x = cx - (w - 1) / 2;
     static const int8_t OFF[3][2] = { {1,0}, {0,1}, {1,1} };
     for (int k = 0; k < 3; k++)
-        rd_text(&TINY, s, x + OFF[k][0], y + OFF[k][1], sh);
-    rd_text(&TINY, s, x, y, ink);
+        rd_text(&M_INTR, s, x + OFF[k][0], y + OFF[k][1], sh);
+    rd_text(&M_INTR, s, x, y, ink);
 }
 static const uint8_t *lut_of(uint8_t i) {
     static uint8_t l[4];
     l[0] = 0xFF; l[1] = i; l[2] = (uint8_t)(i - 1); l[3] = 0;
     return l;
+}
+
+/* func_004314 (0x181F:0x2A8, the colony marker painter) full-size extras:
+ * the POPULATION NUMBER left-aligned at (px+7, py+7) in ink 0xF -- or 0xA
+ * when ColonyRecord +0x1C bit 4, 0xB when bits 4 and 2 (@0x00448B-
+ * @0x0044EF) -- and the NAME left-aligned at (px+2, py+16) in ink 0xF
+ * (@0x0044FA-@0x004529).  Both gated on full-size mode (si == 0x64
+ * @0x004483); the si <= 0x19 path is the minimap dot.  The old centred
+ * name was a guess; the MAP census baseline measures Isabella's "2" at
+ * tile-relative (7,7) and the labels left-anchored. */
+static void colony_marker_extras(int px, int py, int pop, uint8_t flags1c,
+                                 const char *name) {
+    char nb[8];
+    snprintf(nb, sizeof(nb), "%d", pop);
+    uint8_t ik = 0x0F;
+    if (flags1c & 4) ik = (flags1c & 2) ? 0x0B : 0x0A;
+    /* number font = [0x89E] = FONTTINY, name font = [0x268A] = FONTINTR
+     * (spec/ui/fonts_and_colors.md's byte-verified pointer table) */
+    rd_text(&TINY, nb, px + 7, py + 7, lut_of(ik));
+    intr_left_shadow(name, px + 2, py + 16, lut_of(0x0F), 0);
 }
 
 void rm_hollow_rect(int x, int y, int w, int h, uint8_t c) {
@@ -723,8 +743,7 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
             char nm[25];
             memcpy(nm, c->name, 24);
             nm[24] = 0;
-            tiny_center_shadow(nm, px + TILE / 2, py + TILE,
-                               lut_of(0x0F), 0);
+            colony_marker_extras(px, py, c->population, c->colony_flags, nm);
         }
     }
     /* native settlements */
@@ -785,6 +804,22 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
             if (!is_seen_rm(&vw, rc->x, rc->y)) continue;
             rm_draw_settlement(VP_X + tx * TILE, VP_Y + ty * TILE,
                             rc->level, rn, 0, 0xFF);
+            /* func_004314 draws the number + name for EVERY colony -- the
+             * MAP baseline shows St. Louis (French) with both.  The rival
+             * mirror carries no +0x1C flags; the record is at hand. */
+            if (!zoom_pass) {
+                for (int q2 = 0; q2 < CS.n_colonies; q2++) {
+                    const ColonyRecord *oc = &CS.colonies[q2];
+                    if (oc->map_x != rc->x || oc->map_y != rc->y) continue;
+                    char nm[25];
+                    memcpy(nm, oc->name, 24);
+                    nm[24] = 0;
+                    colony_marker_extras(VP_X + tx * TILE, VP_Y + ty * TILE,
+                                         oc->population, oc->colony_flags,
+                                         nm);
+                    break;
+                }
+            }
         }
         for (int k = 0; k < CR.n_runits[rn]; k++) {
             int ui = CR.runits_order[rn][k];

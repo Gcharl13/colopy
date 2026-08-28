@@ -1631,7 +1631,7 @@ function drawMap(ctx) {
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     const px = ox + tx * TILE, py = oy + ty * TILE;
     drawSettlement(tgt, px, py, colonyLevel(c), c.nation, 0);
-    if (G.zoom === 0) FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
+    if (G.zoom === 0) colonyMarkerExtras(ctx, px, py, c);
   }
 
   // Native settlements and units.
@@ -1700,6 +1700,12 @@ function drawMap(ctx) {
       if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
       if (!isSeen(rc.x, rc.y)) continue;
       drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, rc.level, rc.nation, 0);
+      // func_004314 draws the number + name for EVERY colony -- the MAP
+      // census baseline shows St. Louis (French) wearing both.
+      if (G.zoom === 0)
+        colonyMarkerExtras(ctx, ox + tx * TILE, oy + ty * TILE,
+                           { name: rc.name, colonists: { length: rc.pop },
+                             recFlags1c: rc.recFlags1c || 0 });
     }
     for (const ru of r.units) {
       const tx = ru.x - G.view.x, ty = ru.y - G.view.y;
@@ -1846,6 +1852,23 @@ function nationPlate(ctx, x, y, colourIdx, orders) {
   ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 1, y + 1, 6, 7);
   const key = (DATA.orders[orders] || DATA.orders[0]).key;
   FONT.tiny.center(ctx, key, x + 4, y + 2, [ink(0), ink(0), ink(0)]);
+}
+// func_004314 (0x181F:0x2A8, the colony marker painter) full-size extras:
+// the POPULATION NUMBER left-aligned at (px+7, py+7) in ink 0xF -- or 0xA
+// when ColonyRecord +0x1C bit 4, 0xB when bits 4 and 2 (@0x00448B-@0x0044EF)
+// -- and the NAME left-aligned at (px+2, py+16) in ink 0xF (@0x0044FA-
+// @0x004529). Both gated on the full-size mode (si == 0x64 @0x004483); the
+// si <= 0x19 path is the minimap dot. The old centred name was a guess; the
+// MAP census baseline measures Isabella's "2" at tile-relative (7,7) and the
+// labels left-anchored.
+function colonyMarkerExtras(ctx, px, py, c) {
+  const pop = (c.colonists || []).length;
+  const f = c.recFlags1c || 0;
+  const ik = (f & 4) ? ((f & 2) ? 0x0B : 0x0A) : 0x0F;
+  // Number font = [0x89E] = FONTTINY, name font = [0x268A] = FONTINTR
+  // (spec/ui/fonts_and_colors.md's byte-verified pointer table).
+  FONT.tiny.draw(ctx, String(pop), px + 7, py + 7, lut(ik));
+  FONT.intr.draw(ctx, c.name, px + 2, py + 16, lut(0x0F), ink(0));
 }
 function drawUnit(ctx, u, px, py) {
   // The active unit blinks: the engine flashes the unit graphic itself on and
@@ -11133,6 +11156,7 @@ function importSav(bytes) {
       const r = rivalOf(owner);
       if (r) r.colonies.push({
         x: d[b], y: d[b + 1], nation: owner, name, pop, grow: 0,
+        recFlags1c: d[b + 0x1C],
         level: ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) >= 0
           ? 3 - ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) : 0,
       });
@@ -11162,6 +11186,9 @@ function importSav(bytes) {
     const bip = d[b + 0x94];
     const c = { name, x: d[b], y: d[b + 1], nation, colonists,
                 stock: [], buildings, hammers: u16(b + 0x92),
+                // +0x1C flags byte, kept verbatim: the map's population-number
+                // ink reads bits 4/2 (func_004314 @0x00448B-@0x0044A4).
+                recFlags1c: d[b + 0x1C],
                 building: (DATA.buildings[bip] || {}).name || null,
                 sol: divisor > 0 ? Math.max(0, Math.min(100,
                      Math.round(100 * dividend / divisor))) : 0 };

@@ -211,9 +211,14 @@ REPORTS = {
             "differs from DOS and sits ~6 px off), and Moves: 6 vs DOS 5 "
             "(units_session_seed pins full moves; DOS uses the save's "
             "moves_remaining -- a harness pin, declared)\n"
-            "         ~700    colony POPULATION NUMBERS on the sprites "
-            "(San Salvador wears '10', Isabella '2') and the RIVAL colony "
-            "name label ('St. Louis') -- the port draws neither -- OPEN\n"
+            "         DONE (9,855 -> 9,612): colony POPULATION NUMBERS and "
+            "the missing RIVAL name labels, decoded from func_004314 "
+            "(0x181F:0x2A8, the marker painter): number = FONTTINY ([0x89E]) "
+            "left-aligned at (px+7, py+7), ink 0xF / 0xA / 0xB per record "
+            "+0x1C bits 4|2 (@0x00448B-@0x0044EF); name = FONTINTR "
+            "([0x268A]) left-aligned at (px+2, py+16) (@0x0044FA-@0x004529) "
+            "-- the port's centred-FONTTINY label was a guess, and rival "
+            "colonies now get both. Residual glyph-level ink ramp unread\n"
             "        Declared: the active-unit blink, the water palette "
             "cycle (120..127, see `palette`), the mouse pointer."),
     # The COLONY screen, entered by the manual's KEYBOARD path -- the mouse
