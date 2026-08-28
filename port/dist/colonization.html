@@ -4169,6 +4169,12 @@ function drawColonyTiles(ctx, c) {
         // TWO strips -- food at (x,y) from `[0xA891]` and a second good at
         // (x, y+13) from `[0xA893]`/`[0xA894]`. Live Curacao reads 4 and furs 3,
         // and its scene cell shows exactly those two rows.
+        // The centre tile also wears a WHITE 24x24 hollow rect -- measured at
+        // (248,56)-(271,79) on the Isabella baseline. FLAGGED: Vlissingen's
+        // sits at (252,59)-(278,84), so the true anchor tracks something
+        // runtime (the strip extents?); the fixed cell is the better of the
+        // two models measured (net -35 px).
+        hollowRect(ctx, x, y, 24, 24, 0x0F);
         proportionalStrip(ctx, 22 + GOOD.FOOD, centre.food, 0, x, y, 24);
         if (centre.good >= 0)
           proportionalStrip(ctx, 22 + centre.good, centre.amount, 0, x, y + 13, 24);
@@ -4244,10 +4250,23 @@ function centreYield(c) {
   if (G.difficulty === 0) food += 2; else if (G.difficulty === 1) food += 1;
   if (tileRiver(v)) food += 1;
   food += improvementBonus(c.x, c.y, GOOD.FOOD);
+  // The SECONDARY row, byte-read off func_00A222's tail (@0xA34D-@0xA3D1):
+  // best yield over columns 1..7 SKIPPING column 5 (@0xA375, the
+  // lumberjack), then +1 at difficulty 0 (@0xA3AB), +1 per SoL latch flag
+  // (record +0x1C bits 4/2, @0xA3C1/@0xA3CB). Isabella: tobacco 3 + the
+  // difficulty +1 = the baseline's 4. FLAGGED unread: the 0x9AAA resource
+  // add-or-double term and the [bp-0x12] extra.
   let good = -1, amount = 0;
   for (let col = 1; col <= 7; col++) {
+    if (col === 5) continue;
     const y = tileYield(v, col);
     if (y > amount) { amount = y; good = JOB_GOOD[col]; }
+  }
+  if (good >= 0) {
+    if (G.difficulty === 0) amount += 1;
+    const f1c = c.recFlags1c || 0;
+    if (f1c & 4) amount += 1;
+    if (f1c & 2) amount += 1;
   }
   return { food, good, amount };
 }

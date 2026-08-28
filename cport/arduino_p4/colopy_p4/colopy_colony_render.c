@@ -349,10 +349,23 @@ static void centre_yield(const ColonyRecord *c, int *food, int *good,
     else if (cs_difficulty() == 1) f += 1;
     if (tile_river(v)) f += 1;
     f += improvement_bonus(c->map_x, c->map_y, FOOD);
+    /* the SECONDARY row, byte-read off func_00A222's tail
+     * (@0xA34D-@0xA3D1): best yield over columns 1..7 SKIPPING column 5
+     * (@0xA375, the lumberjack), then +1 at difficulty 0 (@0xA3AB),
+     * +1 per SoL latch flag (record +0x1C bits 4/2, @0xA3C1/@0xA3CB).
+     * Isabella: tobacco 3 + the difficulty +1 = the baseline's 4.
+     * FLAGGED unread: the 0x9AAA resource add-or-double term and the
+     * [bp-0x12] extra. */
     int g = -1, a = 0;
     for (int col = 1; col <= 7; col++) {
+        if (col == 5) continue;
         int y = tile_yield(v, col);
         if (y > a) { a = y; g = RJOB_GOOD[col]; }
+    }
+    if (g >= 0) {
+        if (cs_difficulty() == 0) a += 1;
+        if (c->colony_flags & 4) a += 1;
+        if (c->colony_flags & 2) a += 1;
     }
     *food = f; *good = g; *amount = a;
 }
@@ -605,6 +618,13 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                 int x = 200 + 24 * col, y = 8 + 24 * row;
                 int dx = col - 2, dy = row - 2;
                 if (dx == 0 && dy == 0) {
+                    /* the CENTRE TILE wears a white hollow rect --
+                     * (248,56)-(271,79) on the Isabella baseline.
+                     * FLAGGED: Vlissingen's sits at (252,59)-(278,84),
+                     * so the true anchor tracks something runtime (the
+                     * strip extents?); the fixed cell is the better of
+                     * the two models measured (net -35 px) */
+                    rm_hollow_rect(x, y, 24, 24, 0x0F);
                     gauge_strip(22 + FOOD, cfood, 0, cfood, x, y, 24, numbers);
                     if (cgood >= 0)
                         gauge_strip(22 + cgood, camount, 0, camount, x,
