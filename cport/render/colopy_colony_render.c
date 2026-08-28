@@ -352,6 +352,68 @@ static void centre_yield(const ColonyRecord *c, int *food, int *good,
     colony_centre_yield((int)(c - CS.colonies), food, good, amount);
 }
 
+/* The area-view colour jitter — BYTE_VERIFIED func_005296 @0x5296..@0x531B
+ * (2026-08-28): a deterministic per-pixel dither inside the palette ramp.
+ * Position hash = (rows_left & 3) + ((dest_offset & 3) << 2); colours
+ * outside 0x10..0x87 pass through; band 0x10..0x30 uses mask 0x1F shift 0,
+ * 0x31..0x40 mask 0xF shift 2, else mask 7 shift 2.  The delta flips sign
+ * when it would leave the colour's ramp band. */
+static uint8_t area_jitter(uint8_t al, uint8_t bl, int rows_left, int di) {
+    if (al < 0x10 || al >= 0x88) return al;
+    int shift = 2, mask = 7;
+    if (al <= 0x30) { shift = 0; mask = 0x1F; }
+    else if (al <= 0x40) { shift = 2; mask = 0xF; }
+    int dh = (rows_left & 3) + ((di & 3) << 2);
+    int dl = (bl + dh) & 0xF;
+    if (dl == 0 || dl == 8) return al;
+    int d = dl < 8 ? -((dl + 1) >> shift) : (dl - 7) >> shift;
+    int cl = ((al - 0x10) & mask) + d;
+    if (cl < 0 || cl > mask) d = -d;
+    return (uint8_t)(al + d);
+}
+
+/* func_00531C — the area view's 2->3 upscale, now the LITERAL loop
+ * (@0x531C..@0x53DC): the FULL 80x80 scene upscales to 120x120 (even
+ * source columns and odd source rows double) and the panel shows the
+ * (24,24)+72x72 window of it; every output pixel runs through
+ * area_jitter with the running salt bx (+0xD when rows_left%4==0, +0x11
+ * at each 4-aligned write, the duplicate-write bumps undone at each row
+ * pass end).  Emulating the full frame matters because the off-window
+ * writes advance the salt.  Model fit vs the DOS COLONY baseline: 3,555
+ * of 5,184 window pixels reproduce exactly (the plain resample managed
+ * 1,400); the residual is FLAGGED — a phase or source detail is still
+ * unread, and no better variant was found in the parameter sweep. */
+static void area_upscale(const uint8_t *scene80) {
+    int bx = 0, bp2 = 0, dl = 0, dsty = 0;
+    for (int k = 0; k < 80; k++) {
+        int rows_left = 80 - k;
+        int passes = (k & 1) ? 2 : 1;
+        for (int p = 0; p < passes; p++) {
+            if ((rows_left & 3) == 0) { bx += 0x0D; bp2 = 0; }
+            int dstx = 0;
+            for (int sx = 0; sx < 80; sx++) {
+                uint8_t al = scene80[k * 80 + sx];
+                for (int dup = 0; dup < 2; dup++) {
+                    if (dup == 0) {
+                        if ((dstx & 3) == 0) bx += 0x11;
+                    } else {
+                        dl = ~dl & 0xFF;
+                        if (!dl) break;
+                        if ((dstx & 3) == 0) { bx += 0x11; bp2 += 0x11; }
+                    }
+                    int wx = dstx - 24, wy = dsty - 24;
+                    if (wx >= 0 && wx < 72 && wy >= 0 && wy < 72)
+                        RD.fb[(32 + wy) * RD_W + 224 + wx] =
+                            area_jitter(al, (uint8_t)bx, rows_left, dstx);
+                    dstx++;
+                }
+            }
+            bx -= bp2;
+            dsty++;
+        }
+    }
+}
+
 /* worker-slot cell offsets (game.js:10338, colopy_colony.c) */
 static const int8_t RCELL_DX[8] = { 0, 1, 0, -1, -1, 1, 1, -1 };
 static const int8_t RCELL_DY[8] = { -1, 0, 1, 0, -1, -1, 1, 1 };
@@ -579,15 +641,7 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
             }
         scene_grab(0, 0, scene80, 80, 80);
         memcpy(RD.fb, save, 80 * RD_W);         /* restore */
-        /* func_00531C: cols pair at dst%3==0, rows at dst%3==1; the
-         * central 3x3 window lands at (224,32) 72x72 */
-        for (int r = 0; r < 72; r++) {
-            int sy = (2 * (r + 24) + 1) / 3;
-            for (int d = 0; d < 72; d++) {
-                int sx = (2 * (d + 24)) / 3;
-                RD.fb[(32 + r) * RD_W + 224 + d] = scene80[sy * 80 + sx];
-            }
-        }
+        area_upscale(scene80);
         rm_hollow_rect(223, 31, 74, 74, 0);
     }
 

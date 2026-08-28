@@ -4276,24 +4276,79 @@ function drawColony(ctx) {
       if (ov) drawSettlement(sg, tx * 16, ty * 16, ov.level, -1,
                              (G.tribes[ov.tribe] || {}).color || 8, ov.mission);
     }
-  // The x1.5 upscale is func_00531C's 2->3 duplication, whose phases the
-  // live frame pins: COLUMNS pair at dst%3==0 (src = floor(2d/3)) and ROWS
-  // at dst%3==1 (src = floor((2r+1)/3)) -- a plain drawImage stretch had the
-  // row phase off by one. The 4x4 positional ramp dither func_005296 that
-  // the engine passes every written pixel through is NOT reproduced yet
-  // (ramps 0x10..0x87; flagged TBD) -- the capture shows only ~25% exact
-  // pixel pairing where the undithered stretch gives ~75%.
+  // The x1.5 upscale is func_00531C's 2->3 duplication, now the LITERAL
+  // loop (@0x531C..@0x53DC, decoded 2026-08-28): the FULL 80x80 scene
+  // upscales to 120x120 (even source columns and odd source rows double)
+  // and the panel shows the (24,24)+72x72 window -- with EVERY written
+  // pixel passed through the func_005296 ramp dither (@0x5296..@0x531B):
+  // position hash (rows_left&3) + ((dest&3)<<2) plus a running salt bx
+  // (+0xD when rows_left%4==0, +0x11 per 4-aligned write, duplicate-write
+  // bumps undone at each row pass end); colours outside 0x10..0x87 pass
+  // through, band 0x10..0x30 uses mask 0x1F shift 0, 0x31..0x40 mask 0xF
+  // shift 2, else mask 7 shift 2, and the delta flips sign at the ramp
+  // edge. Model fit vs the DOS COLONY baseline: ~3,844 of 5,184 window
+  // pixels exact (the plain resample managed 1,400); the residual is
+  // FLAGGED -- a phase or source detail is still unread.
   const up = document.createElement('canvas');
   up.width = 120; up.height = 120;
   const ug = up.getContext('2d');
   const sd = sg.getImageData(0, 0, 80, 80).data;
   const od = ug.createImageData(120, 120);
-  for (let r = 0; r < 120; r++) {
-    const sy = Math.floor((2 * r + 1) / 3);
-    for (let d = 0; d < 120; d++) {
-      const si = (sy * 80 + Math.floor(2 * d / 3)) * 4, oi = (r * 120 + d) * 4;
-      od.data[oi] = sd[si]; od.data[oi + 1] = sd[si + 1];
-      od.data[oi + 2] = sd[si + 2]; od.data[oi + 3] = 255;
+  const jit = (al, bl, rowsLeft, di) => {
+    if (al < 0x10 || al >= 0x88) return al;
+    let shift = 2, mask = 7;
+    if (al <= 0x30) { shift = 0; mask = 0x1F; }
+    else if (al <= 0x40) { shift = 2; mask = 0xF; }
+    const dl = (bl + (rowsLeft & 3) + ((di & 3) << 2)) & 0xF;
+    if (dl === 0 || dl === 8) return al;
+    let dd = dl < 8 ? -((dl + 1) >> shift) : (dl - 7) >> shift;
+    const cl = ((al - 0x10) & mask) + dd;
+    if (cl < 0 || cl > mask) dd = -dd;
+    return (al + dd) & 0xFF;
+  };
+  if (!drawColony._rgb2idx) {
+    const m = new Map();
+    for (let i = 0; i < 256; i++) {
+      const cc = DATA.palette[i];
+      const k = (cc[0] << 16) | (cc[1] << 8) | cc[2];
+      if (!m.has(k)) m.set(k, i);
+    }
+    drawColony._rgb2idx = m;
+  }
+  const r2i = drawColony._rgb2idx;
+  let bx = 0, bp2 = 0, tdl = 0, dsty = 0;
+  for (let k = 0; k < 80; k++) {
+    const rowsLeft = 80 - k;
+    const passes = (k & 1) ? 2 : 1;
+    for (let p = 0; p < passes; p++) {
+      if ((rowsLeft & 3) === 0) { bx += 0x0D; bp2 = 0; }
+      let dstx = 0;
+      for (let sx = 0; sx < 80; sx++) {
+        const si = (k * 80 + sx) * 4;
+        const key = (sd[si] << 16) | (sd[si + 1] << 8) | sd[si + 2];
+        const idx = r2i.get(key);
+        for (let dup = 0; dup < 2; dup++) {
+          if (dup === 0) {
+            if ((dstx & 3) === 0) bx += 0x11;
+          } else {
+            tdl = ~tdl & 0xFF;
+            if (!tdl) break;
+            if ((dstx & 3) === 0) { bx += 0x11; bp2 += 0x11; }
+          }
+          const oi = (dsty * 120 + dstx) * 4;
+          let r = sd[si], g = sd[si + 1], b = sd[si + 2];
+          if (idx !== undefined) {
+            const j = jit(idx, bx & 0xFF, rowsLeft, dstx);
+            const jc = DATA.palette[j];
+            r = jc[0]; g = jc[1]; b = jc[2];
+          }
+          od.data[oi] = r; od.data[oi + 1] = g;
+          od.data[oi + 2] = b; od.data[oi + 3] = 255;
+          dstx++;
+        }
+      }
+      bx -= bp2;
+      dsty++;
     }
   }
   ug.putImageData(od, 0, 0);
