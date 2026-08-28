@@ -561,42 +561,141 @@ int rm_colony_level_ci(int ci) {
 }
 
 /* drawSidebar (game.js:1914): minimap + HUD text + unit panel */
+/* the SAMPLED minimap colour table -- built once, mirroring the engine's
+ * init loop @0x0668B8-@0x066922: entry = the frame's pixel at (8, 8) of
+ * a 16x16 render (func_066884 returns [bp-0x80] = buffer offset 0x88,
+ * i.e. row 8 col 8; func_066850 does the same off PHYS0).  Base terrain
+ * ids 0..7 are sampled from their ground frames and COPIED to the 8..15
+ * and 16..23 bands (the loop stores one al to all three tables), so a
+ * forested tile shows its UNFORESTED colour; 24/25/26 sample their own
+ * frames; slot 0x1B samples PHYS0 frame 0x21 (mountains), 0x1C frame
+ * 0x31 (hills). */
+static uint8_t mm_tab[0x1D];
+static int mm_tab_ready;
+static uint8_t mm_sample(const rd_entry *sheet, int frame) {
+    rd_frame f;
+    if (!rd_sheet_frame(sheet, frame, &f)) return 0;
+    if (f.w <= 8 || f.h <= 8) return 0;
+    return f.pix[8 * f.w + 8];
+}
+static void mm_build(void) {
+    if (mm_tab_ready) return;
+    for (int i = 0; i < 8; i++)
+        mm_tab[i] = mm_sample(&RD.terrain, ground_frame(i));
+    mm_tab[0x18] = mm_sample(&RD.terrain, ground_frame(24));
+    mm_tab[0x19] = mm_sample(&RD.terrain, ground_frame(25));
+    mm_tab[0x1A] = mm_sample(&RD.terrain, ground_frame(26));
+    /* the engine passes 0x21/0x31 in ITS numbering; the bundle is off
+     * by one (PHYS comment: "MOUNTAIN: 0x20, engine 0x21") */
+    mm_tab[0x1B] = mm_sample(&RD.phys0, PH_MOUNTAIN);       /* @0x066909 */
+    mm_tab[0x1C] = mm_sample(&RD.phys0, PH_HILL);           /* @0x066915 */
+    mm_tab_ready = 1;
+}
+static uint8_t mm_owner_colour(int owner) {
+    /* [0x848 + owner]: powers 0..3, tribes 4..11 */
+    if (owner < 4) return (uint8_t)dat_nations[owner & 3].color;
+    int ti = owner - 4;
+    return (uint8_t)(ti < 8 ? dat_tribes[ti].color : 8);
+}
 static void draw_sidebar(const rm_view *vw) {
     const int mmx = 252, mmy = 9, mmw = 56, mmh = 39;
-    rd_fill(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 0);
+    mm_build();
+    /* backdrop fill is (241, 8) 79x41 (@0x066CF8), the frame (251, 8)-
+     * (308, 48) colour 6 (@0x066D4F) */
+    rd_fill(241, 8, 79, 41, 0);
     rm_hollow_rect(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 6);
-    int sx = vw->view_x - 20, sy = vw->view_y - 13;
-    if (sx > COLOPY_MAP_W - mmw) sx = COLOPY_MAP_W - mmw;
-    if (sy > COLOPY_MAP_H - mmh) sy = COLOPY_MAP_H - mmh;
-    if (sx < 0) sx = 0;
-    if (sy < 0) sy = 0;
+    /* the WINDOW (verb 0x181F:0x59A = @0x066928): anchored to the map
+     * CURSOR [0x17C]/[0x17E] -- the active unit after a load -- with
+     * sx = clamp(cx - 0x1C, 1, W - 0x39), sy = clamp(cy - 0x13, 1,
+     * H - 0x28).  Low bound 1, not 0.  With no selection the port falls
+     * back to the view centre as the cursor model. */
+    int cx, cy;
+    if (vw->sel >= 0 && vw->sel < CR.n_units_order) {
+        cx = CS.units[CR.units_order[vw->sel]].map_x;
+        cy = CS.units[CR.units_order[vw->sel]].map_y;
+    } else {
+        cx = vw->view_x + VIEW_COLS / 2;
+        cy = vw->view_y + VIEW_ROWS / 2;
+    }
+    int sx = cx - 0x1C, sy = cy - 0x13;
+    if (sx > COLOPY_MAP_W - 0x39) sx = COLOPY_MAP_W - 0x39;
+    if (sx < 1) sx = 1;
+    if (sy > COLOPY_MAP_H - 0x28) sy = COLOPY_MAP_H - 0x28;
+    if (sy < 1) sy = 1;
+    /* terrain pass (func_066968): fog -> stays black; hills/mountains
+     * (terrain bit 0x20) index 0x1B (bit 0x80 set) / 0x1C; else
+     * table[id] with the 8..23 bands folded to their base id */
     for (int y = 0; y < mmh; y++)
         for (int x = 0; x < mmw; x++) {
-            if (!is_seen_rm(vw, sx + x, sy + y)) continue;
-            int v = map_at(sx + x, sy + y), t = v & 0x1F;
-            int c = 0x38;
-            if (t == TERR_SEALANE) c = 0x36;
-            else if (t == 24) c = 0x0F;
-            else if (t != TERR_OCEAN)
-                c = t_mountains(v) ? 0x6B : (is_forested_id(t) ? 0x47 : 0x43);
-            rd_fill(mmx + x, mmy + y, 1, 1, (uint8_t)c);
+            int mx = sx + x, my = sy + y;
+            if (mx >= COLOPY_MAP_W || my >= COLOPY_MAP_H) continue;
+            if (!is_seen_rm(vw, mx, my)) continue;
+            int v = map_at(mx, my), t = v & 0x1F;
+            uint8_t c;
+            if (v & 0x20) c = mm_tab[(v & 0x80) ? 0x1B : 0x1C];
+            else {
+                if (t >= 16 && t <= 23) t -= 16;
+                else if (t >= 8 && t <= 15) t -= 8;
+                c = mm_tab[t];
+            }
+            rd_fill(mmx + x, mmy + y, 1, 1, c);
         }
+    /* unit dots (the flags-plane bit 1 branch @0x066A96): owner colour;
+     * a FOREIGN Privateer with chain_next < 0 greys to 8 (@0x066AED --
+     * the unidentified sail).  FLAGGED: the engine gates each unit on the
+     * record owner byte's per-power seen mask, 0x10 << player
+     * (@0x066ABC); the runtime mirrors carry no such mask, so both
+     * engines substitute the tile's sticky visibility -- the same proxy,
+     * identically, to keep JS == C. */
+    for (int q = 0; q < CR.n_units_order; q++) {
+        int ui = CR.units_order[q];
+        int dx = CS.units[ui].map_x - sx, dy = CS.units[ui].map_y - sy;
+        if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
+        if (!is_seen_rm(vw, CS.units[ui].map_x, CS.units[ui].map_y))
+            continue;
+        rd_fill(mmx + dx, mmy + dy, 1, 1,
+                mm_owner_colour((int)cs_nation()));
+    }
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            int ui = CR.runits_order[rn][k];
+            int ux = CR.runit_x[ui], uy = CR.runit_y[ui];
+            int dx = ux - sx, dy = uy - sy;
+            if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
+            if (!is_seen_rm(vw, ux, uy)) continue;
+            uint8_t c = CS.units[ui].type == 0x10
+                        ? 8 : mm_owner_colour(rn);
+            rd_fill(mmx + dx, mmy + dy, 1, 1, c);
+        }
+    }
+    for (int k = 0; k < CR.n_natives; k++) {
+        int ui = CR.natives_order[k];
+        int ux = CS.units[ui].map_x, uy = CS.units[ui].map_y;
+        int dx = ux - sx, dy = uy - sy;
+        if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
+        if (!is_seen_rm(vw, ux, uy)) continue;
+        rd_fill(mmx + dx, mmy + dy, 1, 1,
+                mm_owner_colour((int)CS.units[ui].owner_flags & 0x0F));
+    }
+    /* settlement dots draw ABOVE units (the engine's per-pixel priority
+     * is colony > unit > terrain): villages in tribe colours, colonies
+     * of EVERY power in the owner colour ([0x848 + owner]) */
     for (int vi = 0; vi < CS.n_villages; vi++) {
         int dx = CS.villages[vi].map_x - sx, dy = CS.villages[vi].map_y - sy;
         if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
         if (!is_seen_rm(vw, CS.villages[vi].map_x, CS.villages[vi].map_y))
             continue;
-        int ti = CS.villages[vi].owner_tribe - 4;
         rd_fill(mmx + dx, mmy + dy, 1, 1,
-                (uint8_t)(ti >= 0 && ti < 8 ? dat_tribes[ti].color : 8));
+                mm_owner_colour(CS.villages[vi].owner_tribe));
     }
-    /* owner dots: the JS draws G.colonies — the PLAYER's list only */
     for (int ci = 0; ci < CS.n_colonies; ci++) {
-        if ((CS.colonies[ci].owner_power & 3) != cs_nation()) continue;
         int dx = CS.colonies[ci].map_x - sx, dy = CS.colonies[ci].map_y - sy;
         if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
+        if (!is_seen_rm(vw, CS.colonies[ci].map_x, CS.colonies[ci].map_y))
+            continue;
         rd_fill(mmx + dx, mmy + dy, 1, 1,
-                (uint8_t)dat_nations[CS.colonies[ci].owner_power & 3].color);
+                mm_owner_colour(CS.colonies[ci].owner_power & 3));
     }
     rm_hollow_rect(mmx + (vw->view_x - sx), mmy + (vw->view_y - sy),
                 VIEW_COLS << cur_zoom, VIEW_ROWS << cur_zoom, 0x0F);

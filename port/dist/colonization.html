@@ -2222,41 +2222,110 @@ function carriedLabel(entry) {
   return typeof entry === 'object' ? entry.name : typeName;
 }
 
+// The SAMPLED minimap colour table -- built once, mirroring the engine's
+// init loop @0x0668B8-@0x066922: entry = the frame's pixel at (8, 8) of a
+// 16x16 render (func_066884 returns [bp-0x80] = buffer offset 0x88 = row 8
+// col 8; func_066850 does the same off PHYS0). Base ids 0..7 sample their
+// ground frames and are COPIED to the 8..15 / 16..23 bands (one store to
+// all three tables), so a forested tile shows its UNFORESTED colour;
+// 24/25/26 sample their own frames; slot 0x1B samples the engine's PHYS0
+// frame 0x21 (mountains, bundle 0x20), 0x1C frame 0x31 (hills, 0x30).
+let _mmTab = null;
+function mmSample(sheet, frame) {
+  const sh = DATA.sheets[sheet];
+  const f = sh && sh.frames[frame];
+  if (!f || f.w <= 8 || f.h <= 8) return 'rgb(0,0,0)';
+  const c = document.createElement('canvas');
+  c.width = c.height = 16;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(cycAtlas(sheet, 0), f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+  const d = g.getImageData(8, 8, 1, 1).data;
+  return `rgb(${d[0]},${d[1]},${d[2]})`;
+}
+function mmTable() {
+  if (_mmTab) return _mmTab;
+  const t = {};
+  for (let i = 0; i < 8; i++) t[i] = mmSample('TERRAIN', groundFrame(i));
+  t[0x18] = mmSample('TERRAIN', groundFrame(24));
+  t[0x19] = mmSample('TERRAIN', groundFrame(25));
+  t[0x1A] = mmSample('TERRAIN', groundFrame(26));
+  t[0x1B] = mmSample('PHYS0', PHYS.MOUNTAIN);   // engine 0x21 @0x066909
+  t[0x1C] = mmSample('PHYS0', PHYS.HILL);       // engine 0x31 @0x066915
+  return (_mmTab = t);
+}
+function mmOwnerColour(owner) {
+  // [0x848 + owner]: powers 0..3, tribes 4..11.
+  if (owner < 4) return DATA.nations[owner & 3].color;
+  const ti = owner - 4;
+  return ti < 8 ? ((G.tribes[ti] || {}).color || 8) : 8;
+}
 function drawSidebar(ctx) {
-  // Minimap: 1px per tile in a 56x39 black well inside a 1px orange frame.
-  // Frame (251,8)-(308,48) and interior origin (252,9) are pixel-measured from
-  // docs/screens/06_ingame_map.png; the byte-verified panel rect is (241,8,79,41).
+  // Minimap: 1px per tile inside the orange frame (251,8)-(308,48) colour 6
+  // (@0x066D4F) over the black backdrop fill (241,8,79,41) (@0x066CF8).
   const mm = { x: 252, y: 9, w: 56, h: 39 };
-  ctx.fillStyle = ink(0); ctx.fillRect(mm.x - 1, mm.y - 1, mm.w + 2, mm.h + 2);
+  const tab = mmTable();
+  ctx.fillStyle = ink(0); ctx.fillRect(241, 8, 79, 41);
   hollowRect(ctx, mm.x - 1, mm.y - 1, mm.w + 2, mm.h + 2, 6);
-  const sx = Math.max(0, Math.min(MAP.w - mm.w, G.view.x - 20));
-  const sy = Math.max(0, Math.min(MAP.h - mm.h, G.view.y - 13));
+  // The WINDOW (verb 0x181F:0x59A = @0x066928): anchored to the map CURSOR
+  // [0x17C]/[0x17E] -- the active unit after a load -- with
+  // sx = clamp(cx - 0x1C, 1, W - 0x39), sy = clamp(cy - 0x13, 1, H - 0x28).
+  // Low bound 1, not 0. With no selection the view centre models the cursor.
+  const cu = G.units[G.sel];
+  const cx = cu ? cu.x : G.view.x + (VIEW_COLS() >> 1);
+  const cy = cu ? cu.y : G.view.y + (VIEW_ROWS() >> 1);
+  const sx = Math.max(1, Math.min(MAP.w - 0x39, cx - 0x1C));
+  const sy = Math.max(1, Math.min(MAP.h - 0x28, cy - 0x13));
+  // Terrain pass (func_066968): fog stays black; hills/mountains (terrain
+  // bit 0x20) index 0x1B (bit 0x80 set) / 0x1C; else table[id] with the
+  // 8..23 bands folded to their base id.
   for (let y = 0; y < mm.h; y++) for (let x = 0; x < mm.w; x++) {
-    // The minimap reads the same sticky visibility layer as the main view:
-    // unexplored ground is simply not there.
+    if (sx + x >= MAP.w || sy + y >= MAP.h) continue;
     if (!isSeen(sx + x, sy + y)) continue;
-    const v = at(sx + x, sy + y), t = tileTerrain(v);
-    let c = 0x38;                                  // ocean blue-ish
-    if (t === TERR.SEALANE) c = 0x36;
-    else if (t === TERR.ARCTIC) c = 0x0F;
-    else if (t !== TERR.OCEAN) c = tileMountains(v) ? 0x6B : (isForested(t) ? 0x47 : 0x43);
-    ctx.fillStyle = ink(c);
+    const v = at(sx + x, sy + y);
+    let t = v & 0x1F;
+    if (v & 0x20) ctx.fillStyle = tab[(v & 0x80) ? 0x1B : 0x1C];
+    else {
+      if (t >= 16 && t <= 23) t -= 16;
+      else if (t >= 8 && t <= 15) t -= 8;
+      ctx.fillStyle = tab[t];
+    }
     ctx.fillRect(mm.x + x, mm.y + y, 1, 1);
   }
-  // Owner dots: colonies in their @COUNTRY colour, settlements in the tribe's.
+  // Unit dots (the flags-plane bit 1 branch @0x066A96): owner colour; a
+  // FOREIGN Privateer with chain_next < 0 greys to 8 (@0x066AED -- the
+  // unidentified sail). Gated on the record owner byte's per-power seen
+  // mask 0x10 << player (@0x066ABC); the port mirrors that with its
+  // sticky-visibility test on the tile.
+  const unitDot = (x, y, owner, grey) => {
+    const dx = x - sx, dy = y - sy;
+    if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) return;
+    if (!isSeen(x, y)) return;
+    ctx.fillStyle = ink(grey ? 8 : mmOwnerColour(owner));
+    ctx.fillRect(mm.x + dx, mm.y + dy, 1, 1);
+  };
+  for (const u of G.units) unitDot(u.x, u.y, G.nation, false);
+  for (const r of G.rivals)
+    for (const ru of r.units)
+      unitDot(ru.x, ru.y, ru.nation, ru.type === 'Privateer');
+  for (const n of G.natives) unitDot(n.x, n.y, 4 + n.tribe, false);
+  // Settlement dots draw ABOVE units (engine priority colony > unit >
+  // terrain): villages in tribe colours, colonies of EVERY power.
   for (const v of G.villages) {
     const dx = v.x - sx, dy = v.y - sy;
     if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) continue;
     if (!isSeen(v.x, v.y)) continue;
-    ctx.fillStyle = ink((G.tribes[v.tribe] || {}).color || 8);
+    ctx.fillStyle = ink(mmOwnerColour(4 + v.tribe));
     ctx.fillRect(mm.x + dx, mm.y + dy, 1, 1);
   }
-  for (const c of G.colonies) {
-    const dx = c.x - sx, dy = c.y - sy;
-    if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) continue;
-    ctx.fillStyle = ink(DATA.nations[c.nation].color);
+  const colonyDot = (x, y, nation) => {
+    const dx = x - sx, dy = y - sy;
+    if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) return;
+    if (!isSeen(x, y)) return;
+    ctx.fillStyle = ink(mmOwnerColour(nation));
     ctx.fillRect(mm.x + dx, mm.y + dy, 1, 1);
-  }
+  };
+  for (const c of G.colonies) colonyDot(c.x, c.y, c.nation);
+  for (const r of G.rivals) for (const rc of r.colonies) colonyDot(rc.x, rc.y, rc.nation);
   hollowRect(ctx, mm.x + (G.view.x - sx), mm.y + (G.view.y - sy),
              VIEW_COLS(), VIEW_ROWS(), 0x0F);
 
