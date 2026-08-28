@@ -197,11 +197,23 @@ REPORTS = {
     # view origin (44-7, 29-6) = (37, 23) and sel 6. Declared divergences:
     # the active-unit BLINK (the frigate is visible or hidden by frame
     # parity), the water palette cycle (120..127), and the mouse pointer.
-    "MAP": (None, ["--rendermap", FIXTURE, str(PAK), "{out}", "37", "23", "6"],
-            "NEW ENTRY (15.4%), first captured 2026-08-28. The view origin "
-            "(37, 23) is the sweep's unique minimum (9,794 px; every "
-            "neighbour >= 16,428), which confirms the centring model "
-            "clamp(unit - (7, 6)). Triage of the 9,855:\n"
+    # sel 6 = the active frigate; menu -1 msel 0; BLINK 0 -- this baseline
+    # caught the blink-OFF half (the frigate is absent from its tile), so
+    # the render matches that half rather than declaring the whole unit.
+    "MAP": (None, ["--rendermap", FIXTURE, str(PAK), "{out}", "37", "23", "6",
+                   "-1", "0", "0"],
+            "OPEN (10.8%), captured 2026-08-28 and taken 9,855 -> 6,946 "
+            "the same day. The view origin (37, 23) is the sweep's unique "
+            "minimum (every neighbour >= 16,428), confirming the centring "
+            "model clamp(unit - (7, 6)). The fixes, each measured:\n"
+            "         MAP UNITS draw through the shared func_00386A "
+            "composite (silhouette + class-aware plate) on every layer -- "
+            "player, rival, native, REF -- and a unit standing on a COLONY "
+            "tile is INSIDE it and does not draw (San Salvador's docked "
+            "Galleon). Labels are FLAT white with the glyph's own black "
+            "outline, no ramp (0xC28:0xA gets one ink + shadow 0). This "
+            "baseline caught the blink-OFF half, so the entry renders "
+            "blink 0 via the harness's new BLINK argument\n"
             "         RESOLVED: the 'Ocean/Sea-Lane dither band' was no "
             "band at all -- TERRAIN.SS frame 11 (Sea Lane) carries 62 "
             "pixels per tile in the WATER CYCLE ramp 120..127 (frame 10, "

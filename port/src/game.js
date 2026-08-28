@@ -1683,14 +1683,15 @@ function drawMap(ctx) {
       }
     }
   }
+  // Braves and rival units draw through the SHARED func_00386A composite
+  // like every other map unit, and colony tiles hide their occupants.
   for (const n of G.natives) {
     const tx = n.x - G.view.x, ty = n.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     if (!isSeen(n.x, n.y)) continue;
-    const px = ox + tx * TILE, py = oy + ty * TILE;
-    nationPlate(tgt, px, py, ownerColour(n), n.orders);
-    const [fw, fh] = frameSize('ICONS', n.icon);
-    sheetFrame(tgt, 'ICONS', n.icon, px + TILE - fw, py + TILE - fh);
+    if (onAnyColony(n.x, n.y)) continue;
+    unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, n.type,
+              n.flags || 0, n.orders || 0, ownerColour(n), n.icon);
   }
 
   // Rival powers: their colonies and units, in their own @COUNTRY colours.
@@ -1711,10 +1712,9 @@ function drawMap(ctx) {
       const tx = ru.x - G.view.x, ty = ru.y - G.view.y;
       if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
       if (!isSeen(ru.x, ru.y)) continue;
-      const px = ox + tx * TILE, py = oy + ty * TILE;
-      nationPlate(tgt, px, py, ownerColour(ru), ru.orders);
-      const [fw, fh] = frameSize('ICONS', ru.icon);
-      sheetFrame(tgt, 'ICONS', ru.icon, px + TILE - fw, py + TILE - fh);
+      if (onAnyColony(ru.x, ru.y)) continue;
+      unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
+                ru.flags || 0, ru.orders || 0, ownerColour(ru), ru.icon);
     }
   }
 
@@ -1724,10 +1724,9 @@ function drawMap(ctx) {
   for (const ru of G.refUnits) {
     const tx = ru.x - G.view.x, ty = ru.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
-    const px = ox + tx * TILE, py = oy + ty * TILE;
-    nationPlate(tgt, px, py, KING_COLOUR, ru.orders);
-    const [fw, fh] = frameSize('ICONS', ru.icon);
-    sheetFrame(tgt, 'ICONS', ru.icon, px + TILE - fw, py + TILE - fh);
+    if (onAnyColony(ru.x, ru.y)) continue;
+    unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
+              ru.flags || 0, ru.orders || 0, KING_COLOUR, ru.icon);
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -1866,17 +1865,32 @@ function colonyMarkerExtras(ctx, px, py, c) {
   const f = c.recFlags1c || 0;
   const ik = (f & 4) ? ((f & 2) ? 0x0B : 0x0A) : 0x0F;
   // Number font = [0x89E] = FONTTINY, name font = [0x268A] = FONTINTR
-  // (spec/ui/fonts_and_colors.md's byte-verified pointer table).
-  FONT.tiny.draw(ctx, String(pop), px + 7, py + 7, lut(ik));
-  FONT.intr.draw(ctx, c.name, px + 2, py + 16, lut(0x0F), ink(0));
+  // (spec/ui/fonts_and_colors.md's byte-verified pointer table). FLAT
+  // single-colour glyphs: the text verb gets (ink, shadow) with no ramp
+  // (0xC28:0xA args dx=0xF bx=0 @0x0044FC), and the baseline's label
+  // pixels are pure white + black only.
+  FONT.tiny.draw(ctx, String(pop), px + 7, py + 7,
+                 [ink(ik), ink(ik), ink(0)]);
+  FONT.intr.draw(ctx, c.name, px + 2, py + 16,
+                 [ink(0x0F), ink(0x0F), ink(0)], ink(0));
+}
+function onAnyColony(x, y) {
+  if (G.colonies.some(c => c.x === x && c.y === y)) return true;
+  return G.rivals.some(r => r.colonies.some(c => c.x === x && c.y === y));
 }
 function drawUnit(ctx, u, px, py) {
   // The active unit blinks: the engine flashes the unit graphic itself on and
   // off so the tile beneath shows through. There is no selection outline.
   if (G.units[G.sel] === u && !G.blink) return;
-  nationPlate(ctx, px, py, ownerColour(u), u.orders);
-  const [fw, fh] = frameSize('ICONS', u.icon);
-  sheetFrame(ctx, 'ICONS', u.icon, px + TILE - fw, py + TILE - fh);
+  // A unit standing on a COLONY tile is INSIDE the colony and does not draw
+  // on the map -- the census MAP baseline shows San Salvador bare while the
+  // port stacked the docked Galleon over it.
+  if (onAnyColony(u.x, u.y)) return;
+  // The map tile draws through the SHARED func_00386A composite: the
+  // baseline's ships wear the class-1 plate at the sprite's top-RIGHT with
+  // the silhouette layer, exactly like the sidebar and the dock.
+  unitPanel(ctx, px, py, 16, u.type, u.flags || 0, u.orders || 0,
+            ownerColour(u), u.icon);
 }
 
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],

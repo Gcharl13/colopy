@@ -475,17 +475,27 @@ int rm_owner_colour_ui(int ui) {
     return 8;
 }
 
+static int on_any_colony(int mx, int my) {
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if (CS.colonies[ci].map_x == mx && CS.colonies[ci].map_y == my)
+            return 1;
+    return 0;
+}
 static void draw_unit_rm(const rm_view *vw, int ui, int px, int py) {
     /* the active unit blinks: DRAWN while G.blink is truthy, hidden on
      * the off half (game.js:1729 `if (sel === u && !G.blink) return`) */
     if (vw->sel >= 0 && vw->sel < CR.n_units_order &&
         CR.units_order[vw->sel] == ui && !vw->blink)
         return;
-    rm_nation_plate(px, py, rm_owner_colour_ui(ui), CS.units[ui].orders);
-    rd_frame f;
-    int ic = unit_icon(ui);
-    if (rd_sheet_frame(&RD.icons, ic, &f))
-        rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+    /* a unit standing on a COLONY tile is INSIDE the colony and does not
+     * draw on the map -- the census MAP baseline shows San Salvador bare
+     * while the port stacked the docked Galleon over it */
+    if (on_any_colony(CS.units[ui].map_x, CS.units[ui].map_y)) return;
+    /* the map tile draws through the SHARED func_00386A composite: the
+     * baseline's ships wear the class-1 plate at the sprite's top-RIGHT
+     * with the silhouette layer, exactly like the sidebar and the dock */
+    rm_unit_panel(px, py, 16, CS.units[ui].type, CS.units[ui].flags,
+               CS.units[ui].orders, rm_owner_colour_ui(ui), unit_icon(ui));
 }
 
 /* ---- text helpers (FONT.tiny) ---- */
@@ -528,8 +538,14 @@ static void colony_marker_extras(int px, int py, int pop, uint8_t flags1c,
     if (flags1c & 4) ik = (flags1c & 2) ? 0x0B : 0x0A;
     /* number font = [0x89E] = FONTTINY, name font = [0x268A] = FONTINTR
      * (spec/ui/fonts_and_colors.md's byte-verified pointer table) */
-    rd_text(&TINY, nb, px + 7, py + 7, lut_of(ik));
-    intr_left_shadow(name, px + 2, py + 16, lut_of(0x0F), 0);
+    /* FLAT single-colour glyphs: the text verb gets (ink, shadow) with
+     * no ramp (0xC28:0xA args dx=0xF bx=0 @0x0044FC), and the baseline's
+     * label pixels are pure white + black only */
+    static uint8_t fl[4];
+    fl[0] = 0xFF; fl[1] = ik; fl[2] = ik; fl[3] = 0;
+    rd_text(&TINY, nb, px + 7, py + 7, fl);
+    static const uint8_t fw[4] = { 0xFF, 0x0F, 0x0F, 0 };
+    intr_left_shadow(name, px + 2, py + 16, fw, 0);
 }
 
 void rm_hollow_rect(int x, int y, int w, int h, uint8_t c) {
@@ -881,19 +897,19 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
         if (!zoom_pass && (v->flags & 0x04)) /* capital sparkle @0x4051 */
             rd_blit(&RD.icons, 17, px, py);
     }
-    /* braves + natives-parked units (G.natives order) */
+    /* braves + natives-parked units (G.natives order) -- through the
+     * shared func_00386A composite like every other map unit */
     for (int k = 0; k < CR.n_natives; k++) {
         int ui = CR.natives_order[k];
         int ux = CS.units[ui].map_x, uy = CS.units[ui].map_y;
         int tx = ux - view_x, ty = uy - view_y;
         if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
         if (!is_seen_rm(&vw, ux, uy)) continue;
+        if (on_any_colony(ux, uy)) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        rm_nation_plate(px, py, rm_owner_colour_ui(ui), CS.units[ui].orders);
-        rd_frame f;
-        int ic = unit_icon(ui);
-        if (rd_sheet_frame(&RD.icons, ic, &f))
-            rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+        rm_unit_panel(px, py, 16, CS.units[ui].type, CS.units[ui].flags,
+                   CS.units[ui].orders, rm_owner_colour_ui(ui),
+                   unit_icon(ui));
     }
     /* rivals: colonies then units, per power */
     for (int rn = 0; rn < 4; rn++) {
@@ -930,13 +946,11 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
             if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS)
                 continue;
             if (!is_seen_rm(&vw, ux, uy)) continue;
+            if (on_any_colony(ux, uy)) continue;
             int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-            rm_nation_plate(px, py, (int)dat_nations[rn].color,
-                         CS.units[ui].orders);
-            rd_frame f;
-            int ic = unit_icon(ui);
-            if (rd_sheet_frame(&RD.icons, ic, &f))
-                rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+            rm_unit_panel(px, py, 16, CS.units[ui].type,
+                       CS.units[ui].flags, CS.units[ui].orders,
+                       (int)dat_nations[rn].color, unit_icon(ui));
         }
     }
     /* the King's REF */
@@ -945,12 +959,10 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
         int ux = CS.units[ui].map_x, uy = CS.units[ui].map_y;
         int tx = ux - view_x, ty = uy - view_y;
         if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
+        if (on_any_colony(ux, uy)) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        rm_nation_plate(px, py, KING_COLOUR, CS.units[ui].orders);
-        rd_frame f;
-        int ic = unit_icon(ui);
-        if (rd_sheet_frame(&RD.icons, ic, &f))
-            rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+        rm_unit_panel(px, py, 16, CS.units[ui].type, CS.units[ui].flags,
+                   CS.units[ui].orders, KING_COLOUR, unit_icon(ui));
     }
     /* player units, selected last (stack top) */
     for (int pass = 0; pass < 2; pass++)

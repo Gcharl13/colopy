@@ -83,7 +83,7 @@ int render_smoke_main(const char *pak_path, const char *out_path) {
  * index plane) so the compare tool can resolve palette-model deltas. */
 int render_map_main(const char *save, const char *pak_path,
                     const char *out_path, int vx, int vy, int sel,
-                    int menu, int msel) {
+                    int menu, int msel, int blink) {
     if (strcmp(save, "sav1653") == 0)
         colopy_load_sav(sav1653, sizeof(sav1653));
     else if (strcmp(save, "savraleigh") == 0)
@@ -102,7 +102,7 @@ int render_map_main(const char *save, const char *pak_path,
         fprintf(stderr, "render: bad pak\n");
         return 1;
     }
-    rm_draw_map(vx, vy, sel, 1);
+    rm_draw_map(vx, vy, sel, blink);
     if (menu >= 0) rm_draw_pulldown(menu, msel, sel);
     FILE *o = fopen(out_path, "wb");
     if (!o) return 1;

@@ -79,7 +79,7 @@ COMBAT = """(cases) => {
 }"""
 
 
-RENDERMAP = """([save, vx, vy, sel, menu, msel]) => {
+RENDERMAP = """([save, vx, vy, sel, menu, msel, blink]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
@@ -88,7 +88,7 @@ RENDERMAP = """([save, vx, vy, sel, menu, msel]) => {
   // the C harness calls units_session_seed(): moves full, orders 0
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   G.cyclePhase = 0;               // static frame: no colour cycling
-  G.blink = true;    // the on half: the active unit is DRAWN
+  G.blink = blink === undefined || blink === null || !!blink;  // default: the on half
   G.sel = sel;
   G.zoom = 0;
   G.openMenu = menu === undefined || menu === null ? -1 : menu;
@@ -801,7 +801,8 @@ def main():
                                             int(sys.argv[4]),
                                             int(sys.argv[5]) if len(sys.argv) > 5 else 0,
                                             int(sys.argv[6]) if len(sys.argv) > 6 else -1,
-                                            int(sys.argv[7]) if len(sys.argv) > 7 else 0])
+                                            int(sys.argv[7]) if len(sys.argv) > 7 else 0,
+                                            int(sys.argv[8]) if len(sys.argv) > 8 else 1])
             browser.close()
             print(out)
             return
