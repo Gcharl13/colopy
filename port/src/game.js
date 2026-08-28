@@ -1871,8 +1871,10 @@ function colonyMarkerExtras(ctx, px, py, c) {
   // pixels are pure white + black only.
   FONT.tiny.draw(ctx, String(pop), px + 7, py + 7,
                  [ink(ik), ink(ik), ink(0)]);
+  // NO drop shadow: the baseline's glyphs carry only the font's own
+  // class-3 black outline -- the 3-offset shadow block read far heavier.
   FONT.intr.draw(ctx, c.name, px + 2, py + 16,
-                 [ink(0x0F), ink(0x0F), ink(0)], ink(0));
+                 [ink(0x0F), ink(0x0F), ink(0)]);
 }
 function onAnyColony(x, y) {
   if (G.colonies.some(c => c.x === x && c.y === y)) return true;
@@ -2236,12 +2238,17 @@ function drawSidebar(ctx) {
     // The budget is in thirds; the HUD shows whole moves, with the odd third
     // spelled out so a road march reads correctly.
     const whole = Math.floor(u.movesLeft / MOVE_UNIT), frac = u.movesLeft % MOVE_UNIT;
-    FONT.tiny.draw(ctx, `Moves: ${whole}${frac ? ` ${frac}/3` : ''}`, 270, 74, lut(HUD_INK));
-    FONT.tiny.draw(ctx, `Locat: (${u.x}, ${u.y})`, 270, 84, lut(HUD_INK));
+    // Text geometry MEASURED off the MAP baseline (glyph tops): Moves
+    // (260,69), Locat (260,77) pitch 8; the unit block (242,86)/(242,93)/
+    // (242,100) pitch 7. The ORDERS line prints in YELLOW 0x95 -- whether
+    // that highlight is active-unit-only or permanent is UNRESOLVED on one
+    // frame; this panel only ever shows the active unit either way.
+    FONT.tiny.draw(ctx, `Moves: ${whole}${frac ? ` ${frac}/3` : ''}`, 260, 69, lut(HUD_INK));
+    FONT.tiny.draw(ctx, `Locat: (${u.x}, ${u.y})`, 260, 77, lut(HUD_INK));
     // The HUD uses NAMES @NATIONABBREV ("Eng.", "Fr.", ...), not the adjective.
-    FONT.tiny.draw(ctx, `${DATA.nations[G.nation].abbrev} ${u.type}`, 244, 96, lut(HUD_INK));
-    FONT.tiny.draw(ctx, DATA.orders[u.orders].name, 244, 104, lut(HUD_INK));
-    FONT.tiny.draw(ctx, `(${terrainName(at(u.x, u.y))})`, 244, 112, lut(HUD_INK));
+    FONT.tiny.draw(ctx, `${DATA.nations[G.nation].abbrev} ${u.type}`, 242, 86, lut(HUD_INK));
+    FONT.tiny.draw(ctx, DATA.orders[u.orders].name, 242, 93, lut(0x95));
+    FONT.tiny.draw(ctx, `(${terrainName(at(u.x, u.y))})`, 242, 100, lut(HUD_INK));
     let cy = 128;
     for (const c of u.cargo) {
       const cu = unit(entryType(c));

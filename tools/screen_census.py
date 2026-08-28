@@ -202,8 +202,8 @@ REPORTS = {
     # the render matches that half rather than declaring the whole unit.
     "MAP": (None, ["--rendermap", FIXTURE, str(PAK), "{out}", "37", "23", "6",
                    "-1", "0", "0"],
-            "OPEN (10.8%), captured 2026-08-28 and taken 9,855 -> 6,946 "
-            "the same day. The view origin (37, 23) is the sweep's unique "
+            "OPEN (9.4%), captured 2026-08-28 and taken 9,855 -> 6,049 "
+            "the same day (content 2,875 + cycle 3,119 + pointer 98). The view origin (37, 23) is the sweep's unique "
             "minimum (every neighbour >= 16,428), confirming the centring "
             "model clamp(unit - (7, 6)). The fixes, each measured:\n"
             "         MAP UNITS draw through the shared func_00386A "
@@ -214,6 +214,16 @@ REPORTS = {
             "outline, no ramp (0xC28:0xA gets one ink + shadow 0). This "
             "baseline caught the blink-OFF half, so the entry renders "
             "blink 0 via the harness's new BLINK argument\n"
+            "         The LABELS lost their invented drop shadow (the "
+            "baseline carries only the glyph's own class-3 outline, -324), "
+            "and the sidebar TEXT GEOMETRY was measured off the frame: "
+            "Moves (260,69) / Locat (260,77) pitch 8, the unit block "
+            "(242,86)/(242,93)/(242,100) pitch 7, with the ORDERS line in "
+            "yellow 0x95 (-573). FLAGGED: the menu-bar face is narrower "
+            "than every shipped .FF (GAME runs 13 px vs FONTTINY's 17; "
+            "NP/SMAL/zero-tracking all measured worse) -- unidentified; "
+            "the Gold line's trailing glyph after the number is unread; "
+            "Moves 6-vs-5 semantics unread\n"
             "         RESOLVED: the 'Ocean/Sea-Lane dither band' was no "
             "band at all -- TERRAIN.SS frame 11 (Sea Lane) carries 62 "
             "pixels per tile in the WATER CYCLE ramp 120..127 (frame 10, "

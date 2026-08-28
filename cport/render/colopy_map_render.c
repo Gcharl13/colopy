@@ -507,15 +507,6 @@ static void tiny_center(const char *s, int cx, int y, const uint8_t ink[4]) {
     rd_text(&TINY, s, x, y, ink);
 }
 static rd_font M_INTR;
-static void intr_left_shadow(const char *s, int x, int y,
-                             const uint8_t ink[4], uint8_t shadow) {
-    if (!M_INTR.payload) rd_font_open(&RD.pak, "FONTINTR.FF", &M_INTR);
-    const uint8_t sh[4] = { 0xFF, shadow, shadow, shadow };
-    static const int8_t OFF[3][2] = { {1,0}, {0,1}, {1,1} };
-    for (int k = 0; k < 3; k++)
-        rd_text(&M_INTR, s, x + OFF[k][0], y + OFF[k][1], sh);
-    rd_text(&M_INTR, s, x, y, ink);
-}
 static const uint8_t *lut_of(uint8_t i) {
     static uint8_t l[4];
     l[0] = 0xFF; l[1] = i; l[2] = (uint8_t)(i - 1); l[3] = 0;
@@ -544,8 +535,12 @@ static void colony_marker_extras(int px, int py, int pop, uint8_t flags1c,
     static uint8_t fl[4];
     fl[0] = 0xFF; fl[1] = ik; fl[2] = ik; fl[3] = 0;
     rd_text(&TINY, nb, px + 7, py + 7, fl);
+    /* NO drop shadow: the baseline's glyphs carry only the font's own
+     * class-3 black outline -- the 3-offset shadow block read far heavier
+     * than DOS */
     static const uint8_t fw[4] = { 0xFF, 0x0F, 0x0F, 0 };
-    intr_left_shadow(name, px + 2, py + 16, fw, 0);
+    if (!M_INTR.payload) rd_font_open(&RD.pak, "FONTINTR.FF", &M_INTR);
+    rd_text(&M_INTR, name, px + 2, py + 16, fw);
 }
 
 void rm_hollow_rect(int x, int y, int w, int h, uint8_t c) {
@@ -563,6 +558,11 @@ static void draw_menu_bar(void) {
     };
     rd_fill(0, 7, RD_W, 1, 0);
     rd_fill(240, 8, 1, RD_GAME_H - 8, 0);
+    /* FLAGGED: the DOS menu face is NARROWER than FONTTINY (the
+     * baseline's GAME run is 13 px where FONTTINY's is 17) but is none
+     * of the shipped .FF faces -- FONT-NP scored +797 px, FONTSMAL
+     * +435, FONTTINY at zero tracking +64; plain FONTTINY is the best
+     * measured stand-in and stays until the face is identified. */
     for (int i = 0; i < 6; i++)
         rd_text(&TINY, BAR[i].t, BAR[i].x, 1, lut_of(HUD_INK));
 }
@@ -741,14 +741,22 @@ static void draw_sidebar(const rm_view *vw) {
             snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);
         else
             snprintf(buf, sizeof(buf), "Moves: %d", whole);
-        rd_text(&TINY, buf, 270, 74, lut_of(HUD_INK));
+        /* text geometry MEASURED off the MAP baseline (glyph tops):
+         * Moves (260, 69), Locat (260, 77) -- pitch 8; the unit block
+         * "Dutch Frigate" (242, 86), orders (242, 93), terrain (242,
+         * 100) -- pitch 7.  The ORDERS line prints in YELLOW 0x95
+         * (199,162,32 measured); whether that highlight is
+         * active-unit-only or permanent is UNRESOLVED on one frame --
+         * this panel only ever shows the active unit, so the port
+         * cannot tell the difference either. */
+        rd_text(&TINY, buf, 260, 69, lut_of(HUD_INK));
         snprintf(buf, sizeof(buf), "Locat: (%u, %u)", u->map_x, u->map_y);
-        rd_text(&TINY, buf, 270, 84, lut_of(HUD_INK));
+        rd_text(&TINY, buf, 260, 77, lut_of(HUD_INK));
         snprintf(buf, sizeof(buf), "%s %s", dat_nations[cs_nation()].abbrev,
                  dat_units[u->type].name);
-        rd_text(&TINY, buf, 244, 96, lut_of(HUD_INK));
+        rd_text(&TINY, buf, 242, 86, lut_of(HUD_INK));
         rd_text(&TINY, dat_orders[u->orders < DAT_ORDERS_COUNT ? u->orders : 0]
-                           .name, 244, 104, lut_of(HUD_INK));
+                           .name, 242, 93, lut_of(0x95));
         /* terrainName (game.js:461) */
         int v = map_at(u->map_x, u->map_y), t = v & 0x1F;
         const char *tn;
@@ -759,7 +767,7 @@ static void draw_sidebar(const rm_view *vw) {
             tn = dat_terrain_forested[(((t >= 16) ? (t & 7) | 8 : t) - 8) & 7];
         else tn = dat_terrain_other[t - 24];   /* Arctic/Ocean/Sea Lane */
         snprintf(buf, sizeof(buf), "(%s)", tn);
-        rd_text(&TINY, buf, 244, 112, lut_of(HUD_INK));
+        rd_text(&TINY, buf, 242, 100, lut_of(HUD_INK));
         /* carried units (JS u.cargo) — CR.unit_pass, flagged: labels
          * shortened to the entry name */
         int cy = 128;
