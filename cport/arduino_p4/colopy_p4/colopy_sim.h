@@ -67,6 +67,7 @@ typedef struct {
      * production panel appends THIS as its crossed run (@0x027604). */
     int32_t over_amt[N_GOODS];
     int32_t sec_good, sec_amount; /* the centre's secondary yield (@0xA343) */
+    int32_t depletion_pts;        /* [0xA896]: mineral wear this turn */
 } colony_output;
 
 /* colonyProduce (game.js:2630) over the RECORD form; ci indexes CS.colonies

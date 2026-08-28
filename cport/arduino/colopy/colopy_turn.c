@@ -296,14 +296,24 @@ void cr_reset_from_load(void) {
 }
 
 /* The importer's RUNTIME unit setup (mkUnit game.js:660 + the import
- * loop 10459: movesLeft = movement*3, orders = 0 — the save's own bytes
- * for both fields are DISCARDED).  Called by the session entry points
- * (host --turns/--saveout, the Teensy shell) after colopy_load_sav, NOT
- * by the loader: the Phase-1 contract keeps load→save byte-identical. */
+ * loop 10459: movesLeft = movement*3).  Called by the session entry
+ * points (host --turns/--saveout, the Teensy shell) after
+ * colopy_load_sav, NOT by the loader: the Phase-1 contract keeps
+ * load→save byte-identical.
+ *
+ * ORDERS (C1.18, 2026-08-28): the record byte +0x08 indexes the same
+ * @ORDERS table the status letter reads (0 none / 1 Sentry / 5 Fortify /
+ * 6 Fortified ...), so those stable states are RESTORED rather than
+ * discarded — a fortified defender keeps its +50%/+4 combat standing
+ * across a load.  The other values (2 Trade Route, 3 Go To, 4 Live In
+ * Village, 7..9 build/plow/road, 11/12 engine-internal "no orders")
+ * carry companion state (goals, work counters) whose restore semantics
+ * are not yet byte-read — those still reset to 0, FLAGGED. */
 void units_session_seed(void) {
     for (int i = 0; i < CS.n_units; i++) {
         CS.units[i].moves_remaining = (uint8_t)unit_full_moves(i);
-        CS.units[i].orders = 0;
+        uint8_t o = CS.units[i].orders;
+        if (o != 1 && o != 5 && o != 6) CS.units[i].orders = 0;
     }
 }
 
@@ -853,27 +863,49 @@ void colony_turn(int ci) {
     }
     resolve();
     /* tutorial bindings: NOT ported (see header) */
-    /* @DEPLETION roll per worked silver cell, 1/50 (flagged in JS) */
-    for (int k = 0; k < 8; k++) {
-        int w = (uint8_t)c->tiles[k];
-        if (w == 0xFF || w >= c->population) continue;
-        if (c->occupation[w] != 7) continue;     /* @JOB row 7 = Silver Miner */
-        static const int8_t DX[8] = {0,1,0,-1,-1,1,1,-1};
-        static const int8_t DY[8] = {-1,0,1,0,-1,-1,1,1};
-        int mi = (c->map_y + DY[k]) * COLOPY_MAP_W + (c->map_x + DX[k]);
-        if (!(CS.improve[mi] & 0x80) && (int)((rng_next() * 50u) >> 15) == 0) {
-            CS.improve[mi] |= 0x80;
-            cev("DEPLETION", 0, 0, c->name, 0);
-        }
+    /* MINE DEPLETION — the full byte model (2026-08-28), replacing the
+     * old flagged 1/50-per-silver-cell stand-in:
+     *   colony_produce accrued o.depletion_pts ([0xA896]) off the worked
+     *   minerals; for each point the turn rolls random_int(0,
+     *   difficulty+1) (@0x2EA62) and a NONZERO roll bumps the record's
+     *   +0x97 counter (@0x2EA7B); at 50 it wraps (@0x2EA8A) and the
+     *   action func_02D30A marks EVERY worked ore/silver cell whose
+     *   detail is Minerals (6) or a Depleted Mine (12) with improve bit
+     *   4 (@0x2D383) — which kills the resource bonus and shows the
+     *   Depleted Mine sprite through map_detail_id's imp&4 gate — and
+     *   emits @DEPLETION (string 0xD75) once per turn (@0x2D3A1). */
+    for (int p = 0; p < o.depletion_pts; p++) {
+        if (rng_range(0, cs_difficulty() + 1) == 0) continue;
+        c->depletion_counter++;
+        if (c->depletion_counter < 50) continue;
+        c->depletion_counter -= 50;
+        int fired = 0;
+        for (int dy = 0; dy < 5; dy++)
+            for (int dx = 0; dx <= 5; dx++) {   /* the engine scans x 0..5 */
+                int k = -1;
+                for (int s = 0; s < 8; s++)
+                    if (colony_cell_dx[s] == dx - 2 &&
+                        colony_cell_dy[s] == dy - 2) {
+                        int w = (uint8_t)c->tiles[s];
+                        if (w != 0xFF && w < c->population) k = w;
+                        break;
+                    }
+                if (k < 0) continue;
+                int job = c->occupation[k];
+                if (job != 6 && job != 7) continue;
+                int x = c->map_x + dx - 2, y = c->map_y + dy - 2;
+                int det = map_detail_id(x, y, map_at(x, y));
+                if (det != 6 && det != 12) continue;
+                CS.improve[y * COLOPY_MAP_W + x] |= 4;
+                if (!fired) { cev("DEPLETION", 0, 0, c->name, 0); fired = 1; }
+            }
     }
     r->crosses_turn = o.crosses;
-    {
-        int bells = o.bells;
-        if (has_bld(ci, BLD_NEWSPAPER)) bells *= 2;
-        else if (has_bld(ci, BLD_PRESS)) bells = bells * 3 / 2;
-        r->bells_turn = bells;
-        update_sol(ci, bells);
-    }
+    /* bells: the Press/Newspaper multipliers now live INSIDE
+     * colony_produce (@0xA587..@0xA5AC act on the total there) — applying
+     * them again here double-counted */
+    r->bells_turn = o.bells;
+    update_sol(ci, o.bells);
     sol_announce(ci);
     {
         /* the @INEFFICIENT latch reads the tory penalty off the runtime sol */

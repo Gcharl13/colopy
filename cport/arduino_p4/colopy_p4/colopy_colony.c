@@ -298,6 +298,10 @@ static int res_bonus(int res, int col) {
     return RES_BONUS[res & 0x0F][col & 0x0F];
 }
 
+/* the [0xA896] depletion-pressure accumulator — zeroed by colony_produce,
+ * fed by field_yield, read back into colony_output */
+static int dep_accrue;
+
 /* fieldYield — the FULL func_009B9C chain, byte-read end to end
  * @0x9B9C..@0x9FFB and cross-checked against every per-tile badge in the
  * COLONY_SHIP baseline's worked-tile grid (Vlissingen: farmers 6/5,
@@ -359,13 +363,18 @@ int field_yield(const ColonyRecord *c, int sol, int job,
         if (bonus < 0) yld <<= 1;
         else { if (expert) bonus <<= 1; yld += bonus; }
     }
+    /* depletion pressure accrues per worked mineral (@0x9E13..@0x9E41 on
+     * [0xA896], zeroed at each produce @0xA22C): ore on Minerals +1,
+     * silver on Minerals +2, silver on a Depleted Mine +1 */
+    if (res == 6) {
+        if (col == 6) dep_accrue += 1;
+        else if (col == 7) dep_accrue += 2;
+    }
+    if (res == 0xC && col == 7) dep_accrue += 1;
     int no_mine = 0;
-    if (col == 7) {
-        if (map_improve(x, y) & DEPLETED_BIT) yld = 1;  /* port marker */
-        if (res == -1 && !(imp & 4)) {
-            no_mine = 1;
-            if (yld != 0) yld = ((imp & 0x0A) || expert) ? 1 : 0;
-        }
+    if (col == 7 && res == -1 && !(imp & 4)) {
+        no_mine = 1;
+        if (yld != 0) yld = ((imp & 0x0A) || expert) ? 1 : 0;
     }
     if (col == 5) yld <<= 1;
     if (yld > 0 && !no_mine) {
@@ -564,6 +573,7 @@ void colony_produce(int ci, colony_output *r) {
     memset(r, 0, sizeof(*r));
     r->crosses = 1;   /* the churchless base cross, census3 [0x8DEA]=1 */
     r->sec_good = -1;
+    dep_accrue = 0;   /* [0xA896] zeroed at produce start (@0xA22C) */
 
     /* centre tile — compute_colony_center_yields func_00A222, byte-read
      * END TO END @0xA222..@0xA3D1 (2026-08-28; the old plow/river/runtime-
@@ -682,6 +692,7 @@ void colony_produce(int ci, colony_output *r) {
         r->out[g] = converter_resolve(r, c, raw, r->out[g], factory);
     }
     for (int i = 0; i < N_GOODS; i++) r->out[i] -= r->consumed[i];
+    r->depletion_pts = dep_accrue;              /* [0xA896] after the fields */
     r->eaten = 2 * c->population;               /* BYTE_VERIFIED @0xA5F2 */
     r->horses_bred = horses_bred(ci, r->gross[FOOD], r->eaten);
     /* the panel's horses cell: bred WANT into production, the unfed rest

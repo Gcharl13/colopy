@@ -3054,6 +3054,9 @@ function improvementBonus(x, y, g) {
   if ((imp & PLOW_BIT) && g <= 3) return bonus;
   return 0;
 }
+// the [0xA896] depletion-pressure accumulator -- zeroed by colonyProduce,
+// fed by fieldYield, read back into the produce result
+let depAccrue = 0;
 // compute_terrain_yield for one field worker -- the FULL func_009B9C chain,
 // byte-read end to end @0x9B9C..@0x9FFB and cross-checked against every
 // per-tile badge in the COLONY_SHIP baseline's worked-tile grid
@@ -3096,16 +3099,20 @@ function fieldYield(c, p) {
     if (bonus < 0) y *= 2;
     else { if (expert) bonus *= 2; y += bonus; }
   }
+  // depletion pressure accrues per worked mineral (@0x9E13..@0x9E41 on
+  // [0xA896], zeroed at each produce @0xA22C): ore on Minerals +1, silver
+  // on Minerals +2, silver on a Depleted Mine +1
+  if (res === 6) {
+    if (col === 6) depAccrue += 1;
+    else if (col === 7) depAccrue += 2;
+  }
+  if (res === 12 && col === 7) depAccrue += 1;
   // silver with no detail and no mine bit (imp&4): 1 with a road or an
-  // expert, else 0, and the improvement block is skipped (@0x9E41..@0x9EA6;
-  // the port's own 0x80 depletion marker stays on top).
+  // expert, else 0, and the improvement block is skipped (@0x9E41..@0x9EA6)
   let noMine = false;
-  if (col === 7) {
-    if (imp & 0x80) y = 1;
-    if (res === -1 && !(imp & 4)) {
-      noMine = true;
-      if (y !== 0) y = ((imp & 0x0A) || expert) ? 1 : 0;
-    }
+  if (col === 7 && res === -1 && !(imp & 4)) {
+    noMine = true;
+    if (y !== 0) y = ((imp & 0x0A) || expert) ? 1 : 0;
   }
   if (col === 5) y *= 2;                 // the LUMBER column doubles @0x9EAB
   if (y > 0 && !noMine) {                // improvements @0x9EBD..@0x9F4C
@@ -3229,6 +3236,7 @@ function colonyProduce(c) {
   // plaza strip (census3_colony). The base cross lives in the tally so the
   // strip and the immigration sum read the same number.
   const tally = { [HAMMERS]: 0, [BELLS]: 0, [CROSSES]: 1, [TEACHING]: 0 };
+  depAccrue = 0;                    // [0xA896] zeroed at produce start (@0xA22C)
   // The CENTRE TILE produces with no worker -- and a SECONDARY good that
   // goes straight into production (@0xA3F7..@0xA409). See centreYieldCore.
   const cyc = centreYieldCore(c);
@@ -3324,6 +3332,7 @@ function colonyProduce(c) {
   }
   return { out, gross, consumed, tally, centre, eaten, horsesBred, outages,
            outageAmt, overAmt, secGood: cyc.good, secAmount: cyc.amount,
+           depletionPts: depAccrue,
            netFood: out[GOOD.FOOD] - eaten };
 }
 // The centre tile -- compute_colony_center_yields func_00A222, byte-read
@@ -3782,22 +3791,37 @@ function colonyTurn(c) {
                  STRING1: c.name, STRING2: DATA.nations[G.nation].homeport });
   if (c.colonists.length >= 3) tutOnce(7, { STRING0: c.name });
   if (r.netFood < 0) tutOnce(16);
-  // @DEPLETION roll: each worked silver cell may play out (1/50 per turn,
-  // flagged -- the engine's odds live with the unread resource plane).
-  for (const p of c.colonists) {
-    if (!p.cell || p.job !== 'Silver Miner') continue;
-    const mi = (c.y + p.cell[1]) * MAP.w + (c.x + p.cell[0]);
-    if (!(IMPROVE[mi] & 0x80) && Math.floor(Math.random() * 50) === 0) {
-      IMPROVE[mi] |= 0x80;
-      showEvent('DEPLETION', { STRING0: c.name });
+  // MINE DEPLETION -- the full byte model (2026-08-28), replacing the old
+  // flagged 1/50-per-silver-cell stand-in: colonyProduce accrued
+  // r.depletionPts ([0xA896]) off the worked minerals; each point rolls
+  // random_int(0, difficulty+1) (@0x2EA62) and a NONZERO roll bumps the
+  // record's +0x97 counter (@0x2EA7B); at 50 it wraps (@0x2EA8A) and the
+  // action func_02D30A marks EVERY worked ore/silver cell whose detail is
+  // Minerals (6) or a Depleted Mine (12) with improve bit 4 (@0x2D383) --
+  // killing the resource bonus and showing the Depleted Mine through
+  // detailId's imp&4 gate -- and emits @DEPLETION once (@0x2D3A1).
+  for (let pt = 0; pt < (r.depletionPts || 0); pt++) {
+    if (Math.floor(Math.random() * (G.difficulty + 2)) === 0) continue;
+    c.depletionCounter = (c.depletionCounter || 0) + 1;
+    if (c.depletionCounter < 50) continue;
+    c.depletionCounter -= 50;
+    let fired = false;
+    for (const p of c.colonists) {
+      if (!p.cell) continue;
+      const ji = jobIndex(p.job);
+      if (ji !== 6 && ji !== 7) continue;
+      const tx = c.x + p.cell[0], ty = c.y + p.cell[1];
+      const det = detailId(tx, ty, at(tx, ty));
+      if (det !== 6 && det !== 12) continue;
+      IMPROVE[ty * MAP.w + tx] |= 4;
+      if (!fired) { showEvent('DEPLETION', { STRING0: c.name }); fired = true; }
     }
   }
   c.crossesTurn = r.tally[CROSSES];
-  // Printing Press adds 50% to the colony's bells and a Newspaper doubles them
-  // (per-colony building bits 0x13 / 0x14, founding_fathers.md §3).
-  let bells = r.tally[BELLS];
-  if (c.buildings.includes('Newspaper')) bells *= 2;
-  else if (c.buildings.includes('Printing Press')) bells = Math.floor(bells * 3 / 2);
+  // bells: the Press/Newspaper multipliers now live INSIDE colonyProduce
+  // (@0xA587..@0xA5AC act on the total there) -- applying them again here
+  // double-counted
+  const bells = r.tally[BELLS];
   c.bellsTurn = bells;
   r.tally[BELLS] = bells;
   updateSoL(c, r.tally[BELLS]);
@@ -11699,6 +11723,7 @@ function importSav(bytes) {
       });
       continue;
     }
+    const depletionCounter = d[b + 0x97];   // +0x97, the mine-wear counter
     const colonists = [];
     for (let k = 0; k < pop; k++) {
       const occ = d[b + 0x20 + k];
@@ -11731,6 +11756,7 @@ function importSav(bytes) {
                 // +0x1C flags byte, kept verbatim: the map's population-number
                 // ink reads bits 4/2 (func_004314 @0x00448B-@0x0044A4).
                 recFlags1c: d[b + 0x1C],
+                depletionCounter,
                 building: (DATA.buildings[bip] || {}).name || null,
                 // FLOOR, not round: the DOS colony screen prints 36% for
                 // Isabella (107/292 = 36.64) and 5% for Vlissingen
@@ -11791,6 +11817,14 @@ function importSav(bytes) {
       }
       const u = mkUnit(type.name, x, y);
       u.__rec = i;                       // for the chain-order pass below
+      // ORDERS (C1.18, 2026-08-28): record byte +0x08 indexes the same
+      // @ORDERS table as the status letter (1 Sentry / 5 Fortify /
+      // 6 Fortified) -- those stable states are RESTORED, so a fortified
+      // defender keeps its combat standing across a load. Values with
+      // unread companion state (trade route, goto, build/plow/road,
+      // the 11/12 internals) still reset to 0, FLAGGED.
+      const ro = d[b + 0x08];
+      if (ro === 1 || ro === 5 || ro === 6) u.orders = ro;
       const prof = SAV_PROFESSION(d[b + 0x17]);
       if (prof) u.profession = prof;
       if (d[b + 0x15]) u.tools = d[b + 0x15];
