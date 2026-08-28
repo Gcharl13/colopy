@@ -101,7 +101,13 @@ REPORTS = {
            "measured off the baseline (202 -> 97). ~15 px of glyph-scale "
            "residual remains untriaged."),
     "F7": ("F7", ["--renderreport", FIXTURE, str(PAK), "{out}", "F7"],
-           "OPEN (0.2%), down from 2.5%. C4.1 is CLOSED: the func_00386A "
+           "CLOSED AT THE CURSOR FLOOR -- 82 px, every one of them the DOS "
+           "mouse pointer: the F7 grid is PIXEL-PERFECT. The last 81 px "
+           "were the merged-hold crate count (the runtime hold merges "
+           "same-good slots via hold_add, so rec 0's two full fur holds "
+           "drew as ONE crate; the draw now expands one crate per 100 "
+           "plus a partial, per record semantics). C4.1's decode: the "
+           "func_00386A "
            "panel composite (spec/ui/render_primitives §1b) plus four "
            "byte-verified findings from the F7 caller func_03954C took "
            "1,100 -> 163 px, of which 82 is the mouse pointer:\n"

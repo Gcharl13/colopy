@@ -392,9 +392,20 @@ static void draw_f7(void) {
         for (int k = 0; k < CR.unit_n_hold[ui]; k++) {
             const hold_slot *h = &CR.unit_hold[ui][k];
             if (h->qty <= 0) continue;
-            rd_blit(&RD.icons, (h->qty >= 100 ? 22 : 38) + h->good,
-                    cx, y + 3);
-            cx += F7_CARGO_PITCH;
+            /* the runtime hold MERGES same-good slots (hold_add), but the
+             * engine draws per RECORD slot -- one crate per 100 plus a
+             * partial (rec 0's two full fur holds sit merged as
+             * {furs, 200} and the baseline shows TWO crates) */
+            int q = h->qty;
+            while (q >= 100) {
+                rd_blit(&RD.icons, 22 + h->good, cx, y + 3);
+                cx += F7_CARGO_PITCH;
+                q -= 100;
+            }
+            if (q > 0) {
+                rd_blit(&RD.icons, 38 + h->good, cx, y + 3);
+                cx += F7_CARGO_PITCH;
+            }
         }
         for (int k = 0; k < CR.unit_n_pass[ui]; k++) {
             rd_blit(&RD.icons, F7_CARGO_ICON, cx, y + 3);

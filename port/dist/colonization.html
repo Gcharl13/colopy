@@ -4812,9 +4812,16 @@ function drawColonyDock(ctx, c) {
       if (cu) sheetFrame(ctx, 'ICONS', cu.icon, x, 168);
       continue;
     }
-    const slot = hold[k - taken];
-    if (slot) {
-      const f = (slot.qty >= 100 ? 0x16 : 0x26) + slot.good;
+    // The runtime hold MERGES same-good slots; the engine draws per RECORD
+    // slot -- expand one crate per 100 plus a partial, like the F7 grid.
+    const crates = [];
+    for (const h of hold) {
+      let q = h.qty;
+      while (q >= 100) { crates.push(0x16 + h.good); q -= 100; }
+      if (q > 0) crates.push(0x26 + h.good);
+    }
+    const f = crates[k - taken];
+    if (f !== undefined) {
       const [fw] = frameSize('ICONS', f);
       // Crate placement @0x28063-@0x280AF: x centred as cellx + (cellw-1)/2
       // - w/2 + 1 = x + 5 - w/2, y = the cell y verbatim -- NO vertical
@@ -10833,10 +10840,22 @@ function drawNavalReport(ctx) {
     // generic crate (icon 22) after the goods.
     let cx = F7_CARGO_X;
     if (s.u.ship) {
+      // The runtime hold MERGES same-good slots (holdAdd), but the engine
+      // draws per RECORD slot -- one crate per 100 plus a partial (rec 0's
+      // two full fur holds sit merged as {furs, 200} and the baseline shows
+      // TWO crates).
       (s.u.hold || []).forEach((h) => {
         if (h.qty <= 0) return;
-        sheetFrame(ctx, 'ICONS', (h.qty >= 100 ? 22 : 38) + h.good, cx, y + 3);
-        cx += F7_CARGO_PITCH;
+        let q = h.qty;
+        while (q >= 100) {
+          sheetFrame(ctx, 'ICONS', 22 + h.good, cx, y + 3);
+          cx += F7_CARGO_PITCH;
+          q -= 100;
+        }
+        if (q > 0) {
+          sheetFrame(ctx, 'ICONS', 38 + h.good, cx, y + 3);
+          cx += F7_CARGO_PITCH;
+        }
       });
       (s.u.cargo || []).forEach(() => {
         sheetFrame(ctx, 'ICONS', F7_CARGO_ICON, cx, y + 3);

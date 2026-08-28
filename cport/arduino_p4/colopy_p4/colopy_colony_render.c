@@ -913,10 +913,21 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                                 168);
                     continue;
                 }
-                int hs = k - taken;
-                if (hs < CR.unit_n_hold[ui]) {
-                    const hold_slot *sl = &CR.unit_hold[ui][hs];
-                    int f = (sl->qty >= 100 ? 0x16 : 0x26) + sl->good;
+                /* the runtime hold MERGES same-good slots; the engine
+                 * draws per RECORD slot -- expand one crate per 100 plus
+                 * a partial, like the F7 grid */
+                int hs = k - taken, acc = 0, f = -1;
+                for (int m = 0; m < CR.unit_n_hold[ui] && f < 0; m++) {
+                    const hold_slot *sl = &CR.unit_hold[ui][m];
+                    int q = sl->qty;
+                    while (q >= 100 && f < 0) {
+                        if (acc++ == hs) f = 0x16 + sl->good;
+                        q -= 100;
+                    }
+                    if (q > 0 && f < 0 && acc++ == hs)
+                        f = 0x26 + sl->good;
+                }
+                if (f >= 0) {
                     rd_frame ff;
                     rd_sheet_frame(&RD.icons, f, &ff);
                     /* crate placement @0x28063-@0x280AF: x centred as
