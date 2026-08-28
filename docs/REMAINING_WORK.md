@@ -215,7 +215,13 @@ easy-difficulty +2/+1 field bonus is GONE 2026-08-28 — not in the bytes; the
 whole field/indoor/centre chain is now the byte model (`func_009B9C`,
 `func_009FFC`, `func_00A222`, `func_008E02`, see spec/systems/colony.md);
 Scout in the village-teachable list
-uncited (`:2679`); school-guard timing (`:2838`); 199-cap / 200-food-per-colonist
+uncited (`:2679`); the SCHOOL PASS rewritten to the byte model 2026-08-28
+(@0x2DDAC..@0x2E016: per-TEACHER +0x60 nibble counters that tick for every
+colonist and persist in the save, flat 3-graduations cap, RANDOM student
+from the unskilled pool, @TRAINFAIL only on an empty pool, unskilled
+teachers teach at the Servant class via the 0x1C->0x19 remap; the old
+first-student/per-student-counter model is gone); school-guard timing
+(`:2838`); 199-cap / 200-food-per-colonist
 are the manual's, not byte-located (`:2919`); Custom-House gate on over-100
 disposal open (`:2930`); `@CARGOREADY1/2` and `@SPOIL1-4` selectors unread
 (`:2958`, `:2987`); x32 hammer scale for buildable units inferred from six ship

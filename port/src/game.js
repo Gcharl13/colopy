@@ -3357,43 +3357,55 @@ function teacherGuard(c, p) {
   }
   return false;
 }
+// The schoolhouse pass -- REWRITTEN 2026-08-28 to the byte model
+// (@0x2DDAC..@0x2E016); the old port model differed in four ways, all
+// corrected:
+//   - the taught counter is the TEACHER's own +0x60 nibble (every
+//     colonist's nibble ticks +1 per turn, a teacher resets his on
+//     graduating) -- not a runtime per-STUDENT counter;
+//   - a teacher whose class threshold his nibble reaches produces one
+//     graduation, at most THREE per colony per turn (@0x2DE5B), no
+//     school-level faculty filter in this pass (the level gates live at
+//     assignment); an unskilled teacher teaches at the Servant class
+//     (0x1C->0x19 remap @0x2DE64); thresholds 4/6/8 by @JOB class;
+//   - the student is picked UNIFORMLY AT RANDOM (random_int @0x2DEC5)
+//     from the unskilled colonists (profession none / Free / Servant /
+//     Criminal) and removed from the pool by shift;
+//   - @TRAINFAIL fires only when a graduation pops with the pool EMPTY.
 function runSchool(c) {
-  const level = schoolLevel(c);
-  if (!level) return;
-  // Teachers: mastered professions only, capped at the building's faculty.
-  const faculty = c.colonists.filter(p => p.job === 'Teacher' && p.profession &&
-                                          professionClass(p.profession) <= level)
-                             .slice(0, level);
-  if (!faculty.length) return;
-  for (const teacher of faculty) {
-    const need = TEACH_TURNS[professionClass(teacher.profession)];
-    if (!need) continue;
-    const student = c.colonists.find(p => p !== teacher && p.job !== 'Teacher' &&
-      (!p.profession || STUDENT_TIERS.includes(p.profession)));
-    if (!student) { showEvent('TRAINFAIL', {}); continue; }
-    student.taught = (student.taught || 0) + 1;
-    if (student.taught < need) continue;
-    student.taught = 0;
-    // A student below expert climbs one tier; a Free Colonist takes the
-    // teacher's own expertise.
-    // Graduation ladder (byte-verified @0x02DF00/@0x02DF35/@0x02DF70): a
-    // student below expert climbs one tier, a Free Colonist takes the
-    // teacher's own expertise -- each rung with its own message.
-    const rung = STUDENT_TIERS.indexOf(student.profession);
-    if (rung === 0) {
-      student.profession = STUDENT_TIERS[1];
+  const UNSKILLED = [null, 'Free Colonists', 'Indentured Servants',
+                     'Petty Criminals'];
+  const ready = [];
+  const cand = [];
+  for (const p of c.colonists) {
+    let cnt = ((p.work || 0) & 0xF) + 1;
+    if (UNSKILLED.includes(p.profession)) cand.push(p);
+    if (p.job === 'Teacher' && ready.length < 3) {
+      const tprof = p.profession || 'Indentured Servants';
+      const cls = professionClass(tprof);
+      if (cls < 4) {
+        const need = cls === 1 ? 4 : cls === 2 ? 6 : 8;
+        if (cnt >= need) { ready.push(tprof); cnt = 0; }
+      }
+    }
+    p.work = cnt & 0xF;
+  }
+  for (const tprof of ready) {
+    if (!cand.length) { showEvent('TRAINFAIL', { STRING0: c.name }); break; }
+    const pick = Math.floor(Math.random() * cand.length);
+    const s = cand[pick];
+    if (s.profession === 'Petty Criminals') {
+      s.profession = 'Indentured Servants';
       showEvent('TRAINCRIMINAL', { STRING0: c.name });
-    } else if (rung === 1) {
-      // the engine writes profession 0x1C = NONE (@0x2DF35 `push 0x1c`),
-      // not the Free Colonists row -- a graduated servant carries no
-      // specialty byte at all
-      student.profession = null;
+    } else if (s.profession === 'Indentured Servants') {
+      // the engine writes profession 0x1C = NONE (@0x2DF35 `push 0x1c`)
+      s.profession = null;
       showEvent('TRAININDENTURED', { STRING0: c.name });
     } else {
-      student.profession = teacher.profession;
-      // @TRAINPROFESSION: STRING0 is the COLONY, STRING1 the profession.
-      showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: student.profession });
+      s.profession = tprof;
+      showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: tprof });
     }
+    cand.splice(pick, 1);
   }
 }
 
@@ -11660,6 +11672,8 @@ function importSav(bytes) {
     for (let k = 0; k < pop; k++) {
       const occ = d[b + 0x20 + k];
       colonists.push({ type: 'Colonists',
+                       // +0x60 job-duration nibble (the teaching counter)
+                       work: (d[b + 0x60 + (k >> 1)] >> ((k & 1) ? 4 : 0)) & 0xF,
                        // profession byte 0 = Expert Farmers here too: the
                        // DOS field-yield expert test is plain byte equality
                        // (@0x9CDC) and the Vlissingen scene badges 6/5 only

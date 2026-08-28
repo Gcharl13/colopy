@@ -655,57 +655,81 @@ int colony_school_level(int ci) { return school_level(ci); }
 int colony_profession_class(int prof) {
     return profession_class((uint8_t)prof);
 }
-static int tier_rank(uint8_t prof) {             /* -1 unless a student tier */
-    for (int t = 0; t < 3; t++)
-        if (TIER_ROW[t] >= 0 && prof >= 1 && prof < DAT_JOBEXPERT_COUNT &&
-            strcmp(dat_jobexpert[prof], dat_jobexpert[TIER_ROW[t]]) == 0)
-            return t;
-    return -1;
+/* the +0x60 per-colonist nibble (unpack/pack_nibble_at_60, func_008F2A /
+ * func_008F6C, thunks 0x181F:0xD1C / 0x181F:0xA7E) */
+static int nib60(const ColonyRecord *c, int k) {
+    int v = c->work_duration[k >> 1];
+    return ((k & 1) ? (v >> 4) : v) & 0xF;
 }
+static void set_nib60(ColonyRecord *c, int k, int v) {
+    v &= 0xF;
+    if (k & 1) c->work_duration[k >> 1] =
+        (uint8_t)((c->work_duration[k >> 1] & 0x0F) | (v << 4));
+    else c->work_duration[k >> 1] =
+        (uint8_t)((c->work_duration[k >> 1] & 0xF0) | v);
+}
+
+/* The schoolhouse pass — REWRITTEN 2026-08-28 to the byte model
+ * (@0x2DDAC..@0x2E016 in the per-colony turn processor); the old port
+ * model differed in four ways, all corrected:
+ *   - the taught counter is the TEACHER's own +0x60 nibble (every
+ *     colonist's nibble ticks +1 per turn, @0x2DE19/@0x2DDD6; a teacher
+ *     resets his on graduating, @0x2DDD1) — not a runtime per-STUDENT
+ *     array;
+ *   - a teacher whose class threshold his nibble reaches produces one
+ *     graduation, at most THREE per colony per turn (@0x2DE5B), with no
+ *     school-level faculty filter in this pass (the level gates live at
+ *     assignment); an unskilled teacher teaches at the Servant class
+ *     (the 0x1C->0x19 remap @0x2DE64); thresholds 4/6/8 by class
+ *     (@0x2DDB4/@0x2DE98/@0x2DE8E);
+ *   - the student is picked UNIFORMLY AT RANDOM (random_int @0x2DEC5)
+ *     from the colony's unskilled colonists (profession 19/25/26/28,
+ *     @0x2DE2B..@0x2DE3D) and removed from the pool by shift
+ *     (@0x2DFBE..@0x2DFD8);
+ *   - @TRAINFAIL fires only when a graduation pops with the pool EMPTY
+ *     (@0x2DFE9..@0x2DFF3), once per turn. */
 static void run_school(int ci) {
-    static const int TEACH_TURNS[4] = { 0, 4, 6, 8 };
     ColonyRecord *c = &CS.colonies[ci];
-    colony_rt *r = &CR.col[ci];
-    int level = school_level(ci);
-    if (!level) return;
+    int ready[3], nready = 0;
+    int cand[32], ncand = 0;
     resolve();
-    int faculty[3], nf = 0;
-    for (int k = 0; k < c->population && nf < level; k++)
-        if (c->occupation[k] == JOB_TEACHER && c->profession[k] &&
-            profession_class(c->profession[k]) <= level)
-            faculty[nf++] = k;
-    if (!nf) return;
-    for (int f = 0; f < nf; f++) {
-        int teacher = faculty[f];
-        int cls = profession_class(c->profession[teacher]);
-        if (cls < 1 || cls > 3) continue;
-        int need = TEACH_TURNS[cls];
-        int student = -1;
-        for (int k = 0; k < c->population; k++) {
-            if (k == teacher || c->occupation[k] == JOB_TEACHER) continue;
-            if (!c->profession[k] || tier_rank(c->profession[k]) >= 0) {
-                student = k;
-                break;
+    for (int k = 0; k < c->population && k < 32; k++) {
+        int cnt = nib60(c, k) + 1;
+        int occ = c->occupation[k];
+        int prof = c->profession[k];
+        if (prof == 19 || prof == 25 || prof == 26 || prof == 28)
+            cand[ncand++] = k;
+        if (occ == JOB_TEACHER && nready < 3) {
+            int tprof = prof == 28 ? 25 : prof;
+            int cls = (tprof >= 0 && tprof < DAT_JOBEXPERT_COUNT)
+                          ? (int)dat_jobtier[tprof] : 4;
+            if (cls < 4) {
+                int need = cls == 1 ? 4 : cls == 2 ? 6 : 8;
+                if (cnt >= need) { ready[nready++] = tprof; cnt = 0; }
             }
         }
-        if (student < 0) { cev("TRAINFAIL", 0, 0, 0, 0); continue; }
-        r->taught[student]++;
-        if (r->taught[student] < need) continue;
-        r->taught[student] = 0;
-        int rung = tier_rank(c->profession[student]);
-        if (rung == 0) {
-            c->profession[student] = (uint8_t)TIER_ROW[1];
+        set_nib60(c, k, cnt);
+    }
+    for (int g = 0; g < nready; g++) {
+        if (ncand == 0) { cev("TRAINFAIL", 0, 0, c->name, 0); break; }
+        int pick = rng_range(0, ncand - 1);
+        int s = cand[pick];
+        int sp = c->profession[s];
+        if (sp == 26) {
+            c->profession[s] = 25;
             cev("TRAINCRIMINAL", 0, 0, c->name, 0);
-        } else if (rung == 1) {
+        } else if (sp == 25) {
             /* the engine writes profession 0x1C = NONE (@0x2DF35
              * `push 0x1c`), not the Free Colonists row */
-            c->profession[student] = 28;
+            c->profession[s] = 28;
             cev("TRAININDENTURED", 0, 0, c->name, 0);
         } else {
-            c->profession[student] = c->profession[teacher];
+            c->profession[s] = (uint8_t)ready[g];
             cev("TRAINPROFESSION", 0, 0, c->name,
-                    dat_jobexpert[c->profession[teacher]]);
+                    dat_jobexpert[ready[g]]);
         }
+        for (int j = pick; j < ncand - 1; j++) cand[j] = cand[j + 1];
+        ncand--;
     }
 }
 
