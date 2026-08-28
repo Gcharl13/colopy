@@ -11270,8 +11270,21 @@ function countProfession(job) {
 // unidentified in the repo, so the rate below is a flagged placeholder: one
 // cross per colony per turn, plus one more per Church and per Cathedral.
 // Tracked in docs/UI_AUDIT_TRACKER.md.
+// BYTE_VERIFIED end to end 2026-08-28 (func_035D9A): count = colony
+// populations + ONE PER OWNED UnitRecord, owner nibble +0x03 only
+// (@0x35DDE..@0x35DF8) -- Europe-parked ships, their riders, in-port dock
+// units and riders aboard on-map ships ALL count (C4.29: the port's
+// on-map-only membership read 130 where the fixture's stored 284 = 2*138+8).
+// Then min(2*count+8, 4000), *(8-difficulty)/8 human, *2/3 England.
+function immigrationCount() {
+  let n = G.colonies.reduce((s, c) => s + c.colonists.length, 0)
+        + G.units.length + G.europe.length + G.dockUnits.length;
+  for (const u of G.units) if (u.ship && u.cargo) n += u.cargo.length;
+  for (const e of G.europe) n += (e.passengers || []).length;
+  return n;
+}
 function immigrationThreshold() {
-  let accum = G.colonies.reduce((n, c) => n + c.colonists.length, 0) + G.units.length;
+  let accum = immigrationCount();
   if (accum < 4000) accum *= 2;
   accum += 8;
   accum = Math.min(4000, accum);

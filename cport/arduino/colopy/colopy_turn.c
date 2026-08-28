@@ -1353,14 +1353,33 @@ const char *immigrant_name(const immigrant *m) {
  * stubbed askEvent (key emitted, callback never run) -- flagged; real play
  * wiring lands with the command loop. */
 
-/* immigrationThreshold (game.js:10135) — exported for the F2 report. */
+/* immigrationThreshold — BYTE_VERIFIED end to end 2026-08-28
+ * (immigration_threshold_and_cross_production func_035D9A):
+ *   count = SUM colony populations (owner match, @0x35DB0..@0x35DC2)
+ *         + ONE PER OWNED UnitRecord, owner nibble +0x03 == power and
+ *           NOTHING ELSE (@0x35DDE..@0x35DF8) — Europe-parked ships,
+ *           their riders and cargo colonists all count, which is what
+ *           the port's on-map-only membership missed (C4.29: 130 vs the
+ *           fixture's stored 138; 2*138+8 = the stored threshold 284)
+ *   thr = min(2*count + 8, 4000)               @0x35E2E..@0x35E47
+ *   human: thr = thr*(8-difficulty)/8          @0x35E5D..@0x35E6B
+ *   England (power 0): thr = thr*2/3           @0x35E6E..@0x35E7B
+ * (The @0x35E01 0xEC-sentinel branch adjusts the CROSS base for dock
+ * units after independence, not the count.) */
 int immigration_threshold(void) {
     int accum = 0;
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())
             accum += CS.colonies[ci].population;
-    for (int ui = 0; ui < CS.n_units; ui++)
-        if (unit_on_map_player(ui)) accum++;
+    /* every live player unit entity, wherever it is — the runtime mirror
+     * of the record scan (on-map units + their riders, crossings + their
+     * passengers, recruits on the dock) */
+    accum += CR.n_units_order;
+    for (int q = 0; q < CR.n_units_order; q++)
+        accum += CR.unit_n_pass[CR.units_order[q]];
+    accum += CR.n_europe;
+    for (int k = 0; k < CR.n_europe; k++) accum += CR.europe[k].n_pass;
+    accum += CR.n_dock_units;
     if (accum < 4000) accum *= 2;
     accum += 8;
     if (accum > 4000) accum = 4000;
