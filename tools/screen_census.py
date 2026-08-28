@@ -93,12 +93,13 @@ REPORTS = {
            "the pack (Part E), so the port lists names as text where the "
            "original draws faces."),
     "F5": ("F5", ["--renderreport", FIXTURE, str(PAK), "{out}", "F5"],
-           "OPEN (0.3%), down from 0.6%. Half of it was C4.9, the bid/ask "
-           "straddle: the report's price columns print market_bid/market_ask, "
-           "and both quotes were one high. 398 -> 202 px. What is left is "
-           "still at glyph scale rather than in blocks, so it reads as text "
-           "metrics or remaining content, not a misplaced element. "
-           "Untriaged."),
+           "CLOSED to ~the cursor floor (97 px, of which 82 is the DOS "
+           "mouse pointer), from 398. C4.9 fixed the bid/ask straddle "
+           "(398 -> 202); the rest was ONE element -- the VERTICAL rule "
+           "between the commodity names and the price columns at x = 67, "
+           "rows 25..176, in the same rule ink as the horizontal rules, "
+           "measured off the baseline (202 -> 97). ~15 px of glyph-scale "
+           "residual remains untriaged."),
     "F7": ("F7", ["--renderreport", FIXTURE, str(PAK), "{out}", "F7"],
            "OPEN (0.2%), down from 2.5%. C4.1 is CLOSED: the func_00386A "
            "panel composite (spec/ui/render_primitives §1b) plus four "

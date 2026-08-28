@@ -10682,6 +10682,11 @@ function drawEconomicReport(ctx) {
   ctx.fillStyle = ink(REPORT_RULE_INK);
   for (let i = 0; i <= DATA.cargo.length; i++)
     ctx.fillRect(2, F5_RULE0 + i * F5_PITCH, 311, 1);
+  // The VERTICAL rule between the commodity names and the price columns:
+  // x = 67, rows 25..176, same rule ink -- measured off the census baseline
+  // (137 of its 152 rows are the untouched ink; the rest is where text
+  // crosses it).
+  ctx.fillRect(67, 25, 1, 152);
   DATA.cargo.forEach((g, i) => {
     const y = F5_RULE0 + 2 + i * F5_PITCH;
     FONT.tiny.draw(ctx, g.name, 2, y, lut(REPORT_NAME_INK));

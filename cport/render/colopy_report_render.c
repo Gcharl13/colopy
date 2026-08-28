@@ -283,6 +283,11 @@ static void draw_f5(void) {
                 rlut(REPORT_NAME_INK));
     for (int i = 0; i <= DAT_CARGO_COUNT; i++)
         rd_fill(2, F5_RULE0 + i * F5_PITCH, 311, 1, REPORT_RULE_INK);
+    /* the VERTICAL rule between the commodity names and the price
+     * columns: x = 67, rows 25..176, same rule ink -- measured off the
+     * census baseline (137 of its 152 rows are the untouched ink; the
+     * rest is where text crosses it) */
+    rd_fill(67, 25, 1, 152, REPORT_RULE_INK);
     const PowerRecord *p = &CS.powers[cs_nation()];
     for (int i = 0; i < DAT_CARGO_COUNT; i++) {
         int y = F5_RULE0 + 2 + i * F5_PITCH;
