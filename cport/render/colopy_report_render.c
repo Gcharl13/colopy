@@ -525,7 +525,10 @@ static void draw_f9(void) {
         if (lv > 3) lv = 3;
         rd_blit(&RD.icons, F9_PORTRAIT, F9_ICON_X,
                 F9_ICON_Y + row * F9_PITCH);
-        const uint8_t *tk = rlut((uint8_t)dat_tribes[ti].color);
+        /* the Sioux row is HARDCODED red: the painter overrides power
+         * index 0xA (tribe 6) to ink 0xC (@0x037496-@0x03749B) */
+        const uint8_t *tk = rlut(ti == 6 ? 0x0C
+                                 : (uint8_t)dat_tribes[ti].color);
         char buf[64];
         if (!n) {
             snprintf(buf, sizeof(buf), "%s: %s", dat_tribes[ti].name,

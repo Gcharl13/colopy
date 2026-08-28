@@ -10977,7 +10977,12 @@ function drawIndianReport(ctx) {
     // on the 1653 frame (Inca 97 cream, Aztec 149 gold, Arawak 54 blue,
     // Cherokee 67 green, Apache 111 tan, Sioux 118 dark red, Tupi 71 dark
     // green). The spec's "cell colour = @COLORS basic 68" does not hold.
-    const tk = lut(t.color);
+    // The Sioux row is HARDCODED red: the row painter sets the ink from
+    // [0x848 + power] and then overrides power index 0xA -- tribe 6, the
+    // Sioux -- to 0x0C (`cmp bx, 0xA; mov [bp-0x6E], 0xC` @0x037496-
+    // @0x03749B). The census flag "one tribe, cause UNKNOWN" is closed:
+    // it is a literal special case in the EXE.
+    const tk = lut(i === 6 ? 0x0C : t.color);
     if (!n) {
       f9Shadow(ctx, `${t.name}: ${DATA.text.misc[130]}`, F9_NAME_X, y, tk);
       return;
