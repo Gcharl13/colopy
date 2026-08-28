@@ -58,25 +58,14 @@ SMOKE = ROOT / "cport" / "host" / "smoke"
 # size (27,909) and digest (3348C0DC) -- see the module docstring.
 DOS_SLOT = 0
 FIXTURE = "sav1653"
-# NOT IN THE REGISTRY YET: the COLONY screen, and it is worth saying why.
-# Two entry paths were tried and both filed a MAP frame instead:
-#   VIEW > Find Colony > Return          -- Find Colony moves the SELECTION to
-#                                           a colony and scrolls to show it; it
-#                                           does not open the colony screen, and
-#                                           a second Return does nothing.
-#   ...then a click on the colony tile   -- the view Find Colony leaves behind
-#                                           is not stable between runs (the
-#                                           second attempt came back centred on
-#                                           a different colony with a different
-#                                           active unit), so a fixed click
-#                                           coordinate lands on ocean.
-# Both attempts were caught by LOOKING at the capture, which is the whole
-# reason the docstring's "an untriaged row is an open question" rule exists --
-# a map frame filed as a colony baseline would have reported ~100% divergence
-# and read exactly like a catastrophic port bug. The next attempt needs a
-# deterministic way in: either a keyboard path that opens a colony outright,
-# or a plain MAP entry first (no navigation at all) whose frame can be read to
-# place the click.
+# The COLONY screen's two FAILED mouse entry paths (VIEW > Find Colony >
+# Return, then a fixed click) each filed a MAP frame as a colony baseline --
+# caught only by LOOKING at the capture, which is why the docstring's
+# "an untriaged row is an open question" rule exists. RESOLVED 2026-08-28:
+# a bare map click can never open a colony while a unit awaits orders (it
+# only advances the unit cycle -- measured twice, including a click directly
+# on a colony icon); the manual's keyboard path works instead and is fully
+# deterministic. See the COLONY registry entry.
 
 # id -> (DOS entry key, port render args, declared divergence or None)
 # The DOS entry key is what `capture()` presses from a known map state. A
@@ -196,6 +185,60 @@ REPORTS = {
            "x = 96 (@0x037650), whose counting rule is byte-cited but whose "
            "singular/plural strings [0x2DF0]/[0x2DF2] are unresolved and "
            "which this fixture cannot exercise."),
+    # The MAP itself, straight after LOAD GAME -- no navigation at all, so the
+    # frame is deterministic up to the declared animations. WHERE THE VIEW IS:
+    # not the saved cursor. The save stores [0x017C]/[0x017E] = (21, 30)
+    # (serializer blocks 41-43; the words byte-verify as tile x/y via the
+    # clamp loops @0x24002-@0x2405C against g_map_width/height and the view
+    # verb 0x181F:0xE08), but the captured frame's sidebar reads "Dutch
+    # Frigate / Locat: (44, 29)" -- on load the engine focuses the first
+    # active unit and centres THERE. That unit is record 51 = G.units
+    # ordinal 6 (the 7th player ship in record order), so the entry passes
+    # view origin (44-7, 29-6) = (37, 23) and sel 6. Declared divergences:
+    # the active-unit BLINK (the frigate is visible or hidden by frame
+    # parity), the water palette cycle (120..127), and the mouse pointer.
+    "MAP": (None, ["--rendermap", FIXTURE, str(PAK), "{out}", "37", "23", "6"],
+            "NEW ENTRY (15.4%), first captured 2026-08-28. The view origin "
+            "(37, 23) is the sweep's unique minimum (9,794 px; every "
+            "neighbour >= 16,428), which confirms the centring model "
+            "clamp(unit - (7, 6)). Triage of the 9,855:\n"
+            "         ~2,500  the Ocean(25)/Sea-Lane(26) transition: DOS "
+            "dithers the boundary over a ~5-tile band (~62 px/tile); the "
+            "port's edge is hard. Mechanism unread -- OPEN\n"
+            "         ~2,700  the sidebar: the MINIMAP palette (DOS paints "
+            "the northern landmass tan where the port paints green -- "
+            "colour source unread), the unit panel (plate/sprite layout "
+            "differs from DOS and sits ~6 px off), and Moves: 6 vs DOS 5 "
+            "(units_session_seed pins full moves; DOS uses the save's "
+            "moves_remaining -- a harness pin, declared)\n"
+            "         ~700    colony POPULATION NUMBERS on the sprites "
+            "(San Salvador wears '10', Isabella '2') and the RIVAL colony "
+            "name label ('St. Louis') -- the port draws neither -- OPEN\n"
+            "        Declared: the active-unit blink, the water palette "
+            "cycle (120..127, see `palette`), the mouse pointer."),
+    # The COLONY screen, entered by the manual's KEYBOARD path -- the mouse
+    # is a dead end: while a unit awaits orders, a map click only advances
+    # the unit cycle and recentres on the next active unit (measured twice,
+    # including a click directly on the San Salvador icon). The manual's
+    # "pressing Return when the square is selected" works instead: V (view
+    # mode) puts the square cursor on the ACTIVE unit -- the frigate at
+    # (44, 29), verified by the sidebar reading "Frigate / Locat: (44, 29)"
+    # -- so Left lands on Isabella (43, 29) and Return opens her display.
+    # Fully deterministic from the post-load state. Isabella is G.colonies
+    # ordinal 1 (player colonies in record order: Jamestown 0, Isabella 1).
+    "COLONY": (("KEYS", "v", "Left", "Return"),
+               ["--rendercolony", FIXTURE, str(PAK), "{out}", "1"],
+               "NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "
+               "mouse entries above are RESOLVED by this keyboard path. "
+               "The frame is structurally right (title, scene, docks, "
+               "stockade band, warehouse row, people row all line up). "
+               "The bulk of the 21,303 is the DECLARED building-placement "
+               "divergence: the scene scatters buildings through the "
+               "RNG-driven func_025D34, which is unresolved (the exact "
+               "reason this screen must never be marked COMPLETE -- "
+               "2026-06-24). Also visible and OPEN: the area-view map crop "
+               "is offset from DOS, and two counters read 372/632 against "
+               "DOS 362/642."),
 }
 
 
@@ -242,6 +285,14 @@ def capture(only: str | None = None) -> None:
         if sid == "EUROPE":                    # VIEW > European Status
             drive.key("alt+v", delay=1.5)
             drive.key("E", delay=3.0)
+        elif fkey is None:                     # the map itself -- press nothing
+            import time
+            time.sleep(1.5)
+        elif isinstance(fkey, tuple) and fkey[0] == "CLICK":
+            drive.click(fkey[1], fkey[2], delay=3.0)
+        elif isinstance(fkey, tuple) and fkey[0] == "KEYS":
+            for k in fkey[1:]:
+                drive.key(k, delay=1.5)
         else:
             drive.key(fkey, delay=2.5)
         p = drive.shot("census_%s" % sid)
