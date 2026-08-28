@@ -4022,8 +4022,13 @@ function plazaRow(c) {
   const people = c.colonists.map(p => colonistFigure(p));
   // Which G.units entry each garrison figure IS, not just its icon: clicking
   // one opens @UNITOPTIONS, so the row has to be able to name the unit.
+  // Cargo carriers live in the DOCK strip, not the plaza row -- the
+  // Vlissingen DOS baseline shows the Wagon Train beside the Galleon in the
+  // dock and absent from the row.
   const garrisonIdx = G.units.map((u, i) => [u, i])
-    .filter(([u]) => u.x === c.x && u.y === c.y).map(([, i]) => i);
+    .filter(([u]) => u.x === c.x && u.y === c.y &&
+                     !(Number((unit(u.type) || {}).cargo) > 0))
+    .map(([, i]) => i);
   const icons = people.concat(garrisonIdx.map(i => G.units[i].icon));
   if (!icons.length) return [];
   const totalW = icons.reduce((a, i) => a + frameSize('ICONS', i)[0], 0);
@@ -4460,7 +4465,12 @@ function colonyPopupCommit() {
 //                                                @0x280B7-0x2812B
 const COLONY_DOCK = { shipX: 130, shipY: 147, shipPitch: 18 };
 function colonyShips(c) {
-  return G.units.filter(u => u.ship && u.x === c.x && u.y === c.y);
+  // Membership = CARGO CAPACITY > 0, not hull: the Vlissingen DOS baseline
+  // docks the Wagon Train beside the Galleon (and the engine's y-1
+  // @0x2801A applies only to ship types 0x0D..0x12 -- exactly the tell
+  // that non-ship carriers reach this strip).
+  return G.units.filter(u => Number((unit(u.type) || {}).cargo) > 0 &&
+                             u.x === c.x && u.y === c.y);
 }
 function colonyShip(c) {
   const ships = colonyShips(c);
@@ -4470,17 +4480,28 @@ function colonyShip(c) {
 }
 function drawColonyDock(ctx, c) {
   const ships = colonyShips(c);
+  // Headline: verb 0x181F:0x100 @0x27DCE / @0x27E95 centres the string in
+  // the rect x=0x79(121) w=0x54(84) at y=0x84(132) -- centre 163; the DOS
+  // baseline measures the text at 135..194 (centre 164.5), rows from 132.
+  // (160,130) was the old fitted guess.
   if (!ships.length) {
-    FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(PANEL_INK));
+    FONT.tiny.center(ctx, 'No Ships In Port', 163, 132, lut(PANEL_INK));
     for (let k = 0; k < 6; k++) sheetFrame(ctx, 'ICONS', 122, 127 + 12 * k, 165);
     return;
   }
-  FONT.tiny.center(ctx, `Loading: ${colonyShip(c).type}`, 160, 130, lut(PANEL_INK));
+  FONT.tiny.center(ctx, `Loading: ${colonyShip(c).type}`, 163, 132, lut(PANEL_INK));
+  // The ship strip goes through the SHARED panel composite -- @0x28049-
+  // @0x2805D calls 0x181F:0x2BC (func_00386A) with mode 0x64, centre-width
+  // 0x10, y = 147 minus 1 for a ship type (always here) minus 1 more for
+  // ordinal > 0 (@0x2801A-@0x2803D), x = 130 + 18k (@0x27FA2 pitch).
   ships.slice(0, 4).forEach((u, k) => {
     const x = COLONY_DOCK.shipX + k * COLONY_DOCK.shipPitch;
-    const y = COLONY_DOCK.shipY - 1 - (k > 0 ? 1 : 0);
-    const [fw, fh] = frameSize('ICONS', u.icon);
-    sheetFrame(ctx, 'ICONS', u.icon, x + ((16 - fw) >> 1), y + 16 - fh);
+    // The y-1 (and -1 more past ordinal 0) applies ONLY to ship types
+    // 0x0D..0x12 (@0x2801A-@0x2803D); a wagon stays at 147.
+    const isShipType = Number((unit(u.type) || {}).hull) > 0;
+    const y = COLONY_DOCK.shipY - (isShipType ? 1 + (k > 0 ? 1 : 0) : 0);
+    unitPanel(ctx, x, y, 16, u.type, u.flags || 0, u.orders || 0,
+              DATA.nations[G.nation].color, u.icon);
     if (k === G.colonyShipSel)
       hollowRect(ctx, x - 1, COLONY_DOCK.shipY - 1, 18, 18, 0x0A);
     // The drop highlight while a goods payload is over the dock. The engine's
@@ -4512,8 +4533,11 @@ function drawColonyDock(ctx, c) {
     const slot = hold[k - taken];
     if (slot) {
       const f = (slot.qty >= 100 ? 0x16 : 0x26) + slot.good;
-      const [fw, fh] = frameSize('ICONS', f);
-      sheetFrame(ctx, 'ICONS', f, x + ((10 - fw) >> 1), 165 + ((22 - fh) >> 1));
+      const [fw] = frameSize('ICONS', f);
+      // Crate placement @0x28063-@0x280AF: x centred as cellx + (cellw-1)/2
+      // - w/2 + 1 = x + 5 - w/2, y = the cell y verbatim -- NO vertical
+      // centring.
+      sheetFrame(ctx, 'ICONS', f, x + 5 - (fw >> 1), 165);
     }
   }
 }

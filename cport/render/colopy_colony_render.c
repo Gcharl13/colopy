@@ -397,6 +397,7 @@ int rm_plaza_hit(int ci, int mx, int my) {
     npeople = nicons;
     for (int q = 0; q < CR.n_units_order && nicons < 64; q++) {
         int ui = CR.units_order[q];
+        if (dat_units[CS.units[ui].type].cargo > 0) continue;  /* dock strip */
         if (CS.units[ui].map_x == c->map_x && CS.units[ui].map_y == c->map_y)
             icons[nicons++] = (int)dat_units[CS.units[ui].type].icon - 1;
     }
@@ -435,6 +436,7 @@ int rm_plaza_unit_hit(int ci, int mx, int my) {
     npeople = nicons;
     for (int q = 0; q < CR.n_units_order && nicons < 64; q++) {
         int ui = CR.units_order[q];
+        if (dat_units[CS.units[ui].type].cargo > 0) continue;  /* dock strip */
         if (CS.units[ui].map_x == c->map_x && CS.units[ui].map_y == c->map_y) {
             icons[nicons] = (int)dat_units[CS.units[ui].type].icon - 1;
             order[nicons++] = q;
@@ -695,6 +697,10 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
         npeople = nicons;
         for (int q = 0; q < CR.n_units_order && nicons < 64; q++) {
             int ui = CR.units_order[q];
+            /* cargo carriers live in the DOCK strip, not the plaza row --
+             * the Vlissingen DOS baseline shows the Wagon Train beside the
+             * Galleon in the dock and absent from the row */
+            if (dat_units[CS.units[ui].type].cargo > 0) continue;
             if (CS.units[ui].map_x == c->map_x &&
                 CS.units[ui].map_y == c->map_y)
                 icons[nicons++] = (int)dat_units[CS.units[ui].type].icon - 1;
@@ -829,13 +835,23 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
         int ships[20], nships = 0;
         for (int q = 0; q < CR.n_units_order && nships < 20; q++) {
             int ui = CR.units_order[q];
-            if (dat_units[CS.units[ui].type].hull > 0 &&
+            /* membership = CARGO CAPACITY > 0, not hull: the DOS
+             * baseline docks the Wagon Train beside the Galleon (and the
+             * engine's y-1 @0x2801A applies only to types 0x0D..0x12,
+             * which is exactly the tell that non-ship carriers reach this
+             * strip) */
+            if (dat_units[CS.units[ui].type].cargo > 0 &&
                 CS.units[ui].map_x == c->map_x &&
                 CS.units[ui].map_y == c->map_y)
                 ships[nships++] = ui;
         }
+        /* headline: verb 0x181F:0x100 @0x27DCE / @0x27E95 centres the
+         * string in the rect x=0x79(121) w=0x54(84) at y=0x84(132) --
+         * centre 163, and the DOS baseline measures the text at
+         * 135..194 (centre 164.5), rows from 132.  (160,130) was the
+         * old fitted guess. */
         if (!nships) {
-            c_center("No Ships In Port", 160, 130, clut(PANEL_INK));
+            c_center("No Ships In Port", 163, 132, clut(PANEL_INK));
             for (int k = 0; k < 6; k++)
                 rd_blit(&RD.icons, 122, 127 + 12 * k, 165);
         } else {
@@ -843,14 +859,25 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
             char buf[48];
             snprintf(buf, sizeof(buf), "Loading: %s",
                      dat_units[CS.units[ships[sel]].type].name);
-            c_center(buf, 160, 130, clut(PANEL_INK));
+            c_center(buf, 163, 132, clut(PANEL_INK));
+            /* the ship strip goes through the SHARED panel composite --
+             * @0x28049-@0x2805D calls 0x181F:0x2BC (func_00386A) with
+             * mode 0x64, centre-width 0x10, y = 147 minus 1 for a ship
+             * type (always here) minus 1 more for ordinal > 0
+             * (@0x2801A-@0x2803D), x = 130 + 18k (@0x27FA2 pitch). */
             for (int k = 0; k < (nships < 4 ? nships : 4); k++) {
                 int x = 130 + k * 18;
-                int y = 147 - 1 - (k > 0 ? 1 : 0);
-                int ic = (int)dat_units[CS.units[ships[k]].type].icon - 1;
-                rd_frame f;
-                rd_sheet_frame(&RD.icons, ic, &f);
-                rd_blit(&RD.icons, ic, x + ((16 - f.w) >> 1), y + 16 - f.h);
+                int ui2 = ships[k];
+                /* the y-1 (and -1 more past ordinal 0) applies ONLY to
+                 * ship types 0x0D..0x12 (@0x2801A-@0x2803D); a wagon
+                 * stays at 147 */
+                int isship = CS.units[ui2].type >= 0x0D &&
+                             CS.units[ui2].type <= 0x12;
+                int y = 147 - (isship ? 1 + (k > 0 ? 1 : 0) : 0);
+                rm_unit_panel(x, y, 16, CS.units[ui2].type,
+                           CS.units[ui2].flags, CS.units[ui2].orders,
+                           (int)dat_nations[cs_nation()].color,
+                           (int)dat_units[CS.units[ui2].type].icon - 1);
                 if (k == sel) rm_hollow_rect(x - 1, 146, 18, 18, 0x0A);
             }
             int ui = ships[sel];
@@ -872,8 +899,10 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                     int f = (sl->qty >= 100 ? 0x16 : 0x26) + sl->good;
                     rd_frame ff;
                     rd_sheet_frame(&RD.icons, f, &ff);
-                    rd_blit(&RD.icons, f, x + ((10 - ff.w) >> 1),
-                            165 + ((22 - ff.h) >> 1));
+                    /* crate placement @0x28063-@0x280AF: x centred as
+                     * cellx + (cellw-1)/2 - w/2 + 1 = x + 5 - w/2, y =
+                     * the cell y verbatim -- NO vertical centring */
+                    rd_blit(&RD.icons, f, x + 5 - (ff.w >> 1), 165);
                 }
             }
         }

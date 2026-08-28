@@ -226,6 +226,28 @@ REPORTS = {
     # -- so Left lands on Isabella (43, 29) and Return opens her display.
     # Fully deterministic from the post-load state. Isabella is G.colonies
     # ordinal 1 (player colonies in record order: Jamestown 0, Isabella 1).
+    # Vlissingen (25, 34) -- the colony WITH a docked ship (the Galleon,
+    # record 34, two full holds: goods 6 and 4), so this frame exercises the
+    # func_027DB2 ships-present branch the Isabella entry cannot. Same view-
+    # mode path: the cursor starts on the active frigate (44, 29), so 19
+    # Lefts and 5 Downs land on the colony. Vlissingen is record 12 =
+    # G.colonies ordinal 10 (the 11th player colony in record order).
+    "COLONY_SHIP": (("KEYS", "v") + ("Left",) * 19 + ("Down",) * 5 +
+                    ("Return",),
+               ["--rendercolony", FIXTURE, str(PAK), "{out}", "10"],
+               "NEW ENTRY (42.4%), first captured 2026-08-28, and it "
+               "corrected the dock model immediately (B3.1): the strip's "
+               "membership is CARGO CAPACITY > 0, not hull -- the DOS frame "
+               "docks the WAGON TRAIN beside the Galleon, and the engine's "
+               "own y-1 @0x2801A applying only to ship types 0x0D..0x12 is "
+               "the byte-side tell. Carriers left the plaza row for the "
+               "dock in both engines, the ship strip now goes through the "
+               "shared func_00386A composite (@0x28049 mode 0x64 W=0x10), "
+               "and the headline/crate placement follows the bytes "
+               "(163,132 / x+5-w/2 at y=165). The bulk of what remains is "
+               "the DECLARED RNG building placement plus Vlissingen's "
+               "production strips and SoL split (port 6%/94% vs DOS "
+               "5%/95%), untriaged."),
     "COLONY": (("KEYS", "v", "Left", "Return"),
                ["--rendercolony", FIXTURE, str(PAK), "{out}", "1"],
                "NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "
@@ -291,8 +313,12 @@ def capture(only: str | None = None) -> None:
         elif isinstance(fkey, tuple) and fkey[0] == "CLICK":
             drive.click(fkey[1], fkey[2], delay=3.0)
         elif isinstance(fkey, tuple) and fkey[0] == "KEYS":
-            for k in fkey[1:]:
-                drive.key(k, delay=1.5)
+            # 0.8s between keys (0.6 verified interactively for the view-mode
+            # cursor walk), a long settle after the final key so the opened
+            # screen finishes drawing before the shot.
+            for k in fkey[1:-1]:
+                drive.key(k, delay=0.8)
+            drive.key(fkey[-1], delay=3.0)
         else:
             drive.key(fkey, delay=2.5)
         p = drive.shot("census_%s" % sid)
