@@ -2290,12 +2290,13 @@ static void in_key_inner(const char *k, int alt, int shift) {
             if (cci >= 0) {
                 ColonyRecord *c = &CS.colonies[cci];
                 int k2 = UI.colonist_sel;
+                /* prof 0 IS a specialty (Expert Farmers, C4.26) and can
+                 * be cleared; "no specialty" is byte 28, not 0 */
                 if (k2 >= 0 && k2 < c->population &&
-                    c->profession[k2] >= 1 &&
                     c->profession[k2] < DAT_JOBEXPERT_COUNT) {
                     ev_emit("LOBOTOMIZE", 0, 0,
                             dat_jobexpert[c->profession[k2]], 0);
-                    if (ask_choice() == 0) c->profession[k2] = 0;
+                    if (ask_choice() == 0) c->profession[k2] = 28;
                 }
             }
         }

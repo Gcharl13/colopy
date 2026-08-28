@@ -324,7 +324,10 @@ void units_session_seed(void) {
 void colonist_add(ColonyRecord *c) {
     if (c->population >= 32) return;             /* record slot cap */
     c->occupation[c->population] = 0xFF;         /* no job (like JS null) */
-    c->profession[c->population] = 0;
+    /* "no specialty" is byte 28 (the @0x2DDAC school pool's none value),
+     * NOT 0 — byte 0 IS the Expert Farmer under the byte-equality expert
+     * rule (C4.26).  The old 0 here silently minted Expert Farmers. */
+    c->profession[c->population] = 28;
     c->population++;
 }
 static int unit_type_for_profession(uint8_t prof);
@@ -819,32 +822,98 @@ static void field_learning(int ci) {
     }
 }
 
-/* ---- over-100 disposal (autoExport, game.js:2832; gate func_02D606) ---- */
-static void auto_export(int ci) {
+/* ---- CUSTOM HOUSE auto-sale — the byte model (func_02D658 loop 1, read
+ * 2026-08-28; replaces the port's unconditional over-100 auto-export).
+ * The sale exists ONLY with a Custom House (colony_has @BUILDING 0x12
+ * @0x2D980) — without one nothing is ever auto-sold; the stock climbs to
+ * capacity and warehouse_disposal truncates it.  The human gate is the
+ * per-good +0x8A checkbox bit alone (test_bit_at_8a via 0x181F:0xCFE
+ * @0x2D9CE; bit set = exported); the protected list func_02D606
+ * (0x191F:0x9C0, near-thunk @0x2EF55) gates only the AI entry
+ * (@0x2D6D8/@0x2D9B8) — B3.6.  A checked good with stock >= 100
+ * (@0x2D6F7) sells down to 50 (@0x2D705) at market price; before
+ * independence the Crown's tax%% is cut out (@0x2D733) into the royal
+ * fund (@0x2D785); after the declaration the sale is TAX-FREE
+ * ([0x5382]&1 @0x2D728).  The +0x1B & 3 skip (@0x2D995) is unread — not
+ * modeled, TBD.  Boycott: no test in the disposal bytes; whether the
+ * price func (func_030590) embeds it is unread — kept, FLAGGED. */
+static void custom_house_sale(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
-    colony_rt *r = &CR.col[ci];
     PowerRecord *p = &CS.powers[cur_power()];
-    int spoiled_good = -1, spoiled_qty = 0, n_spoiled = 0;
     resolve();
-    int smith = 0;
-    for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
-        if (strstr(dat_buildings[b].name, "Blacksmith") && has_bld(ci, b)) smith = 1;
-    for (int i = 0; i < N_GOODS; i++) {
-        if (c->stock[i] < 100) continue;
-        int prot = (i == FOOD || i == LUMBER || i == HORSES ||
-                    i == TOOLS || i == MUSKETS) || (i == ORE && smith);
-        if (prot) {
-            if (i != FOOD && !((r->cargo_ready >> i) & 1)) {
-                r->cargo_ready |= (uint16_t)(1 << i);
-                cev("CARGOREADY0", 0, 0, c->name, dat_cargo[i].name);
-            }
-            continue;
-        }
-        if (!((r->cargo_ready >> i) & 1)) {
-            r->cargo_ready |= (uint16_t)(1 << i);
+    if (!has_bld(ci, BLD_CUSTOM)) return;
+    for (int g = 0; g < N_GOODS; g++) {
+        if (!((c->custom_house_flags >> g) & 1)) continue;
+        if (c->stock[g] < 100) continue;
+        if (market_boycotted(g)) continue;
+        int amount = c->stock[g] - 50;
+        c->stock[g] = 50;
+        int32_t gross = (int32_t)amount * market_bid(g);
+        int32_t cut = (CR.woi_flags & WOI_DECLARED)
+                          ? 0 : gross * p->tax_rate / 100;
+        p->gold += gross - cut;
+        p->kings_fund += cut;
+    }
+}
+
+/* ---- WAREHOUSE disposal + cargo-ready — the byte model (func_02D658
+ * loops 2 and 3, @0x2E830..@0x2EA55, read 2026-08-28), replacing the
+ * sale-refuse spoilage and the latched CARGOREADY.
+ *
+ * SPOIL (@0x2E830, goods 1..15): overflow = stock − capacity.  The part
+ * within TODAY'S production (pre = clamp(0, overflow, produced) —
+ * func_0048CC, computed per good in loop 1 @0x2D89A) spoils SILENTLY:
+ * steady-state production overflow never nags, the player was told once
+ * by @CARGOREADY1/2 when the good reached capacity.  Overflow BEYOND
+ * today's production (an unloaded cargo) is announced and spoiled, but a
+ * residue under 2 tons is tolerated (@0x2E801).  One good -> @SPOIL1
+ * (NUMBER0 tons, STRING1 name); several -> @SPOIL2; a Warehouse
+ * Expansion literally adds 2 to the key's digit (@0x2E8D8) ->
+ * @SPOIL3/@SPOIL4 (the variants without the "larger warehouse" hint).
+ * AI colonies instead SELL their overflow (@0x2E86B; horse overflow
+ * feeds the power pool @0x2E75C, muskets convert per 50 @0x2E72A) —
+ * B3.6.
+ *
+ * CARGOREADY (@0x2E913, goods 1..15): edge-triggered when the stock
+ * crosses a 100 multiple upward this turn (floor(start/100) <
+ * floor(now/100) @0x2E927..@0x2E938, start = the pre-banking snapshot
+ * @0x2D900); key CARGOREADY0, or CARGOREADY1 at capacity (@0x2E982) —
+ * CARGOREADY2 with a Warehouse Expansion (@0x2E993) — NUMBER0 =
+ * capacity (@0x2E961).  Gate: colony-report option bit 4 (@0x2E909,
+ * default on). */
+static void warehouse_disposal(int ci, const uint16_t *snapshot,
+                               const colony_output *o) {
+    ColonyRecord *c = &CS.colonies[ci];
+    resolve();
+    /* func_008D00: 100 flat, else (level+1)*100 */
+    int cap = c->warehouse_level ? (c->warehouse_level + 1) * 100 : 100;
+    int count = 0, last_good = -1, last_qty = 0;
+    for (int g = 1; g < N_GOODS; g++) {
+        int over = (int)c->stock[g] - cap;
+        if (over <= 0) continue;
+        int32_t produced = o->out[g];
+        if (g == HORSES) produced += o->horses_bred;
+        int pre = over;              /* clamp(0, over, produced), func_0048CC */
+        if (pre > produced) pre = (int)produced;
+        if (pre >= over) { c->stock[g] = (uint16_t)cap; continue; }
+        c->stock[g] = (uint16_t)(c->stock[g] - pre);
+        int extra = over - pre;
+        if (extra > (int)c->stock[g]) extra = c->stock[g];
+        if (extra < 2) extra = 0;
+        if (extra) { count++; last_good = g; last_qty = extra; }
+        c->stock[g] = (uint16_t)(c->stock[g] - extra);
+    }
+    if (count == 1)
+        cev(c->warehouse_level < 2 ? "SPOIL1" : "SPOIL3",
+                last_qty, 0, c->name, dat_cargo[last_good].name);
+    else if (count > 1)
+        cev(c->warehouse_level < 2 ? "SPOIL2" : "SPOIL4", 0, 0, c->name, 0);
+    for (int g = 1; g < N_GOODS; g++) {
+        if (snapshot[g] / 100 >= c->stock[g] / 100) continue;
+        if ((int)c->stock[g] == cap) {
             cev(c->warehouse_level < 2 ? "CARGOREADY1" : "CARGOREADY2",
-                    100, 0, c->name, dat_cargo[i].name);
-            /* askZoom (game.js:6372 via 2863): same colony-zoom ask. */
+                    cap, 0, c->name, dat_cargo[g].name);
+            /* askZoom (game.js:6372): choice 1 zooms to the colony */
             if (cask() == 1) {
                 CR.screen_map = 0;
                 int ord = -1;
@@ -853,31 +922,10 @@ static void auto_export(int ci) {
                         ord++;
                 CR.zoom_colony = (int16_t)ord;
             }
+        } else {
+            cev("CARGOREADY0", 0, 0, c->name, dat_cargo[g].name);
         }
-        int excess = c->stock[i] - 50;
-        c->stock[i] = 50;
-        int custom = has_bld(ci, BLD_CUSTOM);
-        int custom_off = custom && !((c->custom_house_flags >> i) & 1);
-        /* once independence is declared the excess is WASTED unless a
-         * Custom House trades on ([0x5382]&1 @0x2D728; game.js:2871) */
-        if (market_boycotted(i) ||
-            ((CR.woi_flags & WOI_DECLARED) && !custom) || custom_off) {
-            n_spoiled++;
-            if (n_spoiled == 1) { spoiled_good = i; spoiled_qty = excess; }
-            continue;
-        }
-        int32_t gross = excess * market_bid(i);
-        int32_t tax = gross * p->tax_rate / 100;
-        p->gold += gross - tax;
-        p->kings_fund += tax;
     }
-    for (int i = 0; i < N_GOODS; i++)
-        if (c->stock[i] < 100) r->cargo_ready &= (uint16_t)~(1 << i);
-    if (n_spoiled == 1)
-        cev(c->warehouse_level < 2 ? "SPOIL1" : "SPOIL3",
-                spoiled_qty, 0, c->name, dat_cargo[spoiled_good].name);
-    else if (n_spoiled > 1)
-        cev(c->warehouse_level < 2 ? "SPOIL2" : "SPOIL4", 0, 0, c->name, 0);
 }
 
 /* ---- the per-colony turn (colonyTurn, game.js:3004) -------------------- */
@@ -896,6 +944,10 @@ void colony_turn(int ci) {
     /* the start-of-turn food stock, captured before anything banks
      * ([bp-0x6a] @0x2D6BF) — the starvation-death gate below reads it */
     int start_food = c->stock[FOOD];
+    /* the whole-array start-of-turn snapshot is the cargo-ready trigger's
+     * [bp-0xac] (@0x2D900) */
+    uint16_t snapshot[N_GOODS];
+    memcpy(snapshot, c->stock, sizeof(snapshot));
     colony_produce(ci, &o);
     /* colonyBesieged (game.js:2995): REF + at-war rival land units within
      * 1 of the colony outnumbering the player's attack-capable land units
@@ -950,6 +1002,9 @@ void colony_turn(int ci) {
         int32_t f = (int32_t)c->stock[FOOD] - o.eaten;
         c->stock[FOOD] = (uint16_t)(f < 0 ? 0 : f);
     }
+    /* the Custom House sells checked goods down to 50 right at the
+     * banking loop (func_02D658 loop 1), before growth reads the stock */
+    custom_house_sale(ci);
     /* FOOD MESSAGES + GROWTH — the byte model, func_02D658 @0x2E10A..
      * @0x2E36C (read 2026-08-28), replacing the port's latch-based
      * reading.  The engine's order is growth, then starvation, then the
@@ -1082,7 +1137,7 @@ void colony_turn(int ci) {
     advance_construction(ci, o.hammers);
     run_school(ci);
     field_learning(ci);
-    auto_export(ci);
+    warehouse_disposal(ci, snapshot, &o);
 }
 
 /* ---- the prefix turn step ---------------------------------------------- */

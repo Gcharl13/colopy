@@ -3566,77 +3566,93 @@ function warehouseLevel(c) {
   return (c.buildings.includes('Warehouse') ? 1 : 0) +
          (c.buildings.includes('Warehouse Expansion') ? 1 : 0);
 }
-// The over-100 disposal step, byte-verified at func_02D658 @0x2D6F7: for each
-// tradeable good with stock >= 100 the stock is cut to 50 and the EXCESS IS
-// SOLD, net of tax, to the treasury (@0x2D785) -- unless independence has been
-// declared ([0x5382]&1 @0x2D728), in which case it is wasted instead.
-// OPEN: whether a Custom-House gate sits in the caller. None is recorded, so
-// none is applied. Flagged in docs/UI_AUDIT_TRACKER.md.
-function autoExport(c) {
-  // The disposal gate -- the thunk 0x191F:0x9C0 RESOLVED to func_02D606
-  // (follow_thunk, RULINGS 2026-08-07z12): goods 0/5/8/14/15 (Food, Lumber,
-  // Horses, Tools, Muskets) are NEVER disposed; Ore (6) is protected while
-  // building-check 0x9FC(3) holds or its accumulators [0x8DE4/6] are live
-  // (id 3 = the smithy tier, inferred). Capacity does NOT gate the 100-cut.
-  // The port's old food-only skip over-sold Lumber/Horses/Tools/Muskets.
-  const PROTECTED_GOODS = [0, 5, 8, 14, 15];
-  const spoiled = [];
-  for (let i = 0; i < c.stock.length; i++) {
-    if (c.stock[i] < 100) continue;
-    c.cargoReady = c.cargoReady || {};
-    if (PROTECTED_GOODS.includes(i) ||
-        (i === GOOD.ORE && c.buildings.some(b => /Blacksmith/.test(b)))) {
-      // @CARGOREADY0 -- the PLAIN "a new cargo is ready" notice: a protected
-      // good tops a full hold with nothing disposed. Latched like its
-      // capacity twins. Food stays quiet (the colonist-growth path owns it).
-      if (i !== GOOD.FOOD && !c.cargoReady[i]) {
-        c.cargoReady[i] = true;
-        showEvent('CARGOREADY0',
-                  { STRING0: c.name, STRING1: DATA.cargo[i].name });
-      }
-      continue;
-    }
-    // @CARGOREADY1/2 -- "A new cargo of Y is ready at X ... reached its
-    // storage capacity" -- announced as the good tops the 100-ton overflow
-    // threshold, variant 1 while a larger warehouse could still be built.
-    // The engine's trigger site and its per-good latch are unread; announcing
-    // here, latched until the stock falls back, is the port's reading.
-    if (!c.cargoReady[i]) {
-      c.cargoReady[i] = true;
-      askZoom(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
-              { STRING0: c.name, STRING1: DATA.cargo[i].name, NUMBER0: 100 }, c);
-    }
-    const excess = c.stock[i] - 50;
-    c.stock[i] = 50;
-    // Custom Houses allow trade after independence (market.md); without one the
-    // excess is wasted rather than sold once you have declared. Peter
-    // Stuyvesant is what makes the building available at all.
-    const hasCustom = c.buildings.includes('Custom House');
-    if (isBoycotted(i) || (G.declared && !hasCustom) ||
-        (hasCustom && (c.customOff || {})[i])) {
-      spoiled.push({ good: i, qty: excess });
-      continue;
-    }
-    const gross = excess * bidPrice(i);
-    const tax = Math.floor(gross * G.tax / 100);
-    G.gold += gross - tax;
-    G.kingsFund += tax;
+// CUSTOM HOUSE auto-sale -- the byte model (func_02D658 loop 1, read
+// 2026-08-28; replaces the port's unconditional over-100 auto-export). The
+// sale exists ONLY with a Custom House (colony_has @BUILDING 0x12
+// @0x2D980) -- without one NOTHING is ever auto-sold; the stock just climbs
+// to capacity and warehouseDisposal truncates it. The human gate is the
+// per-good +0x8A checkbox bit alone (test_bit_at_8a via 0x181F:0xCFE
+// @0x2D9CE; bit set = exported, the .SAV cross-decode's reading); the
+// protected-goods list func_02D606 (0x191F:0x9C0, near-thunk @0x2EF55)
+// gates only the AI entry (@0x2D6D8/@0x2D9B8) -- rival colonies, not run
+// here yet (B3.6). A checked good with stock >= 100 (@0x2D6F7) sells down
+// to 50 (@0x2D705) at market price (0x191F:0x9EA -> func_030590); before
+// independence the Crown's tax% is cut out (@0x2D733) into the royal fund
+// (@0x2D785); after the declaration the sale is TAX-FREE ([0x5382]&1
+// @0x2D728). The colony +0x1B & 3 skip (@0x2D995) is unread -- not
+// modeled, TBD. Boycott: no test in the disposal bytes; whether the price
+// func embeds it is unread -- the skip is kept, FLAGGED.
+function customHouseSale(c) {
+  if (!c.buildings.includes('Custom House')) return;
+  for (let g = 0; g < c.stock.length; g++) {
+    if ((c.customOff || {})[g]) continue;
+    if (c.stock[g] < 100) continue;
+    if (isBoycotted(g)) continue;
+    const amount = c.stock[g] - 50;
+    c.stock[g] = 50;
+    const gross = amount * bidPrice(g);
+    const cut = G.declared ? 0 : Math.floor(gross * G.tax / 100);
+    G.gold += gross - cut;
+    G.kingsFund += cut;
   }
-  for (const i of Object.keys(c.cargoReady || {}))
-    if (c.stock[i] < 100) delete c.cargoReady[i];
-  // @SPOIL1-4: goods actually thrown away (the sale paths above never spoil).
-  // Variant pick -- qty+name when one good spoiled (1/3), the generic body for
-  // several (2/4); the "a larger warehouse could hold another 100 tons" tail
-  // only while one can still be built. The engine's variant selector is
-  // unread; this reading is flagged.
-  if (spoiled.length) {
-    const hint = warehouseLevel(c) < 2;
-    if (spoiled.length === 1)
-      showEvent(hint ? 'SPOIL1' : 'SPOIL3',
-                { STRING0: c.name, STRING1: DATA.cargo[spoiled[0].good].name,
-                  NUMBER0: spoiled[0].qty });
+}
+// WAREHOUSE disposal + cargo-ready -- the byte model (func_02D658 loops 2
+// and 3, @0x2E830..@0x2EA55, read 2026-08-28), replacing the port's
+// sale-refuse spoilage and its latched CARGOREADY.
+//
+// SPOIL (@0x2E830, goods 1..15): overflow = stock - capacity. The part of
+// the overflow within TODAY'S production (pre = clamp(0, overflow,
+// produced) -- func_0048CC, computed per good in loop 1 @0x2D89A) spoils
+// SILENTLY: steady-state production overflow never nags, because the
+// player was told once by @CARGOREADY1/2 when the good reached capacity.
+// Overflow BEYOND today's production (an unloaded cargo, a shrunk
+// capacity) is announced and spoiled, except a residue under 2 tons is
+// tolerated to next turn (@0x2E801). One good -> @SPOIL1 (NUMBER0 tons,
+// STRING1 name @0x2E88E..@0x2E8B5); several -> @SPOIL2; with a Warehouse
+// Expansion the engine literally adds 2 to the key's digit character
+// (@0x2E8D8) -> @SPOIL3/@SPOIL4, the variants without the "larger
+// warehouse" hint. AI colonies instead SELL their overflow (@0x2E86B
+// path; horse overflow feeds the power's pool @0x2E75C, muskets convert
+// per 50 @0x2E72A) -- B3.6.
+//
+// CARGOREADY (@0x2E913, goods 1..15): edge-triggered when the stock
+// crosses a 100 multiple upward this turn (floor(start/100) <
+// floor(now/100) @0x2E927..@0x2E938, start = the pre-banking snapshot
+// @0x2D900); key CARGOREADY0, or CARGOREADY1 when the stock sits AT
+// capacity (@0x2E982) -- CARGOREADY2 with a Warehouse Expansion
+// (@0x2E993) -- with NUMBER0 = capacity (@0x2E961). Gate: colony-report
+// option "Report new cargos available" ([0x5384]&4 @0x2E909, default on).
+function warehouseDisposal(c, snapshot, r) {
+  const cap = warehouseCapacity(c);
+  let count = 0, lastGood = -1, lastQty = 0;
+  for (let g = 1; g < c.stock.length; g++) {
+    const over = c.stock[g] - cap;
+    if (over <= 0) continue;
+    let produced = r.out[g];
+    if (g === GOOD.HORSES) produced += r.horsesBred;
+    let pre = over;                    // clamp(0, over, produced), func_0048CC
+    if (pre > produced) pre = produced;
+    if (pre >= over) { c.stock[g] = cap; continue; }
+    c.stock[g] -= pre;
+    let extra = Math.min(c.stock[g], over - pre);
+    if (extra < 2) extra = 0;
+    if (extra) { count++; lastGood = g; lastQty = extra; }
+    c.stock[g] -= extra;
+  }
+  if (count === 1)
+    showEvent(warehouseLevel(c) < 2 ? 'SPOIL1' : 'SPOIL3',
+              { STRING0: c.name, STRING1: DATA.cargo[lastGood].name,
+                NUMBER0: lastQty });
+  else if (count > 1)
+    showEvent(warehouseLevel(c) < 2 ? 'SPOIL2' : 'SPOIL4', { STRING0: c.name });
+  for (let g = 1; g < c.stock.length; g++) {
+    if (Math.floor(snapshot[g] / 100) >= Math.floor(c.stock[g] / 100)) continue;
+    if (c.stock[g] === cap)
+      askZoom(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
+              { STRING0: c.name, STRING1: DATA.cargo[g].name, NUMBER0: cap }, c);
     else
-      showEvent(hint ? 'SPOIL2' : 'SPOIL4', { STRING0: c.name });
+      showEvent('CARGOREADY0',
+                { STRING0: c.name, STRING1: DATA.cargo[g].name });
   }
 }
 // The upgrade CHAINS: @BUILDING is laid out chain by chain (the same grouping
@@ -3751,9 +3767,11 @@ function colonyBesieged(c) {
   return enemies > friends;
 }
 function colonyTurn(c) {
-  // The start-of-turn food stock, captured before anything banks ([bp-0x6a]
-  // @0x2D6BF) -- the starvation-death gate below reads it.
-  const startFood = c.stock[GOOD.FOOD];
+  // The start-of-turn stocks, captured before anything banks: the food word
+  // is the starvation-death gate's [bp-0x6a] (@0x2D6BF), the whole array is
+  // the cargo-ready snapshot [bp-0xac] (@0x2D900).
+  const snapshot = c.stock.slice();
+  const startFood = snapshot[GOOD.FOOD];
   const r = colonyProduce(c);
   if (colonyBesieged(c)) {
     if (!c.sieged) { c.sieged = true; showEvent('SIEGE'); }
@@ -3779,6 +3797,9 @@ function colonyTurn(c) {
   // (@FOODLOW, once, while stores are thin), then STARVATION (@STARVE1) when a
   // colonist is lost, and a BIRTH (@NEWCOLONIST) on growth.
   c.stock[GOOD.FOOD] = Math.max(0, c.stock[GOOD.FOOD] - r.eaten);
+  // The Custom House sells checked goods down to 50 right at the banking
+  // loop (func_02D658 loop 1), before growth reads the food stock.
+  customHouseSale(c);
   // FOOD MESSAGES + GROWTH -- the byte model, func_02D658 @0x2E10A..@0x2E36C
   // (read 2026-08-28), replacing the port's latch-based reading. The engine's
   // order is growth, then starvation, then the low-food warning, and the
@@ -3894,7 +3915,7 @@ function colonyTurn(c) {
   advanceConstruction(c, r.tally[HAMMERS]);
   runSchool(c);
   fieldLearning(c);
-  autoExport(c);
+  warehouseDisposal(c, snapshot, r);
 }
 // FIELD LEARN-BY-DOING -- byte-read @0x2E01C..@0x2E107 (2026-08-28), a
 // mechanic the port lacked entirely: converts never learn (@0x2E05E); only
@@ -4020,7 +4041,7 @@ function advanceConstruction(c, hammers) {
 // @CUSTOM "Which cargos shall our {Custom House} export?" -- the per-good
 // export toggle. The engine's picker format (runtime rows) is unread; the
 // port re-opens the single-pick popup per toggle, '*' marking exported
-// goods, flagged. autoExport consults the toggles when the house stands.
+// goods, flagged. customHouseSale consults the toggles when the house stands.
 function customHouseMenu() {
   const c = G.colonies[G.colony];
   if (!c || !c.buildings.includes('Custom House')) return;

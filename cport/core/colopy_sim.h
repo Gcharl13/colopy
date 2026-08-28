@@ -319,7 +319,7 @@ typedef struct {
     int32_t  rebelA, rebelB;     /* EMA pair; 0 = unseeded */
     uint8_t  ineff, sieged;
     uint8_t  tool_warned, cap_warned, vanished;
-    uint16_t cargo_ready, outage_latch;
+    uint16_t outage_latch;
     int32_t  crosses_turn, bells_turn;
     uint8_t  taught[32];         /* schoolhouse per-student counters */
     uint8_t  bld[48];            /* the JS-ordered building-id list */
