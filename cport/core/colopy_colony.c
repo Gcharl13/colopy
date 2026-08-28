@@ -281,19 +281,39 @@ int field_yield(const ColonyRecord *c, int sol, int job,
         else if (cs_difficulty() == 1) yld += 1;
     }
     yld += tory_penalty(c, sol);
-    if (is_expert(prof, job)) {
+    int expert = is_expert(prof, job);
+    if (expert) {
         if (g == FOOD || g == HORSES) yld += 2; else yld *= 2;
     }
-    /* PRIME RESOURCES: the bonus table func_009AAA (@0x9AAA-@0x9B9A) and
-     * its application at func_009B9C @0x9DD5-@0x9E10 are BYTE-READ --
-     * bonus = table[res][col], negative doubles, expert doubles the
-     * bonus -- but NOT WIRED: the resource id comes from the runtime
-     * [0x164] plane's high nibble (func_005DF0), and after a LOAD that
-     * plane's saved bytes hold region ids (Vlissingen's whole
-     * neighbourhood reads high-nibble 3), so the engine must rebuild it
-     * procedurally at load.  Wiring the saved bytes in would double
-     * cotton on every 0x3X-region tile.  The term waits for the rebuild
-     * rule. */
+    /* PRIME RESOURCES -- the engine's last field-yield term, byte-read
+     * at func_009B9C @0x9DD5-@0x9E10 with the bonus table func_009AAA
+     * (@0x9AAA-@0x9B9A).  The "resource id" argument is the tile's
+     * DETAIL ID: the getter 0x37F:0x4B0 resolves to
+     * tile_terrain_variant_hash @0x60A0 itself -- the seeded detail
+     * sprites ARE the prime resources.  bonus = table[id][col]; id 7
+     * (fish) with no base yield gives 0; a NEGATIVE entry DOUBLES the
+     * yield; otherwise an EXPERT doubles the bonus. */
+    static const int8_t RES_BONUS[16][16] = {
+        [9] = { [0] = 2, [4] = 2 },
+        [1] = { [0] = 2 },
+        [2] = { [0] = 2 },
+        [8] = { [4] = 3 },
+        [3] = { [3] = -1 },
+        [4] = { [2] = -1 },
+        [5] = { [1] = -1 },
+        [10] = { [5] = 2 },
+        [6] = { [6] = 3, [7] = 1 },
+        [13] = { [6] = 2 },
+        [12] = { [7] = 2 },
+        [7] = { [8] = 3 },
+    };
+    int res = map_detail_id(x, y, v);
+    if (res >= 0) {
+        int bonus = RES_BONUS[res & 0x0F][col & 0x0F];
+        if (res == 7 && yld <= 0) bonus = 0;
+        if (bonus < 0) yld *= 2;
+        else { if (expert) bonus *= 2; yld += bonus; }
+    }
     return yld > 0 ? yld : 0;
 }
 

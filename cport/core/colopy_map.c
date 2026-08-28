@@ -30,6 +30,41 @@ uint8_t map_at(int x, int y) {
  * the C keeps the plane verbatim for byte-exact saves and masks on READ, so
  * logic sees exactly what the JS logic sees (plus the port's runtime
  * depletion marker). */
+/* tile_terrain_variant_hash (@0x0060A0): the tile's DETAIL ID -- and that
+ * id IS the prime-resource id (the field yield's getter 0x37F:0x4B0
+ * resolves to file 0x60A0 by the type-B thunk rule stub = seg*16 + off +
+ * 0x2400, proven on 0x37F:0x10E -> 0x5CFE map_tile_read_layer_15C).
+ * Resources are procedural, not a plane.  DTAB stands in for the runtime
+ * table at [0x192]. */
+static const int8_t MAP_DTAB[29] = { 6, 1, 2, 3, 4, 5, 6, 6,
+                                     9, 1, 8, 9, 10, 10, 6, 6,
+                                     9, 1, 8, 9, 10, 10, 6, 6,
+                                     -1, 7, -1, 12, 13 };
+int map_detail_id(int mx, int my, uint8_t v) {
+    if (!CR.map_seed) return -1;             /* gate @0x60A9 */
+    if (mx < 0 || my < 0 || mx >= COLOPY_MAP_W || my >= COLOPY_MAP_H)
+        return -1;
+    int idx = my * COLOPY_MAP_W + mx;
+    int imp = CS.improve[idx];
+    /* the pre-gate func_005F82 (@0x0060B3-@0x0060C4): improvement bit 2
+     * with the TERRITORY plane's high nibble >= 4 (a tribe owner;
+     * func_005DF0 = [0x164] byte >> 4, 0xF none) suppresses the detail */
+    int owner = CS.region[idx] >> 4;
+    if ((imp & 2) && owner != 0x0F && owner >= 4) return -1;
+    int t = v & 0x1F;
+    int forest = (t >= 8 && t <= 0x17);
+    int q = (mx & 3) * 4 + (my & 3);
+    int h = ((my >> 2) * 3 + (mx >> 2) + (CR.map_seed & 0xF) - forest) & 0xF;
+    if (h != q && (h ^ 0xA) != q) return -1;
+    int cls = tile_mountains(v) ? 27 : tile_hills(v) ? 28 : t;
+    int d = MAP_DTAB[cls];
+    if (d < 0) return -1;
+    /* improve bit 4 suppresses the detail EXCEPT table entry 0xC, which
+     * becomes id 0 (@0x00616A-@0x00617E) */
+    if (imp & 4) return d == 0xC ? 0 : -1;
+    return d;
+}
+
 uint8_t map_improve(int x, int y) {
     if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 0;
     return CS.improve[y * COLOPY_MAP_W + x] & (ROAD_BIT | PLOW_BIT | DEPLETED_BIT);

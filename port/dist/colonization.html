@@ -606,24 +606,32 @@ function detailClass(v) {
   if (tileHills(v)) return 28;
   return v & 0x1F;
 }
-function detailFrame(mx, my, v) {
+// tile_terrain_variant_hash (@0x0060A0) returns the tile's DETAIL ID -- and
+// that id IS the prime-resource id: the field yield calls THIS function for
+// its resource argument (0x37F:0x4B0 resolves to file 0x60A0 by the type-B
+// thunk rule stub = seg*16 + off + 0x2400, proven on 0x37F:0x10E ->
+// 0x5CFE = map_tile_read_layer_15C). Resources are procedural, not a plane.
+function detailId(mx, my, v) {
   if (!G.mapSeed) return -1;                  // word [0x190] == 0 disables @0x60A9
-  // The prime-resource pre-gate (func_005F82, @0x0060B3-@0x0060C4) is
-  // byte-read but NOT WIRED: the saved third plane's high nibble holds
-  // region-id bits, not resources (Vlissingen's whole neighbourhood reads
-  // 3), so the runtime [0x164] plane must be rebuilt at load by a rule
-  // still unread. Measured: gating on the saved bytes changes nothing.
-  const imp = impAt(mx, my);
+  // The pre-gate func_005F82 (@0x0060B3-@0x0060C4): improvement bit 2 with
+  // the TERRITORY plane's high nibble >= 4 (a tribe owner; func_005DF0 =
+  // [0x164] byte >> 4, 0xF none) suppresses the detail outright.
+  const imp = impAt(mx, my), owner = resAt(mx, my);
+  if ((imp & 2) && owner !== 0x0F && owner >= 4) return -1;
   const forest = forestConnects(v) || isScrub(v) ? 1 : 0;
   const q = (mx & 3) * 4 + (my & 3);
   const h = ((my >> 2) * 3 + (mx >> 2) + (G.mapSeed & 0xF) - forest) & 0xF;
   if (h !== q && (h ^ 0xA) !== q) return -1;
   const d = DTAB[detailClass(v)];
   if (d < 0) return -1;
-  // Improve bit 4 suppresses the detail EXCEPT table frame 0xC, which
-  // becomes frame 0 (@0x0061 6A-@0x00617E: test al,4 -> only 0xC survives).
-  if (imp & 4) return d === 0xC ? PHYS.DETAIL + 0 : -1;
-  return PHYS.DETAIL + d;
+  // Improve bit 4 suppresses the detail EXCEPT table entry 0xC, which
+  // becomes id 0 (@0x00616A-@0x00617E: test al,4 -> only 0xC survives).
+  if (imp & 4) return d === 0xC ? 0 : -1;
+  return d;
+}
+function detailFrame(mx, my, v) {
+  const d = detailId(mx, my, v);
+  return d < 0 ? -1 : PHYS.DETAIL + d;
 }
 
 function terrainName(v) {
@@ -3047,11 +3055,39 @@ function fieldYield(c, p) {
   // other good DOUBLES (@0x9DAD..0x9DD2).
   // The expert match: the "era" goods Food and Horses take a flat +2, every
   // other good DOUBLES (@0x9DAD..0x9DD2).
-  if (isExpert(p, job)) {
+  const expert = isExpert(p, job);
+  if (expert) {
     if (g === GOOD.FOOD || g === GOOD.HORSES) y += 2; else y *= 2;
+  }
+  // PRIME RESOURCES -- the engine's last field-yield term, byte-read at
+  // func_009B9C @0x9DD5-@0x9E10 with the bonus table func_009AAA
+  // (@0x9AAA-@0x9B9A). The "resource id" argument is the tile's DETAIL ID:
+  // the getter 0x37F:0x4B0 resolves to tile_terrain_variant_hash @0x60A0
+  // itself -- the seeded detail sprites ARE the prime resources. bonus =
+  // table[id][col]; id 7 (fish) with no base yield gives 0; a NEGATIVE
+  // entry DOUBLES the yield; otherwise an EXPERT doubles the bonus.
+  const tx = c.x + p.cell[0], ty = c.y + p.cell[1];
+  const res = detailId(tx, ty, v);
+  if (res >= 0) {
+    let bonus = RES_BONUS[res * 16 + col] || 0;
+    if (res === 7 && y <= 0) bonus = 0;
+    if (bonus < 0) y *= 2;
+    else { if (expert) bonus *= 2; y += bonus; }
   }
   return Math.max(0, y);
 }
+// func_009AAA verbatim: RES_BONUS[id*16 + col]; -1 = double.
+// (9,0)+2 (1,0)+2 (2,0)+2 (9,4)+2 (8,4)+3 (3,3)dbl (4,2)dbl (5,1)dbl
+// (10,5)+2 (6,6)+3 (13,6)+2 (6,7)+1 (12,7)+2 (7,8)+3
+const RES_BONUS = (() => {
+  const t = new Int8Array(16 * 16);
+  const set = (r, cc, vv) => { t[r * 16 + cc] = vv; };
+  set(9, 0, 2); set(1, 0, 2); set(2, 0, 2); set(9, 4, 2); set(8, 4, 3);
+  set(3, 3, -1); set(4, 2, -1); set(5, 1, -1);
+  set(10, 5, 2); set(6, 6, 3); set(13, 6, 2); set(6, 7, 1); set(12, 7, 2);
+  set(7, 8, 3);
+  return t;
+})();
 
 // The list a native village will teach from (§19.4). Whether Scout (row 22)
 // belongs here is UNCITED -- JOB_GOOD has no entry for it and fieldYield returns

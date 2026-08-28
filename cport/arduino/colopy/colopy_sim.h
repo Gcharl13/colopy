@@ -28,7 +28,10 @@ int32_t  rng_range(int32_t lo, int32_t hi); /* func_00C322: lo+((r*(hi-lo+1))>>1
 #define DEPLETED_BIT 0x80   /* port-runtime marker (engine resource plane unread) */
 
 uint8_t map_at(int x, int y);               /* terrain byte, 0 off-map */
-uint8_t map_improve(int x, int y);          /* masked to 0x48 like the JS import */
+uint8_t map_improve(int x, int y);
+/* the tile's detail/prime-resource id, or -1 (tile_terrain_variant_hash
+ * @0x0060A0; see colopy_map.c) */
+int map_detail_id(int mx, int my, uint8_t v);          /* masked to 0x48 like the JS import */
 int  tile_terrain(uint8_t v);               /* v & 0x1F */
 int  tile_water(uint8_t v);
 int  tile_hills(uint8_t v);

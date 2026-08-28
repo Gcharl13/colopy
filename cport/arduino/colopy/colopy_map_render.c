@@ -83,10 +83,7 @@ static int forest_connects(int v) {
     int t = v & 0x1F;
     return t >= 8 && t <= 0x17 && (t & 7) != 1;
 }
-static int is_scrub(int v) {
-    int t = v & 0x1F;
-    return t >= 8 && t <= 0x17 && (t & 7) == 1;
-}
+
 static int river_connects(int v) { return (v & 0x40) != 0; }
 
 /* §6.4-6.6 — 4-cardinal mask, weights N=8 S=4 W=2 E=1 (game.js:408) */
@@ -97,45 +94,12 @@ static int mask4(int mx, int my, int (*connects)(int)) {
          | (connects(map_at(mx + 1, my)) ? 1 : 0);
 }
 
-/* §6.9 detail band: DTAB = the 29-entry word array at DS:0x192 */
-static const int8_t DTAB[29] = { 6, 1, 2, 3, 4, 5, 6, 6,
-                                 9, 1, 8, 9, 10, 10, 6, 6,
-                                 9, 1, 8, 9, 10, 10, 6, 6,
-                                 -1, 7, -1, 12, 13 };
-static int detail_class(int v) {
-    if (t_mountains(v)) return 27;
-    if (t_hills(v)) return 28;
-    return v & 0x1F;
-}
-/* the salt is word [0x190] = CR.map_seed (RULINGS.md 2026-08-07) */
+/* §6.9 detail band -- the id (and its gates) now live in the core as
+ * map_detail_id(): the same seeded hash doubles as the PRIME-RESOURCE id
+ * for the field yield (see colopy_map.c). */
 static int detail_frame(int mx, int my, int v) {
-    if (!CR.map_seed) return -1;             /* gate @0x60A9 */
-    /* The prime-resource pre-gate (func_005F82: improve bit 2 + the
-     * runtime [0x164] high nibble >= 4, @0x0060B3-@0x0060C4) is byte-read
-     * but NOT WIRED: the SAVED third plane's high nibble holds region-id
-     * bits, not resources (Vlissingen's whole neighbourhood reads 3), so
-     * the runtime plane must be rebuilt at load by a rule still unread.
-     * Measured: gating on the saved bytes changes nothing on this
-     * fixture. */
-    int idx = my * COLOPY_MAP_W + mx;
-    int imp = (mx >= 0 && my >= 0 && mx < COLOPY_MAP_W &&
-               my < COLOPY_MAP_H) ? CS.improve[idx] : 0;
-    int forest = (forest_connects(v) || is_scrub(v)) ? 1 : 0;
-    int q = (mx & 3) * 4 + (my & 3);
-    int h = ((my >> 2) * 3 + (mx >> 2) + (CR.map_seed & 0xF) - forest) & 0xF;
-    if (h != q && (h ^ 0xA) != q) return -1;
-    int d = DTAB[detail_class(v)];
-    if (d < 0) return -1;
-    /* improve bit 4 suppresses the detail EXCEPT table frame 0xC, which
-     * becomes frame 0 (@0x00616A-@0x00617E) */
-    /* improve bit 4 suppresses the detail EXCEPT table frame 0xC, which
-     * becomes frame 0 (@0x00616A-@0x00617E).  Measured: with the suppress
-     * MAP = 5,512, without 5,792.  FLAGGED: ~5 baseline fish survive on
-     * bit-4 ocean tiles that this model suppresses -- the engine's
-     * runtime frame table at [0x192] (seeded at boot, annotated
-     * g_rng_seed_hi) may differ from DTAB there; unread. */
-    if (imp & 4) return d == 0xC ? PH_DETAIL + 0 : -1;
-    return PH_DETAIL + d;
+    int d = map_detail_id(mx, my, (uint8_t)v);
+    return d < 0 ? -1 : PH_DETAIL + d;
 }
 
 /* sticky visibility: CS.fog plane, bit 1<<(power+4) (game.js:8571) */
