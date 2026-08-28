@@ -10512,3 +10512,27 @@ that does not exist — the decoded-MOV record is `spec/ui/cinematics.md` §11.3
 MZ-overlay evidence (its "(sound_id, offset, size) triples" model was falsified
 by AUDIO_SPIKE / `docs/RESIDUAL_FINDINGS.md` §3); `formats/BIN.md` and
 `formats/MOV.md` corrected likewise. Design doc: `docs/AUDIO_PORT.md`.
+
+## 2026-08-28 — the census placement seed base is MEASURABLE: 0x795
+
+The colony screens' building layouts were "declared RNG" because
+`[0x8D80]` — the seed base of `func_025D34`'s placement shuffle — is the
+BIOS tick count captured once at game launch (`@0x075FF5` through
+`0x181F:0xE72` = the 0040:006C reader at file `0xE4D2`): per-session
+state no save can supply.  But only the low 15 bits reach the LCG
+(`srand` masks `and ah,0x7f`, `@0x00C310`), and the census harness's
+DOSBox boot turns out to be deterministic enough to reproduce them:
+sweeping all 0x8000 bases in-process against BOTH colony baselines —
+captured in separate DOSBox runs 14 minutes apart — lands on the same
+unique minimum **0x795**, which is also the 2026-08-06 RAM-probe
+session's recorded clock 1410965 mod 0x8000 (three independent boots,
+one base).  A paired plot-by-plot sheet confirms every Isabella plot
+matches the simulated layout at that base.
+
+Both engines' census render paths now pin plot seed base 0x795 (the C
+importer's `CR.plot_seed`, the JS harness's `G.plotSeedBase`); live JS
+play keeps the per-session random base, exactly like the engine.
+Measured: COLONY 18,197 -> 14,460 px, COLONY_SHIP 21,216 -> 15,154.
+The tail dword at save offset tail+0x260 (0x158795 on the fixture) is
+the SAVING session's clock — persisted but never re-read for placement,
+which is why it only scored mid-sweep.

@@ -108,7 +108,7 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
   G.mapSeed = 1657;
-  G.plotSeedBase = 1653;          // the C harness pins the same base
+  G.plotSeedBase = 0x795;         // the census harness's measured boot-clock base
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   G.cyclePhase = 0; G.blink = true; G.drag = null;
   PTR.x = -100; PTR.y = -100;     // hover label off

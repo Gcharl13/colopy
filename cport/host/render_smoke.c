@@ -148,7 +148,7 @@ int render_colony_main(const char *save, const char *pak_path,
         if (++ord == ci) { real_ci = k; break; }
     }
     if (real_ci < 0) { fprintf(stderr, "no player colony #%d\n", ci); return 1; }
-    rm_draw_colony(real_ci, 1653u, csel, ship_sel, view, numbers);
+    rm_draw_colony(real_ci, CR.plot_seed, csel, ship_sel, view, numbers);
     FILE *o = fopen(out_path, "wb");
     if (!o) return 1;
     fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);

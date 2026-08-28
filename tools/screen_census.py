@@ -329,9 +329,16 @@ REPORTS = {
                "the warehouse overdraw [0x8E32] (ore crosses NOTHING "
                "against a 161 stock), and the horses cell is want 4 with "
                "[0x8E6A] = 3 unfed foals crossed. The production panel "
-               "region is now ~123 px from DOS (X-mark pixel offsets); "
-               "the remaining bulk is the DECLARED RNG building "
-               "placement."),
+               "region is now ~123 px from DOS (X-mark pixel offsets). "
+               "PLACEMENT SOLVED 2026-08-28 (42.4% -> 23.7% overall): "
+               "[0x8D80] is the BIOS boot tick (per-session, @0x075FF5), "
+               "and the harness's DOSBox boot is deterministic enough "
+               "that the effective 15-bit base is REPRODUCIBLE -- both "
+               "colony baselines (separate runs, 14 min apart) sweep to "
+               "the same unique minimum 0x795, which is also the "
+               "2026-08-06 RAM-probe session's clock mod 0x8000. The "
+               "remaining bulk is the ground-speckle approximation and "
+               "sprite-level detail."),
     "COLONY": (("KEYS", "v", "Left", "Return"),
                ["--rendercolony", FIXTURE, str(PAK), "{out}", "1"],
                "NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "

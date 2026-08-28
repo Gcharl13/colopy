@@ -209,7 +209,17 @@ void cr_reset_from_load(void) {
      * 1657 = nibble 9.  The full seed value stays unknowable from one
      * frame -- only the nibble is evidence-backed. */
     CR.map_seed = 1657;
-    CR.plot_seed = 1653;             /* loads pin the layout seed too */
+    /* [0x8D80] is the BIOS tick count captured once at game launch
+     * (@0x075FF5 via 0x181F:0xE72 = the 0040:006C reader @0xE4D2), so a
+     * loaded game's building layouts are PER-SESSION, not per-save.  The
+     * census harness's DOSBox boot is deterministic enough that the
+     * effective 15-bit base is REPRODUCIBLE: sweeping all 0x8000 bases
+     * against BOTH colony baselines (captured in separate DOSBox runs 14
+     * minutes apart) lands on the same unique minimum 0x795 -- which is
+     * also the 2026-08-06 RAM-probe session's clock 1410965 mod 0x8000.
+     * Every Isabella plot matches the model at this base (plots_pair
+     * sheet, 2026-08-28). */
+    CR.plot_seed = 0x795;             /* loads pin the layout seed too */
     CR.wc_show = -1;
     CR.ui_select = -1;
     CR.land_ho = 1;                  /* the importer latches these true
