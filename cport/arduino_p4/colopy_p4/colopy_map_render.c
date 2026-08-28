@@ -110,12 +110,32 @@ static int detail_class(int v) {
 /* the salt is word [0x190] = CR.map_seed (RULINGS.md 2026-08-07) */
 static int detail_frame(int mx, int my, int v) {
     if (!CR.map_seed) return -1;             /* gate @0x60A9 */
+    /* a PRIME-RESOURCE tile shows its resource, never a detail:
+     * func_005F82 (improve bit 2 + the region plane's HIGH nibble --
+     * func_005DF0 = [0x164] byte >> 4, 0xF none -- >= 4) must return -1
+     * for the hash to run (@0x0060B3-@0x0060C4) */
+    int idx = my * COLOPY_MAP_W + mx;
+    int imp = (mx >= 0 && my >= 0 && mx < COLOPY_MAP_W &&
+               my < COLOPY_MAP_H) ? CS.improve[idx] : 0;
+    int res = (mx >= 0 && my >= 0 && mx < COLOPY_MAP_W &&
+               my < COLOPY_MAP_H) ? (CS.region[idx] >> 4) : 0x0F;
+    if ((imp & 2) && res != 0x0F && res >= 4) return -1;
     int forest = (forest_connects(v) || is_scrub(v)) ? 1 : 0;
     int q = (mx & 3) * 4 + (my & 3);
     int h = ((my >> 2) * 3 + (mx >> 2) + (CR.map_seed & 0xF) - forest) & 0xF;
     if (h != q && (h ^ 0xA) != q) return -1;
     int d = DTAB[detail_class(v)];
-    return d < 0 ? -1 : PH_DETAIL + d;
+    if (d < 0) return -1;
+    /* improve bit 4 suppresses the detail EXCEPT table frame 0xC, which
+     * becomes frame 0 (@0x00616A-@0x00617E) */
+    /* improve bit 4 suppresses the detail EXCEPT table frame 0xC, which
+     * becomes frame 0 (@0x00616A-@0x00617E).  Measured: with the suppress
+     * MAP = 5,512, without 5,792.  FLAGGED: ~5 baseline fish survive on
+     * bit-4 ocean tiles that this model suppresses -- the engine's
+     * runtime frame table at [0x192] (seeded at boot, annotated
+     * g_rng_seed_hi) may differ from DTAB there; unread. */
+    if (imp & 4) return d == 0xC ? PH_DETAIL + 0 : -1;
+    return PH_DETAIL + d;
 }
 
 /* sticky visibility: CS.fog plane, bit 1<<(power+4) (game.js:8571) */

@@ -480,12 +480,21 @@ function detailClass(v) {
 }
 function detailFrame(mx, my, v) {
   if (!G.mapSeed) return -1;                  // word [0x190] == 0 disables @0x60A9
+  // A PRIME-RESOURCE tile shows its resource, never a detail: func_005F82
+  // (improve bit 2 + resource nibble >= 4, 0xF = none) must return -1 for
+  // the hash to run (@0x0060B3-@0x0060C4).
+  const imp = impAt(mx, my), res = resAt(mx, my);
+  if ((imp & 2) && res !== 0x0F && res >= 4) return -1;
   const forest = forestConnects(v) || isScrub(v) ? 1 : 0;
   const q = (mx & 3) * 4 + (my & 3);
   const h = ((my >> 2) * 3 + (mx >> 2) + (G.mapSeed & 0xF) - forest) & 0xF;
   if (h !== q && (h ^ 0xA) !== q) return -1;
   const d = DTAB[detailClass(v)];
-  return d < 0 ? -1 : PHYS.DETAIL + d;
+  if (d < 0) return -1;
+  // Improve bit 4 suppresses the detail EXCEPT table frame 0xC, which
+  // becomes frame 0 (@0x0061 6A-@0x00617E: test al,4 -> only 0xC survives).
+  if (imp & 4) return d === 0xC ? PHYS.DETAIL + 0 : -1;
+  return PHYS.DETAIL + d;
 }
 
 function terrainName(v) {
@@ -510,6 +519,11 @@ const at = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) ? 25 : MAP.til
 // It is a separate plane from the terrain byte, which is why plow's 0x40 does
 // not collide with the terrain plane's river bit of the same value.
 const IMPROVE = new Uint8Array(MAP.w * MAP.h);
+// Plane 3's HIGH nibble is the PRIME-RESOURCE id (func_005DF0 = layer [0x164]
+// byte >> 4, 0xF = none); the low nibble is the region id.
+const RESOURCE = new Uint8Array(MAP.w * MAP.h).fill(0x0F);
+const resAt = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h)
+  ? 0x0F : RESOURCE[y * MAP.w + x];
 // The REGION plane: map layer 3 ([0x164]), whose LOW NIBBLE is a landmass/
 // region id -- byte-read at func_005D9C (the reader behind 0x181F:0x722,
 // resolved 2026-08-07f). A shipped save carries the plane verbatim; a fresh
@@ -11148,10 +11162,16 @@ function importSav(bytes) {
   // 1<<(power+4) bit convention, so the plane drops straight in.
   const terr = d.subarray(planeBase, planeBase + plane);
   MAP.tiles.set ? MAP.tiles.set(terr) : MAP.tiles.splice(0, MAP.tiles.length, ...terr);
-  for (let i = 0; i < plane; i++) IMPROVE[i] = d[planeBase + plane + i] & 0x48;
+  // Bits 2 and 4 now carried too: bit 2 marks a PRIME-RESOURCE tile
+  // (func_005F82 pairs it with the resource nibble), bit 4 suppresses the
+  // detail band (tile_terrain_variant_hash @0x00616A).
+  for (let i = 0; i < plane; i++) IMPROVE[i] = d[planeBase + plane + i] & 0x4E;
   // Plane 3's LOW NIBBLE is the region id (func_005D9C reads [0x164]) --
   // carried verbatim, replacing the flood-fill approximation.
-  for (let i = 0; i < plane; i++) REGION[i] = d[planeBase + 2 * plane + i] & 0x0F;
+  for (let i = 0; i < plane; i++) {
+    REGION[i] = d[planeBase + 2 * plane + i] & 0x0F;
+    RESOURCE[i] = d[planeBase + 2 * plane + i] >> 4;
+  }
   SEEN.set(d.subarray(planeBase + 3 * plane, planeBase + 4 * plane));
 
   // The player's PowerRecord.
