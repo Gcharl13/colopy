@@ -66,9 +66,16 @@ uint64_t colony_buildings(const ColonyRecord *c) {
     uint64_t built = 0;
     for (unsigned f = 0; f < sizeof(FAMS) / sizeof(FAMS[0]); f++) {
         int lo = FAMS[f][0], w = FAMS[f][1], len = FAMS[f][2];
+        /* PREFIX COUNT, not binary value: the field is a unary mask, one
+         * bit per built tier.  Proven by San Salvador's fortification
+         * bits 1,1,0 -- the binary read said 3 (Fortress) while the
+         * colony's own map frame byte (+0xBE, read by func_004314
+         * @0x004385) says 2 (Fort).  The two readings only ever differ
+         * at two-of-three bits set, which the Jamestown pin never hit. */
         int t = 0;
-        for (int j = 0; j < w; j++)
-            t |= ((c->buildings[(lo + j) >> 3] >> ((lo + j) & 7)) & 1) << j;
+        while (t < w &&
+               ((c->buildings[(lo + t) >> 3] >> ((lo + t) & 7)) & 1))
+            t++;
         if (t > len) t = len;
         for (int j = 0; j < t; j++) built |= 1ull << (lo + j);
     }

@@ -11240,7 +11240,12 @@ function importSav(bytes) {
     // list decodes bit-exactly from these bytes (RULINGS 2026-08-08h). A
     // tier t marks the chain's first t entries built.
     const bAt = (i) => (d[b + 0x84 + (i >> 3)] >> (i & 7)) & 1;
-    const tier = (lo, w) => { let v = 0; for (let j = 0; j < w; j++) v |= bAt(lo + j) << j; return v; };
+    // PREFIX COUNT, not binary value: the field is a unary mask, one bit per
+    // built tier. Proven by San Salvador's fortification bits 1,1,0 -- the
+    // binary read said 3 (Fortress) while the colony's own map frame byte
+    // (+0xBE, read by func_004314 @0x004385) says 2 (Fort). The readings
+    // only differ at two-of-three bits set, which the Jamestown pin never hit.
+    const tier = (lo, w) => { let t = 0; while (t < w && bAt(lo + t)) t++; return t; };
     const FAMS = [[0, 3, 3], [3, 3, 3], [6, 3, 3], [9, 3, 3], [12, 3, 3],
                   [15, 1, 1], [17, 1, 1], [18, 1, 1], [19, 2, 2], [21, 3, 3],
                   [24, 3, 3], [27, 3, 3], [30, 2, 2], [32, 3, 3], [35, 2, 2],
