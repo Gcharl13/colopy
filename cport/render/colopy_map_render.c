@@ -613,11 +613,14 @@ static void draw_sidebar(const rm_view *vw) {
         int ui = CR.units_order[vw->sel];
         const UnitRecord *u = &CS.units[ui];
         rd_frame f;
-        int ic = unit_icon(ui);
-        if (rd_sheet_frame(&RD.icons, ic, &f))
-            /* Math.round(244 + (24-fw)/2): half rounds UP (game.js:1959) */
-            rd_blit(&RD.icons, ic, 244 + (25 - f.w) / 2, 72 + (21 - f.h) / 2);
-        rm_nation_plate(244, 72, rm_owner_colour_ui(ui), u->orders);
+        /* the sidebar unit is the SHARED func_00386A composite -- the MAP
+         * baseline shows the black silhouette layer and the class-1 plate
+         * at the frigate's top-right (interior orange measured at
+         * (252..256, 69..75), which the panel model reproduces from an
+         * anchor of (242, 68)).  The old centred-sprite + 8x9 plate at
+         * (244,72) was capture-era guesswork. */
+        rm_unit_panel(242, 68, 0, u->type, u->flags, u->orders,
+                   rm_owner_colour_ui(ui), unit_icon(ui));
         int whole = u->moves_remaining / 3, frac = u->moves_remaining % 3;
         if (frac)
             snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);

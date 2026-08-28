@@ -2142,9 +2142,14 @@ function drawSidebar(ctx) {
   // Sidebar C (240,136,80,64): selected-unit panel.
   const u = G.units[G.sel];
   if (u) {
-    const [fw, fh] = frameSize('ICONS', u.icon);
-    sheetFrame(ctx, 'ICONS', u.icon, 244 + (24 - fw) / 2, 72 + (20 - fh) / 2);
-    nationPlate(ctx, 244, 72, ownerColour(u), u.orders);
+    // The sidebar unit is the SHARED func_00386A composite -- the MAP census
+    // baseline shows the black silhouette layer and the class-1 plate at the
+    // frigate's top-right (interior orange measured at (252..256, 69..75)).
+    // Anchor (242, 68) is the census sweep's unique minimum (9,332; every
+    // neighbour >= 9,489). The old centred sprite + 8x9 plate was
+    // capture-era guesswork.
+    unitPanel(ctx, 242, 68, 0, u.type, u.flags || 0, u.orders || 0,
+              ownerColour(u), u.icon);
     // The budget is in thirds; the HUD shows whole moves, with the odd third
     // spelled out so a road march reads correctly.
     const whole = Math.floor(u.movesLeft / MOVE_UNIT), frac = u.movesLeft % MOVE_UNIT;

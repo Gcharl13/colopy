@@ -202,13 +202,23 @@ REPORTS = {
             "(37, 23) is the sweep's unique minimum (9,794 px; every "
             "neighbour >= 16,428), which confirms the centring model "
             "clamp(unit - (7, 6)). Triage of the 9,855:\n"
-            "         ~2,500  the Ocean(25)/Sea-Lane(26) transition: DOS "
-            "dithers the boundary over a ~5-tile band (~62 px/tile); the "
-            "port's edge is hard. Mechanism unread -- OPEN\n"
-            "         ~2,700  the sidebar: the MINIMAP palette (DOS paints "
+            "         RESOLVED: the 'Ocean/Sea-Lane dither band' was no "
+            "band at all -- TERRAIN.SS frame 11 (Sea Lane) carries 62 "
+            "pixels per tile in the WATER CYCLE ramp 120..127 (frame 10, "
+            "Ocean, is all static 58..60), and the DOS capture holds a "
+            "live phase while the port renders phase 0. The census now "
+            "models it: one global rotation fit per frame, accepted "
+            "pixels in the `cycle` column (3,117 here), never silently "
+            "subtracted. The initially-suspected darker band further out "
+            "was the UNEXPLORED region, and it matches the port's fog "
+            "exactly (166/166 tiles)\n"
+            "         RESOLVED: the sidebar unit panel is the SHARED "
+            "func_00386A composite (silhouette + class-1 plate at the "
+            "frigate's top-right, interior orange measured (252..256, "
+            "69..75)); anchor (242, 68) is the sweep's unique minimum. "
+            "Still OPEN in the sidebar: the MINIMAP palette (DOS paints "
             "the northern landmass tan where the port paints green -- "
-            "colour source unread), the unit panel (plate/sprite layout "
-            "differs from DOS and sits ~6 px off), and Moves: 6 vs DOS 5 "
+            "colour source unread) and Moves: 6 vs DOS 5 "
             "(units_session_seed pins full moves; DOS uses the save's "
             "moves_remaining -- a harness pin, declared)\n"
             "         DONE (9,855 -> 9,612): colony POPULATION NUMBERS and "
@@ -369,8 +379,44 @@ def diff_one(sid: str) -> dict:
     # come back 0% palette. Without the split, one number invited one wrong
     # explanation for two unrelated faults.
     known = {tuple(dos_img.getpalette()[3 * i:3 * i + 3]) for i in range(256)}
+    # The WATER CYCLE. Palette indices 120..127 rotate live (the animated
+    # sparkle ramp -- TERRAIN.SS frame 11, the Sea Lane ground, carries 62
+    # such pixels per tile, byte-checked against frame 10's static 58..60).
+    # The port renders phase 0; DOSBox is captured mid-animation, so every
+    # cycling pixel can disagree while both sides are RIGHT. The model is a
+    # SINGLE GLOBAL PHASE for the whole frame (the engine rotates the ramp
+    # once per tick, not per pixel): read the port's own index buffer
+    # (OUT.ppm.idx = fb + palette), try all 8 rotations of 120..127 on the
+    # port's cycling pixels, keep the rotation that explains the most, and
+    # accept ONLY the pixels that rotation makes byte-equal. Reported in its
+    # own column -- never silently subtracted from content.
+    cyc_px = 0
+    idx_file = Path(str(out) + ".idx")
+    if idx_file.exists():
+        raw = np.fromfile(idx_file, dtype=np.uint8)
+        npx = raw.size - 768
+        fbw = port.shape[1]
+        fb = raw[:npx].reshape(npx // fbw, fbw)[:200]
+        ppal = raw[npx:].reshape(256, 3)
+        cyc_pts = [(y, x) for y, x in zip(*np.where(mask))
+                   if 120 <= fb[y, x] <= 127]
+        best_phase, best_hits = 0, -1
+        for ph in range(8):
+            hits = sum(1 for y, x in cyc_pts
+                       if (dos[y, x] == ppal[((fb[y, x] - 120 + ph) & 7)
+                                             + 120]).all())
+            if hits > best_hits:
+                best_phase, best_hits = ph, hits
+        accepted = {(y, x) for y, x in cyc_pts
+                    if (dos[y, x] == ppal[((fb[y, x] - 120 + best_phase) & 7)
+                                          + 120]).all()}
+        cyc_px = len(accepted)
+    else:
+        accepted = set()
     pal_px = content_px = 0
     for y, x in zip(*np.where(mask)):
+        if (y, x) in accepted:
+            continue
         if tuple(int(v) for v in port[y, x]) in known:
             content_px += 1
         else:
@@ -393,7 +439,8 @@ def diff_one(sid: str) -> dict:
     return {"id": sid, "px": int(mask.sum()), "pct": round(100 * mask.sum() / mask.size, 2),
             "cursor": cursor,
             "rows": [int(rows.min()), int(rows.max())] if len(rows) else None,
-            "pal": pal_px, "content": content_px, "declared": div}
+            "pal": pal_px, "content": content_px, "cycle": cyc_px,
+            "declared": div}
 
 
 def main() -> int:
@@ -424,9 +471,9 @@ def main() -> int:
         tag = ("  [OPEN]" if str(r["declared"]).startswith("OPEN")
                else "  [declared]") if r["declared"] else ""
         print("  %-7s %6d px  %5.1f%%  rows %-10s  palette %5d / content %5d"
-              "  cursor %3d%s"
+              " / cycle %4d  cursor %3d%s"
               % (r["id"], r["px"], r["pct"], r["rows"], r["pal"], r["content"],
-                 r["cursor"], tag))
+                 r.get("cycle", 0), r["cursor"], tag))
         if r["declared"]:
             print("        %s" % r["declared"])
     print("\nside-by-side (DOS | port | delta): %s" % OUT)
