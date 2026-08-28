@@ -541,16 +541,22 @@ static void advance_construction(int ci, int hammers) {
     colony_rt *r = &CR.col[ci];
     c->hammers = (uint16_t)(c->hammers + hammers);
     int bip = c->building_in_production;
-    /* unitBuildRow (game.js:2965): cost = @UNIT cost x 32, EXCEPT the
-     * Wagon Train's off-scale 40 (census3_build_picker "(40 Hammers)");
-     * tools = the @UNIT tools column x 10, like a building's. */
+    /* BYTE_VERIFIED cost func_00B65A (thunk 0x181F:0xAC4): a buildable
+     * unit (production ids 0x2A..0x30 -> @UNIT rows 11..17, classifier
+     * func_00B5A8 @0xB5BE) prices at its @UNIT hammers byte x32 (@0x0B6B7
+     * shl ax,5) with the clamp ladder <40 -> 40, 40..51 -> 52
+     * (@0x0B6BD..@0x0B6CF; only the 40 floor is reachable for x32 inputs
+     * — it is what prices the Wagon Train's 1x32=32 at "(40 Hammers)").
+     * Tools = the next byte x10 (@0x0B6E3, the same x10 a building's
+     * tools byte gets @0x0B694). */
     int is_unit = bip >= 0xC0 && bip < 0xC0 + 7;
     if (is_unit) {
         const char *un = BUILD_UNIT_NAMES[bip - 0xC0];
         int urow = unit_row_named(un);
         if (urow < 0) return;
-        int cost = strcmp(un, "Wagon Train") == 0
-                       ? 40 : (int)dat_units[urow].cost * 32;
+        int cost = (int)dat_units[urow].cost * 32;
+        if (cost < 40) cost = 40;
+        else if (cost < 52) cost = 52;
         int need_tools = (int)dat_units[urow].tools * 10;
         if (r->sieged) return;
         if (c->hammers < cost) { r->tool_warned = 0; return; }
@@ -590,7 +596,10 @@ static void advance_construction(int ci, int hammers) {
             return;
         }
         r->tool_warned = 0;
-        c->hammers = (uint16_t)(c->hammers - cost);
+        /* completion ZEROES the hammer bank — surplus is NOT carried
+         * (BYTE_VERIFIED @0x2D26C mov word [bx+0x92], 0; the only debit
+         * on the way in is the tools payment @0x2E6A7) */
+        c->hammers = 0;
         c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
         /* the finished unit steps onto the colony square (ships sit in
          * port on that same tile) */
@@ -631,7 +640,9 @@ static void advance_construction(int ci, int hammers) {
         return;
     }
     r->tool_warned = 0;
-    c->hammers = (uint16_t)(c->hammers - b->cost);
+    /* completion ZEROES the hammer bank — surplus is NOT carried
+     * (BYTE_VERIFIED @0x2D26C, common tail of func_02D0E4) */
+    c->hammers = 0;
     c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
     building_add(ci, bip);
     if ((FACTORY_MASK >> bip) & 1) {

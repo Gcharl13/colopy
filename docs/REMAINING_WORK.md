@@ -229,8 +229,12 @@ the outage plane [0x8E5A] with the start-of-turn-empty death gate and
 easy-difficulty leniency, @FOODLOW is latchless at stock < 4x overdraw; see
 spec/systems/colony.md); Custom-House gate on over-100
 disposal open (`:2930`); `@CARGOREADY1/2` and `@SPOIL1-4` selectors unread
-(`:2958`, `:2987`); x32 hammer scale for buildable units inferred from six ship
-costs (`:3059`); `@SIEGE` radius 1, no blockade (`:3091`); the pre-winter
+(`:2958`, `:2987`); the x32 hammer scale BYTE-VERIFIED 2026-08-28
+(func_00B65A @0x0B6B7 shl ax,5, floor 40 @0x0B6C2 — the Wagon Train's
+"off-scale 40" was the floor all along; completion also ZEROES the hammer
+bank @0x2D26C instead of carrying surplus, and +0xB6 turned out to be
+stock[TOOLS], not a second hammer bank — RULINGS 2026-08-28);
+`@SIEGE` radius 1, no blockade (`:3091`); the pre-winter
 variant CLOSED 2026-08-28 — the engine picks @FOOD2/@STARVE2 off the season
 word [0x538C] != 0 (@0x2E19A), which is exactly `G.season === 1`;
 herd-growth cap (`:3168`); `@DEPLETION` 1/50 (`:3181`);

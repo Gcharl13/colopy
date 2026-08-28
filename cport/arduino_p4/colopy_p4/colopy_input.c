@@ -1078,8 +1078,11 @@ static void rush_buy(void) {
         for (int i = 0; i < DAT_UNITS_COUNT; i++)
             if (strcmp(dat_units[i].name, nm) == 0) { ur = i; break; }
         if (ur < 0) return;
-        cost_h = strcmp(nm, "Wagon Train") == 0 ? 40
-                                                : dat_units[ur].cost * 32;
+        /* BYTE_VERIFIED func_00B65A: @UNIT hammers byte x32 (@0x0B6B7)
+         * with the clamp ladder <40 -> 40, 40..51 -> 52 (@0x0B6BD) */
+        cost_h = dat_units[ur].cost * 32;
+        if (cost_h < 40) cost_h = 40;
+        else if (cost_h < 52) cost_h = 52;
         tools10 = dat_units[ur].tools;
     } else {
         return;                              /* no target */

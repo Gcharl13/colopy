@@ -384,10 +384,16 @@ Building progress is a slot in the **per-good colony amount array at `ColonyReco
 (0..0x13)**: the 16 `@CARGO` tradables (0..0xF) followed by the 4 internal goods
 **`0x10`=Hammers, `0x11`=Crosses, `0x12`=Liberty Bells, `0x13`=Flags**, so the array
 would run `+0x9A..+0xC0` and put **Hammers at `+0x9A + 0x10·2 = +0xBA`** (u16).
-⚠ **DISPUTED, not settled** — the build code reads `+0x92`/`+0xB6`, **never `+0xBA`**
-(RULINGS 2026-06-20), and `docs/DATA_MODEL.md` maps the per-good array as **16×u16**
-(`+0x9A..+0xB9`), making `+0xBA` a separate field. See the `+0xBA` **CONFLICT** row in
-the §state table and the §6 residual; the 16-vs-20 array width is unresolved.
+⚠ **DISPUTED, and the 16-wide reading keeps winning** — the build code reads
+`+0x92`/`+0xB6`, **never `+0xBA`** (RULINGS 2026-06-20), and `docs/DATA_MODEL.md`
+maps the per-good array as **16×u16** (`+0x9A..+0xB9`), making `+0xBA` a separate
+field.  2026-08-28 adds two more direct readers consistent only with 16-wide:
+the growth/starvation block reads **`+0x9A` as `stock[FOOD]`** (`@0x2E11D`,
+`@0x2D6BF`) and the tools gate reads **`+0xB6` as `stock[TOOLS]`** (good 14,
+`@0x2E5DD/@0x2E6A7`), while the internal goods live in the DGROUP planes
+(`[0x8DE8]` hammers / `[0x8DEA]` crosses / `[0x8DEC]` bells) and the record's own
+`+0x92` bank.  No reader of a 20-wide array has ever been found; the conflict row
+stays only until someone shows one.
 
 > **Conflict resolved 2026-06-20 (corrects the prior off-by-one lead):** the earlier
 > note placed `0xF`=Hammers ⇒ `+0xB8`. That is wrong. `+0xB8` is good `0xF` =
@@ -408,13 +414,28 @@ the §state table and the §6 residual; the 16-vs-20 array width is unresolved.
     a **global** per-good table `DGROUP:0x8E5A`, not a colony field), clamped ≥0
     (`@0x2E50F`/`@0x2E517`).
   - **Build target id = `ColonyRecord +0x94`** (`@0x2E529 mov al,[bx+0x94]`; `<0` =
-    no target, guard `@0x2E544`). Cost = `@BUILDING[idx].cost` from table
-    **`DGROUP:0x8F8C`** (stride **12 (0xC)**, **42** entries; written by parser
-    `func_074D18 @0x74D1D`, read by `func_00B65A @0xB688`). Gate `cost ≤ +0x92`
-    (`@0x2E53B`).
-  - **Second hammer bank `+0xB6`** (cost-debited): `cost ≤ +0xB6` (`@0x2E6A1`) then
-    **`+0xB6 −= cost`** — **surplus hammers are carried** (remainder kept, not
-    zeroed) (`@0x2E6A7`) → `func_02D0E4`.
+    no target, guard `@0x2E544`). **Cost function = `func_00B65A`** (thunk
+    `0x181F:0xAC4`, re-read 2026-08-28): classifier `func_00B5A8` maps the id —
+    0..0x29 → **building** (cost = `@BUILDING[idx]` word from **`DGROUP:0x8F8C`**
+    stride 12, tools = the row's byte × 10 `@0x0B694`; table written by parser
+    `func_074D18 @0x74D1D`), 0x2A..0x30 → **unit `@UNIT` rows 11..17** (Artillery,
+    Wagon Train, Caravel, Merchantman, Galleon, Privateer, Frigate; hammer cost =
+    the stride-14 unit record's byte `[0x5239+14i]` **× 32** `@0x0B6B7 shl ax,5`,
+    clamp ladder `<40 → 40`, `40..51 → 52` `@0x0B6BD..@0x0B6CF` — only the 40 floor
+    is reachable for ×32 inputs, and it is what prices the Wagon Train's 32 at
+    "(40 Hammers)"; tools = byte `[0x523A+14i]` × 10 `@0x0B6E3`).  The function
+    returns the hammer cost and writes the **tools cost** through its out-arg.
+    Gate `cost ≤ +0x92` (`@0x2E53B`).
+  - **`+0xB6` is `stock[TOOLS]`** (good 14 of the 16-wide `+0x9A` array — the
+    prior "second hammer bank" reading is **overturned 2026-08-28**): the gate
+    `tools_cost ≤ +0xB6` (`@0x2E5DD`, against `func_00B65A`'s out-arg); a shortfall
+    posts **`@NEEDTOOLS`** (key 0xEA1, NUMBER0 = needed, NUMBER1 = on hand
+    `@0x2E62B/@0x2E640`) — and when the stock is zero the engine literally
+    **strcats the string "0" (0xEAB) onto the key** to form `@NEEDTOOLS0`
+    (`@0x2E64F strcpy` / `@0x2E669 strcat`), gated by colony-report option bit
+    0x10 ("Report tools needed", `@0x2E5FF`).  **AI colonies simply get
+    `stock[TOOLS] = cost`** (`@0x2E696`).  Payment: `+0xB6 −= tools_cost`
+    (`@0x2E6A7`) → `func_02D0E4`.
   - **Commit:** `func_0092E0` sets the **persistent constructed-mask bit** in
     **`ColonyRecord +0x84..0x89`** (`cx = *(0x8542) + (id>>3) + 0x84; or [bx],
     1<<(id&7)`, `@0x9308`). **The `+0x8A` bitmap is the DISPLAY copy** — its setter
@@ -424,15 +445,15 @@ the §state table and the §6 residual; the 16-vs-20 array width is unresolved.
   - **Build target `+0x94` is NOT auto-reset** to 0xFF on completion (no writer in
     either function); re-completion is blocked by the `+0x84` guard + `@ALREADYHAVE`.
     Target re-selection is a colony-UI action.
-  - **Two hammer fields (clarified 2026-06-20):** `+0x92` is the **per-turn
-    accumulator** (`+= hammers_produced`, feeds the early `cost ≤ +0x92` gate
-    `@0x2E53B`); `+0xB6` is the **build-progress bank** that is **shown to the
-    player** when the building isn't done yet — at `@0x2E5DD` a `+0xB6 < cost`
-    branch formats *cost* and *+0xB6* into a "X of Y hammers" message (template
-    `@0xEA1`, `@0xEAB` when `+0xB6 == 0`) — and is the field **debited** on
-    completion (`+0xB6 −= cost`, surplus carried). So `+0xB6` is the UI/consumed
-    build bank; `+0x92` gates. (Whether the two are kept in lockstep or hold
-    distinct totals still warrants a runtime spot-check.)
+  - **One hammer bank, zeroed on completion (corrects the 2026-06-20 "two
+    hammer fields" reading, 2026-08-28):** `+0x92` is the only hammer field —
+    the per-turn accumulator (`+= hammers_produced`, clamp ≥ 0
+    `@0x2E50F..@0x2E521`) and the completion gate (`cost ≤ +0x92` `@0x2E53B`).
+    The completion tail **sets `+0x92 = 0`** (`@0x2D26C`) — **surplus hammers
+    are NOT carried**.  The "X of Y" message keyed 0xEA1 is `@NEEDTOOLS`
+    (tools, not hammers — see the `+0xB6` bullet), and the only debit on the
+    way in is the tools payment `@0x2E6A7`.  Both engines carry this model
+    (previously they subtracted the cost and carried the surplus).
   - ⚠ **Conflict with prior dump labels (RULINGS 2026-06-20):** the older
     "RUNTIME-VERIFIED" labels build-target `+0x10` / constructed-mask `+0x60..0x65`
     / hammers `+0xBA` are **not referenced** by the completion code, which uses

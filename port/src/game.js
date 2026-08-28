@@ -3579,10 +3579,16 @@ const BUILDABLE_UNITS = ['Wagon Train', 'Artillery', 'Caravel', 'Merchantman',
                          'Galleon', 'Privateer', 'Frigate'];
 function unitBuildRow(name) {
   const u = unit(name);
-  // census3_build_picker: the engine prices WAGON TRAIN at (40 Hammers) --
-  // the x32 scale (which the ships and Artillery obey) would give 32, so the
-  // wagon is priced off-scale. Capture value used verbatim.
-  const cost = name === 'Wagon Train' ? 40 : u.cost * UNIT_HAMMER_SCALE;
+  // BYTE_VERIFIED cost func_00B65A (thunk 0x181F:0xAC4): a buildable unit
+  // (production ids 0x2A..0x30 -> @UNIT rows 11..17, classifier
+  // func_00B5A8 @0xB5BE) prices at its @UNIT hammers byte x32 (@0x0B6B7
+  // shl ax,5) with the clamp ladder <40 -> 40, 40..51 -> 52 (@0x0B6BD..
+  // @0x0B6CF; only the 40 floor is reachable for x32 inputs -- it is what
+  // prices the Wagon Train's 1x32=32 at the picker's "(40 Hammers)").
+  // Tools = the next byte x10 (@0x0B6E3, same x10 as buildings @0x0B694).
+  let cost = u.cost * UNIT_HAMMER_SCALE;
+  if (cost < 40) cost = 40;
+  else if (cost < 52) cost = 52;
   return u && { name, cost, tools_x10: u.tools, isUnit: true };
 }
 function unitBuildRows(c) {
@@ -3848,7 +3854,11 @@ function advanceConstruction(c, hammers) {
     return;
   }
   c.toolWarned = false;
-  c.hammers -= b.cost;
+  // Completion ZEROES the hammer bank -- surplus is NOT carried
+  // (BYTE_VERIFIED @0x2D26C mov word [bx+0x92], 0, the common tail of
+  // func_02D0E4; the only debit on the way in is the tools payment
+  // @0x2E6A7).
+  c.hammers = 0;
   c.stock[GOOD.TOOLS] -= needTools;
   if (b.isUnit) {
     // A finished unit steps onto the colony square (ships sit in port there,

@@ -10536,3 +10536,32 @@ Measured: COLONY 18,197 -> 14,460 px, COLONY_SHIP 21,216 -> 15,154.
 The tail dword at save offset tail+0x260 (0x158795 on the fixture) is
 the SAVING session's clock — persisted but never re-read for placement,
 which is why it only scored mid-sweep.
+
+## 2026-08-28 — construction: `+0xB6` is the TOOLS stock, and completion zeroes the hammer bank
+
+Two corrections to the 2026-06-20 build-chain ruling, from re-reading
+`func_02D658 @0x2E4FF..@0x2E6AF` and the completion tail of
+`func_02D0E4`:
+
+1. The "second hammer bank `+0xB6` (surplus carried)" reading is
+   **overturned**.  `+0xB6` is `stock[TOOLS]` — good 14 of the 16-wide
+   `+0x9A` array.  The `@0x2E5DD` compare is against the **tools cost**
+   that the cost function `func_00B65A` (thunk `0x181F:0xAC4`) writes
+   through its out-arg; the shortfall message keyed 0xEA1 is
+   `@NEEDTOOLS` (NUMBER0 = needed, NUMBER1 = on hand), and the engine
+   forms `@NEEDTOOLS0` by literally strcat-ing the string "0" (0xEAB)
+   onto the key (`@0x2E64F/@0x2E669`).  AI colonies skip the gate by
+   having their tools stock SET to the cost (`@0x2E696`).  The
+   `@0x2E6A7` subtraction is the tools payment, not a hammer debit.
+2. Completion **zeroes** the hammer bank: `mov word [bx+0x92], 0`
+   `@0x2D26C` in the common tail — surplus hammers are NOT carried.
+   Both engines previously subtracted the cost and carried the surplus;
+   both now zero.
+
+Same read also byte-verified the unit cost rule the port had inferred:
+buildable production ids 0x2A..0x30 map to `@UNIT` rows 11..17
+(`func_00B5A8`), hammer cost = the unit record's byte × 32
+(`@0x0B6B7 shl ax,5`) with the clamp ladder `<40 → 40`, `40..51 → 52`
+(`@0x0B6BD..@0x0B6CF`; the 40 floor is what prices the Wagon Train), and
+tools = the next byte × 10.  The Wagon Train name-based special case in
+both engines is replaced by the real floor.
