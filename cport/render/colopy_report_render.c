@@ -337,7 +337,12 @@ static void draw_f6(void) {
 /* ---- F7 Naval: the grid ---- */
 #define F7_ROW0 42
 #define F7_PITCH 20
-#define F7_PANEL_X 4
+/* Ship rows enter the shared panel composite (0x181F:0x2BC) at
+ * func_03954C @0x039843 with bx = [bp-0x56] = 2 (the row x); sea-borne
+ * LAND units enter at @0x039574 with bx = [bp-0x56]+0x56 = 88 (cargo
+ * column).  The previously FITTED value 4 was compensating for
+ * func_00380C's own +2 sprite offset, now modelled in rm_unit_panel. */
+#define F7_PANEL_X 2
 #define PW_ADD 4
 #define PH_ADD 3
 #define F7_PER_PAGE 7
@@ -372,15 +377,37 @@ static void draw_f7(void) {
                    (int)dat_units[u->type].icon - 1);
         rd_text(&R_TINY, dat_units[u->type].name, 26, y + 6,
                 rlut(REPORT_VALUE_INK));
-        /* JS reads u.cargo — the PASSENGER list; a non-numeric entry
-         * falls back to icon 22 (the faithful oddity) */
+        /* func_03954C cargo column: one crate per occupied HOLD, engine
+         * frame = (qty >= 0x64 ? 0x17 : 0x27) + good (@0x039605 full,
+         * @0x0395A8 partial; goods via 0x181F:0xBE6, qty via 0xC68) =
+         * bundle icon (22 + good full / 38 + good partial), at
+         * x = 88 + 12k, y = row + 3.  Units aboard draw the generic
+         * crate (the port's icon 22) after the goods. */
         int cx = F7_CARGO_X;
+        for (int k = 0; k < CR.unit_n_hold[ui]; k++) {
+            const hold_slot *h = &CR.unit_hold[ui][k];
+            if (h->qty <= 0) continue;
+            rd_blit(&RD.icons, (h->qty >= 100 ? 22 : 38) + h->good,
+                    cx, y + 3);
+            cx += F7_CARGO_PITCH;
+        }
         for (int k = 0; k < CR.unit_n_pass[ui]; k++) {
             rd_blit(&RD.icons, F7_CARGO_ICON, cx, y + 3);
             cx += F7_CARGO_PITCH;
         }
-        char loc[24];
-        snprintf(loc, sizeof(loc), "(%d, %d)", u->map_x, u->map_y);
+        /* location column @0x0396A4 (formatter 0x191F:0xF82): the colony
+         * NAME when the ship sits on a colony tile, else "(x, y)" */
+        char loc[26];
+        int docked = -1;
+        for (int c = 0; c < CS.n_colonies; c++)
+            if (CS.colonies[c].map_x == u->map_x &&
+                CS.colonies[c].map_y == u->map_y) { docked = c; break; }
+        if (docked >= 0) {
+            memcpy(loc, CS.colonies[docked].name, 24);
+            loc[24] = 0;
+        } else {
+            snprintf(loc, sizeof(loc), "(%d, %d)", u->map_x, u->map_y);
+        }
         r_center(loc, F7_CENTRE[2], y + 6, rlut(REPORT_VALUE_INK));
         row++;
     }

@@ -194,6 +194,25 @@ void rd_blit(const rd_entry *sheet, int idx, int x, int y) {
     }
 }
 
+/* the frame's shape filled with ONE colour -- func_00380C layer 1's
+ * silhouette pass (blit verb 0xCD8:4) */
+void rd_blit_silhouette(const rd_entry *sheet, int idx, int x, int y,
+                        uint8_t colour) {
+    rd_frame f;
+    if (!rd_sheet_frame(sheet, idx, &f)) return;
+    for (int r = 0; r < f.h; r++) {
+        int dy = y + r;
+        if (dy < 0 || dy >= RD_H) continue;
+        const uint8_t *src = f.pix + r * f.w;
+        uint8_t *dst = RD.fb + dy * RD_W;
+        for (int c = 0; c < f.w; c++) {
+            int dx = x + c;
+            if (dx < 0 || dx >= RD_W) continue;
+            if (src[c] != RD_TRANSPARENT) dst[dx] = colour;
+        }
+    }
+}
+
 void rd_blit_name(const char *sheet_name, int idx, int x, int y) {
     rd_entry e;
     if (rd_pak_find(&RD.pak, sheet_name, &e)) rd_blit(&e, idx, x, y);

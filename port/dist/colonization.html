@@ -348,6 +348,30 @@ function frameSize(sheet, idx) {
   const f = DATA.sheets[sheet] && DATA.sheets[sheet].frames[idx];
   return f ? [f.w, f.h] : [0, 0];
 }
+// func_00380C layer 1: the frame's opaque shape as one flat colour (the
+// engine's colour = flags&4 ? 0x5F : 0, @0x003829-@0x003834, blit 0xCD8:4).
+const _silCache = new Map();
+function sheetSilhouette(ctx, sheet, idx, x, y, colourIdx) {
+  const sh = DATA.sheets[sheet];
+  if (!sh) return;
+  const f = sh.frames[idx];
+  if (!f) return;
+  const key = `${sheet}:${idx}:${colourIdx}`;
+  let c = _silCache.get(key);
+  if (!c) {
+    const atlas = cycAtlas(sheet, 0);
+    if (!atlas) return;
+    c = document.createElement('canvas');
+    c.width = f.w; c.height = f.h;
+    const g = c.getContext('2d');
+    g.drawImage(atlas, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = ink(colourIdx);
+    g.fillRect(0, 0, f.w, f.h);
+    _silCache.set(key, c);
+  }
+  ctx.drawImage(c, Math.round(x), Math.round(y));
+}
 
 // ------------------------------------------------- count strips (engine verbs)
 // Three shared primitives the colony screen (and the reports) are built out of.
@@ -1895,12 +1919,14 @@ function ownerColour(u) {
 // The plate is a rect of colour 0, a rect inset 1 and 2 smaller in the owner
 // colour, and the letter at +2/+2 (@0x003D1C-@0x003D66, @0x003DF8).
 //
-// STILL APPROXIMATE: the engine takes the sprite's w/h from two sheet-header
-// fields (es:[bx+0x3E] / [bx+0x40]) that have not been decoded, so this uses
-// the port's own trimmed frame size instead. Measured, that is the better of
-// the two candidates -- a fixed 16-wide cell scores worse on every value tried
-// (12..18). It is why F7 lands at 1,100 px rather than 0.
-const F7_PANEL_X = 4;
+// The runtime 12-byte sheet table at es:[bx+0x3E] holds the frame's TRIMMED
+// width (settled empirically: an adjustment sweep scores 0 > -1 > -2), so the
+// port's trimmed frame size IS the engine's. Ship rows enter the shared panel
+// verb (0x181F:0x2BC) at func_03954C @0x039843 with bx = [bp-0x56] = 2 (the
+// row x); sea-borne LAND units enter at @0x039574 with bx = [bp-0x56]+0x56 =
+// 88 (the cargo column). The previously FITTED anchor 4 was compensating for
+// func_00380C's own +2 sprite offset, now modelled in unitPanel().
+const F7_PANEL_X = 2;
 function panelClass(type, flags) {
   switch (DATA.units.findIndex(r => r.name === type)) {
     case 0x0F: case 0x10: case 0x11: case 0x12: return 1;
@@ -1931,10 +1957,16 @@ function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame) {
       break;
     default: px = dx; py = y + sh - ph; after = true; break;
   }
-  if (!after) sheetFrame(ctx, 'ICONS', frame, sx, y);
+  // func_00380C, the two-layer sprite draw: layer 1 is the frame as a SOLID
+  // BLACK SILHOUETTE at (x, y) (@0x003829-@0x003834), layer 2 the real sprite
+  // at (x + 2, y) (`lea dx, [di + 2]` @0x003854) -- a black shadow copy with
+  // the sprite two pixels right of it. The class-0 path defers layer 1 until
+  // after the plates (@0x003D71); every class draws layer 2 last (@0x003D80).
+  if (!after) sheetSilhouette(ctx, 'ICONS', frame, sx, y, 0);
   ctx.fillStyle = ink(0); ctx.fillRect(px, py, pw, ph);
   ctx.fillStyle = ink(colourIdx); ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
-  if (after) sheetFrame(ctx, 'ICONS', frame, sx, y);
+  if (after) sheetSilhouette(ctx, 'ICONS', frame, sx, y, 0);
+  sheetFrame(ctx, 'ICONS', frame, sx + 2, y);
   FONT.tiny.draw(ctx, key, px + 2, py + 2, [ink(0), ink(0), ink(0)]);
 }
 function nationPlate(ctx, x, y, colourIdx, orders) {
@@ -5015,6 +5047,13 @@ function drawEurope(ctx) {
   const CROSS_BANDS = [146, 137, 132];
   const crossingCell = (e, x, k) => {
     const y = CROSS_BANDS[Math.min(k, 2)];
+    // Every unit here draws through func_00380C's two layers: the black
+    // SILHOUETTE of the frame 2 px left of the sprite (see unitPanel).
+    // Measured on the census fixture: crossing band 486 -> 421 px with the
+    // silhouettes (ship's alone worth 35), while shifting the sprites
+    // instead (silhouette at the pinned x, sprite +2) scores 529 -- the
+    // capture-pinned x's are the SPRITE positions.
+    sheetSilhouette(ctx, 'ICONS', e.icon, x + 1, y, 0);
     sheetFrame(ctx, 'ICONS', e.icon, x + 3, y);
     (e.passengers || []).slice(0, 3).forEach((p, i) => {
       const px = x + 20 + i * 17;
@@ -5037,8 +5076,9 @@ function drawEurope(ctx) {
       const fig = entryType(p) === 'Colonists'
         ? professionIconByName(entryName(p)) : null;
       const u = unit(entryType(p)) || unit('Colonists');
-      sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
-                 px, y);
+      const fi = fig !== null && fig !== undefined ? fig : u.icon;
+      sheetSilhouette(ctx, 'ICONS', fi, px - 2, y, 0);
+      sheetFrame(ctx, 'ICONS', fi, px, y);
     });
   };
   // THE THREE PANEL HEADINGS -- centred, ink 69, and the port had all three
@@ -5118,8 +5158,11 @@ function drawEurope(ctx) {
     // and the crossings.
     const fig = entryType(e) === 'Colonists'
       ? professionIconByName(entryName(e)) : null;
-    sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
-               x + 3, EURO_DOCK.y + 1);
+    const fi = fig !== null && fig !== undefined ? fig : u.icon;
+    // func_00380C silhouette layer, 2 px left of the sprite (neutral on the
+    // census fixture -- no dock unit in frame -- kept for the shared verb).
+    sheetSilhouette(ctx, 'ICONS', fi, x + 1, EURO_DOCK.y + 1, 0);
+    sheetFrame(ctx, 'ICONS', fi, x + 3, EURO_DOCK.y + 1);
     if (k === G.euroDockSel)
       hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
   });
@@ -5129,6 +5172,7 @@ function drawEurope(ctx) {
     // Nation sack at cell+(1,1), ship sprite at cell+(4,1) -- both from
     // europe_port_2ships.png (Merchantman (149,146), Caravel (167,146)).
     drawSack(ctx, x + 1, EURO_SHIP.y + 1);
+    sheetSilhouette(ctx, 'ICONS', e.icon, x + 2, EURO_SHIP.y + 1, 0);
     sheetFrame(ctx, 'ICONS', e.icon, x + 4, EURO_SHIP.y + 1);
     // Only the SELECTED ship wears the green cell (the two-ship frame boxes
     // exactly the "Loading:" ship; [0x9E12]-driven).
@@ -10571,8 +10615,13 @@ function drawNavalReport(ctx) {
   [61, 62, 63, 64].forEach((mi, c) =>
     FONT.tiny.center(ctx, DATA.text.misc[mi], F7_CENTRE[c], 27,
                      lut(REPORT_NAME_INK)));
+  // Location column @0x0396A4 (formatter 0x191F:0xF82): the colony NAME when
+  // the ship sits on a colony tile, else "(x, y)".
   const ships = G.units.filter(u => u.ship)
-    .map(u => ({ u, loc: `(${u.x}, ${u.y})`, dest: '' }))
+    .map(u => {
+      const col = G.colonies.find(c => c.x === u.x && c.y === u.y);
+      return { u, loc: col ? col.name : `(${u.x}, ${u.y})`, dest: '' };
+    })
     .concat(G.europe.map(e => ({
       u: e,
       loc: DATA.nations[G.nation].homeport,
@@ -10591,16 +10640,23 @@ function drawNavalReport(ctx) {
                       s.u.flags || 0, s.u.orders || 0,
                       DATA.nations[G.nation].color, cu.icon);
     FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK));
-    // Cargo: one goods sprite per laden hold, ICONS frame 22 + commodity,
-    // first at x=88 and pitch 12, y = row + 3 (template-matched at score 0 on
-    // the Merchantman's two bales of furs).
+    // Cargo column (func_03954C): one crate per occupied HOLD, engine frame =
+    // (qty >= 0x64 ? 0x17 : 0x27) + good (@0x039605 full, @0x0395A8 partial;
+    // goods via 0x181F:0xBE6, qty via 0xC68) = bundle icon 22 + good full /
+    // 38 + good partial, at x = 88 + 12k, y = row + 3. Units aboard draw the
+    // generic crate (icon 22) after the goods.
     let cx = F7_CARGO_X;
-    (s.u.cargo || []).forEach((c) => {
-      const g = (c && c.good !== undefined) ? c.good : c;
-      sheetFrame(ctx, 'ICONS', F7_CARGO_ICON + (typeof g === 'number' ? g : 0),
-                 cx, y + 3);
-      cx += F7_CARGO_PITCH;
-    });
+    if (s.u.ship) {
+      (s.u.hold || []).forEach((h) => {
+        if (h.qty <= 0) return;
+        sheetFrame(ctx, 'ICONS', (h.qty >= 100 ? 22 : 38) + h.good, cx, y + 3);
+        cx += F7_CARGO_PITCH;
+      });
+      (s.u.cargo || []).forEach(() => {
+        sheetFrame(ctx, 'ICONS', F7_CARGO_ICON, cx, y + 3);
+        cx += F7_CARGO_PITCH;
+      });
+    }
     FONT.tiny.center(ctx, s.loc, F7_CENTRE[2], y + 6, lut(REPORT_VALUE_INK));
     FONT.tiny.center(ctx, s.dest, F7_CENTRE[3], y + 6, lut(REPORT_VALUE_INK));
   });

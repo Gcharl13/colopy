@@ -430,10 +430,19 @@ void rm_unit_panel(int x, int y, int W, int type, int flags148,
         break;
     default: px = dx;                      py = y + sh - ph; after = 1; break;
     }
-    if (!after) rd_blit(&RD.icons, frame, sx, y);
+    /* func_00380C, the two-layer sprite draw: layer 1 is the frame as a
+     * SOLID BLACK SILHOUETTE at (x, y) (colour = flags&4 ? 0x5F : 0,
+     * @0x003829-@0x003834, blit 0xCD8:4), layer 2 the real sprite at
+     * (x + 2, y) (`lea dx, [di + 2]` @0x003854).  So every unit panel is a
+     * black shadow copy with the sprite two pixels right of it -- the
+     * outlined look on the live frames.  The class-0 path defers layer 1
+     * until after the plates (@0x003D71); every class draws layer 2 last
+     * (@0x003D80). */
+    if (!after) rd_blit_silhouette(&RD.icons, frame, sx, y, 0);
     rd_fill(px, py, pw, ph, 0);
     rd_fill(px + 1, py + 1, pw - 2, ph - 2, (uint8_t)colour);
-    if (after) rd_blit(&RD.icons, frame, sx, y);
+    if (after) rd_blit_silhouette(&RD.icons, frame, sx, y, 0);
+    rd_blit(&RD.icons, frame, sx + 2, y);
     const uint8_t black[4] = { 0xFF, 0, 0, 0 };
     rd_text(&TINY, key, px + 2, py + 2, black);
 }

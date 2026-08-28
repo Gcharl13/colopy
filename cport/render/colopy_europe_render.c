@@ -99,20 +99,20 @@ static const int16_t CROSS_BANDS[3] = { 146, 137, 132 };
 static void crossing_cell(const euro_crossing *e, int x, int k) {
     int y = CROSS_BANDS[k < 2 ? k : 2];
     /* The SACK here is this screen's stand-in for the shared unit-panel
-     * verb's plate (func_00386A, spec/ui/render_primitives.md §1b).  Routing
-     * this column through rm_unit_panel() was TRIED and MEASURED WORSE --
-     * the crossing band went 326 -> 361 px -- so it is not done.
+     * verb's plate (func_00386A, spec/ui/render_primitives.md §1b) --
+     * routing the column through rm_unit_panel() was TRIED and MEASURED
+     * WORSE (326 -> 361 px), so the capture-pinned +5/+7 sack stays.
      *
-     * The reason is instructive rather than discouraging.  The model's
-     * class-0 plate y is `y + sh - ph`, and with this screen's sprites that
-     * lands on exactly the +7 the capture pinned years ago: the vertical
-     * half of the decode is confirmed here.  Its plate X depends on the
-     * sprite width `sw` the engine reads from the undecoded sheet-header
-     * field es:[bx+0x3E], and substituting the port's trimmed frame width
-     * there puts the plate ~5 px right of where the original has it.  Until
-     * that field is read, the capture-derived +5/+7 is the better number and
-     * the measurement says so. */
-    rd_blit(&RD.icons, (int)dat_units[e->type].icon - 1, x + 3, y);
+     * What DID land (2026-08-28) is func_00380C's other layer: every unit
+     * draw is silhouette-at-x, sprite-at-x+2, and the capture-pinned
+     * positions are the SPRITE positions, so the black silhouette goes
+     * 2 px left of each sprite.  Measured on the census fixture: the
+     * EUROPE screen went 486 -> 421 px with the silhouettes (the ship's
+     * alone is worth 35), while the alternative reading -- silhouette at
+     * the pinned x, sprite shifted +2 -- scores 529 and is dead. */
+    int si = (int)dat_units[e->type].icon - 1;
+    rd_blit_silhouette(&RD.icons, si, x + 1, y, 0);
+    rd_blit(&RD.icons, si, x + 3, y);
     int np = e->n_pass < 3 ? e->n_pass : 3;
     for (int i = 0; i < np; i++) {
         int px = x + 20 + i * 17;
@@ -120,6 +120,7 @@ static void crossing_cell(const euro_crossing *e, int x, int k) {
         int fig = entry_prof_figure(&e->pass[i]);
         if (fig < 0)
             fig = (int)dat_units[entry_unit_type(&e->pass[i])].icon - 1;
+        rd_blit_silhouette(&RD.icons, fig, px - 2, y, 0);
         rd_blit(&RD.icons, fig, px, y);
     }
 }
@@ -266,6 +267,7 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
         int fig = entry_prof_figure(e);
         if (fig < 0)
             fig = (int)dat_units[entry_unit_type(e)].icon - 1;
+        rd_blit_silhouette(&RD.icons, fig, x + 1, 137 + 1, 0);
         rd_blit(&RD.icons, fig, x + 3, 137 + 1);
         if (d == dock_sel) rm_hollow_rect(x, 137, 18, 18, 0x0A);
     }
@@ -273,6 +275,9 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     for (int s = 0; s < nport && s < 6; s++) {
         int x = 145 + s * 18;
         draw_sack(x + 1, 145 + 1);
+        rd_blit_silhouette(&RD.icons,
+                (int)dat_units[CR.europe[port[s]].type].icon - 1,
+                x + 2, 145 + 1, 0);
         rd_blit(&RD.icons, (int)dat_units[CR.europe[port[s]].type].icon - 1,
                 x + 4, 145 + 1);
         if (s == euro_ship) rm_hollow_rect(x, 145, 18, 18, 0x0A);

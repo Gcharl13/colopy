@@ -111,11 +111,32 @@ under `[0x53A2] == 0` uses `0x58` (`@0x003955`), the AI-debug branch uses `+0x31
 (or `0x45` when `>= 0x80`, `@0x00397B`), and a unit with `+0x3148 & 0x80` shows its
 remaining work as a digit or `+` (`@0x003A3B`–`@0x003A88`).
 
-**Still TBD:** `[bp-0x1A]` and `[bp-0x26]` (`es:[bx+0x3E]`/`[bx+0x40]` off the sheet
-header) are the sprite's measured size, so the exact plate x/y per class needs those two
-sheet fields read as well; and `func_00380C`'s own layer semantics are unread. That is
-what stands between this decode and closing census rows C4.1 (F7, 1,635 px) and C4.27
-(the Europe crossing column, ~326 px) — both of which are this plate.
+**`func_00380C`, the two-layer sprite draw (DECODED 2026-08-28).** The verb this
+composite draws its sprite through is itself two blits: **layer 1** renders the frame as a
+**solid silhouette** in one flat colour — `flags & 4 ? 0x5F : 0`, so black in every
+composite path (`@0x003829`–`@0x003834`, through the shape-fill blit `0xCD8:4`) — at
+(`x`, `y`); **layer 2** is the real sprite at (**`x + 2`**, `y`) (`lea dx, [di+2]`
+`@0x003854`). Every unit panel is therefore a black shadow copy with the sprite two
+pixels right of it; class 0 defers layer 1 until after the plate (`@0x003D71`), every
+class draws layer 2 last (`@0x003D80`).
+
+**The F7 caller's anchors (BYTE-VERIFIED 2026-08-28).** `func_03954C` sets
+`[bp-0x56] = 2` (`@0x03955B`) and enters the composite twice: **ship rows** at
+`@0x039843` with `bx = [bp-0x56] = 2` (the row x — the previously FITTED anchor 4 was
+compensating for `func_00380C`'s own +2), and **sea-borne land units** at `@0x039574`
+with `bx = [bp-0x56] + 0x56 = 88` (the cargo column). Its cargo column draws one crate
+per occupied hold — frame `(qty >= 0x64 ? 0x17 : 0x27) + good` (`@0x039605` full /
+`@0x0395A8` partial; goods via `0x181F:0xBE6`, quantities via `0xC68`) at `88 + 12k` —
+and its location column (`@0x0396A4`, formatter `0x191F:0xF82`) prints the colony NAME
+when the ship sits on a colony tile, coordinates only at sea.
+
+**The sheet-header width field settled (measured 2026-08-28).** `es:[bx+0x3E]` (the
+runtime 12-byte-stride sheet table) holds the frame's **trimmed width** — on the F7
+census an adjustment sweep scores trimmed-w best (0 → 163 px total, −1 → +91, −2 →
++103). With all of the above implemented, census row C4.1 (F7) CLOSED at 163 px (82 of
+it the mouse pointer, from 1,635) and C4.27 (the Europe crossing column) dropped
+486 → 421 px — the "black plate behind every figure" was `func_00380C`'s silhouette
+layer, sitting 2 px left of each capture-pinned sprite position.
 
 ## 2. NOT a draw — the `0x35C` correction (B)
 **`0x181F:0x35C` → `func_0048CC` is `clamp(v, lo, hi)`**, not a text/sprite verb. Body
