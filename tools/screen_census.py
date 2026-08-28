@@ -83,11 +83,22 @@ FIXTURE = "sav1653"
 # screen reached by a menu carries its accel path instead (see capture()).
 REPORTS = {
     "F2": ("F2", ["--renderreport", FIXTURE, str(PAK), "{out}", "F2"],
-           "OPEN (0.7%): 454 px, of which 82 is the DOS mouse pointer. The "
-           "rest is ONE element the port does not draw at all -- a black "
-           "badge at (10,27)-(46,37) carrying the crosses figure and a cross "
-           "glyph (the original reads \"30 +\" on this save). Same shape as "
-           "the earlier misses: not a placement error, a missing element."),
+           "CLOSED to the cursor floor (82 px = the DOS mouse pointer, "
+           "0.1%), from 454. C4.23: the crosses gauge was never drawn "
+           "because the runtime accumulator was never seeded -- PowerRecord "
+           "+0x2E holds the crosses (30 on this save) and +0x30 the "
+           "threshold (284), byte-verified at the F2 caller func_037958 "
+           "@0x0379AB/AE, and the gauge itself (0x181F:0x236 = func_002EE4, "
+           "pitch/scale helper func_002D74, number badge func_002E4E) was "
+           "already implemented faithfully in both engines. Two seeds "
+           "closed it: the accumulator, and the gauge SPAN, which is the "
+           "STORED threshold rather than a draw-time recompute -- the "
+           "port's recompute counted 130 units where the original's record "
+           "iteration counts 138 (G.units excludes Europe-side and "
+           "aboard-ship records), threshold 268 vs 284, which spread the "
+           "30 crosses ~6% wider and leaked sprite edges through the "
+           "smear. The badge now diffs to ZERO. The unit-count divergence "
+           "itself is flagged (C4.29), not silently absorbed."),
     "F3": ("F3", ["--renderreport", FIXTURE, str(PAK), "{out}", "F3"],
            "Founding Father portraits: the 25 CC-00..CC-24 sheets are not in "
            "the pack (Part E), so the port lists names as text where the "

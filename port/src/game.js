@@ -10246,7 +10246,13 @@ function drawReligiousReport(ctx) {
   // The live frame carries NO count badge and no "n / m" caption -- the strip is
   // the whole readout -- so numbers are off and the caption the port used to add
   // is gone.
-  gauge(ctx, 0x39 - 1, G.crosses, 0, immigrationThreshold(), 0x0A, 0x19, 0x12C, 1, 0, 0);
+  // The gauge SPAN is the STORED threshold, PowerRecord +0x30 (func_037958
+  // reads the pair @0x0379AB/AE). Recomputing at draw time gave 268 where the
+  // record holds 284 -- the port's G.units excludes Europe-side and
+  // aboard-ship records that the original's count iterates -- which spread
+  // the crosses ~6% wider and leaked sprite edges through the smear (C4.23).
+  gauge(ctx, 0x39 - 1, G.crosses, 0, G.crossThreshold || immigrationThreshold(),
+        0x0A, 0x19, 0x12C, 1, 0, 0);
 }
 
 // ---- F3 Continental Congress ---------------------------------------------
@@ -10722,6 +10728,7 @@ function crossesPerTurn() {
 }
 function checkImmigration() {
   G.crosses += crossesPerTurn();
+  G.crossThreshold = immigrationThreshold();   // mirror of PowerRecord +0x30
   const thr = immigrationThreshold();
   if (G.crosses < thr) return;
   G.crosses -= thr;
@@ -10911,6 +10918,15 @@ function importSav(bytes) {
     t.recHerds = d[tb + 8];          // F9 horse herds, verbatim (@0x0377D6)
     t.met = !!(t.relation & 0x20);
   });
+  // PowerRecord +0x2E is the CROSSES ACCUMULATOR -- byte-verified at the F2
+  // gauge caller func_037958, which reads +0x2E/+0x30 off [0x84fc]
+  // (@0x0379AB/@0x0379AE) and hands them to the icon-strip gauge 0x181F:0x236.
+  // +0x30 is the stored immigration threshold; the byte-cited formula in
+  // immigrationThreshold() computes exactly the stored 284 on this fixture, so
+  // only the accumulator needs seeding. Without it F2's gauge drew nothing on
+  // a loaded game (census C4.23).
+  G.crosses = u16(powBase + nation * 0x13C + 0x2E);
+  G.crossThreshold = u16(powBase + nation * 0x13C + 0x30);
   // REF strength: [0x53DA/DC/DE/E0] = Regulars / Cavalry / Man-O-War /
   // Artillery (COLONIZATION_TECHNICAL_REFERENCE.md 1117) = g+0x5A..0x60.
   G.ref = { Regulars: u16(g + 0x5A), Cavalry: u16(g + 0x5C),

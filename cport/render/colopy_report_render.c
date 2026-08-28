@@ -143,8 +143,18 @@ static int next_player_col(int from) {
 
 /* ---- F2 Religious ---- */
 static void draw_f2(void) {
-    r_gauge(0x39 - 1, CR.crosses, 0, immigration_threshold(),
-            0x0A, 0x19, 0x12C, 1, 0, 0);
+    /* The gauge SPAN is the STORED threshold, PowerRecord +0x30 -- the F2
+     * caller func_037958 reads the pair [bx+0x2E]/[bx+0x30] @0x0379AB/AE
+     * and passes them verbatim.  The port used to recompute the formula at
+     * draw time, and its unit count came out 130 where the original's
+     * record iteration counts 138 (the port's G.units excludes Europe-side
+     * and aboard-ship records) -- threshold 268 vs the stored 284, which
+     * spread the 30 crosses ~6%% wider and leaked sprite edges through the
+     * smear.  Census C4.23; the count divergence itself is flagged in the
+     * ledger, not silently absorbed. */
+    int thr = CR.cross_threshold ? CR.cross_threshold
+                                 : immigration_threshold();
+    r_gauge(0x39 - 1, CR.crosses, 0, thr, 0x0A, 0x19, 0x12C, 1, 0, 0);
 }
 
 /* ---- F3 Continental Congress ---- */

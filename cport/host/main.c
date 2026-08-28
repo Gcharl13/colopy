@@ -306,6 +306,8 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
     colopy_init(1653);                       /* the shared trace seed */
     units_session_seed();
     CR.n_dock_units = 0;   /* the trace clears G.dockUnits after import */
+    CR.crosses = 0;        /* sim_trace.py:490 zeroes G.crosses too */
+    CR.cross_threshold = 0;
     if (agitate) {
         /* the trace's adversarial seeding — mirrors sim_trace.py TURNS */
         for (int v = 0; v < CS.n_villages; v++) {
@@ -655,6 +657,8 @@ int main(int argc, char **argv) {
         colopy_init(1653);
         units_session_seed();
         CR.n_dock_units = 0;   /* mirror of the trace preamble */
+        CR.crosses = 0;
+        CR.cross_threshold = 0;
         for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
         for (int t = 0; t < atoi(argv[3]); t++) {
             turn_step_prefix();

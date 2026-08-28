@@ -487,7 +487,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
     return ((_s >>> 16) & 0x7FFF) / 32768;
   };
   G.rngState = _s;
-  G.crosses = 0; G.bellsTotal = 0; G.dockUnits = []; G.fatherInProgress = null;
+  G.crosses = 0; G.crossThreshold = 0; G.bellsTotal = 0; G.dockUnits = []; G.fatherInProgress = null;
   // Optional adversarial seeding (draw-free, mirrored in C): war-footing
   // alarm + own missions on even tribes + hostile tension, so the raid
   // ladder / conversion / mission-tick paths all get parity coverage even

@@ -258,6 +258,20 @@ void cr_reset_from_load(void) {
     CR.artillery_bought =
         (uint8_t)CS.powers[cs_nation()].artillery_bought;
     CR.boycotts = CS.powers[cs_nation()].boycott;
+    /* PowerRecord +0x2E is the CROSSES ACCUMULATOR and +0x30 the immigration
+     * threshold -- byte-verified at the F2 gauge caller func_037958, which
+     * reads the pair off [0x84fc] (@0x0379AB/@0x0379AE) and hands them to
+     * the icon-strip gauge 0x181F:0x236, and again at its debug-text branch
+     * (@0x0379C4/@0x0379C7).  The fixture corroborates the threshold side:
+     * +0x30 holds 284 and the byte-cited formula in immigration_threshold()
+     * computes exactly 284 from the same save.  The port never seeded the
+     * runtime accumulator, so F2's gauge drew NOTHING on a loaded game --
+     * census C4.23, the "missing badge".  (Write-back on save is untouched:
+     * the record bytes round-trip verbatim, so an unmodified save keeps its
+     * value; a long-played session's drift into +0x2E is FLAGGED, not
+     * wired.) */
+    CR.crosses = CS.powers[cs_nation()].crosses_accum;
+    CR.cross_threshold = CS.powers[cs_nation()].cross_threshold;
     /* slice 3: the Europe harbour + the ship hold/passenger mirrors
      * (importer game.js:10477 — CR-only writes, load stays byte-pure) */
     europe_seed_from_load();
@@ -1354,6 +1368,11 @@ static void check_immigration(void) {
             per += CR.col[ci].crosses_turn;
     CR.crosses += per;
     int accum = immigration_threshold();
+    /* Mirror the engine's own bookkeeping: the record field +0x30 holds the
+     * CURRENT threshold (the F2 caller reads it, func_037958 @0x0379AE), so
+     * the runtime mirror tracks each recompute.  Kept OUT of the record
+     * bytes so save digests stay byte-identical. */
+    CR.cross_threshold = accum;
     if (CR.crosses < accum) return;
     CR.crosses -= accum;
     resolve();

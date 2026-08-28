@@ -363,6 +363,7 @@ typedef struct {
     uint8_t upkeep_unpaid;       /* @UPKEEP half-rate latch */
     uint8_t time_changed;        /* @TIMECHANGE one-shot */
     int32_t crosses;             /* immigration accumulator (JS G.crosses) */
+    int32_t cross_threshold;     /* F2 gauge span (JS G.crossThreshold) */
     int32_t bells_total;         /* whole-game bells (JS G.bellsTotal) */
     int16_t father_in_progress;  /* dat_fathers index, -1 = none */
     immigrant dock[3];           /* the three Europe dock candidates */

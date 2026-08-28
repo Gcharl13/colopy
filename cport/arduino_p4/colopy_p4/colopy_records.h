@@ -125,7 +125,9 @@ typedef struct COLOPY_PACKED {
     int32_t  kings_fund;            /* +0x22 */
     uint8_t  _pad_26[4];
     int32_t  gold;                  /* +0x2A */
-    uint8_t  _pad_2E[0x1E];
+    uint16_t crosses_accum;         /* +0x2E  crosses toward next immigrant */
+    uint16_t cross_threshold;       /* +0x30  the immigration threshold */
+    uint8_t  _pad_32[0x1A];
     uint8_t  price_level[16];       /* +0x4C  live bid prices */
     uint16_t traffic[16];           /* +0x5C  per-good traffic accumulator */
     int32_t  trade_gold[16];        /* +0x7C  F5 net trade value */
