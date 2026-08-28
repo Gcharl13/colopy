@@ -222,6 +222,11 @@ disposal open (`:2930`); `@CARGOREADY1/2` and `@SPOIL1-4` selectors unread
 costs (`:3059`); `@SIEGE` radius 1, no blockade (`:3091`); pre-winter turn
 (`:3128`); herd-growth cap (`:3168`); `@DEPLETION` 1/50 (`:3181`);
 `@MERCANTILISM` rate (`:3269`); Custom House picker format (`:3292`);
+FIELD LEARN-BY-DOING added 2026-08-28 (was entirely absent): byte-read
+@0x2E01C..@0x2E107 — planter/trapper jobs 1..4, unskilled tiers only
+(func_0082B2), gated on the power owning ZERO of the specialty (the
+func_042726 census), odds 1/100 (1/200 servant, 1/300 criminal),
+@TRAINPROFESSION on success; both engines;
 tier-packed building write inverts the byte-verified decode
 (`cport/core/colopy_turn.c:317`); building removal does not rewrite record bytes
 (`colopy_sim.h:74`); a fresh colony's tier field left zeroed (`colopy_cmd.c:369`).

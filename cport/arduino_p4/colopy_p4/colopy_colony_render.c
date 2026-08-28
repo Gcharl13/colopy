@@ -778,20 +778,28 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                 if (i == npeople - 1) x += 4;
             }
         }
-        /* the food / crosses / bells row (@0x027330-0x0273C7) */
-        int P = r.gross[FOOD], E = r.eaten, C = r.centre;
+        /* the food / crosses / bells row (@0x027330-0x0273C7, re-read
+         * 2026-08-28): the shaded sub-runs split FISH food ([0xA895])
+         * from land food — the old model read the split off the CENTRE
+         * yield, which matched only when the fixture's fish happened to
+         * equal it.  Surplus branch (@0x27337, [0x8E32]==0): cell 1 =
+         * eaten with sub eaten−min(fish, eaten); cell 2 = surplus with
+         * sub surplus−leftover_fish.  Shortfall branch (@0x2737E): cell
+         * 1 = produced with sub produced−fish; cell 2 = the overdraw
+         * [0x8E32], 0x8000-marked. */
+        int P = r.gross[FOOD], E = r.eaten, F = r.fish_food;
         rm_crow_cell cells[4];
         int nc = 0;
         if (E > P) {
-            int s1 = P - C;
+            int s1 = P - F;
             cells[nc++] = (rm_crow_cell){ 22 + FOOD, P, s1 > 0 ? s1 : 0, 0x4000 };
             cells[nc++] = (rm_crow_cell){ 22 + FOOD, E - P, 0, 0x8000 };
         } else {
-            int mCE = C < E ? C : E;
-            int hi = (P - E) - (C - E > 0 ? C - E : 0);
-            cells[nc++] = (rm_crow_cell){ 22 + FOOD, E, E - mCE, 0x4000 };
-            cells[nc++] = (rm_crow_cell){ 22 + FOOD, P - E, hi > 0 ? hi : 0,
-                                       0x4000 };
+            int a = F < E ? F : E;
+            int left = F - a; if (left < 0) left = 0;
+            cells[nc++] = (rm_crow_cell){ 22 + FOOD, E, E - a, 0x4000 };
+            cells[nc++] = (rm_crow_cell){ 22 + FOOD, P - E,
+                                       (P - E) - left, 0x4000 };
         }
         cells[nc++] = (rm_crow_cell){ 56, r.crosses, 0, 0 };
         cells[nc++] = (rm_crow_cell){ 62, r.bells, 0, 0 };

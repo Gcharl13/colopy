@@ -618,9 +618,13 @@ void colony_produce(int ci, colony_output *r) {
         if (job >= DAT_JOBS_COUNT) continue;            /* no job */
         if (cell_of[k] >= 0) {
             int g = job_good(job);
-            if (g >= 0)
-                r->out[g] += field_yield(c, sol, job, c->profession[k],
-                                         CELL_DX[cell_of[k]], CELL_DY[cell_of[k]]);
+            if (g >= 0) {
+                int y = field_yield(c, sol, job, c->profession[k],
+                                    CELL_DX[cell_of[k]], CELL_DY[cell_of[k]]);
+                r->out[g] += y;
+                /* [0xA895] += the fisherman's yield (@0xA44D..@0xA456) */
+                if (job == 8) r->fish_food += y;
+            }
         } else if (is_field_job(job)) {
             /* a field job with no field rests in the plaza (importer rule,
              * game.js:10393) */

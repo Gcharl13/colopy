@@ -707,6 +707,65 @@ static void run_school(int ci) {
     }
 }
 
+/* FIELD LEARN-BY-DOING — byte-read @0x2E01C..@0x2E107 (in the per-colony
+ * turn processor, 2026-08-28), a mechanic the port lacked entirely:
+ *   - per colonist: converts never learn (@0x2E05E); only the unskilled
+ *     tiers may (func_0082B2 returns 0 for none 28 / Free Colonists 19 /
+ *     Indentured Servants 25 / Petty Criminals 26);
+ *   - only the PLANTER/TRAPPER jobs teach themselves: occupation 1..4
+ *     (@0x2E070..@0x2E07C);
+ *   - SCARCITY gate (@0x2E022): the roll happens only when the power owns
+ *     ZERO of that specialty — [job-0x6BD0] is the per-power profession
+ *     census func_042726 builds from every unit record + every colonist;
+ *   - odds: random_int(0, N) == 0 with N = 99, 199 for a Servant, 99+200
+ *     for a Criminal (@0x2E080..@0x2E098);
+ *   - success sets profession := the job id (0x181F:0xCAE — which is
+ *     what makes him the job's expert under the byte-equality rule) and
+ *     emits @TRAINPROFESSION (string 0xE1F) with the specialty name. */
+static int prof_owned(int prof) {
+    int n = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        const ColonyRecord *cc = &CS.colonies[ci];
+        if ((cc->owner_power & 3) != cs_nation()) continue;
+        for (int k = 0; k < cc->population && k < 32; k++)
+            if (cc->profession[k] == prof) n++;
+    }
+    /* the unit half of func_042726's census, over the same live pools the
+     * immigration count mirrors (record professions incl. riders,
+     * crossings, the dock) */
+    for (int q = 0; q < CR.n_units_order; q++) {
+        int ui = CR.units_order[q];
+        if (CS.units[ui].profession == prof) n++;
+        for (int rr = 0; rr < CR.unit_n_pass[ui]; rr++)
+            if (CR.unit_pass[ui][rr].kind == 4 &&
+                CR.unit_pass[ui][rr].idx == prof) n++;
+    }
+    for (int k = 0; k < CR.n_europe; k++)
+        for (int rr = 0; rr < CR.europe[k].n_pass; rr++)
+            if (CR.europe[k].pass[rr].kind == 4 &&
+                CR.europe[k].pass[rr].idx == prof) n++;
+    for (int k = 0; k < CR.n_dock_units; k++)
+        if (CR.dock_units[k].kind == 4 && CR.dock_units[k].idx == prof) n++;
+    return n;
+}
+static void field_learning(int ci) {
+    ColonyRecord *c = &CS.colonies[ci];
+    for (int k = 0; k < c->population && k < 32; k++) {
+        int occ = c->occupation[k];
+        int prof = c->profession[k];
+        if (prof == 27) continue;
+        if (!(prof == 28 || prof == 19 || prof == 25 || prof == 26)) continue;
+        if (occ < 1 || occ > 4) continue;
+        if (prof_owned(occ) != 0) continue;
+        int n = 99;
+        if (prof == 25) n = 199;
+        if (prof == 26) n = 99 + 200;
+        if (rng_range(0, n) != 0) continue;
+        c->profession[k] = (uint8_t)occ;
+        cev("TRAINPROFESSION", 0, 0, c->name, dat_jobexpert[occ]);
+    }
+}
+
 /* ---- over-100 disposal (autoExport, game.js:2832; gate func_02D606) ---- */
 static void auto_export(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
@@ -924,6 +983,7 @@ void colony_turn(int ci) {
     }
     advance_construction(ci, o.hammers);
     run_school(ci);
+    field_learning(ci);
     auto_export(ci);
 }
 

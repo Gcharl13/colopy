@@ -169,6 +169,32 @@ Per job (jump table `@0xA1F4`, cs base 0x82B0):
   link, **+50%** with the 3rd (factory), ×2 if expert. (Isabella's census rum
   row 4 = criminal 1 + free 3.)
 
+### Field learn-by-doing — **BYTE_VERIFIED** (`@0x2E01C..@0x2E107`, 2026-08-28)
+Inside the per-colony turn processor, after the school pass: each colonist
+whose profession is an unskilled tier (`func_0082B2` returns 0 for none 28 /
+Free Colonists 19 / Indentured Servants 25 / Petty Criminals 26; Indian
+Converts are skipped outright `@0x2E05E`) and whose OCCUPATION is a
+planter/trapper job 1..4 (`@0x2E070`) may learn that job's specialty — but
+only while the power owns **zero** of it: the gate reads `[job-0x6BD0]`, the
+per-power profession census `func_042726` rebuilds from every owned
+UnitRecord's `+0x17` byte plus every colonist's `+0x40` byte.  The roll is
+`random_int(0, N) == 0` with N = 99 (199 for a Servant, 99+200 for a
+Criminal, `@0x2E080..@0x2E098`); success sets `profession := job id`
+(`0x181F:0xCAE` — the byte-equality expert rule makes him the job's expert;
+the setter also remaps Veteran Dragoons→Veteran Soldiers `@0x9141`) and
+emits `@TRAINPROFESSION` (string 0xE1F) with the specialty name, registering
+the new expert in the census (`@0x2E0B4`).
+
+### Mine depletion — **BYTE_VERIFIED** (accrual `@0x9E13`, consumer `@0x2EA62..@0x2EA9D`, action `func_02D30A`)
+Field yields accrue `[0xA896]` (ore on Minerals +1, silver on Minerals +2,
+silver on a Depleted Mine +1; zeroed per produce `@0xA22C`).  Per point the
+turn rolls `random_int(0, difficulty+1)`; a NONZERO roll bumps
+`ColonyRecord+0x97`; at 50 it wraps and `func_02D30A` marks every worked
+ore/silver cell whose detail id is 6 or 12 with improve bit **0x04**
+(`@0x2D383`) — killing the resource bonus and switching the sprite to the
+Depleted Mine through `map_detail_id`'s `imp&4` gate — and emits
+`@DEPLETION` (string 0xD75) once per turn.
+
 ### The centre tile — **BYTE_VERIFIED** (`func_00A222 @0xA222..@0xA3D1`)
 FOOD band by classifier id — arctic 0; desert family {1, 9, 0x11} 1; forested
 8..23 and Hills/Mountains 2; other land 3 (`@0xA247..@0xA290`; **no

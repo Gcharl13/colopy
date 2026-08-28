@@ -68,6 +68,10 @@ typedef struct {
     int32_t over_amt[N_GOODS];
     int32_t sec_good, sec_amount; /* the centre's secondary yield (@0xA343) */
     int32_t depletion_pts;        /* [0xA896]: mineral wear this turn */
+    int32_t fish_food;            /* [0xA895]: the fishermen's share of the
+                                   * food -- the food row's shaded split
+                                   * (@0x27337/@0x2737E) is fish vs land,
+                                   * not centre vs fields */
 } colony_output;
 
 /* colonyProduce (game.js:2630) over the RECORD form; ci indexes CS.colonies

@@ -3237,6 +3237,7 @@ function colonyProduce(c) {
   // strip and the immigration sum read the same number.
   const tally = { [HAMMERS]: 0, [BELLS]: 0, [CROSSES]: 1, [TEACHING]: 0 };
   depAccrue = 0;                    // [0xA896] zeroed at produce start (@0xA22C)
+  let fishFood = 0;                 // [0xA895], zeroed alongside (@0xA229)
   // The CENTRE TILE produces with no worker -- and a SECONDARY good that
   // goes straight into production (@0xA3F7..@0xA409). See centreYieldCore.
   const cyc = centreYieldCore(c);
@@ -3246,8 +3247,15 @@ function colonyProduce(c) {
   const indoor = [];
   for (const p of c.colonists) {
     if (!p.job) continue;
-    if (p.cell) { const g = JOB_GOOD[jobIndex(p.job)]; if (g >= 0) out[g] += fieldYield(c, p); }
-    else indoor.push(p);
+    if (p.cell) {
+      const g = JOB_GOOD[jobIndex(p.job)];
+      if (g >= 0) {
+        const y = fieldYield(c, p);
+        out[g] += y;
+        // [0xA895] += the fisherman's yield (@0xA44D..@0xA456)
+        if (jobIndex(p.job) === 8) fishFood += y;
+      }
+    } else indoor.push(p);
   }
   // The chains: every want accumulates UNCAPPED (@0xA480..@0xA4A0); the
   // raw costs are recorded in full (a factory pays 2/3, @0x8EB1) and the
@@ -3332,7 +3340,7 @@ function colonyProduce(c) {
   }
   return { out, gross, consumed, tally, centre, eaten, horsesBred, outages,
            outageAmt, overAmt, secGood: cyc.good, secAmount: cyc.amount,
-           depletionPts: depAccrue,
+           depletionPts: depAccrue, fishFood,
            netFood: out[GOOD.FOOD] - eaten };
 }
 // The centre tile -- compute_colony_center_yields func_00A222, byte-read
@@ -3839,7 +3847,49 @@ function colonyTurn(c) {
   }
   advanceConstruction(c, r.tally[HAMMERS]);
   runSchool(c);
+  fieldLearning(c);
   autoExport(c);
+}
+// FIELD LEARN-BY-DOING -- byte-read @0x2E01C..@0x2E107 (2026-08-28), a
+// mechanic the port lacked entirely: converts never learn (@0x2E05E); only
+// the unskilled tiers may (func_0082B2: none / Free Colonists / Indentured
+// Servants / Petty Criminals); only the PLANTER/TRAPPER jobs 1..4 teach
+// themselves (@0x2E070); the roll happens only when the power owns ZERO of
+// that specialty ([job-0x6BD0], the per-power profession census
+// func_042726 builds from every unit record + colonist); odds
+// random_int(0, N) == 0 with N = 99 / 199 servant / 299 criminal; success
+// sets the profession to the job's expert and emits @TRAINPROFESSION.
+function profOwnedCount(title) {
+  let n = 0;
+  const hit = (t) => { if (t === title) n++; };
+  for (const cc of G.colonies)
+    for (const p of cc.colonists) hit(p.profession);
+  for (const u of G.units) {
+    hit(u.profession);
+    for (const e of (u.cargo || [])) if (e && e.name) hit(e.name);
+  }
+  for (const e of G.europe)
+    for (const q of (e.passengers || [])) if (q && q.name) hit(q.name);
+  for (const q of G.dockUnits) if (q && q.name) hit(q.name);
+  return n;
+}
+function fieldLearning(c) {
+  for (const p of c.colonists) {
+    if (p.profession === 'Indian Converts') continue;
+    if (p.profession && p.profession !== 'Free Colonists' &&
+        p.profession !== 'Indentured Servants' &&
+        p.profession !== 'Petty Criminals') continue;
+    const occ = jobIndex(p.job);
+    if (occ < 1 || occ > 4) continue;
+    const title = DATA.jobexpert[occ];
+    if (profOwnedCount(title) !== 0) continue;
+    let n = 99;
+    if (p.profession === 'Indentured Servants') n = 199;
+    if (p.profession === 'Petty Criminals') n = 99 + 200;
+    if (Math.floor(Math.random() * (n + 1)) !== 0) continue;
+    p.profession = title;
+    showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: title });
+  }
 }
 // One turn of construction: bank this colony's hammers, then finish the target
 // if it is paid for. Tools are consumed with the hammers.
@@ -4601,14 +4651,21 @@ function drawColonyPlaza(ctx, c) {
   // only when nonzero; flush at x=2 y=0xA3 span=0x76 gap=4 (@0x0273CC).
   // (The engine's [0xA895] is stale-zero on a freshly loaded game until the
   // first turn tick; the port computes it live.)
+  // Re-read 2026-08-28: the shaded sub-runs split FISH food ([0xA895])
+  // from land food -- the old centre-based split matched only when the
+  // fixture's fish happened to equal the centre. Surplus branch (@0x27337):
+  // cell 1 = eaten, sub eaten-min(fish, eaten); cell 2 = surplus, sub
+  // surplus-leftover_fish. Shortfall branch (@0x2737E): cell 1 = produced,
+  // sub produced-fish; cell 2 = the overdraw [0x8E32], 0x8000-marked.
   const r = colonyProduce(c);
-  const P = r.gross[GOOD.FOOD], E = r.eaten, C = r.centre;
+  const P = r.gross[GOOD.FOOD], E = r.eaten, F = r.fishFood || 0;
   const CORN = 22 + GOOD.FOOD;
+  const a = Math.min(F, E), leftover = Math.max(0, F - a);
   const foodCells = E > P
-    ? [{ frame: CORN, count: P, sub: Math.max(0, P - C), flags: 0x4000 },
+    ? [{ frame: CORN, count: P, sub: Math.max(0, P - F), flags: 0x4000 },
        { frame: CORN, count: E - P, sub: 0, flags: 0x8000 }]
-    : [{ frame: CORN, count: E, sub: E - Math.min(C, E), flags: 0x4000 },
-       { frame: CORN, count: P - E, sub: Math.max(0, (P - E) - Math.max(0, C - E)), flags: 0x4000 }];
+    : [{ frame: CORN, count: E, sub: E - a, flags: 0x4000 },
+       { frame: CORN, count: P - E, sub: (P - E) - leftover, flags: 0x4000 }];
   drawCountRow(ctx, foodCells.concat([
     { frame: 56, count: r.tally[CROSSES], sub: 0, flags: 0 },   // EXE 0x39
     { frame: 62, count: r.tally[BELLS], sub: 0, flags: 0 },     // EXE 0x3F
