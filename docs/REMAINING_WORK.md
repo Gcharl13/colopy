@@ -227,9 +227,14 @@ growth/starvation/@FOODLOW block rewritten to func_02D658
 @0x2E10A..@0x2E36C — growth spawns a UNIT at the fence, starvation keys off
 the outage plane [0x8E5A] with the start-of-turn-empty death gate and
 easy-difficulty leniency, @FOODLOW is latchless at stock < 4x overdraw; see
-spec/systems/colony.md); Custom-House gate on over-100
-disposal open (`:2930`); `@CARGOREADY1/2` and `@SPOIL1-4` selectors unread
-(`:2958`, `:2987`); the x32 hammer scale BYTE-VERIFIED 2026-08-28
+spec/systems/colony.md); the over-100 disposal CLOSED 2026-08-28 — the
+Custom House IS the gate (@0x2D980; without one nothing auto-sells and
+overflow spoils at capacity), the human per-good gate is the +0x8A
+checkbox bit, the protected list func_02D606 is AI-only, and the
+@SPOIL1-4 / @CARGOREADY0-2 selectors are byte-read (one-good vs many
+plus the Warehouse-Expansion digit patch @0x2E8D8; 100-crossing edge
+trigger with the at-capacity variants) — see spec/systems/colony.md;
+the x32 hammer scale BYTE-VERIFIED 2026-08-28
 (func_00B65A @0x0B6B7 shl ax,5, floor 40 @0x0B6C2 — the Wagon Train's
 "off-scale 40" was the floor all along; completion also ZEROES the hammer
 bank @0x2D26C instead of carrying surplus, and +0xB6 turned out to be

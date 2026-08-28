@@ -460,6 +460,61 @@ stays only until someone shows one.
     `+0x94` / `+0x84` / `+0x92`+`+0xB6`. The byte-traced offsets are authoritative
     for the build mechanism; the dump labels are flagged for re-examination.
 
+### Custom House auto-sale, spoilage & cargo-ready — **BYTE_VERIFIED** (`func_02D658` loops 1–3, read 2026-08-28)
+The per-good turn loop (`@0x2D6D8..@0x2D9D3`, goods 0..15) snapshots the
+start-of-turn stock (`[bp-0xac]` `@0x2D900`), banks the produced plane
+(`0x181F:0xB50` → `func_008DBC`; AI colonies substitute `goods_out −
+consumed` `@0x2D92F`, and get **+difficulty/2 food** `@0x2D955`), then runs
+the **Custom House auto-sale**:
+
+- The sale exists **only with a Custom House** (`colony_has(@BUILDING
+  0x12)` `@0x2D980`) — without one nothing is ever auto-sold.
+- The human gate is the per-good **`+0x8A` checkbox bit** alone
+  (`test_bit_at_8a`, `0x181F:0xCFE` `@0x2D9CE`; a new colony zeroes the
+  word `@0x2EC3C`); the **protected-goods list `func_02D606`**
+  (Food/Lumber/Horses/Tools/Muskets always; Ore while `colony_has(3)` or
+  the tools/muskets planes `[0x8DE4]/[0x8DE6]` are live) gates **only the
+  AI entry** (`@0x2D6D8` via near-thunk `@0x2EF55`, jumped from
+  `@0x2D9B8`).
+- A gated good with **stock ≥ 100** (`@0x2D6F7`) sells **down to 50**
+  (`@0x2D705`) at market price (`0x191F:0x9EA` → `func_030590`);
+  pre-independence the tax%% is cut out (`@0x2D733`) into the royal fund
+  (`@0x2D785`), **after the declaration the sale is tax-free**
+  (`[0x5382]&1` `@0x2D728`).  A colony `+0x1B & 3` state skips the human
+  sale (`@0x2D995`) — bits unread, **TBD**.
+
+**Spoilage** (`@0x2E830..@0x2E87F`, goods 1..15): overflow = stock −
+capacity (`func_008D00`).  The part within **today's production**
+(`pre = clamp(0, overflow, produced)`, `func_0048CC`, computed per good in
+loop 1 `@0x2D89A`) is truncated **silently** — steady-state production
+overflow never nags, the player was told once by `@CARGOREADY1/2` when the
+good reached capacity.  Overflow **beyond** today's production is announced
+and spoiled, except a residue under 2 tons is tolerated (`@0x2E801`).  One
+good → `@SPOIL1` (`NUMBER0` tons + `STRING1` name `@0x2E88E`); several →
+`@SPOIL2`; with a Warehouse Expansion the engine **adds 2 to the key's
+digit character** (`@0x2E8D8`) → `@SPOIL3/4`, the variants without the
+"larger warehouse" hint.  **AI colonies sell their overflow instead**
+(`@0x2E86B` path: price byte `[power·16+g−0x7B44]`, gold `@0x2E7B7`; horse
+overflow feeds the power pool `[-0x77AE]` `@0x2E75C`, muskets convert one
+per 50 into `[-0x77AF]` `@0x2E72A`).
+
+**Cargo-ready** (`@0x2E913..@0x2EA55`, goods 1..15): edge-triggered when
+the stock **crosses a 100 multiple upward** this turn
+(`floor(start/100) < floor(now/100)` `@0x2E927..@0x2E938`); key
+`@CARGOREADY0`, or `@CARGOREADY1` when the stock sits at capacity
+(`@0x2E982`) — `@CARGOREADY2` with a Warehouse Expansion (`@0x2E993`) —
+with `NUMBER0` = capacity (`@0x2E961`).  Gate: colony-report option
+"Report new cargos available" (`[0x5384]&4` `@0x2E909`).  The
+`@NEEDTOOLS0` trick recurs here: the engine strcpy's `CARGOREADY0` and
+patches the digit in place (`@0x2E988/@0x2E993`).
+
+Both engines carry this model (`custom_house_sale`/`warehouse_disposal` in
+C, `customHouseSale`/`warehouseDisposal` in JS).  Landing it exposed a
+**C4.26 fallout** in the C: `colonist_add` and `@LOBOTOMIZE` encoded "no
+specialty" as byte **0** — which under the byte-equality expert rule IS
+the Expert Farmer — silently minting experts; both now write **28** (the
+school pool's none value), and a prof-0 expert is lobotomizable.
+
 ### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
 Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
 1) · 100`**, default **100** when `+0x95 == 0` (`@0x008D04` `bp-2=0x64`; `@0x008D14`
