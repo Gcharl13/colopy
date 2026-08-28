@@ -261,8 +261,9 @@ REPORTS = {
                "and the headline/crate placement follows the bytes "
                "(163,132 / x+5-w/2 at y=165). The bulk of what remains is "
                "the DECLARED RNG building placement plus Vlissingen's "
-               "production strips and SoL split (port 6%/94% vs DOS "
-               "5%/95%), untriaged."),
+               "production strips, untriaged. (The SoL split 6%/94% vs "
+               "DOS 5%/95% was the rounding bug fixed via the COLONY "
+               "entry: the engine floors -- 64/1082 = 5.92 prints 5.)"),
     "COLONY": (("KEYS", "v", "Left", "Return"),
                ["--rendercolony", FIXTURE, str(PAK), "{out}", "1"],
                "NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "
