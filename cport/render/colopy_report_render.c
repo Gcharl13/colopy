@@ -476,7 +476,10 @@ static void draw_f8(void) {
 #define F9_ICON_Y 25
 #define F9_ROW0 28
 #define F9_PITCH 21
-#define F9_PER_PAGE 7
+/* 8 = the row loop's own bound (`cmp [bp-0x64], 8`): all eight tribes
+ * draw in one pass; there is no F9 paginator (func_039E98 is the SCORE
+ * screen's icon-flow placer, not a pager -- ledger B3.3) */
+#define F9_PER_PAGE 8
 #define F9_PORTRAIT 116
 /* NAMES @LEVELS singular/plural (the JS TRIBE_LEVELS table) */
 static const struct { const char *name, *one, *many; } R_LEVELS[4] = {

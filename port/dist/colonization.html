@@ -10759,7 +10759,14 @@ const F9_MUSKET_X = 152, F9_HORSE_X = 208;
 // which is why the 1653 frame stops at seven. The spec calls F9 "multi-page via
 // paginator func_039E98"; that paginator is NOT wired up here, so an eighth
 // contacted tribe would simply not be shown. TBD.
-const F9_ICON_Y = 25, F9_ROW0 = 28, F9_PITCH = 21, F9_PER_PAGE = 7;
+// F9_PER_PAGE is 8, straight from the row loop's own bound `cmp
+// [bp-0x64], 8` (quoted below): the engine draws ALL EIGHT tribes in one
+// pass at pitch 21 -- there is no F9 paginator. (The ledger's old B3.3
+// blamed func_039E98 for a missing pager; that function is byte-disproved
+// as the SCORE screen's population-icon flow placer -- see
+// docs/REMAINING_WORK.md B3.3.) The port's 7 was the actual bug: an 8th
+// contacted tribe was silently dropped.
+const F9_ICON_Y = 25, F9_ROW0 = 28, F9_PITCH = 21, F9_PER_PAGE = 8;
 // ICONS 113..117 are five near-identical native portraits. The 1653 frame uses
 // 116 for five of its seven rows, 115 for the Apache and 113 for the Sioux --
 // no rule derivable from tribe index, tech level or settlement count, which is
