@@ -5212,8 +5212,11 @@ function drawEurope(ctx) {
     // silhouettes (ship's alone worth 35), while shifting the sprites
     // instead (silhouette at the pinned x, sprite +2) scores 529 -- the
     // capture-pinned x's are the SPRITE positions.
-    sheetSilhouette(ctx, 'ICONS', e.icon, x + 1, y, 0);
-    sheetFrame(ctx, 'ICONS', e.icon, x + 3, y);
+    // The crossing SHIP is the full func_00386A composite -- the DOS
+    // baseline shows the class-1 plate at the hull's top-right. (The old
+    // attempt that measured worse predates the silhouette + x+2 decode.)
+    unitPanel(ctx, x + 1, y, 0, e.type, 0, 0,
+              DATA.nations[G.nation].color, e.icon);
     (e.passengers || []).slice(0, 3).forEach((p, i) => {
       const px = x + 20 + i * 17;
       // Each passenger = his profession figure + the nation sack at his
@@ -5331,8 +5334,8 @@ function drawEurope(ctx) {
     // Nation sack at cell+(1,1), ship sprite at cell+(4,1) -- both from
     // europe_port_2ships.png (Merchantman (149,146), Caravel (167,146)).
     drawSack(ctx, x + 1, EURO_SHIP.y + 1);
-    sheetSilhouette(ctx, 'ICONS', e.icon, x + 2, EURO_SHIP.y + 1, 0);
-    sheetFrame(ctx, 'ICONS', e.icon, x + 4, EURO_SHIP.y + 1);
+    unitPanel(ctx, x + 2, EURO_SHIP.y + 1, 0, e.type, 0, 0,
+              DATA.nations[G.nation].color, e.icon);
     // Only the SELECTED ship wears the green cell (the two-ship frame boxes
     // exactly the "Loading:" ship; [0x9E12]-driven).
     if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);

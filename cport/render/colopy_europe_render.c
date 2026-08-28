@@ -110,9 +110,13 @@ static void crossing_cell(const euro_crossing *e, int x, int k) {
      * EUROPE screen went 486 -> 421 px with the silhouettes (the ship's
      * alone is worth 35), while the alternative reading -- silhouette at
      * the pinned x, sprite shifted +2 -- scores 529 and is dead. */
-    int si = (int)dat_units[e->type].icon - 1;
-    rd_blit_silhouette(&RD.icons, si, x + 1, y, 0);
-    rd_blit(&RD.icons, si, x + 3, y);
+    /* the crossing SHIP is the full func_00386A composite -- the DOS
+     * baseline shows the class-1 plate at the hull's top-right.  The
+     * 2026-08-2x attempt that measured worse predates the silhouette
+     * and +2 decode; with those modelled the composite now fits. */
+    rm_unit_panel(x + 1, y, 0, e->type, 0, 0,
+               (int)dat_nations[cs_nation()].color,
+               (int)dat_units[e->type].icon - 1);
     int np = e->n_pass < 3 ? e->n_pass : 3;
     for (int i = 0; i < np; i++) {
         int px = x + 20 + i * 17;
@@ -275,11 +279,9 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     for (int s = 0; s < nport && s < 6; s++) {
         int x = 145 + s * 18;
         draw_sack(x + 1, 145 + 1);
-        rd_blit_silhouette(&RD.icons,
-                (int)dat_units[CR.europe[port[s]].type].icon - 1,
-                x + 2, 145 + 1, 0);
-        rd_blit(&RD.icons, (int)dat_units[CR.europe[port[s]].type].icon - 1,
-                x + 4, 145 + 1);
+        rm_unit_panel(x + 2, 145 + 1, 0, CR.europe[port[s]].type, 0, 0,
+                   (int)dat_nations[cs_nation()].color,
+                   (int)dat_units[CR.europe[port[s]].type].icon - 1);
         if (s == euro_ship) rm_hollow_rect(x, 145, 18, 18, 0x0A);
     }
 

@@ -126,7 +126,14 @@ REPORTS = {
            "-1 -> +91 px, -2 -> +103 px). What is LEFT (~81 px beyond the "
            "pointer) is at glyph/edge scale, untriaged."),
     "EUROPE": ("EUROPE", ["--rendereurope", FIXTURE, str(PAK), "{out}", "0", "0", "-1", "0"],
-           "OPEN (0.8%), down from 20.0%. Twelve fixes; the last four:\n"
+           "OPEN (0.6%, 379 px of which 82 is the pointer), down from 20.0%. "
+           "Thirteen fixes -- the latest: the crossing and harbour SHIPS "
+           "go through the full func_00386A composite (the baseline shows "
+           "the class-1 plate at the hull's top-right; the old worse "
+           "measurement predates the silhouette + x+2 decode), 421 -> 379. "
+           "What remains is figure-level pixel noise in the crossing band "
+           "(anchors verified identical) and a sparse market-strip row. "
+           "Earlier fixes:\n"
            "         1,537 -> 1,030(band)  C4.24 the market cell CENTRE is "
            "19i + 10, not 9 -- `imul ax, [bp+6], 0x13; add ax, 0xa` "
            "@0x030ED4, with the icon row's y (0xB5) in the same frame "
