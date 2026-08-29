@@ -303,6 +303,7 @@ int32_t euro_purchase_price(int row); /* purchasePrice incl. escalation */
 int32_t euro_train_cost(int sorted_row);
 int32_t euro_hold_qty(int ei, int good); /* holdQty over a port ship */
 void king_petition(void);             /* petitionLowerTaxes (game.js:8898) */
+void blockade_census(int *any, int *frig); /* func_042138 colony +0x1B scan */
 void euro_arm_dock(int k, int verb_row); /* euroContextCommit 'arm' */
 int  euro_arm_rows(int k, uint8_t *verbs_out); /* dockUnitRows arm subset */
 const char *euro_purchase_unit(int row);       /* PURCHASE[row].unit */
@@ -318,6 +319,9 @@ typedef struct {
     uint8_t  latch;              /* 0x04 majority / 0x02 unanimous */
     int32_t  rebelA, rebelB;     /* EMA pair; 0 = unseeded */
     uint8_t  ineff, sieged;
+    uint8_t  blockade;           /* +0x1B bits: 1 = rival ship in the +-5
+                                  * box, 2 = a Frigate (func_042138 census,
+                                  * @0x424F3..; water-path gate unported) */
     uint8_t  tool_warned, cap_warned, vanished;
     uint16_t outage_latch;
     int32_t  crosses_turn, bells_turn;
@@ -444,13 +448,14 @@ typedef struct {
      * express that. */
     uint8_t runits_order[4][COLOPY_MAX_UNITS];
     uint16_t n_runits[4];
-    int8_t  king_war_rival;      /* G.kingWar, -1 = none */
-    uint8_t king_war_turns;
-    uint8_t king_wed;            /* KINGWIFE one-shot */
+    int16_t king_war_stamp[4];   /* G.kingWars: per-rival declaration turn
+                                  * ([0x53C8+b*2] @0x36128), -1 = none;
+                                  * expires 16 turns later (@0x57FFF) */
+    uint8_t king_weddings;       /* [0x53A7]: lifetime wedding count, cap 30 */
+    uint8_t king_war_country;    /* [0x53A8]: last @KINGWAR country, 1..8 */
     uint8_t succession;          /* spanishSuccession latch */
     uint8_t retired, soon_warned;
     uint8_t scored;              /* G.scored (the SCORED answer latch) */
-    uint8_t king_frigate;        /* G.kingFrigate (KINGFRIGATE answer) */
     uint16_t boycotts;           /* G.boycotts — RUNTIME, [] at import
                                   * (game.js:10287); the record's +0x20
                                   * word is NOT what the JS reads */

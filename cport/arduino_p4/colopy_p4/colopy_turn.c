@@ -110,7 +110,7 @@ void cr_reset_from_load(void) {
     memset(CR.unit_route, 0xFF, sizeof(CR.unit_route));   /* -1 = none */
     CR.zoom_colony = -1;
     CR.father_in_progress = -1;
-    CR.king_war_rival = -1;
+    for (int n = 0; n < 4; n++) CR.king_war_stamp[n] = -1;
     CR.screen_map = 1;               /* importSav ends on the map screen */
     for (int i = 0; i < CS.n_colonies; i++) {
         CR.col[i].sol = (uint8_t)colony_sol(&CS.colonies[i]);
@@ -872,11 +872,48 @@ static void field_learning(int ci) {
  * ([0x5382]&1 @0x2D728).  The +0x1B & 3 skip (@0x2D995) is unread — not
  * modeled, TBD.  Boycott: no test in the disposal bytes; whether the
  * price func (func_030590) embeds it is unread — kept, FLAGGED. */
+/* blockadeCensus (game.js) — func_042138's colony scan (@0x424F3..
+ * @0x42557): +0x1B bit 0 = another power's SHIP within the +-5 box with a
+ * water-path (0x1A1F:0x27E) <= 5, bit 1 = such a FRIGATE (type 0x11);
+ * cleared and recomputed each pass (@0x4268C).  The port tests the box
+ * only — the water-path walk is unported, FLAGGED.  The any/frig outputs
+ * mirror the [0xA89A]/[0xA89B] tallies. */
+void blockade_census(int *any, int *frig) {
+    int a = 0, f = 0;
+    int frigate = unit_row_named("Frigate");
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        ColonyRecord *c = &CS.colonies[ci];
+        if ((c->owner_power & 3) != cs_nation()) continue;
+        CR.col[ci].blockade = 0;
+        for (int rn = 0; rn < 4; rn++) {
+            if (rn == (int)cs_nation()) continue;
+            for (int k = 0; k < CR.n_runits[rn]; k++) {
+                int ui = CR.runits_order[rn][k];
+                if (CS.units[ui].type >= DAT_UNITS_COUNT ||
+                    dat_units[CS.units[ui].type].hull <= 0) continue;
+                int dx = CS.units[ui].map_x - c->map_x;
+                int dy = CS.units[ui].map_y - c->map_y;
+                if (dx < -5 || dx > 5 || dy < -5 || dy > 5) continue;
+                CR.col[ci].blockade |= 1;
+                if ((int)CS.units[ui].type == frigate)
+                    CR.col[ci].blockade |= 2;
+            }
+        }
+        if (CR.col[ci].blockade & 1) a++;
+        if (CR.col[ci].blockade & 2) f++;
+    }
+    if (any) *any = a;
+    if (frig) *frig = f;
+}
+
 static void custom_house_sale(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
     PowerRecord *p = &CS.powers[cur_power()];
     resolve();
     if (!has_bld(ci, BLD_CUSTOM)) return;
+    /* @0x2D995: the +0x1B blockade bits (& 3) skip the auto-sale — no
+     * Custom House sells from a blockaded harbour. */
+    if (CR.col[ci].blockade & 3) return;
     for (int g = 0; g < N_GOODS; g++) {
         if (!((c->custom_house_flags >> g) & 1)) continue;
         if (c->stock[g] < 100) continue;
@@ -1241,6 +1278,7 @@ void turn_step_prefix(void) {
      * The scaffolding above (turn_power / cur_power / cev / cask) is the
      * prerequisite and is already in place and oracle-verified neutral, so
      * that change becomes the loop below plus the JS model. */
+    blockade_census(0, 0);       /* +0x1B bits for the Custom-House skip */
     turn_power = (int)cs_nation();
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())

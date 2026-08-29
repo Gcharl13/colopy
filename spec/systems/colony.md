@@ -489,9 +489,12 @@ the **Custom House auto-sale**:
   FRIGATE (type 0x11); the bits are cleared and recomputed each pass
   (`@0x4268C`), and `[0xA89A]/[0xA89B]` + `[0x9E52]/[0x9E54]` tally the
   blockaded colonies and their populations.  So a Custom House will not
-  auto-sell from a blockaded harbour.  The port does not yet model the
-  blockade bits (its `sieged` is the radius-1 land siege) — the sale
-  skip is noted, not wired; FLAGGED.
+  auto-sell from a blockaded harbour.  **WIRED 2026-08-29**: both engines
+  now run a per-turn blockade census (`blockadeCensus` /
+  `blockade_census`) that rebuilds the bits over the ±5 box and skips the
+  Custom-House sale on `& 3` — the **water-path ≤ 5 walk** (`0x1A1F:0x27E`)
+  is the one unported term (box-only proxy, FLAGGED), and the
+  `[0xA89A]/[0xA89B]` tallies now also gate `@KINGFRIGATE` (king.md §3).
 
 **Spoilage** (`@0x2E830..@0x2E87F`, goods 1..15): overflow = stock −
 capacity (`func_008D00`).  The part within **today's production**

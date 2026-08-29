@@ -10565,3 +10565,43 @@ buildable production ids 0x2A..0x30 map to `@UNIT` rows 11..17
 (`@0x0B6BD..@0x0B6CF`; the 40 floor is what prices the Wagon Train), and
 tools = the next byte × 10.  The Wagon Train name-based special case in
 both engines is replaced by the real floor.
+
+## 2026-08-29 — the Crown's war cycle is byte-read; "AI-AI war" does not exist
+
+1. **The kingWarCycle reconstruction is replaced by the byte model.**
+   `func_035E80` (called per player turn from the immigration/king tick
+   `func_0363A2 @0x3656E`) is the `@KINGNEWWAR` driver: human power only,
+   `(diff+2)·turn ≥ 800`, at least one treaty partner and no royal
+   peace-pending pair, roll `random_int(0, ((P+2)·2−T)·20) ≤ diff`; the
+   target is a random treaty partner; grant `(diff+1)·100` (+25 per point
+   of census-strength deficit, cap `(5−diff)·500`), Veteran Soldiers
+   `1 + deficit>>3` (cap `6−diff`) spawned at NEGATIVE coords = the
+   Europe dock; treaty bit 0x40 → war bit 0x10 swap, `[0x53C8+b·2]=turn`,
+   expiry 16 turns later at the next meeting (`@0x57FFF`).
+   `@KINGFRIGATE` is the `func_02F052` upkeep tail: every 8th turn, gated
+   on the census blockade tallies (`[0xA89B] ≠ 0` or `[0xA89A] > 3`) —
+   the accept costs a `+10` `@KINGTAX` raise (`func_034318`, cap 75) for
+   a free Frigate; AI powers auto-accept; there is NO latch.
+2. **`@KINGMERCY` is dead content** — the key exists in GAME.TXT but has
+   ZERO string hits in VICEROY.EXE; no engine path can emit it.  The
+   port's KINGMERCY tick is removed, and `@KINGVICTORY` is confirmed as
+   the `func_036138` tax-cut band only (never a war-end message; the
+   king-war expiry is silent).
+3. **C1.17 "AI-AI war grievance drivers" — the premise is overturned.**
+   The complete war-bit-2 writer sweep (all relation_or sites + direct
+   matrix writes) shows no autonomous European-vs-European war start
+   exists.  The single autonomous declaration is `@0x542F0`: the NEAREST
+   native tribe (selected per colony by `func_046056` region scan)
+   declares war on an AI European power inside that power's own colony
+   pass (`func_053B7E`), gated on the `func_042138`/`func_0427D6` census
+   tables (regional presence ≥ 2, tribe strength ≤ 2× power strength ×2
+   for Spain, tribe regional strength < 4× regional presence ×2 for
+   Spain, native-settlement region flag, no third European in the region
+   unless Spain) and tension `> 25` (Spain exempt).  The tension-table
+   geometry is confirmed: `[0x5B1C + (tribe·0x27 + power)·2]` =
+   TribeRecord `+0x46`, exactly 4 word slots per 0x4E record.
+4. **Blockade census wired.**  Both engines now rebuild the ColonyRecord
+   `+0x1B` bits per turn (rival ship in the ±5 box; Frigate bit) and use
+   them for the Custom-House sale skip (`@0x2D995`) and the
+   `@KINGFRIGATE` gate.  The water-path ≤ 5 leg (`0x1A1F:0x27E`) is the
+   flagged box-only proxy.

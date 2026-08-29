@@ -3596,6 +3596,10 @@ function warehouseLevel(c) {
 // func embeds it is unread -- the skip is kept, FLAGGED.
 function customHouseSale(c) {
   if (!c.buildings.includes('Custom House')) return;
+  // @0x2D995: a colony whose +0x1B blockade bits are set (& 3) skips the
+  // auto-sale -- a Custom House will not sell from a blockaded harbour.
+  // The bits come from blockadeCensus() (func_042138's colony scan).
+  if (c.blockade & 3) return;
   for (let g = 0; g < c.stock.length; g++) {
     if ((c.customOff || {})[g]) continue;
     if (c.stock[g] < 100) continue;
@@ -8800,9 +8804,13 @@ function newsTick() {
     }
   }
   // Rival-vs-rival wars. The engine genuinely fights AI wars and bulletins
-  // them through func_05CA7E; the port SIMULATES the war tick (the grievance
-  // drivers that start engine wars stay omitted -- RULINGS 2026-08-07m --
-  // so the start/stop and battle rates here are flagged). The BULLETIN
+  // them through func_05CA7E; the port SIMULATES the war tick. RESOLVED
+  // 2026-08-29: there IS no autonomous Euro-Euro war-start driver in the
+  // EXE (the full war-bit-2 writer sweep, diplomacy.md par.3) -- engine
+  // wars start at diplomatic meetings (@0x58A7B/@0x59A71), from attacks
+  // (func_03ECF0), or as the King's bit-0x10 war (kingWarCycle); the port
+  // runs no rival-rival meetings, so the 1/80 start/stop and battle rates
+  // here stay the flagged SIMULATION of that traffic. The BULLETIN
   // conditions and wording are byte-read: a unit-vs-unit battle with no
   // settlement emits @EUROPEWIN/@EUROPELOSE with the @MISC 73/74
   // "defeat"/"defeats" verb chosen by the subject's plurality
@@ -9947,55 +9955,99 @@ function revealAll() {
 // to 15 / 12 / 9 as the year crosses 1600 / 1700 / 1750, further reduced by a
 // human-player difficulty term (difficulty - 2). Skipped once tax > 85.
 function taxInterval() {
+  // base 18 / 15 past 1600 / 12 past 1700 / 9 past 1750, MINUS
+  // 2 x (difficulty - 2) for the human (@0x361AE shl dx,1)
   const base = G.year >= 1750 ? 9 : G.year >= 1700 ? 12 : G.year >= 1600 ? 15 : 18;
-  return Math.max(2, base - (G.difficulty - 2));
+  return Math.max(2, base - 2 * (G.difficulty - 2));
 }
 // RAISE (func_034AE0, read instruction by instruction):
 //   delta       = ((difficulty & 0xFE) << 1) + 4
 //   turn_factor = (turn / 400) + 1
 //   candidate   = delta * turn_factor
-//   no demand if candidate + 5 >= tax; below candidate it also needs a
-//   random_int(1, difficulty + 1) roll to come up non-1.
-// The raise is applied to tax_pct and hard-clamped at 75 (func_034318 @0x03434F).
+// -- that math belongs to the PETITION path; the demand cycle below no
+// longer uses it (2026-08-29). The 75 hard clamp on application stands
+// (func_034318 @0x03434F).
 const TAX_CAP = 75;
 function taxRaise() {
   const delta = ((G.difficulty & 0xFE) << 1) + 4;
   const turnFactor = Math.floor(G.turn / 400) + 1;
   return delta * turnFactor;
 }
-// PRETEXT (func_036138 @0x361CC..0x36221): a severity score picks which excuse
-// the Crown gives, and it escalates with unrest, tax and treasure.
-//   sev = random_int(1,1000) + (2*rebel_sentiment - tax)*5 + gold/100 + turn/30
-// wedding < 0x28A, war < 0x3B6, Navigation Acts < 0x44C, else the Stamp Act.
-function taxPretext() {
-  const sev = 1 + Math.floor(Math.random() * 1000)
-    + (2 * nationalSoL() - G.tax) * 5
-    + Math.floor(G.gold / 100)
-    + Math.floor(G.turn / 30);
-  if (sev < 0x28A) {
-    // The wedding pretext carries a second gate ([0x53A7] < 0x1E @0x362C7)
-    // the port reads as once-per-game; after it, the plain @KINGTAX core
-    // demand serves the band. Flagged reading.
-    if (!G.kingWed) { G.kingWed = true; return 'KINGWIFE'; }
-    return 'KINGTAX';
-  }
-  if (sev < 0x3B6) return 'KINGWAR';
-  if (sev < 0x44C) return 'KINGNAVACT';
-  return 'KINGSTAMPACT';
-}
+// The Crown's tax/war cycle -- BYTE_VERIFIED end to end 2026-08-29
+// (king_tax_demand_and_pretext, func_036138 @0x36138..@0x363A0):
+//   severity = random_int(1,1000) + 5*(2*rebel_meter - tax) + gold/100
+//            + population census + turn/30
+//   < 100    @KINGVICTORY: tax CUT min(random_int(2,5), tax) -- zero = no
+//            event -- naming the REMEMBERED @KINGWAR country ([0x53A8])
+//   < 650    @KINGWIFE +1 while the wedding counter [0x53A7] < 30 -- the
+//            30-entry @ORDINAL list IS the cap; at 30 the band falls
+//            through to the war test
+//   < 950    @KINGWAR +2; country = random_int(1,8) rerolled while equal
+//            to the last, remembered
+//   < 1100   @KINGNAVACT +random_int(3,4)
+//   else     @KINGSTAMPACT +random_int(5,8)
+// [0x53A7]/[0x53A8] live in the persisted globals block the importers do
+// not read yet, FLAGGED.
+const KING_COUNTRIES = ['the Holy Roman Empire', 'the Portuguese',
+  'the Ottoman Turks', 'the Barbary Pirates', 'Russia', 'Prussia',
+  'Sweden', 'Denmark'];
+const KING_ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth',
+  'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth',
+  'thirteenth', 'fourteenth', 'fifteenth', 'sixteenth', 'seventeenth',
+  'eighteenth', 'nineteenth', 'twentieth', 'twenty first',
+  'twenty second', 'twenty third', 'twenty fourth', 'twenty fifth',
+  'twenty sixth', 'twenty seventh', 'twenty eighth', 'twenty ninth',
+  'thirtieth'];
 // The Crown addresses you by your difficulty rank -- [0x8394] is a 5-entry table
 // of salutation strings, one per difficulty (RESOLVED 2026-06-20). @DIFFICULTY
 // carries exactly those five names.
 const kingSalutation = () => DATA.difficulty[G.difficulty];
 function kingTaxDemand() {
   if (G.flags & WOI_DECLARED) return;              // no King to obey any more
+  if (!G.colonies.length) return;                  // @0x36146
   if (G.turn < 30 || G.tax > 85) return;
   if (G.turn % taxInterval() !== 0) return;
-  const candidate = taxRaise();
-  if (candidate + 5 >= G.tax) { /* the gate below still applies */ }
-  if (G.tax <= candidate && 1 + Math.floor(Math.random() * (G.difficulty + 1)) === 1) return;
-  const raise = Math.max(1, Math.min(TAX_CAP - G.tax, candidate));
-  if (raise <= 0) return;
+  // The [-0x6BF0] census: colony sizes + valid units (0x181F:0xB78
+  // validity unread -- every player unit counts here, FLAGGED).
+  const pop = G.colonies.reduce((n, c) => n + c.colonists.length, 0) +
+              G.units.length;
+  const sev = 1 + Math.floor(Math.random() * 1000)
+    + (2 * nationalSoL() - G.tax) * 5
+    + Math.floor(G.gold / 100) + pop
+    + Math.floor(G.turn / 30);
+  let raise, key, s2 = null;
+  if (sev < 100) {
+    // @KINGVICTORY: the war is won, the tax drops -- applied directly (no
+    // tea party against good news; the port's reading of the negative
+    // amount @0x3627D, FLAGGED).
+    const cut = Math.min(2 + Math.floor(Math.random() * 4), G.tax);
+    if (cut <= 0) return;
+    G.tax -= cut;
+    const wc = G.kingWarCountry >= 1 && G.kingWarCountry <= 8 ? G.kingWarCountry : 1;
+    showEvent('KINGVICTORY', { STRING0: kingSalutation(),
+      STRING1: G.leader || DATA.nations[G.nation].leader,
+      STRING2: KING_COUNTRIES[wc - 1], NUMBER0: cut, NUMBER1: G.tax });
+    return;
+  } else if (sev < 0x28A && (G.kingWeddings || 0) < 30) {
+    raise = 1;
+    G.kingWeddings = (G.kingWeddings || 0) + 1;
+    key = 'KINGWIFE';
+    s2 = KING_ORDINAL[G.kingWeddings - 1];
+  } else if (sev < 0x3B6) {
+    raise = 2;
+    let pick;
+    do { pick = 1 + Math.floor(Math.random() * 8); } while (pick === G.kingWarCountry);
+    G.kingWarCountry = pick;
+    key = 'KINGWAR';
+    s2 = KING_COUNTRIES[pick - 1];
+  } else if (sev < 0x44C) {
+    raise = 3 + Math.floor(Math.random() * 2);
+    key = 'KINGNAVACT';
+  } else {
+    raise = 5 + Math.floor(Math.random() * 4);
+    key = 'KINGSTAMPACT';
+    s2 = DATA.nations[G.nation].country;
+  }
   // The good the Sons of Liberty would throw into the sea: the one your colonies
   // hold most of, which is what a Party costs you.
   const stock = DATA.cargo.map((_, i) =>
@@ -10004,9 +10056,9 @@ function kingTaxDemand() {
   for (let i = 1; i < 16; i++) if (stock[i] > stock[good]) good = i;
   const party = DATA.cargo[good].name;
   const subs = { STRING0: kingSalutation(), STRING1: G.leader || DATA.nations[G.nation].leader,
-                 STRING2: DATA.nations[G.nation].adjective, STRING3: party,
+                 STRING2: s2 || DATA.nations[G.nation].adjective, STRING3: party,
                  NUMBER0: raise, NUMBER1: G.tax + raise };
-  askEvent(taxPretext(), subs, (choice) => {
+  askEvent(key, subs, (choice) => {
     // @TAXOPTIONS row 0 kisses the ring, row 1 holds the Party.
     if (choice === 1) {
       teaParty(good);
@@ -10287,64 +10339,145 @@ function growREF() {
       showEvent('KINGBUY', { STRING0: pick });
   }
 }
-// The Crown's European-war cycle (COMPLETION_PLAN Phase 3). Only the
-// KINGWAR/KINGNAVACT tax pretexts are byte-cited (func_036138's severity
-// table); the CYCLE here is a flagged reconstruction of the engine
-// behaviour the keys describe: a background war starts rarely
-// (@KINGNEWWAR -- the King declares war on a rival, cancels your peace
-// arrangement, orders you in with a grant and Veteran Soldiers), runs
-// some turns with occasional @KINGMERCY tax relief and the @KINGFRIGATE
-// escort offer, and ends with @KINGVICTORY's tax cut. Every rate, length
-// and amount is the port's flagged parameter.
-function kingWarCycle() {
-  if ((G.flags & WOI_DECLARED) || G.retired) return;
-  const S = { STRING0: DATA.difficulty[G.difficulty],
-              STRING1: G.leader || DATA.nations[G.nation].leader };
-  if (!G.kingWar) {
-    if (G.turn < 40 || Math.floor(Math.random() * 40) !== 0) return;
-    const foes = G.rivals.filter(r => r.met);
-    const foe = foes[Math.floor(Math.random() * foes.length)];
-    if (!foe) return;
-    G.kingWar = { rival: foe.nation, turns: 8 + Math.floor(Math.random() * 8) };
-    const grant = 300, soldiers = 2;
-    G.gold += grant;
-    for (let k = 0; k < soldiers; k++) {
-      const c0 = G.colonies[0];
-      if (c0) {
-        const u = mkUnit('Soldiers', c0.x, c0.y);
-        u.profession = 'Veteran Soldiers';
-        G.units.push(u);
+// The blockade census -- func_042138's colony scan (@0x424F3..@0x42557,
+// spec/systems/colony.md Custom House note): each colony's +0x1B gets
+// bit 0 when another power's SHIP (EXE types 0xD..0x12) stands within the
+// +-5 box with a water-path distance (0x1A1F:0x27E) <= 5, bit 1 when that
+// ship is a FRIGATE (type 0x11); the bits are cleared and recomputed each
+// pass (@0x4268C). The port tests the +-5 box only -- the water-path walk
+// is unported, FLAGGED. [0xA89A]/[0xA89B] are the census tallies of
+// colonies carrying bit 0 / bit 1; blockadeCensus() returns them.
+function blockadeCensus() {
+  let any = 0, frig = 0;
+  for (const c of G.colonies) {
+    c.blockade = 0;
+    for (const r of G.rivals) {
+      for (const u of r.units) {
+        if (!u.ship) continue;
+        if (Math.abs(u.x - c.x) > 5 || Math.abs(u.y - c.y) > 5) continue;
+        c.blockade |= 1;
+        if (u.type === 'Frigate') c.blockade |= 2;
       }
     }
-    setTreaty(G.nation, foe.nation, REL.TREATY, false);
-    setWar(G.nation, foe.nation, REL.WAR, true);
-    showEvent('KINGNEWWAR', { ...S, STRING2: DATA.nations[foe.nation].adjective,
-                              NUMBER0: grant, NUMBER1: soldiers });
-    return;
+    if (c.blockade & 1) any++;
+    if (c.blockade & 2) frig++;
   }
-  G.kingWar.turns -= 1;
-  const rivalAdj = DATA.nations[G.kingWar.rival].adjective;
-  if (G.kingWar.turns <= 0) {
-    G.tax = Math.max(0, G.tax - 2);
-    showEvent('KINGVICTORY', { ...S, STRING2: rivalAdj, NUMBER0: 2, NUMBER1: G.tax });
-    setWar(G.nation, G.kingWar.rival, REL.WAR, false);
-    G.kingWar = null;
-    return;
+  return { any, frig };
+}
+// The Crown's European-war cycle -- the byte model (read 2026-08-29).
+//
+// @KINGNEWWAR driver = func_035E80 (file 0x035E80..0x036137, called per
+// player turn from the immigration/king tick func_0363A2 @0x3656E via the
+// ljmp stub 0x368A9 -> 0x191f:0xc84). Gates, in EXE order:
+//   - power < 4 and HUMAN (AIPersonality.controller == 0 @0x35EA5);
+//   - power attribute bit 0x13 clear (@0x35EAF -- the independence flag);
+//   - (difficulty+2) * turn >= 800 (@0x35EC1..@0x35ECF);
+//   - scan rivals b: T = treaty partners (relation & 0x40), P = pairs in
+//     the royal peace-pending state ((rel & 0x60) == 0x20) -- P must be 0
+//     (@0x35F82) and T >= 1 (@0x35F75);
+//   - roll random_int(0, ((P+2)*2 - T) * 20) <= difficulty (@0x35F9E..).
+// Target: reroll random_int(0,3) until a treaty partner (@0x35FC6..).
+// Amounts: soldiers = 1, grant = (diff+1)*100 (@0x35FF6..@0x36004); if the
+// target's census strength byte [0x942C+b] exceeds ours, d = theirs-ours,
+// soldiers = (d>>3)+1, grant += 25*d (@0x36007..@0x3602F); clamps
+// soldiers <= 6-diff, grant <= (5-diff)*500 (@0x36032..@0x3605C). Effects:
+// gold += grant; the Veteran Soldier units spawn at NEGATIVE map coords =
+// the EUROPE DOCK (@0x360DC spawn_unit, profession 0x15 @0x36F8);
+// treaty bit 0x40 cleared + king-war bit 0x10 set (@0x36108..@0x36120);
+// [0x53C8 + b*2] = turn (@0x36128). The war EXPIRES at the next diplomatic
+// meeting once 16 turns have passed (diplomacy_meeting_dispatch @0x57FFF:
+// stamp+0x10 <= turn -> clear bit 0x10); the port clears on expiry directly
+// (it has no player-rival meeting dispatcher) -- proxy, flagged.
+//
+// @KINGFRIGATE = the func_02F052 upkeep tail (@0x2F286..@0x2F39D): every
+// 8th turn (test [0x538E],7), pre-independence ([0x5382]&1 clear), when
+// the census says >=1 colony carries the Frigate-blockade bit ([0xA89B])
+// or >3 colonies carry the any-ship bit ([0xA89A] @0x2F28D), and the
+// per-power byte [0x925D + p*0x13] is 0 (@0x2F29B -- identity OPEN, the
+// port omits that gate, TBD). Humans get the ask (id 0xEF5 @0x2F314);
+// answer "Yes" spawns a free Frigate on the Europe dock (@0x2F32D,
+// negative coords) and then RAISES THE TAX by 10 via @KINGTAX
+// (func_034318(0xF01, 10) @0x2F390 -- tax += delta capped at 75
+// @0x3434F). AI powers auto-accept (@0x2F322). There is NO latch -- the
+// blockade tallies and the tax cost re-gate it. @KINGMERCY is DEAD
+// CONTENT: the key exists in GAME.TXT but not in VICEROY.EXE (0 hits),
+// no engine path emits it. @KINGVICTORY belongs solely to the tax-demand
+// band of func_036138 (kingTaxDemand); it is not a war-end message.
+//
+// The port's strength term is a PROXY: the EXE census strength byte
+// [0x942C+p] saturates a per-unit strength query (0x181f:0x9c8, unread)
+// over the power's units; the port sums @UNIT attack+defense, capped 255.
+function unitListStrength(units) {
+  let s = 0;
+  for (const u of units) {
+    const t = unit(u.type || u.name);
+    if (t) s = Math.min(255, s + (t.attack || 0) + (t.combat || 0));
   }
-  const roll = Math.floor(Math.random() * 24);
-  if (roll === 0) {
-    G.tax = Math.max(0, G.tax - 1);
-    showEvent('KINGMERCY', { ...S, STRING2: 'Frigate', NUMBER0: 1, NUMBER1: G.tax });
-  } else if (roll === 1 && !G.kingFrigate &&
-             (G.units.some(u => u.ship) || G.europe.length)) {
-    askEvent('KINGFRIGATE', { ...S, STRING2: DATA.nations[G.nation].adjective },
-             (choice) => {
-      if (choice !== 0) return;
-      G.kingFrigate = true;
-      G.europe.push({ type: 'Frigate', icon: unit('Frigate').icon,
-                      hold: [], passengers: [], state: 'port' });
-    });
+  return s;
+}
+function kingWarCycle() {
+  if (G.retired) return;
+  const S = { STRING0: DATA.difficulty[G.difficulty],
+              STRING1: G.leader || DATA.nations[G.nation].leader };
+  // King-war expiry: 16 turns after the declaration stamp (@0x57FFF).
+  G.kingWars = G.kingWars || {};
+  for (const n of Object.keys(G.kingWars)) {
+    if (G.turn >= G.kingWars[n] + 16) {
+      setWar(G.nation, +n, REL.WAR, false);
+      delete G.kingWars[n];
+    }
   }
+  if (G.flags & WOI_DECLARED) return;
+  // ---- @KINGFRIGATE (func_02F052 tail) ----
+  if ((G.turn & 7) === 0) {
+    const { any, frig } = blockadeCensus();
+    if (frig !== 0 || any > 3) {
+      askEvent('KINGFRIGATE',
+               { ...S, STRING2: DATA.nations[G.nation].adjective },
+               (choice) => {
+        if (choice !== 0) return;
+        G.europe.push({ type: 'Frigate', icon: unit('Frigate').icon,
+                        hold: [], passengers: [], state: 'port' });
+        // func_034318(+10): tax += 10, capped at 75 (@0x3434F), @KINGTAX.
+        const raise = Math.min(10, 75 - G.tax);
+        if (raise > 0) {
+          G.tax += raise;
+          showEvent('KINGTAX', { NUMBER0: raise, NUMBER1: G.tax });
+        }
+      });
+    }
+  }
+  // ---- @KINGNEWWAR (func_035E80) ----
+  if ((G.difficulty + 2) * G.turn < 800) return;
+  const partners = G.rivals.filter(r => r.met &&
+                                        haveTreaty(G.nation, r.nation));
+  const T = partners.length;
+  if (!T) return;
+  // P (royal peace-pending pairs, (rel&0x60)==0x20) is unmodeled -> 0.
+  if (Math.floor(Math.random() * ((4 - T) * 20 + 1)) > G.difficulty) return;
+  // Target: the EXE rerolls random_int(0,3) until it lands on a treaty
+  // partner; the port draws from the partner list directly (same
+  // distribution over valid targets).
+  const foe = partners[Math.floor(Math.random() * T)];
+  let soldiers = 1, grant = (G.difficulty + 1) * 100;
+  const theirs = unitListStrength(foe.units);
+  const ours = unitListStrength(G.units);
+  if (theirs > ours) {
+    const d = theirs - ours;
+    soldiers = (d >> 3) + 1;
+    grant += 25 * d;
+  }
+  soldiers = Math.min(soldiers, 6 - G.difficulty);
+  grant = Math.min(grant, (5 - G.difficulty) * 500);
+  G.gold += grant;
+  // The King's veterans arrive ON THE EUROPE DOCK (@0x360DC spawns at
+  // negative coords), not in a colony.
+  for (let k = 0; k < soldiers; k++) G.dockUnits.push('Veteran Soldiers');
+  setTreaty(G.nation, foe.nation, REL.TREATY, false);
+  setWar(G.nation, foe.nation, REL.WAR, true);
+  G.kingWars[foe.nation] = G.turn;
+  showEvent('KINGNEWWAR', { ...S, STRING2: DATA.nations[foe.nation].adjective,
+                            NUMBER0: grant, NUMBER1: soldiers });
 }
 // GAME menu "DECLARE INDEPENDENCE" -> the declaration gate (func_03E984).
 // Three steps, all byte-cited: already-revolting, then the SoL floor of 50,
@@ -12408,6 +12541,7 @@ function endTurn() {
   for (const u of G.units) { u.movesLeft = u.moves; u.slipChecked = false; }
   revealAll();
   payUpkeep();
+  blockadeCensus();
   for (const c of G.colonies) colonyTurn(c);
   // @VANISH removals, deferred out of the loop above.
   if (G.colonies.some(c => c.vanished)) {

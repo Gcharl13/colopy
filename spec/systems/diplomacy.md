@@ -73,7 +73,65 @@ Runs when two powers meet and exchange treaty / peace / tribute / war. Structure
     requires turn `>= 0x28` (`cmp [0x538E],0x28` `@0x57B10`) **and** at least one of the
     two powers' attitude `>= 8` (`cmp byte ptr [bx-0x6BF4],8` `@0x57B1A`/`@0x57B24`).
     Plus the difficulty-scaled demand terms above.
-- **Privateer attribution** (BYTE_VERIFIED, see §2 / §6.3): in the war-declaration resolver `func_03ECF0`, a unit-type guard `cmp byte ptr [bx+0x3146],0x10` (`@0x3F092`, type `0x10` = Privateer) routes a privateer attack to `or byte ptr [bx+si-0x77C4],0x80` (`@0x3F0A1`, `-0x77C4 = 0x883C` war-matrix) — setting the **hidden-attribution bit `0x80`** *instead of* the war bit `0x02`, so the aggression is not openly imputed to the controlling power (cleared/revealed `@0x58BE1`). **Blockade:** no naval-blockade mechanic exists (0 `blockad*` strings in `data_extracted/text/`); the nearest analogue is land-adjacency **SIEGE**, which restricts a besieged colony's production to military units. **B.**
+- **Privateer attribution** (BYTE_VERIFIED, see §2 / §6.3): in the war-declaration resolver `func_03ECF0`, a unit-type guard `cmp byte ptr [bx+0x3146],0x10` (`@0x3F092`, type `0x10` = Privateer) routes a privateer attack to `or byte ptr [bx+si-0x77C4],0x80` (`@0x3F0A1`, `-0x77C4 = 0x883C` war-matrix) — setting the **hidden-attribution bit `0x80`** *instead of* the war bit `0x02`, so the aggression is not openly imputed to the controlling power (cleared/revealed `@0x58BE1`). **Blockade:** there is no *diplomatic* blockade topic (0 `blockad*` strings in `data_extracted/text/`), but a mechanical **harbour-blockade census does exist** (amended 2026-08-29): `func_042138` writes ColonyRecord `+0x1B` bit 0 when another power's ship stands within the ±5 box at water-path ≤ 5, bit 1 for a Frigate (`spec/systems/colony.md`), skipping the Custom-House auto-sale and gating `@KINGFRIGATE` (`king.md` §3). The land-adjacency **SIEGE** production restriction is a separate mechanic. **B.**
+
+**Autonomous war starts — the complete war-bit-2 writer inventory
+(BYTE_VERIFIED 2026-08-29).** A sweep of every `relation_or`
+(`func_007F96`, `0x181f:0xa06`, sole thunk) call and every direct
+war-matrix write finds war bit `0x02` set at exactly these sites:
+`@0x58A7B` (meeting declaration, above), `@0x59A71` (one-sided war on a
+parley outcome inside `func_057F4E`: `0xa06([bp+8], [bp-0xC8], 2)`),
+`@0x3F0E8` (the attack resolver `func_03ECF0`), and **one autonomous
+driver** `@0x542F0` — and *none* of them is a background European-vs-
+European grievance cycle. **There is no autonomous Euro-Euro AI war
+start in VICEROY.EXE**; European wars begin only from meetings, attacks,
+and the King's own `bit 0x10` war (`king.md` §3).
+
+The autonomous driver `@0x542F0` is a **native tribe declaring war on an
+AI European power**, embedded in the per-colony AI pass
+(`func_053B7E`, called per AI-power colony from `func_052F7E` — the
+`AIPersonality.controller == 1` branch of the turn loop `@0x5A37`).
+Actors: `[bp-0x1AE]` = the colony's owner power (ColonyRecord `+0x1A`
+`@0x53C38`); the tribe is whichever the colony-head call
+`func_046056(x, y, −1, region)` (`0x181f:0xd84` `@0x53CA9`) selected —
+the **nearest native settlement in the colony's region** (it chains
+`func_0081F2` → `func_0081C6`, leaving `[0x8D52]` = tribe 0..7,
+`[0x8D50]` = tribe owner id +4, `[0x8DB8]` = distance). Gates, in order
+(`@0x54225..@0x542E4`, census tables from `func_042138`/`func_0427D6`;
+note the negative DGROUP displacements are the same bytes as the
+positive-offset tables, mod 0x10000):
+
+- region flag `[0x95F2+r]` (`−0x6A0E`) **bit 0** set — a native
+  settlement is in the region (`@0x426C7`);
+- if flags **& 6** (a *foreign* European unit `@0x423CD` / colony
+  `@0x425F3` shares the region) the war path is skipped unless the
+  defender is **power 2 (Spain)** (`@0x54244`);
+- the power's regional unit strength `[0x95B2 + p·16 + r]` (`−0x6A4E`,
+  saturating census byte `@0x423AA`) **≥ 2** (`@0x5425C`);
+- tribe total strength `[0x9184+t]` (`−0x6E7C`, `@0x427E9`-zeroed,
+  unit-loop summed) **≤ 2 × power total strength** `[0x941C+p]`
+  (`−0x6BE4`, `@0x42335`) — ×4 for Spain (`@0x54266..@0x542B5`);
+- tribe regional strength `[0x91CC + t·16 + r]` (`−0x6E34`) **<
+  4 × the power's regional strength byte** — ×8 for Spain
+  (`@0x54283..@0x542CB`);
+- tension `func_0082A0(t, p)` (`0x181f:0x30c`) **> 25**, or the
+  defender is Spain (`@0x542D2..@0x542E4`) — the tension table geometry
+  is confirmed here: `[0x5B1C + (t·0x27 + p)·2]` = TribeRecord `+0x46`,
+  4 word slots per 0x4E-stride record = one per European power;
+- then `relation_or([bp-0x1AE], [0x8D50], 2)` — war between the tribe
+  and the colony's power (`@0x542F0`).
+
+The score half of the same block (`@0x541B4..@0x54222`) computes
+`[bp-0x72] = ((pop+[0x8D72])·3/2 − wartier − turn>>7 + stance-adj) /
+(wartier+5 ±1)` from the per-power triple at `[0x9566 + p·3]`
+(`−0x6A9A..−0x6A98`, a **persisted SAV field** — loader `@0x74C3D..`
+reads three bytes per power via `0x1a1f:0x88a`; meaning TBD) and the
+per-power-region stance byte `[0x9870 + p·16 + r]` (`−0x6790`, writer
+`@0x4DE74..` in the AI strategy pass) — it feeds the garrison sizing,
+not the war gate. **Port status:** the port keeps tribe tension only
+toward the *player* and rival colonies as static records (ledger B3.6),
+so a tribe→AI-power declaration has no consumer there — documented,
+not implemented (`docs/REMAINING_WORK.md` C1.17).
 
 > Corroborated by `viceroy_source/src/diplomacy/{meeting,relations,treaty}.c`
 > (other branch); the offsets above are re-verified against this branch's EXE.

@@ -795,73 +795,81 @@ static void news_tick(void) {
     }
 }
 
-/* kingWarCycle (game.js:8956): the Crown's European war — grant + veteran
- * soldiers on entry, tax relief on exit, mercy/frigate rolls between. */
+/* kingWarCycle — the Crown's European-war cycle, the byte model (read
+ * 2026-08-29; the old grant/mercy/frigate reconstruction is gone).
+ *
+ * @KINGNEWWAR = func_035E80 (0x035E80..0x036137, run per player turn from
+ * the immigration/king tick func_0363A2 @0x3656E): HUMAN power only
+ * (@0x35EA5), independence attribute clear (@0x35EAF), (diff+2)*turn >=
+ * 800 (@0x35EC1); needs >=1 treaty partner (rel & 0x40, @0x35F75) and no
+ * royal peace-pending pair ((rel&0x60)==0x20, @0x35F82 — unmodeled here);
+ * fires when random_int(0, ((P+2)*2-T)*20) <= difficulty (@0x35F9E).
+ * Target: a random treaty partner (@0x35FC6 reroll loop).  soldiers = 1,
+ * grant = (diff+1)*100 (@0x35FF6); if the target's census strength byte
+ * [0x942C+b] beats ours, d = theirs-ours, soldiers = (d>>3)+1, grant +=
+ * 25*d (@0x36007..); clamps soldiers <= 6-diff, grant <= (5-diff)*500
+ * (@0x36032..).  Gold += grant; the Veteran Soldier units spawn AT
+ * NEGATIVE COORDS = the Europe dock (@0x360DC); treaty bit cleared +
+ * king-war bit 0x10 set (@0x36108..) and [0x53C8+b*2] = turn (@0x36128).
+ * The war expires at the next diplomatic meeting 16 turns on
+ * (diplomacy_meeting_dispatch @0x57FFF); the port clears on expiry
+ * directly — flagged proxy (no player-rival meeting dispatcher).
+ *
+ * @KINGFRIGATE = the func_02F052 upkeep tail (@0x2F286..@0x2F39D): every
+ * 8th turn, pre-independence, when the census counts >=1 Frigate-blockaded
+ * colony ([0xA89B]) or >3 ship-blockaded ones ([0xA89A]); the per-power
+ * byte [0x925D+p*0x13] gate (@0x2F29B) is unread — omitted, TBD.  "Yes"
+ * lands a free Frigate on the Europe dock (@0x2F32D) and raises the tax
+ * by 10 via @KINGTAX (func_034318(0xF01,10) @0x2F390, cap 75 @0x3434F).
+ * No latch — the tallies and the tax cost re-gate it.  @KINGMERCY is dead
+ * GAME.TXT content (0 hits in VICEROY.EXE); @KINGVICTORY belongs to the
+ * tax-demand bands (king_tax_demand), not to the war end.
+ *
+ * Strength proxy: the EXE's census byte saturates the per-unit strength
+ * query 0x181f:0x9c8 (unread); both ports sum @UNIT attack+combat, cap
+ * 255 — FLAGGED. */
+static int power_strength_units(void) {
+    int s = 0;
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int t = CS.units[CR.units_order[k]].type;
+        if (t < DAT_UNITS_COUNT) {
+            s += dat_units[t].attack + dat_units[t].combat;
+            if (s > 255) s = 255;
+        }
+    }
+    return s;
+}
+static int power_strength_rival(int rn) {
+    int s = 0;
+    for (int k = 0; k < CR.n_runits[rn]; k++) {
+        int t = CS.units[CR.runits_order[rn][k]].type;
+        if (t < DAT_UNITS_COUNT) {
+            s += dat_units[t].attack + dat_units[t].combat;
+            if (s > 255) s = 255;
+        }
+    }
+    return s;
+}
 static void king_war_cycle(void) {
-    if ((CR.woi_flags & WOI_DECLARED) || CR.retired) return;
+    if (CR.retired) return;
     int me = cs_nation();
     PowerRecord *p = &CS.powers[me];
-    if (CR.king_war_rival < 0) {
-        if (cs_turn() < 40 || R(40) != 0) return;
-        int foes[3], nf = 0;
-        for (int n = 0; n < 4; n++)
-            if (n != me && CR.rivals[n].met) foes[nf++] = n;
-        if (!nf) return;
-        int foe = foes[R(nf)];
-        CR.king_war_rival = (int8_t)foe;
-        CR.king_war_turns = (uint8_t)(8 + R(8));
-        p->gold += 300;
-        int c0 = -1;
-        for (int ci = 0; ci < CS.n_colonies && c0 < 0; ci++)
-            if ((CS.colonies[ci].owner_power & 3) == me) c0 = ci;
-        if (c0 >= 0) {
-            int ts = -1, vet = -1;
-            for (int i = 0; i < DAT_UNITS_COUNT; i++)
-                if (strcmp(dat_units[i].name, "Soldiers") == 0) ts = i;
-            for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
-                if (strcmp(dat_jobexpert[i], "Veteran Soldiers") == 0 &&
-                    vet < 0) vet = i;
-            for (int k = 0; k < 2; k++) {
-                int ui = unit_append(ts, me, CS.colonies[c0].map_x,
-                                     CS.colonies[c0].map_y);
-                if (ui >= 0 && vet >= 0)
-                    CS.units[ui].profession = (uint8_t)vet;
-            }
+    /* king-war expiry: 16 turns after the stamp (@0x57FFF) */
+    for (int n = 0; n < 4; n++) {
+        if (CR.king_war_stamp[n] < 0) continue;
+        if ((int)cs_turn() >= CR.king_war_stamp[n] + 16) {
+            CR.war_matrix[me][n] &= (uint8_t)~REL_WAR;  /* JS setWar: one way */
+            CR.king_war_stamp[n] = -1;
         }
-        CR.treaty_matrix[me][foe] &= (uint8_t)~REL_TREATY;   /* symmetric */
-        CR.treaty_matrix[foe][me] &= (uint8_t)~REL_TREATY;
-        CR.war_matrix[me][foe] |= REL_WAR;
-        ev_emit("KINGNEWWAR", 300, 2, dat_nations[foe].adjective, 0);
-        return;
     }
-    CR.king_war_turns--;
-    if (CR.king_war_turns == 0) {
-        p->tax_rate = (uint8_t)(p->tax_rate >= 2 ? p->tax_rate - 2 : 0);
-        ev_emit("KINGVICTORY", 2, p->tax_rate,
-                dat_nations[CR.king_war_rival].adjective, 0);
-        CR.war_matrix[me][CR.king_war_rival] &= (uint8_t)~REL_WAR;
-        CR.king_war_rival = -1;
-        return;
-    }
-    int roll = R(24);
-    if (roll == 0) {
-        p->tax_rate = (uint8_t)(p->tax_rate >= 1 ? p->tax_rate - 1 : 0);
-        ev_emit("KINGMERCY", 1, p->tax_rate, 0, 0);
-    } else if (roll == 1 && !CR.king_frigate) {
-        /* @KINGFRIGATE needs a fleet: a G.units ship or a crossing/port
-         * ship (game.js:8996 — G.units.some(ship) || G.europe.length) */
-        int fleet = CR.n_europe > 0;
-        for (int k = 0; k < CR.n_units_order && !fleet; k++) {
-            int ui = CR.units_order[k];
-            if (CS.units[ui].type < DAT_UNITS_COUNT &&
-                dat_units[CS.units[ui].type].hull > 0) fleet = 1;
-        }
-        if (fleet) {
-            ev_emit("KINGFRIGATE", 0, 0, 0, 0);
-            /* game.js:9000: row 0 accepts — the latch stops repeats and
-             * the gift Frigate parks in the home harbour, empty */
+    if (CR.woi_flags & WOI_DECLARED) return;
+    /* ---- @KINGFRIGATE (func_02F052 tail) ---- */
+    if ((cs_turn() & 7) == 0) {
+        int any = 0, frig = 0;
+        blockade_census(&any, &frig);
+        if (frig != 0 || any > 3) {
+            ev_emit("KINGFRIGATE", 0, 0, dat_nations[me].adjective, 0);
             if (ask_choice() == 0) {
-                CR.king_frigate = 1;
                 if (CR.n_europe <
                     (int)(sizeof(CR.europe) / sizeof(CR.europe[0]))) {
                     euro_crossing *e = &CR.europe[CR.n_europe++];
@@ -872,9 +880,56 @@ static void king_war_cycle(void) {
                     e->state = 0;                 /* port */
                     e->lane_x = e->lane_y = -1;   /* no lane */
                 }
+                /* func_034318(+10): tax += 10, capped at 75, @KINGTAX */
+                int raise = 75 - p->tax_rate;
+                if (raise > 10) raise = 10;
+                if (raise > 0) {
+                    p->tax_rate = (uint8_t)(p->tax_rate + raise);
+                    ev_emit("KINGTAX", raise, p->tax_rate, 0, 0);
+                }
             }
         }
     }
+    /* ---- @KINGNEWWAR (func_035E80) ---- */
+    if ((cs_difficulty() + 2) * (int)cs_turn() < 800) return;
+    int partners[3], T = 0;
+    for (int n = 0; n < 4; n++)
+        if (n != me && CR.rivals[n].met && have_treaty(me, n))
+            partners[T++] = n;
+    if (!T) return;
+    /* P (royal peace-pending pairs) is unmodeled -> 0 */
+    if (R((4 - T) * 20 + 1) > cs_difficulty()) return;
+    int foe = partners[R(T)];
+    int soldiers = 1, grant = (cs_difficulty() + 1) * 100;
+    int theirs = power_strength_rival(foe);
+    int ours = power_strength_units();
+    if (theirs > ours) {
+        int d = theirs - ours;
+        soldiers = (d >> 3) + 1;
+        grant += 25 * d;
+    }
+    if (soldiers > 6 - cs_difficulty()) soldiers = 6 - cs_difficulty();
+    if (grant > (5 - cs_difficulty()) * 500)
+        grant = (5 - cs_difficulty()) * 500;
+    p->gold += grant;
+    /* the King's veterans arrive ON THE EUROPE DOCK (@0x360DC) */
+    int vet = -1;
+    for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
+        if (strcmp(dat_jobexpert[i], "Veteran Soldiers") == 0 && vet < 0)
+            vet = i;
+    for (int k = 0; k < soldiers && vet >= 0; k++)
+        if (CR.n_dock_units <
+            (int)(sizeof(CR.dock_units) / sizeof(CR.dock_units[0]))) {
+            immigrant *m = &CR.dock_units[CR.n_dock_units++];
+            memset(m, 0, sizeof(*m));
+            m->kind = 4;                 /* a profession-name entry */
+            m->idx = (uint8_t)vet;
+        }
+    CR.treaty_matrix[me][foe] &= (uint8_t)~REL_TREATY;  /* both ways (JS) */
+    CR.treaty_matrix[foe][me] &= (uint8_t)~REL_TREATY;
+    CR.war_matrix[me][foe] |= REL_WAR;
+    CR.king_war_stamp[foe] = (int16_t)cs_turn();
+    ev_emit("KINGNEWWAR", grant, soldiers, dat_nations[foe].adjective, 0);
 }
 
 /* petitionLowerTaxes (game.js:8898): the Europe screen's 'k' key.  A
@@ -901,24 +956,102 @@ void king_petition(void) {
     ev_emit("KINGNOTHING", 0, 0, 0, 0);
 }
 
-/* kingTaxDemand (game.js:8647): cadence func_036138, raise func_034AE0,
- * pretext severity @0x361CC — the ask is stubbed, so the tax never moves
- * headless (row 0 is the callback's). */
+/* The Crown's tax/war cycle — BYTE_VERIFIED end to end 2026-08-29
+ * (king_tax_demand_and_pretext, func_036138 @0x36138..@0x363A0),
+ * replacing the func_034AE0-based candidate gate (that math belongs to
+ * the PETITION path above) and the invented pretext-only bands:
+ *
+ *   gate     >= 1 colony (@0x36146), turn >= 30 (@0x36150),
+ *            tax <= 85 (0x55, @0x361C3)
+ *   cadence  base 18, 15 past 1600, 12 past 1700, 9 past 1750
+ *            (@0x3615A..@0x36174), MINUS 2 x (difficulty - 2) for the
+ *            human (@0x361AE shl dx,1); fires on turn %% interval == 0
+ *   severity roll = random_int(1,1000)
+ *            + 5 x (2 x rebel_meter - tax) (@0x361F9..@0x36208)
+ *            + gold/100 (@0x361DC) + population census [-0x6BF0]
+ *            (@0x3620A) + turn/30 (@0x36216)
+ *   bands    < 100          @KINGVICTORY: tax CUT min(random_int(2,5),
+ *                           tax) — zero = no event (@0x36276) — naming
+ *                           the REMEMBERED war country ([0x53A8] - 1
+ *                           into @COUNTRIES, @0x3628F)
+ *            < 650, and     @KINGWIFE: +1; the wedding counter [0x53A7]
+ *            weddings < 30  increments and picks the @ORDINAL word
+ *                           (@0x362BB..@0x362E8 — the 30-entry ordinal
+ *                           list IS the cap); at 30 weddings the band
+ *                           falls through to the war test
+ *            < 950          @KINGWAR: +2; country = random_int(1,8)
+ *                           rerolled while equal to the last
+ *                           (@0x3630B..@0x3631F), remembered in [0x53A8]
+ *            < 1100         @KINGNAVACT: +random_int(3,4) (@0x36339)
+ *            else           @KINGSTAMPACT: +random_int(5,8) (@0x3634E)
+ *
+ * The raise lands in PowerRecord +0x10 and the ask (@TAXOPTIONS / tea
+ * party) follows; the VICTORY cut applies directly (the port's reading
+ * of the negative amount @0x3627D — no tea party against good news,
+ * FLAGGED).  [0x53A7]/[0x53A8] live in the persisted globals block —
+ * the importers do not read that block yet, FLAGGED. */
+static const char *KING_COUNTRIES[8] = {
+    "the Holy Roman Empire", "the Portuguese", "the Ottoman Turks",
+    "the Barbary Pirates", "Russia", "Prussia", "Sweden", "Denmark" };
+static const char *KING_ORDINAL[30] = {
+    "first", "second", "third", "fourth", "fifth", "sixth", "seventh",
+    "eighth", "ninth", "tenth", "eleventh", "twelfth", "thirteenth",
+    "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth",
+    "nineteenth", "twentieth", "twenty first", "twenty second",
+    "twenty third", "twenty fourth", "twenty fifth", "twenty sixth",
+    "twenty seventh", "twenty eighth", "twenty ninth", "thirtieth" };
 static void king_tax_demand(void) {
     if (CR.woi_flags & WOI_DECLARED) return;   /* no King to obey (8648) */
     int me = cs_nation();
     PowerRecord *p = &CS.powers[me];
-    if (cs_turn() < 30 || p->tax_rate > 85) return;
+    int ncol = 0, pop = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == me) {
+            ncol++;
+            pop += CS.colonies[ci].population;
+        }
+    if (!ncol || cs_turn() < 30 || p->tax_rate > 85) return;
     int base = cs_year() >= 1750 ? 9 : cs_year() >= 1700 ? 12
              : cs_year() >= 1600 ? 15 : 18;
-    int interval = base - (cs_difficulty() - 2);
+    int interval = base - 2 * (cs_difficulty() - 2);
     if (interval < 2) interval = 2;
     if (cs_turn() % interval != 0) return;
-    int candidate = (((cs_difficulty() & 0xFE) << 1) + 4) *
-                    ((int)cs_turn() / 400 + 1);
-    if (p->tax_rate <= candidate && 1 + R(cs_difficulty() + 1) == 1) return;
-    int raise = 75 - p->tax_rate < candidate ? 75 - p->tax_rate : candidate;
-    if (raise < 1) raise = 1;
+    /* the [-0x6BF0] census: colony sizes + valid units (0x181F:0xB78
+     * validity unread — every player unit counts here, FLAGGED) */
+    pop += CR.n_units_order;
+    int sev = 1 + R(1000) + (2 * national_sol() - p->tax_rate) * 5 +
+              (int)(p->gold / 100) + pop + (int)cs_turn() / 30;
+    int raise;
+    const char *key, *s2 = 0;
+    if (sev < 100) {
+        int cut = 2 + R(4);
+        if (cut > p->tax_rate) cut = p->tax_rate;
+        if (cut <= 0) return;
+        p->tax_rate = (uint8_t)(p->tax_rate - cut);
+        int wc = CR.king_war_country >= 1 && CR.king_war_country <= 8
+                     ? CR.king_war_country : 1;
+        ev_emit("KINGVICTORY", cut, p->tax_rate, KING_COUNTRIES[wc - 1], 0);
+        return;
+    } else if (sev < 0x28A && CR.king_weddings < 30) {
+        raise = 1;
+        CR.king_weddings++;
+        key = "KINGWIFE";
+        s2 = KING_ORDINAL[CR.king_weddings - 1];
+    } else if (sev < 0x3B6) {
+        raise = 2;
+        int pick;
+        do pick = 1 + R(8); while (pick == CR.king_war_country);
+        CR.king_war_country = (uint8_t)pick;
+        key = "KINGWAR";
+        s2 = KING_COUNTRIES[pick - 1];
+    } else if (sev < 0x44C) {
+        raise = 3 + R(2);
+        key = "KINGNAVACT";
+    } else {
+        raise = 5 + R(4);
+        key = "KINGSTAMPACT";
+        s2 = dat_nations[me].country;
+    }
     /* the Party good: the good your colonies hold most of (game.js:8658,
      * strict-greater scan from 0 — lowest index on ties) */
     int good = 0;
@@ -931,16 +1064,7 @@ static void king_tax_demand(void) {
         for (int g = 1; g < 16; g++)
             if (tot[g] > tot[good]) good = g;
     }
-    int sev = 1 + R(1000) + (2 * national_sol() - p->tax_rate) * 5 +
-              (int)(p->gold / 100) + (int)cs_turn() / 30;
-    const char *key;
-    if (sev < 0x28A) {
-        if (!CR.king_wed) { CR.king_wed = 1; key = "KINGWIFE"; }
-        else key = "KINGTAX";
-    } else if (sev < 0x3B6) key = "KINGWAR";
-    else if (sev < 0x44C) key = "KINGNAVACT";
-    else key = "KINGSTAMPACT";
-    ev_emit(key, raise, p->tax_rate + raise, dat_cargo[good].name, 0);
+    ev_emit(key, raise, p->tax_rate + raise, s2 ? s2 : dat_cargo[good].name, 0);
     /* @TAXOPTIONS (game.js:8667): row 0 kisses the ring, row 1 holds the
      * Party — teaParty (8676): the good is dumped at the first colony
      * holding it, the tax is NOT raised, and the good is boycotted

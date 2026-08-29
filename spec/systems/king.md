@@ -111,15 +111,19 @@ The pretext is then chosen by a composite **grievance/severity score** `[bp-0x52
 sev = random_int(1, 1000)
     + (2·rebel_sentiment[0x53D0] − tax) · 5      # @0x361F9..0x36208
     + gold_term(gold +0x2A, 100)                  # @0x361EA (0xD1D:0xEC6)
-    + per_player_const[0x9410 + player]           # @0x3620E
+    + population_census[0x9410 + player]          # @0x3620E — the func_042138
+                                                  #   census tally ([−0x6BF0]
+                                                  #   mod 0x10000 = 0x9410),
+                                                  #   NOT a constant
     + turn / 30                                    # @0x36216
 ```
 escalating historically by `sev` threshold:
 
 | Severity (`[bp-0x52] <`) | Pretext key | handle | extra | site |
 |--------------------------|-------------|--------|-------|------|
-| `0x28A` (and `[0x53A7] < 0x1E`) | **`@KINGWIFE`** (royal wedding) | `0x1155` | bumps `[0x53A7]` | `@0x362C7` |
-| `0x3B6` | **`@KINGWAR`** | `0x1166` | `random_int(1,8)` war no. | `@0x362FA` |
+| `0x64` (100) | **`@KINGVICTORY`** — a tax **CUT** of `min(random_int(2,5), tax)`, applied directly, naming the remembered `@KINGWAR` country `[0x53A8]` (skipped while `[0x53A8]`=0) | `0x113F` | — | (band 0) |
+| `0x28A` (and `[0x53A7] < 0x1E`) | **`@KINGWIFE`** (royal wedding) | `0x1155` | bumps `[0x53A7]`; the 30 `@ORDINAL` strings are the cap | `@0x362C7` |
+| `0x3B6` | **`@KINGWAR`** | `0x1166` | `random_int(1,8)` war no., rerolled ≠ last, stored `[0x53A8]` | `@0x362FA` |
 | `0x44C` | **`@KINGNAVACT`** (Navigation Acts) | `0x1178` | `random_int(3,4)` | `@0x36348` |
 | else | **`@KINGSTAMPACT`** (Stamp Act) | `0x1183` | `random_int(5,8)` | `@0x36371` |
 
@@ -127,6 +131,50 @@ The chosen case/severity number `[bp-0x56]` is then written to the current
 `PowerRecord +0x10` (`@0x36387`). So higher unrest/tax/gold raises the severity and
 the stated reason escalates (wedding → war → Navigation Acts → Stamp Act). **B.**
 `@KINGTAX`/`@KINGRAISE`/`@MERCANTILISM`/`@PURCHASETAX` are the surrounding tax-dialog strings.
+
+**The Crown's European war — `func_035E80` (file `0x035E80..0x036137`).
+BYTE_VERIFIED 2026-08-29.** Runs once per player turn from the
+immigration/king tick `func_0363A2` (`@0x3656E`, via the ljmp stub `0x368A9`
+→ `0x191f:0xc84`). Gates, in order:
+
+- power `< 4` and **HUMAN** (`AIPersonality.controller == 0` `@0x35EA5`);
+  power attribute bit `0x13` (independence) clear (`@0x35EAF`);
+- `(difficulty+2) · turn ≥ 800` (`@0x35EC1..@0x35ECF`);
+- rival scan `@0x35ED4..@0x35F70`: `T` = treaty partners (`rel & 0x40`),
+  `P` = royal peace-pending pairs (`(rel & 0x60) == 0x20`); requires
+  `T ≥ 1` (`@0x35F75`) and `P == 0` (`@0x35F82`);
+- roll `random_int(0, ((P+2)·2 − T) · 20) ≤ difficulty` (`@0x35F9E..@0x35FC1`).
+
+Target = reroll `random_int(0,3)` until a treaty partner (`@0x35FC6..`).
+Amounts (`@0x35FF6..@0x3605C`): `soldiers = 1`, `grant = (diff+1)·100`; if
+the target's census strength byte `[0x942C+b]` exceeds the player's,
+`d = theirs − ours`, `soldiers = (d>>3)+1`, `grant += 25·d`; clamps
+`soldiers ≤ 6−diff`, `grant ≤ (5−diff)·500`. Effects: `gold += grant`
+(`@0x360C9`); the `Veteran Soldier` units (`spawn_unit(1, …)`, profession
+`0x15` `@0x360F8`) spawn at **negative map coords = the Europe dock**
+(`@0x360DC`); treaty bit `0x40` cleared + **king-war bit `0x10`** set
+(`@0x36108..@0x36120`); `[0x53C8 + b·2] = turn` (`@0x36128`); `@KINGNEWWAR`
+(id `0x1134`) emitted `@0x360BE`. The war **expires at the next diplomatic
+meeting** once 16 turns have passed: `diplomacy_meeting_dispatch`
+`@0x57FFF` clears bit `0x10` when `[0x53C8+b·2] + 0x10 ≤ turn`.
+
+**`@KINGFRIGATE` — the `func_02F052` upkeep tail (`@0x2F286..@0x2F39D`).
+BYTE_VERIFIED.** Every 8th turn (`test [0x538E],7` `@0x2F2AF`),
+pre-independence (`[0x5382]&1` clear `@0x2F2A5`), when the census counts
+≥1 colony with the Frigate-blockade bit (`[0xA89B] ≠ 0`) **or** >3 with the
+any-ship bit (`[0xA89A] > 3` `@0x2F28D`), and the per-power byte
+`[0x925D + p·0x13]` is 0 (`@0x2F29B` — identity **TBD**). Humans get the
+ask (id `0xEF5` `@0x2F314`, speaker `0x3E` `@0x2F30A`); AI powers
+auto-accept (`@0x2F322`). "Yes" spawns a **free Frigate** (type `0x11`) at
+negative coords = the Europe dock (`@0x2F32D..`), then **raises the tax by
+10** via `func_034318(0xF01 @KINGTAX, 10)` (`@0x2F390`; the +75 clamp
+`@0x3434F` applies). There is **no latch** — the tallies and the tax cost
+re-gate the offer.
+
+**`@KINGMERCY` is dead content**: the key exists in `GAME.TXT` but appears
+**nowhere in VICEROY.EXE** (0 string hits), so no engine path emits it.
+`@KINGVICTORY` belongs solely to the tax-demand severity band above — it is
+not a war-end message; nothing announces the king-war expiry.
 
 ## 4. UI layout — "what is drawn where"
 
