@@ -186,6 +186,7 @@ int  unit_pos_x(int ui);         /* record, or the rival mirror */
 int  unit_pos_y(int ui);
 void colony_remove(int ci);      /* immediate splice (rival capture path) */
 void colony_vanish_filter(void);  /* the deferred @VANISH compaction */
+void rival_colony_pass(int power); /* B3.6: func_02F052 for one rival */
 void adjust_tension(int tribe, int delta, int cause);  /* game.js:5103 */
 void village_first_welcome(void);
 /* scoreParts — the F10 numbers (population/fathers/sentiment/razed/

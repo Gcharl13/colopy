@@ -662,13 +662,25 @@ void colony_produce(int ci, colony_output *r) {
     /* bells: base 1 (@0xA4DB), Jefferson +50% (@0xA4DF father 15),
      * Paine +tax% (@0xA500 father 17), Bolivar (size+3)/5 for AI-run
      * colonies (@0xA539 father 18), then Newspaper x2 else Printing
-     * Press +50% (@0xA587..@0xA5AC, rows 0x14/0x13). */
+     * Press +50% (@0xA587..@0xA5AC, rows 0x14/0x13).
+     *
+     * Every check keys on the colony OWNER (the 0x981:0 calls take
+     * [bx+0x1A] @0xA4E5/@0xA50B/@0xA544) and Paine reads the OWNER's
+     * tax byte (@0xA525, PowerRecord[owner].tax_pct) — live now that
+     * the pass runs rival colonies (B3.6).  father_owned() reads
+     * cur_power(), which IS the owner inside the pass. */
     r->bells += 1;
-    if ((c->owner_power & 3) == cs_nation()) {
+    {
+        int owner = c->owner_power & 3;
         if (father_owned(father_by_name("Thomas Jefferson")))
             r->bells += r->bells / 2;
         if (father_owned(father_by_name("Thomas Paine")))
-            r->bells += (CS.powers[cs_nation()].tax_rate * r->bells) / 100;
+            r->bells += (CS.powers[owner].tax_rate * r->bells) / 100;
+        /* Bolivar's gate @0xA555..@0xA567: owner >= 4 (never for a
+         * colony) OR an AIPersonality controller != 0 — an AI power */
+        if (owner != (int)cs_nation() &&
+            father_owned(father_by_name("Simon Bolivar")))
+            r->bells += (c->population + 3) / 5;
     }
     if (colony_has_name(ci, "Newspaper")) r->bells <<= 1;
     else if (colony_has_name(ci, "Printing Press")) r->bells += r->bells / 2;

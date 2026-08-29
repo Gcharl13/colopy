@@ -362,6 +362,10 @@ void rival_turn(void) {
     for (int rn = 0; rn < 4; rn++) {
         if (rn == (int)cs_nation()) continue;
         rival_rt *r = &CR.rivals[rn];
+        /* B3.6: the power's own colony pass (func_02F052) runs first —
+         * same body as the player's, popups silenced.  Mirrors the JS
+         * rivalTurn head draw for draw. */
+        rival_colony_pass(rn);
         int war = at_war(cs_nation(), rn);
         /* r.units order (the CR list): ships-then-land at import, plus
          * succession appends.  JS iterates a slice() snapshot; the only
@@ -1171,6 +1175,12 @@ static void spanish_succession(void) {
         if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
             wr->col[wr->n_col++] = cr_->col[k];
     cr_->n_col = 0;
+    /* the ColonyRecords change hands too (JS c.nation = winner) — the
+     * per-power colony pass keys off the record owner (B3.6) */
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 0x0F) == (ceding & 0x0F))
+            CS.colonies[ci].owner_power = (uint8_t)
+                ((CS.colonies[ci].owner_power & 0xF0) | (winner & 0x0F));
     /* units transfer in the ceding LIST order, APPENDED to the winner's
      * list (game.js:7015 winner.units.push) */
     for (int k = 0; k < CR.n_runits[ceding]; k++) {

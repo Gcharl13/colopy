@@ -609,8 +609,9 @@ static void advance_construction(int ci, int hammers) {
         if (r->sieged) return;
         if (c->hammers < cost) { r->tool_warned = 0; return; }
         /* @NOMOREWAGONS: wagons are capped at the colony count — the
-         * build STALLS (target kept), announced once (game.js:3127) */
-        if (strcmp(un, "Wagon Train") == 0) {
+         * build STALLS (target kept), announced once (game.js:3127).
+         * The census is player-relative; rivals bypass the cap (B3.6). */
+        if (cur_is_human() && strcmp(un, "Wagon Train") == 0) {
             int wagons = 0, ncol = 0;
             for (int i = 0; i < CS.n_units; i++)
                 if (unit_on_map_player(i) &&
@@ -650,8 +651,13 @@ static void advance_construction(int ci, int hammers) {
         c->hammers = 0;
         c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
         /* the finished unit steps onto the colony square (ships sit in
-         * port on that same tile) */
-        unit_append(urow, (int)cur_power(), c->map_x, c->map_y);
+         * port on that same tile) — a rival's build joins the rival's
+         * unit list (B3.6) */
+        {
+            int nu = unit_append(urow, (int)cur_power(), c->map_x, c->map_y);
+            if (nu >= 0 && !cur_is_human())
+                runits_push((int)cur_power(), nu);
+        }
         c->building_in_production = 0xFF;
         cev("BUILT", 0, 0, c->name, un);
         return;
@@ -693,7 +699,9 @@ static void advance_construction(int ci, int hammers) {
     c->hammers = 0;
     c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] - need_tools);
     building_add(ci, bip);
-    if ((FACTORY_MASK >> bip) & 1) {
+    /* @MERCANTILISM taxes only the PLAYER (the JS raises G.tax) — a
+     * rival's factory raises nothing here (B3.6) */
+    if (cur_is_human() && ((FACTORY_MASK >> bip) & 1)) {
         PowerRecord *p = &CS.powers[cur_power()];
         if (p->tax_rate < 75) {                  /* WOI flag TBD: fixtures 0 */
             p->tax_rate++;
@@ -924,17 +932,26 @@ static void custom_house_sale(int ci) {
     /* @0x2D995: the +0x1B blockade bits (& 3) skip the auto-sale — no
      * Custom House sells from a blockaded harbour. */
     if (CR.col[ci].blockade & 3) return;
+    int human = cur_is_human();
     for (int g = 0; g < N_GOODS; g++) {
         if (!((c->custom_house_flags >> g) & 1)) continue;
         if (c->stock[g] < 100) continue;
-        if (market_boycotted(g)) continue;
+        /* a boycott is the PLAYER's +0x20 bit; rival boycotts are
+         * unmodelled (B3.6 — their sale runs untaxed below) */
+        if (human && market_boycotted(g)) continue;
         int amount = c->stock[g] - 50;
         c->stock[g] = 50;
+        /* price: the player's market level stands in for the rival's own
+         * +0x4C ladder (FLAGGED, B3.6) — same stand-in as the JS */
         int32_t gross = (int32_t)amount * market_bid(g);
-        int32_t cut = (CR.woi_flags & WOI_DECLARED)
-                          ? 0 : gross * p->tax_rate / 100;
-        p->gold += gross - cut;
-        p->kings_fund += cut;
+        if (human) {
+            int32_t cut = (CR.woi_flags & WOI_DECLARED)
+                              ? 0 : gross * p->tax_rate / 100;
+            p->gold += gross - cut;
+            p->kings_fund += cut;
+        } else {
+            CR.rivals[cur_power()].gold += gross;   /* JS r.gold */
+        }
     }
 }
 
@@ -1033,8 +1050,11 @@ void colony_turn(int ci) {
     colony_produce(ci, &o);
     /* colonyBesieged (game.js:2995): REF + at-war rival land units within
      * 1 of the colony outnumbering the player's attack-capable land units
-     * there. */
-    {
+     * there.  The census is PLAYER-relative, so a rival colony has no
+     * siege model yet (B3.6, FLAGGED; same gate in the JS). */
+    if (!cur_is_human()) {
+        r->sieged = 0;
+    } else {
         int me = cur_power(), enemies = 0, friends = 0;
         for (int ui = 0; ui < CS.n_units; ui++) {
             const UnitRecord *u = &CS.units[ui];
@@ -1106,8 +1126,10 @@ void colony_turn(int ci) {
     if (c->stock[FOOD] >= FOOD_FOR_COLONIST) {
         c->stock[FOOD] = (uint16_t)(c->stock[FOOD] - FOOD_FOR_COLONIST);
         int ut = unit_row_named("Colonists");
-        unit_append(ut < 0 ? 0 : ut, c->owner_power & 0x0F,
-                    c->map_x, c->map_y);
+        int nu = unit_append(ut < 0 ? 0 : ut, c->owner_power & 0x0F,
+                             c->map_x, c->map_y);
+        /* a rival birth joins the rival's unit list (JS r.units) — B3.6 */
+        if (nu >= 0 && !cur_is_human()) runits_push((int)cur_power(), nu);
         cev("NEWCOLONIST", 0, 0, c->name, 0);
     }
     int autumn = cs_season() != 0;
@@ -1294,6 +1316,49 @@ void turn_step_prefix(void) {
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())
             colony_turn(ci);
     turn_power = -1;
+    colony_vanish_filter();
+}
+
+/* B3.6: the per-power colony pass (func_02F052) for one RIVAL power —
+ * the same colony_turn body with turn_power set: popups silenced by
+ * cev/cask, births and built units runits_push'd, the Custom House pays
+ * CR.rivals[].gold, fathers come from the rival's own PowerRecord.
+ * Afterwards the rival_colony stubs (news_tick's sol feed, the map's
+ * pop labels) sync from the live records, vanished colonies drop from
+ * both the stub list and the record array. */
+static int rival_col_record(int power, int k) {
+    const rival_rt *r = &CR.rivals[power];
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == power &&
+            CS.colonies[ci].map_x == r->col[k].x &&
+            CS.colonies[ci].map_y == r->col[k].y)
+            return ci;
+    return -1;                       /* runtime-founded stub: no record */
+}
+void rival_colony_pass(int power) {
+    rival_rt *r = &CR.rivals[power];
+    /* JS `for (const c of r.colonies) if (c.colonists) colonyTurn(c)`:
+     * the STUB list is the JS array (same order through import,
+     * succession appends and founding), a stub without a record is a
+     * runtime-founded colony the JS skips on its missing colonists. */
+    turn_power = power;
+    for (int k = 0; k < r->n_col; k++) {
+        int ci = rival_col_record(power, k);
+        if (ci >= 0) colony_turn(ci);
+    }
+    turn_power = -1;
+    for (int k = r->n_col - 1; k >= 0; k--) {
+        int ci = rival_col_record(power, k);
+        if (ci < 0) continue;
+        if (CR.col[ci].vanished) {
+            memmove(&r->col[k], &r->col[k + 1],
+                    (size_t)(r->n_col - k - 1) * sizeof(rival_colony));
+            r->n_col--;
+        } else {
+            r->col[k].sol = (uint8_t)CR.col[ci].sol;
+            r->col[k].pop = CS.colonies[ci].population;
+        }
+    }
     colony_vanish_filter();
 }
 

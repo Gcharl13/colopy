@@ -3124,7 +3124,7 @@ function fieldYield(c, p) {
     y += add;
   }
   if (col >= 8 && !c.buildings.includes('Docks')) y = 0;   // @0x9F4F
-  if (col === 4 && G.fathersOwned.includes('Henry Hudson')) y *= 2;
+  if (col === 4 && ffOwned('Henry Hudson')) y *= 2;
   if (p.profession === 'Indian Converts' && y > 0 &&
       (col <= 4 || col >= 8)) y += 1;    // @0x9F86..@0x9FB6
   if (y < 0) y = 0;
@@ -3204,7 +3204,7 @@ function indoorYield(c, p) {
   } else if (ji === 16) {
     y = (expert ? 6 : cls) + pen;
     if (c.buildings.includes('Cathedral')) y *= 2;
-    if (G.fathersOwned.includes('William Penn')) y += Math.floor(y / 2);
+    if (ffOwned('William Penn')) y += Math.floor(y / 2);
   } else if (ji === 17) {
     y = cls + pen;
     if (expert) y *= 2;
@@ -3274,11 +3274,22 @@ function colonyProduce(c) {
   // (father 17), then Newspaper x2 else Printing Press +50% (@0xA587..).
   if (c.buildings.includes('Church')) tally[CROSSES] += 1;
   if (c.buildings.includes('Cathedral')) tally[CROSSES] += 1;
+  // The bells chain keys every father check on the colony OWNER
+  // (@0xA4E5/@0xA50B/@0xA544 read +0x1A) and Paine on the OWNER'S tax
+  // byte (@0xA525) -- for a rival, the imported record tax (r.tax). The
+  // old G.taxRate here was an unassigned name: Paine's bonus would have
+  // been NaN, a dormant bug until the fixture owns him.
   tally[BELLS] += 1;
-  if (G.fathersOwned.includes('Thomas Jefferson'))
+  if (ffOwned('Thomas Jefferson'))
     tally[BELLS] += Math.floor(tally[BELLS] / 2);
-  if (G.fathersOwned.includes('Thomas Paine'))
-    tally[BELLS] += Math.floor(G.taxRate * tally[BELLS] / 100);
+  if (ffOwned('Thomas Paine')) {
+    const otax = curIsHuman() ? G.tax : ((rivalOf(curPower()) || {}).tax || 0);
+    tally[BELLS] += Math.floor(otax * tally[BELLS] / 100);
+  }
+  // Bolivar (father 18, @0xA539..@0xA57A): AI-CONTROLLED owners add
+  // (size+3)/5 -- the gate is the AIPersonality controller byte.
+  if (!curIsHuman() && ffOwned('Simon Bolivar'))
+    tally[BELLS] += Math.floor((c.colonists.length + 3) / 5);
   if (c.buildings.includes('Newspaper')) tally[BELLS] *= 2;
   else if (c.buildings.includes('Printing Press'))
     tally[BELLS] += Math.floor(tally[BELLS] / 2);
@@ -3514,19 +3525,19 @@ function runSchool(c) {
     p.work = cnt & 0xF;
   }
   for (const tprof of ready) {
-    if (!cand.length) { showEvent('TRAINFAIL', { STRING0: c.name }); break; }
+    if (!cand.length) { cev('TRAINFAIL', { STRING0: c.name }); break; }
     const pick = Math.floor(Math.random() * cand.length);
     const s = cand[pick];
     if (s.profession === 'Petty Criminals') {
       s.profession = 'Indentured Servants';
-      showEvent('TRAINCRIMINAL', { STRING0: c.name });
+      cev('TRAINCRIMINAL', { STRING0: c.name });
     } else if (s.profession === 'Indentured Servants') {
       // the engine writes profession 0x1C = NONE (@0x2DF35 `push 0x1c`)
       s.profession = null;
-      showEvent('TRAININDENTURED', { STRING0: c.name });
+      cev('TRAININDENTURED', { STRING0: c.name });
     } else {
       s.profession = tprof;
-      showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: tprof });
+      cev('TRAINPROFESSION', { STRING0: c.name, STRING1: tprof });
     }
     cand.splice(pick, 1);
   }
@@ -3549,7 +3560,7 @@ function updateSoL(c, bells) {
   c.rebelA = Math.max(0, (c.rebelA || 0) + bells - ((c.rebelA || 0) >> 6));
   c.rebelA = Math.min(c.rebelA, c.rebelB);
   let sol = Math.floor(c.rebelA * 100 / c.rebelB);
-  if (G.fathersOwned.includes('Jan de Witt')) sol += 20;
+  if (ffOwned('Jan de Witt')) sol += 20;
   c.sol = Math.min(100, sol);
 }
 // Food store and growth. The store is ColonyRecord +0xAA, bounded by the
@@ -3583,16 +3594,26 @@ function customHouseSale(c) {
   // auto-sale -- a Custom House will not sell from a blockaded harbour.
   // The bits come from blockadeCensus() (func_042138's colony scan).
   if (c.blockade & 3) return;
+  const human = curIsHuman();
   for (let g = 0; g < c.stock.length; g++) {
     if ((c.customOff || {})[g]) continue;
     if (c.stock[g] < 100) continue;
-    if (isBoycotted(g)) continue;
+    // A player boycott is the PLAYER'S PowerRecord +0x20 bit; rival
+    // boycotts are unmodelled (B3.6 -- their sale runs untaxed below).
+    if (human && isBoycotted(g)) continue;
     const amount = c.stock[g] - 50;
     c.stock[g] = 50;
+    // Price: the player's market level stands in for the rival's own
+    // +0x4C ladder (FLAGGED, B3.6) -- same stand-in in both engines.
     const gross = amount * bidPrice(g);
-    const cut = G.declared ? 0 : Math.floor(gross * G.tax / 100);
-    G.gold += gross - cut;
-    G.kingsFund += cut;
+    if (human) {
+      const cut = G.declared ? 0 : Math.floor(gross * G.tax / 100);
+      G.gold += gross - cut;
+      G.kingsFund += cut;
+    } else {
+      const rv = rivalOf(curPower());
+      if (rv) rv.gold = (rv.gold || 0) + gross;
+    }
   }
 }
 // WAREHOUSE disposal + cargo-ready -- the byte model (func_02D658 loops 2
@@ -3639,18 +3660,19 @@ function warehouseDisposal(c, snapshot, r) {
     c.stock[g] -= extra;
   }
   if (count === 1)
-    showEvent(warehouseLevel(c) < 2 ? 'SPOIL1' : 'SPOIL3',
+    cev(warehouseLevel(c) < 2 ? 'SPOIL1' : 'SPOIL3',
               { STRING0: c.name, STRING1: DATA.cargo[lastGood].name,
                 NUMBER0: lastQty });
   else if (count > 1)
-    showEvent(warehouseLevel(c) < 2 ? 'SPOIL2' : 'SPOIL4', { STRING0: c.name });
+    cev(warehouseLevel(c) < 2 ? 'SPOIL2' : 'SPOIL4', { STRING0: c.name });
   for (let g = 1; g < c.stock.length; g++) {
     if (Math.floor(snapshot[g] / 100) >= Math.floor(c.stock[g] / 100)) continue;
-    if (c.stock[g] === cap)
-      askZoom(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
-              { STRING0: c.name, STRING1: DATA.cargo[g].name, NUMBER0: cap }, c);
-    else
-      showEvent('CARGOREADY0',
+    if (c.stock[g] === cap) {
+      if (curIsHuman())
+        askZoom(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
+                { STRING0: c.name, STRING1: DATA.cargo[g].name, NUMBER0: cap }, c);
+    } else
+      cev('CARGOREADY0',
                 { STRING0: c.name, STRING1: DATA.cargo[g].name });
   }
 }
@@ -3687,6 +3709,30 @@ function buildingChain() {
 // services of Adam Smith" rule.
 const BUILDING_FACTORY = new Set(['Textile Mill', 'Cigar Factory', 'Rum Factory',
   'Fur Factory', 'Iron Works', 'Arsenal']);
+
+// ---- per-power pass scaffolding (B3.6) -------------------------------------
+// Mirrors the C's turn_power/cur_power/cev/cask (colopy_turn.c): func_02F052
+// is a PER-POWER colony pass -- the [bp+6] power selects whose colonies run,
+// and everything belonging to a PLAYER rather than a colony (popups, asks,
+// the treasury) is gated on it. turnPower = -1 outside a pass (the human).
+let turnPower = -1;
+const curPower = () => (turnPower < 0 ? G.nation : turnPower);
+const curIsHuman = () => turnPower < 0 || turnPower === G.nation;
+function cev(key, subs) { if (curIsHuman()) showEvent(key, subs); }
+function cask(key, subs, cb, opts) {
+  if (curIsHuman()) askEvent(key, subs, cb, opts);
+  else cb(0);                       // a rival takes the default row, silently
+}
+const rivalOf = (n) => (G.rivals || []).find(r => r.nation === n);
+// Founding-father consult for the pass: the C's father_owned reads
+// CS.powers[cur_power()].founding_fathers -- each power its OWN Congress.
+// The rival bitmask is the imported +0x07 dword (r.fathers).
+function ffOwned(name) {
+  if (curIsHuman()) return G.fathersOwned.includes(name);
+  const r = rivalOf(curPower());
+  const idx = (DATA.fathers || []).findIndex(f => f.name === name);
+  return !!(r && idx >= 0 && ((r.fathers || 0) >>> idx) & 1);
+}
 
 // What a colony may build: an @BUILDING row it does not already have, whose
 // min_colony gate its population meets, whose predecessor tier is built, that
@@ -3772,8 +3818,10 @@ function colonyTurn(c) {
   const snapshot = c.stock.slice();
   const startFood = snapshot[GOOD.FOOD];
   const r = colonyProduce(c);
-  if (colonyBesieged(c)) {
-    if (!c.sieged) { c.sieged = true; showEvent('SIEGE'); }
+  // The siege census is player-relative (enemies of G.nation) -- a rival
+  // colony has no siege model yet (B3.6, FLAGGED; same gate in the C).
+  if (curIsHuman() && colonyBesieged(c)) {
+    if (!c.sieged) { c.sieged = true; cev('SIEGE'); }
   } else c.sieged = false;
   // Input-outage latches: a manned converter starved of its raw announces
   // once, and re-arms when the chain runs again. The engine's latch site is
@@ -3782,7 +3830,7 @@ function colonyTurn(c) {
   for (const raw of r.outages) {
     if (!OUTAGE_KEY[raw] || c.outageLatch[raw]) continue;
     c.outageLatch[raw] = true;
-    showEvent(OUTAGE_KEY[raw], { STRING0: c.name });
+    cev(OUTAGE_KEY[raw], { STRING0: c.name });
   }
   for (const k of Object.keys(c.outageLatch))
     if (!r.outages.has(Number(k))) delete c.outageLatch[k];
@@ -3816,14 +3864,22 @@ function colonyTurn(c) {
   // available." (id 0xE2F @0x2E156).
   if (c.stock[GOOD.FOOD] >= FOOD_FOR_COLONIST) {
     c.stock[GOOD.FOOD] -= FOOD_FOR_COLONIST;
-    G.units.push(mkUnit('Colonists', c.x, c.y));
-    showEvent('NEWCOLONIST', { STRING0: c.name });
+    // func_006D24 spawns the unit with the COLONY'S owner -- a rival birth
+    // joins the rival's unit list (B3.6).
+    if (curIsHuman()) G.units.push(mkUnit('Colonists', c.x, c.y));
+    else {
+      const rv = rivalOf(curPower());
+      if (rv) rv.units.push({ type: 'Colonists', icon: unit('Colonists').icon,
+                              x: c.x, y: c.y, nation: curPower(),
+                              orders: 0, ship: false });
+    }
+    cev('NEWCOLONIST', { STRING0: c.name });
   }
   const autumn = G.season !== 0;
   // STARVATION @0x2E164: the trigger is the food OUTAGE plane [0x8E5A]
   // (max(0, eaten - start-stock - produced), func_008E02 @0x8E5A) -- not the
-  // banked stock. AI powers are forgiven an outage below 3 (@0x2E177; player
-  // colonies only here, so no forgiveness). A colonist DIES only when the
+  // banked stock. AI powers are forgiven an outage below 3 (@0x2E177 --
+  // live for the rival pass, B3.6). A colonist DIES only when the
   // colony ENTERED the turn with no food at all ([bp-0x6a] @0x2D6BF, tested
   // @0x2E1AD); on difficulty <= 1 the death is waived before 1520 (@0x2E1C0)
   // and afterwards survives only a random_int(0, 2-diff) == 0 roll
@@ -3831,16 +3887,19 @@ function colonyTurn(c) {
   // -> @VANISH (@0x2E265, the removal then empties it and the colony is
   // destroyed @0x2E2F8); otherwise @STARVE1/@STARVE2. Each death removes a
   // RANDOM colonist random_int(0, size-1) via func_008FB4 (@0x2E2C6).
-  const outage = r.outageAmt[GOOD.FOOD];
+  let outage = r.outageAmt[GOOD.FOOD];
+  // AI powers are forgiven an outage below 3 (@0x2E177) -- live now that
+  // the pass runs rival colonies (B3.6).
+  if (!curIsHuman() && outage < 3) outage = 0;
   if (outage > 0) {
     let deaths = startFood === 0 ? 1 : 0;
     if (deaths && G.difficulty <= 1) {
       if (G.year < 1520) deaths = 0;
       else if (Math.floor(Math.random() * (3 - G.difficulty)) !== 0) deaths = 0;
     }
-    if (deaths === 0) showEvent(autumn ? 'FOOD2' : 'FOOD1', { STRING0: c.name });
-    else if (c.colonists.length === deaths) showEvent('VANISH', { STRING0: c.name });
-    else showEvent(autumn ? 'STARVE2' : 'STARVE1', { STRING0: c.name });
+    if (deaths === 0) cev(autumn ? 'FOOD2' : 'FOOD1', { STRING0: c.name });
+    else if (c.colonists.length === deaths) cev('VANISH', { STRING0: c.name });
+    else cev(autumn ? 'STARVE2' : 'STARVE1', { STRING0: c.name });
     for (let d = 0; d < deaths; d++)
       c.colonists.splice(Math.floor(Math.random() * c.colonists.length), 1);
     if (c.colonists.length === 0) c.vanished = true;   // destroy @0x2E2F8
@@ -3853,7 +3912,7 @@ function colonyTurn(c) {
     // has no options dialog yet, so the default all-on applies.
     const overdraw = r.netFood < 0 ? -r.netFood : 0;
     if (overdraw > 0 && 4 * overdraw > c.stock[GOOD.FOOD])
-      showEvent('FOODLOW', { STRING0: c.name, NUMBER0: c.stock[GOOD.FOOD] });
+      cev('FOODLOW', { STRING0: c.name, NUMBER0: c.stock[GOOD.FOOD] });
   }
   // Tutorial bindings: TUTORIAL6 (func_02D658 @0x2EA4C) when a sellable
   // cargo has built up; 7 (func_02883E @0x28D41) when the colony can use a
@@ -3888,7 +3947,7 @@ function colonyTurn(c) {
       const det = detailId(tx, ty, at(tx, ty));
       if (det !== 6 && det !== 12) continue;
       IMPROVE[ty * MAP.w + tx] |= 4;
-      if (!fired) { showEvent('DEPLETION', { STRING0: c.name }); fired = true; }
+      if (!fired) { cev('DEPLETION', { STRING0: c.name }); fired = true; }
     }
   }
   c.crossesTurn = r.tally[CROSSES];
@@ -3906,10 +3965,10 @@ function colonyTurn(c) {
   const pen = toryPenalty(c);
   if (pen < 0 && !c.ineffLatch) {
     c.ineffLatch = true;
-    showEvent('INEFFICIENT', { STRING0: c.name, NUMBER0: 10 - G.difficulty });
+    cev('INEFFICIENT', { STRING0: c.name, NUMBER0: 10 - G.difficulty });
   } else if (pen >= 0 && c.ineffLatch) {
     c.ineffLatch = false;
-    showEvent('EFFICIENT', { STRING0: c.name });
+    cev('EFFICIENT', { STRING0: c.name });
   }
   advanceConstruction(c, r.tally[HAMMERS]);
   runSchool(c);
@@ -3954,7 +4013,7 @@ function fieldLearning(c) {
     if (p.profession === 'Petty Criminals') n = 99 + 200;
     if (Math.floor(Math.random() * (n + 1)) !== 0) continue;
     p.profession = title;
-    showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: title });
+    cev('TRAINPROFESSION', { STRING0: c.name, STRING1: title });
   }
 }
 // One turn of construction: bank this colony's hammers, then finish the target
@@ -3970,12 +4029,12 @@ function advanceConstruction(c, hammers) {
   if (c.hammers < b.cost) { c.toolWarned = false; return; }
   // Completion-time guards. @NOMOREWAGONS: wagons are capped at the colony
   // count (the PEDIA/manual rule) -- the build stalls, announced once.
-  if (b.isUnit && b.name === 'Wagon Train') {
+  if (curIsHuman() && b.isUnit && b.name === 'Wagon Train') {
     const wagons = G.units.filter(u => u.type === 'Wagon Train').length;
     if (wagons >= G.colonies.length) {
       if (!c.capWarned) {
         c.capWarned = true;
-        showEvent('NOMOREWAGONS', { STRING0: c.name, NUMBER0: G.colonies.length });
+        cev('NOMOREWAGONS', { STRING0: c.name, NUMBER0: G.colonies.length });
       }
       return;
     }
@@ -3984,7 +4043,7 @@ function advanceConstruction(c, hammers) {
   // @ALREADYHAVE / @NOMOREWAREHOUSE: the target already stands (reachable
   // when circumstances changed after the pick); the target is cleared.
   if (!b.isUnit && c.buildings.includes(b.name)) {
-    showEvent(b.name === 'Warehouse Expansion' ? 'NOMOREWAREHOUSE' : 'ALREADYHAVE',
+    cev(b.name === 'Warehouse Expansion' ? 'NOMOREWAREHOUSE' : 'ALREADYHAVE',
               { STRING0: c.name, STRING1: b.name });
     c.building = null;
     return;
@@ -3994,10 +4053,11 @@ function advanceConstruction(c, hammers) {
   // hand) and the building waits. Once per stall, not every turn.
   if (c.stock[GOOD.TOOLS] < needTools) {
     if (!c.toolWarned) {
-      c.toolWarned = true;
+      c.toolWarned = true;               // the latch sets for every owner
       const have = c.stock[GOOD.TOOLS];
-      askZoom(have > 0 ? 'NEEDTOOLS' : 'NEEDTOOLS0',
-              { STRING0: c.name, STRING1: b.name, NUMBER0: needTools, NUMBER1: have }, c);
+      if (curIsHuman())
+        askZoom(have > 0 ? 'NEEDTOOLS' : 'NEEDTOOLS0',
+                { STRING0: c.name, STRING1: b.name, NUMBER0: needTools, NUMBER1: have }, c);
     }
     return;
   }
@@ -4010,15 +4070,24 @@ function advanceConstruction(c, hammers) {
   c.stock[GOOD.TOOLS] -= needTools;
   if (b.isUnit) {
     // A finished unit steps onto the colony square (ships sit in port there,
-    // the same tile colonyShip reads).
-    G.units.push(mkUnit(b.name, c.x, c.y));
+    // the same tile colonyShip reads) -- with the COLONY'S owner: a rival's
+    // build joins the rival's unit list (B3.6).
+    if (curIsHuman()) G.units.push(mkUnit(b.name, c.x, c.y));
+    else {
+      const rv = rivalOf(curPower());
+      if (rv) rv.units.push({ type: b.name, icon: unit(b.name).icon,
+                              x: c.x, y: c.y, nation: curPower(), orders: 0,
+                              ship: unit(b.name).hull > 0 });
+    }
   } else {
     c.buildings.push(b.name);
     // @MERCANTILISM: a profit-taking manufactory draws the Crown's tax raise
-    // (manual-cited pretext; the rate/amount are flagged stand-ins).
-    if (BUILDING_FACTORY.has(b.name) && G.tax < 75 && !(G.flags & WOI_DECLARED)) {
+    // (manual-cited pretext; the rate/amount are flagged stand-ins). The
+    // Crown taxes only the PLAYER -- a rival's factory raises nothing here.
+    if (curIsHuman() &&
+        BUILDING_FACTORY.has(b.name) && G.tax < 75 && !(G.flags & WOI_DECLARED)) {
       G.tax += 1;
-      showEvent('MERCANTILISM', { STRING0: b.name,
+      cev('MERCANTILISM', { STRING0: b.name,
                                   STRING1: DATA.nations[G.nation].adjective,
                                   NUMBER0: 1, NUMBER1: G.tax });
     }
@@ -4026,7 +4095,7 @@ function advanceConstruction(c, hammers) {
   c.building = null;
   // @BUILT: "%STRING0 colony produces {%STRING1}." (STRING0=colony, STRING1=the
   // building) -- a popup, not a status line.
-  showEvent('BUILT', { STRING0: c.name, STRING1: b.name });
+  cev('BUILT', { STRING0: c.name, STRING1: b.name });
 }
 
 // The rush-buy (@BUYME0 info / @BUYME1 confirm, width 160): pay gold to
@@ -9283,6 +9352,17 @@ function newsTick() {
 }
 function rivalTurn() {
   for (const r of G.rivals) {
+    // B3.6: the per-power colony pass. func_02F052 runs ONE pass per power
+    // over the same records; a rival's fully-imported colonies (the ones
+    // with a colonists array -- runtime-founded stubs have none) run the
+    // SAME colonyTurn body with turnPower set: popups silenced (cev/cask),
+    // births and built units join r.units, the Custom House pays r.gold,
+    // fathers come from the rival's own Congress (ffOwned).
+    turnPower = r.nation;
+    for (const c of r.colonies) if (c.colonists) colonyTurn(c);
+    turnPower = -1;
+    for (const c of r.colonies) if (c.colonists) c.pop = c.colonists.length;
+    r.colonies = r.colonies.filter(c => !c.vanished);
     const war = atWar(G.nation, r.nation);
     for (const u of r.units.slice()) {
       if (u.ship) {
@@ -11262,19 +11342,19 @@ function solAnnounce(c) {
   // @SONSDOWN) fire on crossing a 10% band, in whichever direction moved.
   const band = Math.floor(c.sol / 10);
   if (c.solBand === undefined) c.solBand = band;
-  else if (band > c.solBand) { showEvent('SONSUP', { STRING0: c.name, NUMBER0: c.sol }); c.solBand = band; }
-  else if (band < c.solBand) { showEvent('SONSDOWN', { STRING0: c.name, NUMBER0: c.sol }); c.solBand = band; }
+  else if (band > c.solBand) { cev('SONSUP', { STRING0: c.name, NUMBER0: c.sol }); c.solBand = band; }
+  else if (band < c.solBand) { cev('SONSDOWN', { STRING0: c.name, NUMBER0: c.sol }); c.solBand = band; }
   if (c.sol >= 50 && !(c.latch & 0x04)) {
-    c.latch |= 0x04; showEvent('REBELMAJORITY', { STRING0: c.name });
+    c.latch |= 0x04; cev('REBELMAJORITY', { STRING0: c.name });
   }
   if (c.sol >= 100 && !(c.latch & 0x02)) {
-    c.latch |= 0x02; showEvent('REBELUNANIMOUS', { STRING0: c.name });
+    c.latch |= 0x02; cev('REBELUNANIMOUS', { STRING0: c.name });
   }
   if (c.sol < 95 && (c.latch & 0x02)) {
-    c.latch &= ~0x02; showEvent('TORYMINORITY', { STRING0: c.name });
+    c.latch &= ~0x02; cev('TORYMINORITY', { STRING0: c.name });
   }
   if (c.sol < 50 && (c.latch & 0x04)) {
-    c.latch &= ~0x04; showEvent('TORYMAJORITY', { STRING0: c.name });
+    c.latch &= ~0x04; cev('TORYMAJORITY', { STRING0: c.name });
   }
 }
 // The uprising's own gate is byte-exact: random_int(0, difficulty+1), and it
@@ -12567,6 +12647,11 @@ function importSav(bytes) {
     if (n === nation) continue;
     G.rivals.push({ nation: n, met: true, attitude: 8,
                     gold: i32(powBase + n * 0x13C + 0x2A),
+                    // the rival's own Congress (+0x07 bitmask) and tax
+                    // byte (+0x01) -- the per-power colony pass consults
+                    // both (B3.6)
+                    fathers: i32(powBase + n * 0x13C + 0x07) >>> 0,
+                    tax: d[powBase + n * 0x13C + 0x01],
                     colonies: [], nextColony: 0, units: [] });
   }
   const rivalOf = (n) => G.rivals.find(r => r.nation === n);
@@ -12611,23 +12696,12 @@ function importSav(bytes) {
     // warehouse_level (+0x95): 2 = the Expansion standing on the Warehouse.
     if (d[b + 0x95] >= 2 && !buildings.includes('Warehouse Expansion'))
       buildings.push('Warehouse Expansion');
-    if (owner !== nation) {
-      const r = rivalOf(owner);
-      if (r) r.colonies.push({
-        x: d[b], y: d[b + 1], nation: owner, name, pop, grow: 0,
-        recFlags1c: d[b + 0x1C],
-        // The colony's rebel/SoL % (func_008524: 100 x (+0xC2)/(+0xC6),
-        // clamped 0..100) -- feeds the rival's +0x19 sentiment
-        // (func_03C424, newsTick). Static: rival colonies produce no
-        // bells (B3.6).
-        sol: i32(b + 0xC6) > 0
-          ? Math.max(0, Math.min(100,
-              Math.floor(100 * i32(b + 0xC2) / i32(b + 0xC6)))) : 0,
-        level: ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) >= 0
-          ? 3 - ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) : 0,
-      });
-      continue;
-    }
+    // B3.6 slice B: rival-owned records now get the SAME full parse as the
+    // player's (colonists, cells, buildings, stock, construction) -- the
+    // engine runs one colony pass per power over identical records
+    // (func_02F052, owner match @0x2F256), so the reference model must hold
+    // identical data. The stub fields (pop/grow/level/sol) ride on top for
+    // the existing consumers.
     const depletionCounter = d[b + 0x97];   // +0x97, the mine-wear counter
     const colonists = [];
     for (let k = 0; k < pop; k++) {
@@ -12658,7 +12732,7 @@ function importSav(bytes) {
     // census3 picker's highlighted row). An index past the 42 buildings
     // would be a colony-built unit target -- unobserved, left null.
     const bip = d[b + 0x94];
-    const c = { name, x: d[b], y: d[b + 1], nation, colonists,
+    const c = { name, x: d[b], y: d[b + 1], nation: owner, colonists,
                 stock: [], buildings, hammers: u16(b + 0x92),
                 // +0x1C flags byte, kept verbatim: the map's population-number
                 // ink reads bits 4/2 (func_004314 @0x00448B-@0x0044A4).
@@ -12677,6 +12751,18 @@ function importSav(bytes) {
     c.customOff = {};
     for (let k = 0; k < 16; k++) if (!(chf & (1 << k))) c.customOff[k] = true;
     for (let k = 0; k < 16; k++) c.stock.push(u16(b + 0x9A + k * 2));
+    if (owner !== nation) {
+      const r = rivalOf(owner);
+      if (r) {
+        // The stub fields the existing consumers read (pop/grow/level and
+        // the +0x19 sentiment feed) sit on the full object.
+        c.pop = pop; c.grow = 0;
+        c.level = ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) >= 0
+          ? 3 - ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) : 0;
+        r.colonies.push(c);
+      }
+      continue;
+    }
     G.colonies.push(c);
   }
 

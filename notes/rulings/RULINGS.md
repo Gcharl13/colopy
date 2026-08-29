@@ -10645,3 +10645,26 @@ both engines is replaced by the real floor.
    TribeRecord `+0x0C` (the Silver-weight numerator, glossed "hoard",
    writer unread; imported verbatim by both engines) and `[0x962A]` =
    per-tribe settlement count (usage-consistent, writer unread).
+
+## 2026-08-29 — rival colony development lands (B3.6 core)
+
+1. **The per-power colony pass runs for rivals in both engines.**
+   `func_02F052` loops every colony once per power (owner match
+   `@0x2F256`); the JS now imports rival-owned ColonyRecords as FULL
+   colony objects and runs the same `colonyTurn` body under `turnPower`
+   (the new `cev`/`cask` scaffolding mirrors the C's), while the C's
+   `rival_colony_pass()` walks the stub list — the JS array order —
+   into the shared `colony_turn`.  The whole oracle suite is green with
+   the pass live.
+2. **The bells chain is per-OWNER, byte-read.**  The three father
+   checks key on the colony owner byte `+0x1A` (`0x981:0` calls
+   `@0xA4E5/@0xA50B/@0xA544`), Paine's bonus reads the OWNER's tax
+   (`@0xA525`), and **Bolivar adds `(size+3)/5` bells for AI-controlled
+   owners** (`@0xA539..@0xA57A`, gate = AIPersonality controller ≠ 0) —
+   previously documented in a comment, now implemented.  Riding along:
+   the JS Paine site read the never-assigned `G.taxRate` (NaN bells had
+   he ever been owned) — fixed to the owner's tax.
+3. **Deliberate residuals, all FLAGGED in the ledger row**: no rival
+   siege model, no per-power market (the player's bid stands in,
+   untaxed), wagon cap and building upkeep bypass rivals, and the AI
+   overflow-sale path (`@0x2E86B`) still spoils silently.
