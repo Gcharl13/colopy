@@ -117,6 +117,24 @@ void cr_reset_from_load(void) {
         CR.col[i].sol_band = 0xFF;
         colony_bld_seed(i);
     }
+    /* per-unit SAV state (read 2026-08-29): the damaged flag is record
+     * +0x04 bit 0x80 (tested @0x2F084 — the repair pass runs it on ships;
+     * artillery carries its demotion in the same bit) and the +0x16
+     * turns_worked byte is the shared pioneer/convert/repair counter
+     * (@0x4071D/@0x2EFD6/@0x2F0E0).  Both are imported only where a
+     * consumer is LIVE — a stale counter on an idle colonist is inert in
+     * the engine too, and the JS model loses it through the ship-rider
+     * round-trip, so importing it everywhere desyncs the digests. */
+    for (int i = 0; i < CS.n_units; i++) {
+        const UnitRecord *u = &CS.units[i];
+        int heavy = u->type < DAT_UNITS_COUNT &&
+                    (dat_units[u->type].hull > 0 ||
+                     strcmp(dat_units[u->type].name, "Artillery") == 0);
+        if (heavy && (u->flags & 0x80)) CR.unit_damaged[i] = 1;
+        if (u->orders == 8 || u->orders == 9 || CR.unit_damaged[i] ||
+            u->profession == 27)
+            CR.unit_work[i] = u->turns_worked;
+    }
     /* natives: every non-ship record owned >= 4 is a brave (importer
      * game.js:10431); home = the tribe's nearest village by Manhattan
      * distance, first on tie (the stable-sort [0]). */
@@ -308,15 +326,19 @@ void cr_reset_from_load(void) {
  * @ORDERS table the status letter reads (0 none / 1 Sentry / 5 Fortify /
  * 6 Fortified ...), so those stable states are RESTORED rather than
  * discarded — a fortified defender keeps its +50%/+4 combat standing
- * across a load.  The other values (2 Trade Route, 3 Go To, 4 Live In
- * Village, 7..9 build/plow/road, 11/12 engine-internal "no orders")
- * carry companion state (goals, work counters) whose restore semantics
- * are not yet byte-read — those still reset to 0, FLAGGED. */
+ * across a load.  8 (Clear/Plow) and 9 (Build Road) are restored as of
+ * 2026-08-29: their only companion state is the +0x16 work counter,
+ * which the loader now imports, and the work processors (func_040656 /
+ * func_0409D6) are byte-modeled — a pioneer resumes mid-job.  The other
+ * values (2 Trade Route, 3 Go To, 4 Live In Village, 7, 11/12
+ * engine-internal) still carry unread companion state and reset to 0,
+ * FLAGGED. */
 void units_session_seed(void) {
     for (int i = 0; i < CS.n_units; i++) {
         CS.units[i].moves_remaining = (uint8_t)unit_full_moves(i);
         uint8_t o = CS.units[i].orders;
-        if (o != 1 && o != 5 && o != 6) CS.units[i].orders = 0;
+        if (o != 1 && o != 5 && o != 6 && o != 8 && o != 9)
+            CS.units[i].orders = 0;
     }
 }
 
@@ -1246,7 +1268,6 @@ int unit_append(int type, int owner, int x, int y) {
     CR.unit_work[i] = 0;
     CR.unit_sail_home[i] = 0;
     CR.unit_offered[i] = 0;
-    CR.unit_faith[i] = 0;
     CR.unit_damaged[i] = 0;
     CR.unit_in_natives[i] = 0;
     CR.native_heading[i] = 0xFF;
@@ -1272,7 +1293,6 @@ void unit_remove(int ui) {
     memmove(&CR.unit_work[ui], &CR.unit_work[ui + 1], n);
     memmove(&CR.unit_sail_home[ui], &CR.unit_sail_home[ui + 1], n);
     memmove(&CR.unit_offered[ui], &CR.unit_offered[ui + 1], n);
-    memmove(&CR.unit_faith[ui], &CR.unit_faith[ui + 1], n);
     memmove(&CR.unit_damaged[ui], &CR.unit_damaged[ui + 1], n);
     memmove(&CR.native_heading[ui], &CR.native_heading[ui + 1], n);
     memmove(&CR.native_home[ui], &CR.native_home[ui + 1], n);
@@ -1532,10 +1552,26 @@ static void advance_improvements(void) {
         if (road) {
             CS.improve[mi] |= ROAD_BIT;
         } else if (is_forested_id(tile_terrain(map_at(u->map_x, u->map_y)))) {
-            /* clear: lumber grant from the LUMBERJACK column x10 (flagged in
-             * game.js -- the spec's +0x2F80 column conflicts), then fold the
-             * id and drop 8 (CLAUDE.md hard rule 3: fold 16..23 first). */
-            int lumber = tile_yield(map_at(u->map_x, u->map_y), 5) * 10;
+            /* CLEAR — the lumber grant is now BYTE_VERIFIED (func_040656
+             * completion @0x40769..@0x4084D, read 2026-08-29), closing the
+             * +0x2F80 column CONFLICT: 0x2F80 − 0x2F7B = 5, the LUMBERJACK
+             * yield column exactly (the old "that is y_ore" arithmetic
+             * forgot the col-0 base).  mult = the FOLDED id's lumber
+             * column, +1 when the receiving COLONY's own tile carries
+             * river or road (improve & 0x0A @0x407C7), forced to 1
+             * without a Lumber Mill (@0x407D0); amount = min(warehouse
+             * room, mult × 20 × (Hardy ? 2 : 1)) (@0x407E1..@0x407FD),
+             * and the colony must be the unit's own power's within
+             * distance ≤ 3 (0x614 search, [0x8db8] gate @0x407A0 — the
+             * engine's metric is unread; Manhattan is the port's
+             * reading, FLAGGED).  Then fold the id and drop 8 (CLAUDE.md
+             * hard rule 3: fold 16..23 first; `sub es:[bx],8`
+             * @0x40896). */
+            int mult = tile_yield(map_at(u->map_x, u->map_y), 5);
+            int hardy = u->profession >= 1 &&
+                        u->profession < DAT_JOBEXPERT_COUNT &&
+                        strcmp(dat_jobexpert[u->profession],
+                               "Hardy Pioneers") == 0;
             int t = tile_terrain(CS.terrain[mi]);
             if (t >= 16 && t <= 23) t = (t & 7) | 8;
             CS.terrain[mi] = (uint8_t)((CS.terrain[mi] & ~0x1F) | (t - 8));
@@ -1546,6 +1582,19 @@ static void advance_improvements(void) {
                 int d = (c->map_x > u->map_x ? c->map_x - u->map_x : u->map_x - c->map_x) +
                         (c->map_y > u->map_y ? c->map_y - u->map_y : u->map_y - c->map_y);
                 if (best < 0 || d < bd) { best = ci; bd = d; }
+            }
+            if (best >= 0 && bd > 3) best = -1;   /* [0x8db8] <= 3 @0x407A0 */
+            int lumber = 0;
+            if (best >= 0) {
+                const ColonyRecord *cc = &CS.colonies[best];
+                if (map_improve(cc->map_x, cc->map_y) & 0x0A) mult++;
+                if (!colony_has_name(best, "Lumber Mill")) mult = 1;
+                int cap = cc->warehouse_level
+                              ? (cc->warehouse_level + 1) * 100 : 100;
+                lumber = (mult * 20) << (hardy ? 1 : 0);
+                if (lumber > cap - (int)cc->stock[LUMBER])
+                    lumber = cap - (int)cc->stock[LUMBER];
+                if (lumber < 0) lumber = 0;
             }
             if (best >= 0 && lumber > 0) {
                 ColonyRecord *c = &CS.colonies[best];
@@ -1835,26 +1884,37 @@ static void check_treasure(void) {
     }
 }
 
-/* @REFIT (game.js:10754): a damaged ship spending the turn in a port with a
- * Drydock/Shipyard is fixed — the one-turn timer is the JS port's flagged
- * stand-in (the engine's repair timer is unread). */
+/* Damaged-ship repair, map half — BYTE_VERIFIED func_02F052
+ * @0x2F084..@0x2F1E2 (read 2026-08-29), replacing the Drydock/Shipyard
+ * one-turn stand-in: every damaged ship of the power (Artillery keeps its
+ * demotion — type 0x0B skip @0x2F08F, covered here by hull <= 0) ticks
+ * its +0x16 counter +1 a turn (@0x2F0E0) and +1 MORE when its
+ * coordinates pass the map-bounds test (is_xy_in_map_bounds via
+ * 0x181F:0x302 @0x2F0FE) — ships anywhere ON the map, port or open sea,
+ * mend at 2 a turn, no building needed.  Complete at the @UNIT defense
+ * column (+0x5235 = dat_units[].combat, @0x2F126): the flag clears
+ * (@0x2F135) and @REFIT names the colony under the ship (@0x2F1A4); at
+ * sea the engine's location slot is stale — the port passes the empty
+ * string.  The counter reset on completion is the port's own hygiene
+ * (the engine leaves +0x16 as-is), flagged.  The Europe half (+1 a
+ * turn) lives in advance_crossings. */
 static void refit_ships(void) {
     for (int ui = 0; ui < CS.n_units; ui++) {
         if (!unit_on_map_player(ui)) continue;
         if (dat_units[CS.units[ui].type].hull <= 0 || !CR.unit_damaged[ui])
             continue;
+        CR.unit_work[ui] = (uint8_t)(CR.unit_work[ui] + 2);
+        if ((int)CR.unit_work[ui] < (int)dat_units[CS.units[ui].type].combat)
+            continue;
+        CR.unit_damaged[ui] = 0;
+        CR.unit_work[ui] = 0;
         int home = -1;
         for (int ci = 0; ci < CS.n_colonies; ci++)
             if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
                 CS.colonies[ci].map_x == CS.units[ui].map_x &&
                 CS.colonies[ci].map_y == CS.units[ui].map_y) { home = ci; break; }
-        if (home < 0) continue;
-        if (colony_has_name(home, "Drydock") ||
-            colony_has_name(home, "Shipyard")) {
-            CR.unit_damaged[ui] = 0;
-            ev_emit("REFIT", 0, 0, dat_units[CS.units[ui].type].name,
-                    CS.colonies[home].name);
-        }
+        ev_emit("REFIT", 0, 0, dat_units[CS.units[ui].type].name,
+                home >= 0 ? CS.colonies[home].name : "");
     }
 }
 

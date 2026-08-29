@@ -307,6 +307,7 @@ void cmd_sail_for_europe(int ui) {
     e->state = EURO_TO_EUROPE;
     e->turns = SAIL_TURNS;
     e->damaged = CR.unit_damaged[ui];
+    e->work = CR.unit_work[ui];
     e->lane_x = u->map_x;
     e->lane_y = u->map_y;
     memcpy(e->hold, CR.unit_hold[ui], sizeof(e->hold));
@@ -381,15 +382,29 @@ void euro_sail_new_world(int ei) {
 void advance_crossings(void) {
     for (int k = CR.n_europe - 1; k >= 0; k--) {
         euro_crossing *e = &CR.europe[k];
+        /* Damaged-ship repair, Europe half — BYTE_VERIFIED func_02F052
+         * @0x2F0E0..@0x2F1E2 (read 2026-08-29): every damaged ship ticks
+         * +1 a turn; the on-map bounds bonus (@0x2F0FE) fails off-map,
+         * so ships in Europe (crossing or docked) mend at HALF the map
+         * rate.  Complete at the @UNIT defense column (+0x5235 =
+         * dat_units[].combat, @0x2F126); @REFIT names the homeport
+         * (@0x2F1BA).  The counter reset is the port's own hygiene (the
+         * engine leaves +0x16 stale), flagged. */
+        if (e->damaged) {
+            e->work++;
+            if ((int)e->work >= (int)dat_units[e->type].combat) {
+                e->damaged = 0;
+                e->work = 0;
+                ev_emit("REFIT", 0, 0, dat_units[e->type].name,
+                        dat_nations[cs_nation()].homeport);
+            }
+        }
         if (e->state == EURO_PORT) continue;
         if (--e->turns > 0) continue;
         if (e->state == EURO_TO_EUROPE) {
             e->state = EURO_PORT;
-            if (e->damaged) {
-                e->damaged = 0;
-                ev_emit("REFIT", 0, 0, dat_units[e->type].name,
-                        dat_nations[cs_nation()].homeport);
-            }
+            /* (the old instant damage-clear on docking is gone: repair
+             * is the byte-verified timer above) */
             for (int p = 0; p < e->n_pass; p++)
                 if (CR.n_dock_units <
                     (int)(sizeof(CR.dock_units) / sizeof(CR.dock_units[0])))
@@ -421,6 +436,10 @@ void advance_crossings(void) {
             CR.unit_n_hold[ui] = e->n_hold;
             memcpy(CR.unit_pass[ui], e->pass, sizeof(e->pass));
             CR.unit_n_pass[ui] = e->n_pass;
+            if (e->damaged) {
+                CR.unit_damaged[ui] = 1;
+                CR.unit_work[ui] = e->work;
+            }
         }
         memmove(&CR.europe[k], &CR.europe[k + 1],
                 (size_t)(CR.n_europe - k - 1) * sizeof(euro_crossing));

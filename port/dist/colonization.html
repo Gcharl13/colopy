@@ -2830,15 +2830,18 @@ function advanceImprovements() {
       IMPROVE[i] |= ROAD_BIT;
       G.msg = 'Pioneers complete a road.';
     } else if (isForested(tileTerrain(at(u.x, u.y)))) {
-      // Clear: the tile id drops by 8 to its unforested base, and the lumber
-      // the forest was worth goes to the nearest colony. The grant's column
-      // carries a CONFLICT -- the spec cites +0x2F80, which by this table's own
-      // column arithmetic is y_ore, while the grant is plainly lumber. The port
-      // reads the LUMBERJACK column as the coherent one and scales it x10 to
-      // land in the original's familiar range; both choices are flagged in
-      // docs/UI_AUDIT_TRACKER.md.
-      const LUMBER_COL = 5, CLEAR_SCALE = 10;
-      const lumber = tileYield(at(u.x, u.y), LUMBER_COL) * CLEAR_SCALE;
+      // CLEAR -- the lumber grant is BYTE_VERIFIED (func_040656 completion
+      // @0x40769..@0x4084D, read 2026-08-29), closing the +0x2F80 column
+      // CONFLICT: 0x2F80 - 0x2F7B = 5, the LUMBERJACK yield column exactly
+      // (the old "that is y_ore" arithmetic forgot the col-0 base). mult =
+      // the FOLDED id's lumber column, +1 when the receiving COLONY's own
+      // tile carries river or road (improve & 0x0A @0x407C7), forced to 1
+      // without a Lumber Mill (@0x407D0); amount = min(warehouse room,
+      // mult x 20 x (Hardy ? 2 : 1)) (@0x407E1..@0x407FD), and the colony
+      // must be the unit's own power's within distance <= 3 (0x614 search,
+      // [0x8db8] gate @0x407A0 -- the engine's metric is unread; Manhattan
+      // is the port's reading, FLAGGED).
+      let mult = tileYield(at(u.x, u.y), 5);
       // `sub es:[bx],8` is applied to the FOLDED id. Raw ids 16..23 fold to
       // 8..15 first (CLAUDE.md hard rule 3), so a straight -8 on the raw byte
       // would leave a 16..23 tile still forested; folding first lands both
@@ -2847,8 +2850,17 @@ function advanceImprovements() {
       let t = tileTerrain(MAP.tiles[i]);
       if (t >= 16 && t <= 23) t = (t & 7) | 8;
       MAP.tiles[i] = (MAP.tiles[i] & ~0x1F) | (t - 8);
-      const c = G.colonies.slice().sort((a, b) =>
+      let c = G.colonies.slice().sort((a, b) =>
         (Math.abs(a.x - u.x) + Math.abs(a.y - u.y)) - (Math.abs(b.x - u.x) + Math.abs(b.y - u.y)))[0];
+      if (c && Math.abs(c.x - u.x) + Math.abs(c.y - u.y) > 3) c = null;
+      let lumber = 0;
+      if (c) {
+        if (IMPROVE[c.y * MAP.w + c.x] & 0x0A) mult += 1;
+        if (!c.buildings.includes('Lumber Mill')) mult = 1;
+        lumber = mult * 20 * (isHardy(u) ? 2 : 1);
+        lumber = Math.max(0, Math.min(lumber,
+                          warehouseCapacity(c) - c.stock[GOOD.LUMBER]));
+      }
       if (c && lumber > 0) {
         c.stock[GOOD.LUMBER] += lumber;
         showEvent('CLEARCUT', { STRING0: c.name, NUMBER0: lumber });
@@ -4081,6 +4093,7 @@ function sailForEurope(ship) {
   tutOnce(11, { STRING0: ship.type, STRING1: DATA.nations[G.nation].homeport });
   G.europe.push({ type: ship.type, icon: ship.icon, hold: ship.hold || [],
                   passengers: ship.cargo || [], state: 'toEurope', turns: SAIL_TURNS,
+                  damaged: ship.damaged || false, work: ship.work || 0,
                   lane: { x: ship.x, y: ship.y } });
   G.units.splice(G.units.indexOf(ship), 1);
   G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
@@ -4107,6 +4120,22 @@ function sailForNewWorld(e) {
 function advanceCrossings() {
   for (let k = G.europe.length - 1; k >= 0; k--) {
     const e = G.europe[k];
+    // Damaged-ship repair, Europe half -- BYTE_VERIFIED func_02F052
+    // @0x2F0E0..@0x2F1E2 (read 2026-08-29): every damaged ship ticks +1 a
+    // turn; the on-map bounds bonus (@0x2F0FE) fails off-map, so ships in
+    // Europe (crossing or docked) repair at HALF the map rate. Complete at
+    // the @UNIT defense column (+0x5235 = unit.combat, @0x2F126), @REFIT
+    // names the homeport (@0x2F1BA). The counter reset on completion is
+    // the port's own hygiene (the engine leaves +0x16 stale), flagged.
+    if (e.damaged) {
+      e.work = (e.work || 0) + 1;
+      if (e.work >= (unit(e.type) || {}).combat) {
+        e.damaged = false;
+        e.work = 0;
+        showEvent('REFIT', { STRING0: e.type,
+                             STRING1: DATA.nations[G.nation].homeport });
+      }
+    }
     if (e.state === 'port') continue;
     if (--e.turns > 0) continue;
     // Docking in Europe brings up the harbour, the way arriving does in game.
@@ -4115,13 +4144,8 @@ function advanceCrossings() {
     // and boarding/sailing takes them back aboard.
     if (e.state === 'toEurope') {
       e.state = 'port';
-      // @REFIT covers the home port too: damage clears on docking (the
-      // engine's repair timer is unread; same flagged stand-in as colonies).
-      if (e.damaged) {
-        e.damaged = false;
-        showEvent('REFIT', { STRING0: e.type,
-                             STRING1: DATA.nations[G.nation].homeport });
-      }
+      // (The old instant damage-clear on docking is gone: repair is the
+      // byte-verified timer above -- Europe ships mend at 1 tick a turn.)
       for (const p of (e.passengers || [])) G.dockUnits.push(p);
       e.passengers = [];
       G.euroShip = shipsInPort().indexOf(e);
@@ -4141,6 +4165,7 @@ function advanceCrossings() {
     const u = mkUnit(e.type, e.lane ? e.lane.x : MAP.w - 1, e.lane ? e.lane.y : 20,
                      e.passengers);
     u.hold = e.hold;
+    if (e.damaged) { u.damaged = true; u.work = e.work || 0; }
     G.units.push(u);
     G.europe.splice(k, 1);
   }
@@ -6616,7 +6641,6 @@ function denounceHeresy(v, u) {
 // WHEN the roll fires ("each eligible turn") is untraced; the port rolls once
 // per mission per turn. Flagged in docs/UI_AUDIT_TRACKER.md.
 const CONVERT_CLASS = 'Indian Converts';
-const CONVERT_FAITH = 8;                 // turns before loss of faith
 function conversionThreshold(v) {
   const t = G.tribes[v.tribe];
   let th = (t ? t.level : 0) + 2;
@@ -6628,6 +6652,15 @@ function attemptConversions() {
     G.eventTribe = v.tribe;
     if (!v.mission || v.mission.power !== G.nation) continue;
     if (!G.colonies.length) continue;
+    // Convert headroom: settled converts never age (the byte model), so a
+    // mission-heavy game floods the pool without a bound. Both engines
+    // stop converting at 100 LIVING CONVERTS -- a shared port capacity
+    // limit, not a byte claim (the DOS pool is finite too, size unread --
+    // FLAGGED). The count is over the player's own unit list, a
+    // digest-compared quantity, so the two engines agree exactly; checked
+    // BEFORE the roll to keep the RNG stream lockstep.
+    if (G.units.filter(u => u.profession === CONVERT_CLASS).length >= 100)
+      continue;
     if (Math.floor(Math.random() * 16) >= conversionThreshold(v)) continue;
     // "created at the colony" -- the handler is passed a ColonyRecord's map_x /
     // map_y / owner, so the convert appears on a colony tile. The port picks the
@@ -6636,26 +6669,33 @@ function attemptConversions() {
       (Math.abs(a.x - v.x) + Math.abs(a.y - v.y)) - (Math.abs(b.x - v.x) + Math.abs(b.y - v.y)))[0];
     const u = mkUnit('Colonists', c.x, c.y);
     u.profession = CONVERT_CLASS;
-    u.faith = CONVERT_FAITH;
     G.units.push(u);
     showEvent('INDIANSCONVERT', { STRING0: c.name });
     tutOnce(19);
   }
 }
-// "Converts who do not join colonies within eight turns of their conversion are
-// eliminated for loss of faith" (@DEADCONVERTS). Joining a colony is what
-// clears the timer -- a convert standing on the map keeps counting down.
+// @DEADCONVERTS -- BYTE_VERIFIED func_02EF64 (0x191F:0xA58, read
+// 2026-08-29), replacing the port's unconditional 8-turn countdown: a
+// CONVERT unit (type 0 Colonists with profession 0x1B, @0x2EF99/@0x2EFA3)
+// ticks its +0x16 counter only while he is ON the map (@0x2EF86), NOT
+// standing on a settlement tile (village-or-colony lookup 0x181F:0x6BE ->
+// func_005FD4, improve bit 2, @0x2EFB5) and ALONE (his tile stack counts
+// fewer than 2 via the chain walker func_0073A8 verb 2, @0x2EFC9) -- an
+// escorted or parked convert keeps his faith. Past 8 qualifying turns
+// (@0x2EFDA, the text's own "eight turns") he is eliminated (@0x2F00B)
+// with @DEADCONVERTS per convert and a view-center for the human owner
+// (@0x2F000). The counter is the SAV's own +0x16 field, so the timer
+// survives a save.
 function ageConverts() {
-  let lost = 0;
   for (let i = G.units.length - 1; i >= 0; i--) {
     const u = G.units[i];
-    if (u.profession !== CONVERT_CLASS || u.faith === undefined) continue;
-    u.faith -= 1;
-    if (u.faith > 0) continue;
+    if (u.profession !== CONVERT_CLASS || u.type !== 'Colonists') continue;
+    if (colonyAt(u.x, u.y) ||
+        G.villages.some(v => v.x === u.x && v.y === u.y)) continue;
+    if (G.units.filter(q => q.x === u.x && q.y === u.y).length >= 2) continue;
+    u.work = (u.work || 0) + 1;
+    if (u.work <= 8) continue;
     G.units.splice(i, 1);
-    lost += 1;
-  }
-  if (lost) {
     G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
     showEvent('DEADCONVERTS', {});
   }
@@ -8944,7 +8984,7 @@ function applyFatherEffect(name) {
   // Colonist on the spot (class 0x1B -> 0x1C, @0x3BEB2).
   if (name === 'Bartolome de las Casas') {
     for (const u of G.units)
-      if (u.profession === CONVERT_CLASS) { u.profession = 'Free Colonists'; delete u.faith; }
+      if (u.profession === CONVERT_CLASS) { u.profession = 'Free Colonists'; u.work = 0; }
     for (const c of G.colonies)
       for (const p of c.colonists)
         if (p.profession === CONVERT_CLASS) p.profession = 'Free Colonists';
@@ -11950,11 +11990,27 @@ function importSav(bytes) {
       // ORDERS (C1.18, 2026-08-28): record byte +0x08 indexes the same
       // @ORDERS table as the status letter (1 Sentry / 5 Fortify /
       // 6 Fortified) -- those stable states are RESTORED, so a fortified
-      // defender keeps its combat standing across a load. Values with
-      // unread companion state (trade route, goto, build/plow/road,
-      // the 11/12 internals) still reset to 0, FLAGGED.
+      // defender keeps its combat standing across a load. 8 (Clear/Plow)
+      // and 9 (Build Road) restore as of 2026-08-29: their only companion
+      // state is the +0x16 work counter imported below, and the work
+      // processors are byte-modeled -- a pioneer resumes mid-job. Values
+      // with unread companion state (trade route, goto, live-in-village,
+      // 7, the 11/12 internals) still reset to 0, FLAGGED.
       const ro = d[b + 0x08];
-      if (ro === 1 || ro === 5 || ro === 6) u.orders = ro;
+      if (ro === 1 || ro === 5 || ro === 6 || ro === 8 || ro === 9) u.orders = ro;
+      // Per-unit SAV state (read 2026-08-29): the damaged flag is +0x04
+      // bit 0x80 (tested @0x2F084 -- the repair pass runs it on ships;
+      // artillery carries its demotion in the same bit); +0x16
+      // turns_worked is the shared pioneer/convert/repair counter
+      // (@0x4071D/@0x2EFD6/@0x2F0E0). Both import only where a consumer
+      // is LIVE -- a stale counter on an idle colonist is inert in the
+      // engine too, and this model loses it through the ship-rider
+      // round-trip, so importing it everywhere desyncs the two engines.
+      if ((d[b + 0x04] & 0x80) && (isShip || type.name === 'Artillery'))
+        u.damaged = true;
+      if (u.orders === 8 || u.orders === 9 || u.damaged ||
+          d[b + 0x17] === 27)
+        u.work = d[b + 0x16];
       const prof = SAV_PROFESSION(d[b + 0x17]);
       if (prof) u.profession = prof;
       if (d[b + 0x15]) u.tools = d[b + 0x15];
@@ -12282,17 +12338,26 @@ function endTurn() {
     G.colonies = G.colonies.filter(c => !c.vanished);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
   }
-  // @REFIT: a damaged ship spending the turn in a port with repair
-  // facilities is fixed. The manual: a Drydock/Shipyard "enables your colony
-  // to repair any damaged ships" (the mother country always can). The
-  // engine's repair TIMER is unread -- one full turn is the port's flagged
-  // stand-in (u.damaged was previously never cleared at all).
+  // Damaged-ship repair, map half -- BYTE_VERIFIED func_02F052
+  // @0x2F084..@0x2F1E2 (read 2026-08-29), replacing the Drydock/Shipyard
+  // one-turn stand-in: every damaged ship of the power (Artillery keeps
+  // its demotion, @0x2F08F) ticks its +0x16 counter +1 a turn (@0x2F0E0)
+  // and +1 MORE when its coordinates pass the map-bounds test
+  // (is_xy_in_map_bounds via 0x181F:0x302 @0x2F0FE) -- so ships anywhere
+  // ON the map, port or open sea, mend at 2 a turn, no building needed.
+  // Complete at the @UNIT defense column (+0x5235 = unit.combat,
+  // @0x2F126): the flag clears (@0x2F135) and @REFIT names the colony
+  // under the ship (@0x2F1A4); at sea the engine's location slot is
+  // stale -- the port passes the empty string. The counter reset is the
+  // port's own hygiene (the engine leaves +0x16 as-is), flagged.
   for (const u of G.units) {
-    const home = u.ship && u.damaged && colonyAt(u.x, u.y);
-    if (home && ['Drydock', 'Shipyard'].some(b => home.buildings.includes(b))) {
-      u.damaged = false;
-      showEvent('REFIT', { STRING0: u.type, STRING1: home.name });
-    }
+    if (!u.ship || !u.damaged) continue;
+    u.work = (u.work || 0) + 2;
+    if (u.work < (unit(u.type) || {}).combat) continue;
+    u.damaged = false;
+    u.work = 0;
+    const home = colonyAt(u.x, u.y);
+    showEvent('REFIT', { STRING0: u.type, STRING1: home ? home.name : '' });
   }
   advanceImprovements();
   checkImmigration();

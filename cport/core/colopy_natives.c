@@ -338,6 +338,21 @@ static void attempt_conversions(void) {
         const NativeSettlement *v = &CS.villages[vi];
         if (v->mission == 0xFF || (v->mission & 0x0F) != cs_nation()) continue;
         if (!player_colony_count()) continue;
+        /* convert headroom: settled converts never age (the byte model),
+         * so a mission-heavy game floods the pool without a bound.  Both
+         * engines stop converting at 100 LIVING CONVERTS — a shared port
+         * capacity limit, not a byte claim (the DOS pool is finite too,
+         * size unread — FLAGGED).  The count is over the player's own
+         * unit list, a digest-compared quantity, so the two engines
+         * agree exactly; checked BEFORE the roll to keep the RNG stream
+         * lockstep. */
+        {
+            int nconv = 0;
+            for (int k = 0; k < CR.n_units_order; k++)
+                if (CS.units[CR.units_order[k]].profession == JOB_CONVERT)
+                    nconv++;
+            if (nconv >= 100) continue;
+        }
         int th = tribe_level(v->owner_tribe - 4) + 2;
         if (v->mission & 0x10) th *= 2;
         if (R(16) >= th) continue;
@@ -354,30 +369,53 @@ static void attempt_conversions(void) {
         if (best < 0) continue;
         int ui = unit_append(TY_COLONISTS, cs_nation(),
                              CS.colonies[best].map_x, CS.colonies[best].map_y);
-        if (ui >= 0) {
+        if (ui >= 0)
             CS.units[ui].profession = (uint8_t)JOB_CONVERT;
-            CR.unit_faith[ui] = 8;               /* CONVERT_FAITH */
-        }
         ev_emit("INDIANSCONVERT", 0, 0, CS.colonies[best].name, 0);
         /* tutOnce(19): TUTORIAL* keys are excluded from the parity diff */
     }
 }
+/* @DEADCONVERTS — BYTE_VERIFIED func_02EF64 (0x191F:0xA58, read
+ * 2026-08-29), replacing the unconditional 8-turn countdown: a CONVERT
+ * unit (type 0 Colonists with profession 0x1B, @0x2EF99/@0x2EFA3) ticks
+ * its +0x16 counter only while ON the map (@0x2EF86), NOT standing on a
+ * settlement tile (village-or-colony lookup 0x181F:0x6BE -> func_005FD4,
+ * improve bit 2, @0x2EFB5) and ALONE (his tile stack counts fewer than 2
+ * via the chain walker func_0073A8 verb 2, @0x2EFC9) — an escorted or
+ * parked convert keeps his faith.  Past 8 qualifying turns (@0x2EFDA,
+ * the text's own "eight turns") he is eliminated (@0x2F00B) with
+ * @DEADCONVERTS per convert.  The counter is the SAV's own +0x16
+ * field (CR.unit_work), so the timer survives a save. */
 static void age_converts(void) {
     nresolve();
-    int lost = 0;
     /* JS iterates G.UNITS backwards (game.js:5397) — a convert CAPTURED
      * by a rival left that list and never ages again; walk the order
      * list, not the record pool */
     for (int k = CR.n_units_order - 1; k >= 0; k--) {
         int ui = CR.units_order[k];
-        if (CS.units[ui].profession != JOB_CONVERT || !CR.unit_faith[ui])
+        const UnitRecord *u = &CS.units[ui];
+        if (u->profession != JOB_CONVERT || u->type != TY_COLONISTS)
             continue;
-        CR.unit_faith[ui]--;
-        if (CR.unit_faith[ui] > 0) continue;
+        int settled = 0;
+        for (int ci = 0; ci < CS.n_colonies && !settled; ci++)
+            if (CS.colonies[ci].map_x == u->map_x &&
+                CS.colonies[ci].map_y == u->map_y) settled = 1;
+        for (int v = 0; v < CS.n_villages && !settled; v++)
+            if (CS.villages[v].map_x == u->map_x &&
+                CS.villages[v].map_y == u->map_y) settled = 1;
+        if (settled) continue;
+        int stack = 0;
+        for (int q = 0; q < CR.n_units_order && stack < 2; q++) {
+            int uj = CR.units_order[q];
+            if (CS.units[uj].map_x == u->map_x &&
+                CS.units[uj].map_y == u->map_y) stack++;
+        }
+        if (stack >= 2) continue;
+        CR.unit_work[ui]++;
+        if (CR.unit_work[ui] <= 8) continue;
         unit_remove(ui);            /* drops list slot k, re-bases */
-        lost++;
+        ev_emit("DEADCONVERTS", 0, 0, 0, 0);
     }
-    if (lost) ev_emit("DEADCONVERTS", 0, 0, 0, 0);
 }
 
 /* ---- the raid-target scorer (game.js:5646, func_0460F8 byte-ported) ---- */

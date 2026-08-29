@@ -404,7 +404,7 @@ PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
         (e.passengers || []).length]),
       units: G.units.length,
       converts: G.units.filter(u => u.profession === 'Indian Converts')
-        .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),
+        .map(u => [u.x, u.y, u.work ? u.work : -1]),
       rivals: G.rivals.map(r => ({ n: r.nation,
         cols: r.colonies.map(c => [c.x, c.y]),
         units: r.units.map(u => [u.x, u.y,

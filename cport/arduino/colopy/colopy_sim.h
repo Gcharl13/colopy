@@ -355,6 +355,7 @@ typedef struct {
     uint8_t type;                /* @UNIT row */
     uint8_t state;               /* 0 port / 1 toEurope / 2 toNewWorld */
     uint8_t turns, damaged;
+    uint8_t work;                /* the +0x16 repair counter, riding along */
     int16_t lane_x, lane_y;      /* the sea-lane square it left from */
     hold_slot hold[EURO_HOLD_MAX];
     uint8_t n_hold;
@@ -403,7 +404,6 @@ typedef struct {
      * departs instead of just clearing the order. */
     uint8_t unit_sail_home[COLOPY_MAX_UNITS];
     uint8_t unit_offered[COLOPY_MAX_UNITS]; /* treasure offer latch */
-    uint8_t unit_faith[COLOPY_MAX_UNITS];   /* convert countdown, 0 = none */
     uint8_t unit_damaged[COLOPY_MAX_UNITS]; /* JS u.damaged (raids/refit) */
     uint8_t unit_fatigue[COLOPY_MAX_UNITS]; /* JS u.fatigue (§14.3 tired) */
     uint8_t native_heading[COLOPY_MAX_UNITS]; /* 0..7, 0xFF = unset */

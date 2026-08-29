@@ -477,7 +477,7 @@ static void print_projection(int job_convert) {
             if (!unit_on_map_player(ui) || u->profession != job_convert)
                 continue;
             printf("%s[%u,%u,%d]", first ? "" : ",", u->map_x, u->map_y,
-                   CR.unit_faith[ui] ? CR.unit_faith[ui] : -1);
+                   CR.unit_work[ui] ? CR.unit_work[ui] : -1);
             first = 0;
         }
         /* rivals in nation order (the JS G.rivals build order); units in
