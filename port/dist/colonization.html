@@ -2859,16 +2859,22 @@ function advanceGoTo() {
       if (u.sailHome) arrived.push(u);
       continue;
     }
-    // One step a turn along the pathfinder's route (func_061F02).
-    const next = gotoPathStep(u, gx, gy);
+    // Steps along the pathfinder's route (func_061F02), spending the
+    // unit's move allowance per step like the engine's order loop --
+    // C1.3 (one tile a turn whatever the allowance) closed 2026-08-29.
+    // The first step is always allowed (the step() rule), later steps
+    // need the movement budget.
     let moved = false;
-    if (next) {
-      const [nx, ny] = next;
-      if (!(nx === u.x && ny === u.y)) {
-        u.x = nx; u.y = ny;
-        reveal(nx, ny, sightRadius(u));
-        moved = true;
-      }
+    for (let steps = 0; ; steps++) {
+      const next = gotoPathStep(u, gx, gy);
+      if (!next || (next[0] === u.x && next[1] === u.y)) break;
+      const cost = moveCost(u, u.x, u.y, next[0], next[1]);
+      if (steps > 0 && cost > u.movesLeft) break;
+      u.movesLeft = cost > u.movesLeft ? 0 : u.movesLeft - cost;
+      u.x = next[0]; u.y = next[1];
+      reveal(u.x, u.y, sightRadius(u));
+      moved = true;
+      if (u.x === gx && u.y === gy) break;
     }
     if (moved && u.x === gx && u.y === gy) {
       u.orders = 0; u.goal = null;

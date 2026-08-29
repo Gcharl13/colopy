@@ -93,10 +93,10 @@ gameplay mechanics still missing and every flagged approximation, is
   format has no field for either and the `.SAV` is written byte-exact.
 - Cosmetic TBDs remain: the colony dither/speckle pass, a handful of
   unresolved display strings, and no resource model on the map.
-- **Go To moves ONE square a turn**, whatever the unit's allowance.  That
-  is the executor's shape in both engines and predates the sail-for-Europe
-  work; it makes a ship's run out to the sea lane slower than the ship.
-  Recorded as TBD in `notes/rulings/RULINGS.md` (2026-08-17).
+- ~~Go To moves ONE square a turn.~~ **Fixed 2026-08-29**: Go To now
+  runs the byte-read 16×16 pathfinder (func_061F02) and spends the
+  unit's full movement allowance per turn — a ship reaches its lane at
+  ship speed.
 - **No fence hit-rect.**  `@TUTORIAL4` puts the fence "near the water on
   the colony picture", but no byte-read rectangle for it exists, so
   leaving a colony rides the two exits that do: the jobs menu's "Return

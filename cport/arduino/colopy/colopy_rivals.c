@@ -1679,14 +1679,25 @@ static void advance_goto(void) {
             if (CR.unit_sail_home[ui]) CR.unit_sail_home[ui] = 2;
             continue;
         }
-        /* one step along the pathfinder's route (func_061F02) */
+        /* steps along the pathfinder's route (func_061F02), spending
+         * the move allowance per step like the engine's order loop
+         * (C1.3 closed 2026-08-29; first step always allowed) */
         int nx, ny, moved = 0;
-        if (goto_path_step(ui, gx, gy, &nx, &ny) &&
-            !(nx == u->map_x && ny == u->map_y)) {
+        int is_ship2 = u->type < DAT_UNITS_COUNT &&
+                       dat_units[u->type].hull > 0;
+        for (int steps = 0;; steps++) {
+            if (!goto_path_step(ui, gx, gy, &nx, &ny)) break;
+            if (nx == u->map_x && ny == u->map_y) break;
+            int cost = move_cost(is_ship2, u->map_x, u->map_y, nx, ny);
+            if (steps > 0 && cost > u->moves_remaining) break;
+            u->moves_remaining = (uint8_t)(cost > u->moves_remaining
+                                               ? 0
+                                               : u->moves_remaining - cost);
             u->map_x = (uint8_t)nx;
             u->map_y = (uint8_t)ny;
-            colopy_reveal(nx, ny, unit_sight_radius(ui));  /* game.js:2291 */
+            colopy_reveal(nx, ny, unit_sight_radius(ui));
             moved = 1;
+            if (u->map_x == gx && u->map_y == gy) break;
         }
         if (moved && u->map_x == gx && u->map_y == gy) {
             u->orders = 0;
