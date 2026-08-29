@@ -10605,3 +10605,43 @@ both engines is replaced by the real floor.
    them for the Custom-House sale skip (`@0x2D995`) and the
    `@KINGFRIGATE` gate.  The water-path ≤ 5 leg (`0x1A1F:0x27E`) is the
    flagged box-only proxy.
+
+## 2026-08-29 — the village teach skill is the seeded weight pick (C1.6)
+
+1. **"Stored nowhere that has been mapped" is overturned — it is stored
+   NOWHERE at all, and that is the design.**  The Live Among handler
+   `func_04A426` derives the skill live: teach weights from
+   `func_048F34` (stub `0x1CA24` — the demand builder; the teach table
+   `[0x9E78]` is the sibling of the demand table `[0x9E58]`), then a
+   `random_int(1, Σw)` pick inside a private seeded window —
+   `srand(((y<<8) + x + dword[0x8D80]) & 0x7FFF)` — the exact
+   colony-building-layout construct (`func_009726` family), restored to
+   clock seeding afterwards (`0x181F:0x4CA` ignores its pushed arg;
+   `@0x00C2F8` reads the BIOS tick).  The port's old coordinate hash was
+   directionally right (deterministic per site) and is replaced by the
+   byte model in both engines; loads pin the JS seed base to the C's
+   measured `0x795`.
+2. **Reachable rows** are 0-4 (Farmer, the three Planters, Fur Trapper),
+   6 (Ore, tech ≥ 1), 7 (Silver, tech ≥ 2), 11 (Weaver) and 12 (Fur
+   Trader) from the table, plus 0x16 Seasoned Scout (pick 4 when
+   `(x+y)%3 == 0`) and 8 Expert Fisherman (pick 0, water-ring roll).
+   Rows 5 Lumberjack, 9 Distiller, 10 Tobacconist are UNREACHABLE — the
+   builder never writes them (the caller's tech-gate zeroing of 9/10 is
+   belt-and-braces over already-zero words).
+3. **Ladder corrections carried into both engines**: @LEARNMAD fires at
+   attitude band > 1 (tension ≥ 50, `func_008262`) — not the port's old
+   75 — and COSTS 3 tension via the applier; the @LEARNSLOW failure roll
+   runs only at band > 0 (content tribes always teach); the taught latch
+   (settlement `+0x03` bit 1, `or [bx+3],2 @0x4A78A`) never blocks a
+   CAPITAL (`@0x4A6EE`); the JS importer now reads the latch from the
+   SAV.  The GAME keys are composed in-EXE as `"LEARN"+suffix` from the
+   suffix strings at DS `0x15E7..0x162A`.
+4. **New pins riding along**: MSC runtime `rand/srand` at file
+   `0x103D4/0x103C2` (`state·214013 + 2531011`, top 15 bits — confirms
+   the 2026-08-06 model from the bytes themselves, not just the replay);
+   the 20-entry plot ring tables at DS `0xC8` (dx) / `0xDE` (dy) = file
+   `0x1DA68/0x1DA7E`; `lookup_byte_from_pair @0x8892` maps box coords −2
+   through those same tables (centre and corners return −1).  FLAGGED:
+   TribeRecord `+0x0C` (the Silver-weight numerator, glossed "hoard",
+   writer unread; imported verbatim by both engines) and `[0x962A]` =
+   per-tribe settlement count (usage-consistent, writer unread).

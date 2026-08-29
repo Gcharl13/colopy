@@ -221,14 +221,171 @@ static void denounce_heresy(int vi, int ui) {
     ev_emit(win ? "HERESY0" : "HERESY1", 0, 0, dat_tribes[tr].name, 0);
 }
 
-/* liveAmong (game.js:5978): villageSkill = OUTDOOR_JOBS[(x*7+y*13)%8]. */
-static const uint8_t OUTDOOR_JOBS[8] = { 0, 1, 2, 3, 4, 7, 8, 22 };
-static void live_among(int vi, int ui) {
+/* villageSkill — C1.6 closed 2026-08-29: the BYTE MODEL of the Live Among
+ * handler func_04A426 + the teach-weight builder func_048F34 (stub 0x1CA24;
+ * the sibling of the goods-demand table — teach weights live at [0x9E78],
+ * 16 words indexed by @JOB row).  The pick runs inside its own seeded LCG
+ * window — srand(((y<<8) + x + dword[0x8D80]) & 0x7FFF) @0x4A49B, the same
+ * construct as colony building placement — then the engine re-seeds from
+ * the clock, so the main stream is untouched.  Mirrors game.js
+ * villageSkill draw for draw (a LOCAL lcg, never rng_next). */
+static int att_band(int tension);
+static const int8_t SKILL_RING_DX[20] = { 0, 1, 0, -1, -1, 1, 1, -1, 0, 2,
+                                          0, -2, -1, 1, -1, 1, -2, -2, 2, 2 };
+static const int8_t SKILL_RING_DY[20] = { -1, 0, 1, 0, -1, -1, 1, 1, -2, 0,
+                                          2, 0, -2, -2, 2, 2, -1, 1, -1, 1 };
+static int village_skill(int vi) {
     const NativeSettlement *v = &CS.villages[vi];
     int tr = vtribe(vi);
-    int job = OUTDOOR_JOBS[(v->map_x * 7 + v->map_y * 13) % 8];
-    if (CR.tension[tr] >= TENSION_HOSTILE) {
+    int tech = tribe_level(tr);
+    /* mask: box cells worked by any colony (@0x48F7D..@0x4904A),
+     * transcribed literally — the bounds probe (func_005BFA, interior
+     * 1..W-2/1..H-2) and the marked index both use village-relative
+     * arithmetic where colony-box coordinates belong (the engine's own
+     * quirk).  Player colonies contribute centre + worked cells (the
+     * +0x70 plot array through lookup_byte_from_pair — only the 8-ring
+     * both ports track); rival colonies (JS stubs) centre only. */
+    uint8_t mask[25];
+    memset(mask, 0, sizeof(mask));
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        if ((c->owner_power & 3) != cs_nation()) continue;
+        for (int k = -1; k < 8; k++) {
+            int dx0 = 2, dy0 = 2;
+            if (k >= 0) {
+                if (c->tiles[k] < 0 || c->tiles[k] >= c->population) continue;
+                dx0 = colony_cell_dx[k] + 2;
+                dy0 = colony_cell_dy[k] + 2;
+            }
+            int rx = v->map_x - c->map_x + dx0;      /* [bp-4]    */
+            int ry = v->map_y - c->map_y + dy0;      /* [bp-0x5A] */
+            if (!(rx - 2 >= 1 && rx - 2 <= COLOPY_MAP_W - 2 &&
+                  ry - 2 >= 1 && ry - 2 <= COLOPY_MAP_H - 2)) continue;
+            if (rx < 0 || rx >= 5 || ry < 0 || ry >= 5) continue;
+            mask[dy0 * 5 + dx0] = 1;                 /* @0x49002 */
+        }
+    }
+    for (int p = 0; p < 4; p++) {
+        if (p == cs_nation()) continue;
+        for (int k = 0; k < CR.rivals[p].n_col; k++) {
+            int rx = v->map_x - CR.rivals[p].col[k].x + 2;
+            int ry = v->map_y - CR.rivals[p].col[k].y + 2;
+            if (!(rx - 2 >= 1 && rx - 2 <= COLOPY_MAP_W - 2 &&
+                  ry - 2 >= 1 && ry - 2 <= COLOPY_MAP_H - 2)) continue;
+            if (rx < 0 || rx >= 5 || ry < 0 || ry >= 5) continue;
+            mask[2 * 5 + 2] = 1;
+        }
+    }
+    /* 5x5 terrain scan (@0x4904A..@0x49242); ids per func_00627A =
+     * tile_yield_class (0x18 Arctic, 0x19/0x1A water, 0x1B mtn, 0x1C
+     * hills, 8..0x17 forested). */
+    int mtn = 0, hills = 0, c_arc = 0, fur_prime = 0, forest = 0, food = 0,
+        sugar = 0, tobacco = 0, cotton = 0, ore2 = 0, ore_cnt = 0, wrun = 0;
+    for (int ty = v->map_y - 2; ty <= v->map_y + 2; ty++)
+        for (int tx = v->map_x - 2; tx <= v->map_x + 2; tx++) {
+            if (!(tx >= 1 && tx <= COLOPY_MAP_W - 2 &&
+                  ty >= 1 && ty <= COLOPY_MAP_H - 2)) continue;
+            if (mask[(ty - v->map_y + 2) * 5 + (tx - v->map_x + 2)]) continue;
+            int tt = tile_yield_class(map_at(tx, ty));
+            if (tt == 0x1B) mtn++;                     /* @0x49195 */
+            else if (tt == 0x1C) hills++;              /* @0x4919E */
+            else if (tt == 0x18) c_arc += 4;           /* @0x491A7 */
+            if (tt >= 8 && tt < 0x18) {                /* forest variants */
+                food++;                                /* @0x491C5 */
+                int base = tt >= 0x10 ? tt - 0x10 : tt - 8;
+                if (base < 3) { fur_prime++; c_arc += 2; }  /* @0x4905C */
+                else {
+                    forest++; ore_cnt++;               /* @0x491F9 */
+                    if (base == 5) sugar += 2;
+                    if (base == 4) tobacco += 2;
+                    if (base == 3) cotton += 2;
+                }
+            } else if (tt == 0x19 || tt == 0x1A) {     /* water @0x49072 */
+                wrun += tech + 1;
+                while (wrun >= 3) { food += 2; wrun -= 3; }
+            } else if (tt < 8) {                       /* @0x4909B.. */
+                if (tt == 5) sugar += 4;
+                if (tt == 7) sugar += 2;
+                if (tt == 4) tobacco += 4;
+                if (tt == 6) tobacco += 2;
+                if (tt == 3) cotton += 4;
+                if (tt == 0) ore2 += 2;
+                if (tt == 2) { cotton += 1; food += 2; }
+                if (tt > 1) {                          /* @0x490E4 */
+                    food += 2;
+                    if (tt >= 6) ore2++;
+                    else {
+                        food++;
+                        if (tt & 4) ore_cnt += 2;      /* 4, 5 */
+                        else c_arc += 2;               /* 2, 3 */
+                    }
+                } else if (tt == 1) ore_cnt += 4;      /* @0x49112 */
+                else c_arc += 3;                       /* tt == 0 */
+            }
+        }
+    (void)c_arc; (void)ore_cnt;   /* feed only unwritten/demand rows */
+    /* weight assembly (@0x49242..@0x49386) + the caller's tech gates
+     * (@0x4A4CF..@0x4A51D).  Rows 5, 9, 10 and 13..15 are never written. */
+    int pop1 = v->population + 1;
+    int vcount = 0;
+    for (int wv = 0; wv < CS.n_villages; wv++)
+        if (vtribe(wv) == tr) vcount++;
+    int tb = tr * 0x4E;
+    int hoard = (int16_t)(CS.tribes[tb + 0x0C] | (CS.tribes[tb + 0x0D] << 8));
+    int w[16];
+    memset(w, 0, sizeof(w));
+    w[0] = ((tech + pop1) * food) / (7 - tech);            /* Farmer      */
+    w[1] = sugar;                                          /* Sugar       */
+    w[2] = tobacco;                                        /* Tobacco     */
+    w[3] = cotton;                                         /* Cotton      */
+    w[4] = (2 * fur_prime + (forest >> 1)) / (tech + 1);   /* Fur Trapper */
+    if (tech >= 1) {
+        w[6] = 2 * hills + mtn + ore2;                     /* Ore Miner   */
+        if (tech >= 2)
+            /* tribe +0x0C word (role otherwise unread — FLAGGED "hoard")
+             * over the tribe's settlement count, + 4/mtn (8 at tech 3). */
+            w[7] = hoard / (vcount > 0 ? vcount : 1) +
+                   (tech > 2 ? 8 : 4) * mtn;               /* Silver      */
+    }
+    w[12] = 2 * ((w[4] + tech) >> 1);                      /* Fur Trader  */
+    w[11] = 2 * ((w[3] + tech) >> 1);                      /* Weaver      */
+    if (tech < 1) { w[12] = 0; w[6] = 0; w[0] >>= 1; }
+    if (tech < 2) { w[11] = 0; w[7] = 0; w[0] -= w[0] >> 2; }
+    if (tech == 3) w[7] += w[7] >> 1;                      /* @0x4A512 */
+    /* the seeded pick (@0x4A521..@0x4A5F1) on a LOCAL lcg */
+    uint32_t s = ((uint32_t)((v->map_y << 8) + v->map_x) + CR.plot_seed)
+                 & 0x7FFF;
+    int sum = 0;
+    for (int i = 0; i < 16; i++) sum += w[i];
+    if (sum < 1) return 0;      /* all-zero table: the EXE would walk off */
+    s = s * 214013u + 2531011u;
+    int cnt = 1 + (int)((((s >> 16) & 0x7FFF) * (uint32_t)sum) >> 15);
+    int j = -1;
+    do { cnt -= w[++j]; } while (cnt > 0);
+    if (j == 4 && (v->map_x + v->map_y) % 3 == 0) j = 0x16;    /* Scout */
+    if (j == 0) {               /* Fisherman ring roll @0x4A595..@0x4A5EB */
+        int n = 0;
+        for (int k = 0; k < 20; k++) {
+            int raw = map_at(v->map_x + SKILL_RING_DX[k],
+                             v->map_y + SKILL_RING_DY[k]) & 0x1F;
+            if (raw == 0x19 || raw == 0x1A) n++;
+        }
+        s = s * 214013u + 2531011u;
+        if (1 + (int)((((s >> 16) & 0x7FFF) * 20u) >> 15) < n) j = 8;
+    }
+    return j;
+}
+
+/* liveAmong — func_04A426's own ladder order (@0x4A64C..@0x4A78E). */
+static void live_among(int vi, int ui) {
+    NativeSettlement *v = &CS.villages[vi];
+    int tr = vtribe(vi);
+    int job = village_skill(vi);
+    /* @LEARNMAD: attitude band (25/50/75) above 1 — tension >= 50 —
+     * refuses AND costs 3 tension (the applier call @0x4A669). */
+    if (att_band(CR.tension[tr]) > 1) {
         ev_emit("LEARNMAD", 0, 0, dat_tribes[tr].name, 0);
+        adjust_tension(tr, 3, 0);
         return;
     }
     if (prof_named(ui, "Petty Criminals")) {
@@ -246,17 +403,23 @@ static void live_among(int vi, int ui) {
         ev_emit("LEARNMASTER", 0, 0, 0, 0);
         return;
     }
-    if (CR.village_flags[vi] & VF_TAUGHT) {
+    /* the taught latch (settlement +0x03 bit 1) only blocks NON-capitals
+     * (@0x4A6EE skips @LEARNALREADY on the capital flag, bit 2) */
+    if ((CR.village_flags[vi] & VF_TAUGHT) && !(v->flags & 0x04)) {
         ev_emit("LEARNALREADY", 0, 0, 0, 0);
         return;
     }
     ev_emit("LEARNSTAY", 0, 0, dat_tribes[tr].name, 0);
     if (ask_choice() != 0) { ev_emit("LEARNLATER", 0, 0, 0, 0); return; }
-    if (1 + R(1000) < 200 * cs_difficulty() + 100) {
+    /* the failure roll only runs at band > 0 (tension >= 25, @0x4A728) —
+     * a content tribe always teaches */
+    if (att_band(CR.tension[tr]) > 0 &&
+        1 + R(1000) < 200 * cs_difficulty() + 100) {
         ev_emit("LEARNSLOW", 0, 0, 0, 0);        /* may retry */
         return;
     }
     CR.village_flags[vi] |= VF_TAUGHT;
+    v->flags |= 0x02;                            /* @0x4A78A */
     CS.units[ui].profession = (uint8_t)job;      /* @JOB row == expert row */
     ev_emit("LEARNDONE", 0, 0, 0, 0);
 }

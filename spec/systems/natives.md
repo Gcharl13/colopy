@@ -272,6 +272,58 @@ Both engines carry the model (JS `tradeSellPick..tradeBuyRound`, C
 Cancel, so the path runs only in live play. Settlement `+0x07/+0x08/+0x09`
 and the tribe counters/stock are SAV-persisted and imported. **B.**
 
+### Live Among The Natives — the teach skill — **BYTE_VERIFIED** (`func_04A426` + weight builder `func_048F34`, read 2026-08-29; C1.6)
+Which skill a village teaches is DETERMINISTIC PER SITE, drawn inside a private
+RNG window: the handler builds the weights, calls the clock re-seed
+(`0x181F:0x4CA → @0x00C2F8`, its pushed arg ignored), then
+`srand(((y<<8) + x + dword[0x8D80]) & 0x7FFF)` (`@0x4A49B..@0x4A4C7`, wrapper
+`@0x00C30A`) — the colony-building-layout construct — draws the pick, and the
+next `0x4CA` restores clock seeding. Model:
+
+- **Weights** (`func_048F34`, reached via stub `0x1CA24` — the same routine
+  that fills the goods-demand table `[0x9E58]`; the teach table is its sibling
+  `[0x9E78]`, 16 words = @JOB rows): a 5×5 scan around the settlement
+  (interior tiles only, `func_005BFA`), skipping cells its mask marks as
+  colony-worked — the colony plot array `+0x70` through
+  `lookup_byte_from_pair @0x8956/0x8892` (box coords − 2 against the 20-ring
+  tables at `DS:0xC8/0xDE`) plus each colony centre; NOTE the mask arithmetic
+  uses village-relative values where colony-box coordinates belong (engine
+  quirk, transcribed literally in both ports). Terrain ids per `func_00627A`
+  (0x1B mountains / 0x1C hills / 0x18 Arctic / 0x19-0x1A water / 8..0x17
+  forested). Written rows: 0 Farmer `((tech+pop+1)·food)/(7−tech)`;
+  1/2/3 Sugar/Tobacco/Cotton from crop-terrain counters; 4 Fur Trapper
+  `(2·primefur + forest/2)/(tech+1)`; 6 Ore Miner `2·hills+mtn+tundra-ish`
+  (tech ≥ 1); 7 Silver Miner `tribe[+0x0C]/settlements + 4·mtn` (8·mtn at
+  tech 3; tech ≥ 2; ×1.5 at tech 3 `@0x4A512`); 11 Weaver
+  `2·((cotton+tech)>>1)`; 12 Fur Trader `2·((fur+tech)>>1)`. Rows 5, 9, 10,
+  13..15 are never written; row 8 is zeroed pre-pick (`@0x4A4CF`). Tech
+  gates: tech 0 zeroes 6/12 and halves row 0; tech < 2 zeroes 7/11 and
+  ×¾ row 0.
+- **Pick** (`@0x4A521`): `random_int(1, Σw)`, subtractive walk.
+- **Seasoned Scout**: pick 4 converts to row 0x16 when `(x+y)%3 == 0`
+  (`@0x4A56B`).
+- **Expert Fisherman**: pick 0 converts to row 8 when `random_int(1,20)` <
+  the count of water tiles (`raw&0x1F ∈ {0x19,0x1A}`, `func_0062B4`) over
+  the 20-ring (`@0x4A595..@0x4A5EB`).
+- **Ladder** (handler order): @LEARNMAD at attitude band > 1 (tension ≥ 50,
+  `func_008262`) **and +3 tension via the applier** (`@0x4A669`); criminal
+  (0x1A) / convert (0x1B) / not-{0x19 servant, 0x1C free} refusals; the
+  taught latch (settlement `+0x03` bit 1, set `@0x4A78A`) blocks only
+  NON-capitals (`@0x4A6EE`); the @LEARNSLOW roll
+  `random_int(1,1000) < 200·difficulty+100` runs only at band > 0 — a
+  content tribe always teaches. GAME keys are composed `"LEARN"+suffix`
+  in-EXE (suffix strings `MAD CRIMINAL MASTER ALREADY SLOW LATER DONE` +
+  base `LEARN` at DS `0x15E7..0x162A`).
+- **LCG**: the runtime is the MSC pair `srand @0x103C2` / `rand @0x103D4`
+  (`state·214013+2531011`, top 15 bits) — the same one both ports already
+  carry for colony layouts (`ColonyRng` / the plot LCG); loads pin the JS
+  seed base to the C's measured `0x795`.
+- Both engines: `villageSkill` (JS) / `village_skill` (C). Residual flags:
+  tribe `+0x0C`'s writer (glossed "hoard"); `[0x962A]` = per-tribe
+  settlement count (usage-consistent, writer unread); both ports track only
+  the 8 adjacent worked cells (their colony model), so range-2 worked cells
+  never mask. **B.**
+
 ### Convert loss of faith — **BYTE_VERIFIED** (`func_02EF64`, `0x191F:0xA58`, read 2026-08-29)
 Run per unit from the nation's upkeep pass (`func_02F052 @0x2F0BD`).  A
 **convert** unit (type 0 Colonists with profession `0x1B`, `@0x2EF99/@0x2EFA3`)

@@ -3142,11 +3142,10 @@ const RES_BONUS = (() => {
   return t;
 })();
 
-// The list a native village will teach from (§19.4). Whether Scout (row 22)
-// belongs here is UNCITED -- JOB_GOOD has no entry for it and fieldYield returns
-// 0, so it is inert as a field job, and spec/systems/natives.md has no entry
-// either way. TBD.
-const OUTDOOR_JOBS = [0, 1, 2, 3, 4, 7, 8, 22];
+// Which skills a village teaches is no longer a hand-made list: villageSkill()
+// below is the byte model of the teach-weight builder (func_048F34), whose
+// reachable rows are 0-4, 6-8, 11, 12 and 22. (The old OUTDOOR_JOBS array and
+// its coordinate hash are gone -- C1.6.)
 // The NINE FIELD jobs are the nine terrain yield columns, one for one: Farmer,
 // Planter (sugar / tobacco / cotton), Fur Trapper, Lumberjack, Ore Miner,
 // Silver Miner, Fisherman -- NAMES.TXT:17-19 is the yield-column legend and
@@ -3155,12 +3154,9 @@ const OUTDOOR_JOBS = [0, 1, 2, 3, 4, 7, 8, 22];
 // file 0x1DC94, 19 signed bytes), where jobs 0..8 are all -1 = outdoor, no
 // workplace building.
 //
-// This is DELIBERATELY a separate array from OUTDOOR_JOBS above, which omits
-// rows 5 and 6: villageSkill() indexes OUTDOOR_JOBS *modulo its length*, so
-// growing that array in place would silently reshuffle every native village's
-// taught skill. The omission was a real bug on the field side -- a forest cell
-// yields lumber 3 against furs 2, so bestFieldJob could never return Lumberjack
-// and every forest worker came out a Fur Trapper.
+// (Rows 5 and 6 were once omitted here by mistake -- a real bug on the field
+// side: a forest cell yields lumber 3 against furs 2, so bestFieldJob could
+// never return Lumberjack and every forest worker came out a Fur Trapper.)
 const FIELD_JOBS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 // Which of the nine field jobs pays best on the cell this colonist is on.
 // A colonist who already masters an outdoor skill keeps it if the tile yields
@@ -7480,24 +7476,160 @@ function spawnBrave(v) {
 // Demand Tribute and Attack Village.
 
 // --- r4 Live Among The Natives -------------------------------------------
-// Teaches OUTDOOR skills only: Expert Farmer, Fisherman, Fur Trapper, Silver
-// Miner, the three Master Planters, Seasoned Scout -- @JOB rows 0..4, 7, 8, 22.
-// Petty Criminals are refused, a colonist who already masters a profession is
-// refused, and each village teaches exactly once. The roll is byte-cited:
-//   learn succeeds when random_int(1,1000) >= 200*difficulty + 100
-// = 90/70/50/30/10 % from Discoverer to Viceroy.
-// WHICH skill a village offers is stored nowhere that has been mapped, so the
-// port derives it from the site's coordinates -- deterministic, and flagged.
+// C1.6 CLOSED 2026-08-29: which skill a village teaches is the BYTE MODEL of
+// the Live Among handler `func_04A426` + the weight builder `func_048F34`
+// (reached through stub 0x1CA24 -- the same routine that fills the goods
+// DEMAND table at [0x9E58]; the teach weights are its sibling table at
+// [0x9E78], 16 words indexed by @JOB row).
+//
+// The pick is DETERMINISTIC PER SITE: the handler seeds the runtime LCG with
+// `srand(((y<<8) + x + dword[0x8D80]) & 0x7FFF)` (@0x4A49B..@0x4A4C7 via the
+// srand wrapper @0x00C30A) -- the same construct as colony building placement
+// (`func_009726`) -- draws the pick, then re-seeds from the clock
+// (0x181F:0x4CA -> @0x00C2F8, arg ignored). So it never touches the main
+// stream, and the port reuses ColonyRng + G.plotSeedBase.
+//
+// The 20-tile ring offsets are the plot tables at DS:0xC8/0xDE (file
+// 0x1DA68/0x1DA7E) -- the 5x5 box minus centre and corners.
+const SKILL_RING = [[0, -1], [1, 0], [0, 1], [-1, 0], [-1, -1], [1, -1],
+                    [1, 1], [-1, 1], [0, -2], [2, 0], [0, 2], [-2, 0],
+                    [-1, -2], [1, -2], [-1, 2], [1, 2], [-2, -1], [-2, 1],
+                    [2, -1], [2, 1]];
 function villageSkill(v) {
-  return OUTDOOR_JOBS[(v.x * 7 + v.y * 13) % OUTDOOR_JOBS.length];
+  const t = G.tribes[v.tribe] || {};
+  const tech = t.level || 0;
+  // ---- mask: box cells worked by ANY colony (@0x48F7D..@0x4904A). The
+  // colony's worked-plot array is read through `lookup_byte_from_pair`
+  // (0x8956 -> 0x8892: box coords - 2 looked up in the SAME ring tables,
+  // so centre and corners never match) with the colony CENTRE special-cased
+  // (@0x48FE4). Transcribed literally, including the engine's own quirk:
+  // both the bounds probe (interior check func_005BFA on 1..W-2/1..H-2,
+  // @0x48FC0) and the marked index use village-relative arithmetic where
+  // colony-box coordinates belong.
+  const mask = new Uint8Array(25);
+  const boxes = [];
+  for (const c of G.colonies) {
+    const cells = [[2, 2]];
+    for (const p of c.colonists) if (p.cell) cells.push([p.cell[0] + 2, p.cell[1] + 2]);
+    boxes.push({ x: c.x, y: c.y, cells });
+  }
+  for (const r of G.rivals || [])
+    for (const rc of r.colonies || []) boxes.push({ x: rc.x, y: rc.y, cells: [[2, 2]] });
+  for (const b of boxes)
+    for (const [dx0, dy0] of b.cells) {
+      const rx = v.x - b.x + dx0, ry = v.y - b.y + dy0;         // [bp-4]/[bp-0x5A]
+      if (!(rx - 2 >= 1 && rx - 2 <= MAP.w - 2 &&
+            ry - 2 >= 1 && ry - 2 <= MAP.h - 2)) continue;      // 0x181F:0x302
+      if (rx < 0 || rx >= 5 || ry < 0 || ry >= 5) continue;
+      mask[dy0 * 5 + dx0] = 1;                                  // @0x49002
+    }
+  // ---- 5x5 terrain scan (@0x4904A..@0x49242). Terrain ids come from
+  // func_00627A: 0..7 base, 8..0x17 forested, 0x18 Arctic, 0x19/0x1A water,
+  // 0x1B mountains / 0x1C hills (func_00624E: relief bit 0x20, bit 0x80
+  // splitting mountain from hill) -- exactly the port's detailClass().
+  let mtn = 0, hills = 0, cArc = 0, furPrime = 0, forest = 0, food = 0,
+      sugar = 0, tobacco = 0, cotton = 0, ore2 = 0, oreCnt = 0, waterRun = 0;
+  for (let ty = v.y - 2; ty <= v.y + 2; ty++)
+    for (let tx = v.x - 2; tx <= v.x + 2; tx++) {
+      if (!(tx >= 1 && tx <= MAP.w - 2 && ty >= 1 && ty <= MAP.h - 2)) continue;
+      if (mask[(ty - v.y + 2) * 5 + (tx - v.x + 2)]) continue;
+      const tt = detailClass(at(tx, ty));
+      if (tt === 0x1B) mtn++;                                   // @0x49195
+      else if (tt === 0x1C) hills++;                            // @0x4919E
+      else if (tt === 0x18) cArc += 4;                          // @0x491A7
+      if (tt >= 8 && tt < 0x18) {                               // forest variants
+        food++;                                                 // @0x491C5
+        const base = tt >= 0x10 ? tt - 0x10 : tt - 8;
+        if (base < 3) { furPrime++; cArc += 2; }                // @0x4905C
+        else {
+          forest++; oreCnt++;                                   // @0x491F9
+          if (base === 5) sugar += 2;
+          if (base === 4) tobacco += 2;
+          if (base === 3) cotton += 2;
+        }
+      } else if (tt === 0x19 || tt === 0x1A) {                  // water @0x49072
+        waterRun += tech + 1;
+        while (waterRun >= 3) { food += 2; waterRun -= 3; }
+      } else if (tt < 8) {                                      // @0x4909B..
+        if (tt === 5) sugar += 4;
+        if (tt === 7) sugar += 2;
+        if (tt === 4) tobacco += 4;
+        if (tt === 6) tobacco += 2;
+        if (tt === 3) cotton += 4;
+        if (tt === 0) ore2 += 2;
+        if (tt === 2) { cotton += 1; food += 2; }
+        if (tt > 1) {                                           // @0x490E4
+          food += 2;
+          if (tt >= 6) ore2++;
+          else {
+            food++;
+            if (tt & 4) oreCnt += 2;                            // 4, 5
+            else cArc += 2;                                     // 2, 3
+          }
+        } else if (tt === 1) oreCnt += 4;                       // @0x49112
+        else cArc += 3;                                         // tt === 0
+      }
+    }
+  // ---- weight assembly (@0x49242..@0x49386) + the caller's tech gates
+  // (@0x4A4CF..@0x4A51D). Rows 5, 9, 10 and 13..15 are never written.
+  const pop1 = (v.pop || 0) + 1;
+  const vcount = G.villages.filter(w => w.tribe === v.tribe).length;
+  const w = new Array(16).fill(0);
+  w[0] = Math.trunc(((tech + pop1) * food) / (7 - tech));       // Farmer
+  w[1] = sugar;                                                 // Sugar Planter
+  w[2] = tobacco;                                               // Tobacco Planter
+  w[3] = cotton;                                                // Cotton Planter
+  w[4] = Math.trunc((2 * furPrime + (forest >> 1)) / (tech + 1)); // Fur Trapper
+  if (tech >= 1) {
+    w[6] = 2 * hills + mtn + ore2;                              // Ore Miner
+    if (tech >= 2)                                              // Silver Miner:
+      // tribe hoard word (+0x0C, role otherwise unread -- FLAGGED) over the
+      // tribe's settlement count, plus 4 per mountain (8 at tech 3).
+      w[7] = Math.trunc((t.hoard || 0) / Math.max(1, vcount)) +
+             (tech > 2 ? 8 : 4) * mtn;
+  }
+  w[12] = 2 * ((w[4] + tech) >> 1);                             // Fur Trader
+  w[11] = 2 * ((w[3] + tech) >> 1);                             // Weaver
+  if (tech < 1) { w[12] = 0; w[6] = 0; w[0] >>= 1; }
+  if (tech < 2) { w[11] = 0; w[7] = 0; w[0] -= w[0] >> 2; }
+  if (tech === 3) w[7] += w[7] >> 1;                            // @0x4A512
+  // ---- the seeded pick (@0x4A521..@0x4A5F1).
+  const rng = new ColonyRng((((v.y << 8) + v.x + (G.plotSeedBase >>> 0)) >>> 0) & 0x7FFF);
+  const sum = w.reduce((a, x) => a + x, 0);
+  if (sum < 1) return 0;         // all-zero table: the EXE would walk off it
+  let cnt = rng.range(1, sum), j = -1;
+  do { cnt -= w[++j]; } while (cnt > 0);
+  // Seasoned Scout: pick 4 converts when (x + y) % 3 == 0 (@0x4A56B).
+  if (j === 4 && (v.x + v.y) % 3 === 0) j = 0x16;
+  // Expert Fisherman: pick 0 converts when random_int(1,20) < the count of
+  // water tiles ((raw & 0x1F) == 0x19/0x1A, func_0062B4) on the 20-ring
+  // (@0x4A595..@0x4A5EB).
+  if (j === 0) {
+    let n = 0;
+    for (const [dx, dy] of SKILL_RING) {
+      const raw = at(v.x + dx, v.y + dy) & 0x1F;
+      if (raw === 0x19 || raw === 0x1A) n++;
+    }
+    if (rng.range(1, 20) < n) j = 8;
+  }
+  return j;
 }
+// The handler ladder, in func_04A426's own order (@0x4A64C..@0x4A78E). The
+// GAME.TXT keys are composed as "LEARN"+suffix in the EXE (strcpy/strcat of
+// the suffix strings "MAD"/"CRIMINAL"/"MASTER"/"ALREADY"/"SLOW"/"LATER"/
+// "DONE" onto base key 0x162A) -- the same full keys the port already uses.
 function liveAmong(v, u) {
   const t = G.tribes[v.tribe];
   const job = villageSkill(v);
   const S = { STRING0: t.name, STRING1: DATA.jobs[job] };
-  // @LEARNMAD: an angry tribe refuses to teach at all ("your ill manners
-  // infuriate us"). Band = the F9 hostile threshold, flagged.
-  if (((t && t.tension) || 0) >= TENSION_HOSTILE) { showEvent('LEARNMAD', S); return; }
+  // @LEARNMAD: attitude band (func_008262: 25/50/75) above 1 -- i.e.
+  // tension >= 50 -- refuses AND costs 3 tension (the applier call with
+  // delta 3, category 0, @0x4A669).
+  if (attBand((t && t.tension) || 0) > 1) {
+    showEvent('LEARNMAD', S);
+    adjustTension(v.tribe, 3, 0);
+    return;
+  }
   if (u.profession === 'Petty Criminals') { showEvent('LEARNCRIMINAL', S); return; }
   // @TEACHCONVERT: "Indian converts already know the Indian ways." -- the
   // convert refusal is its own key (training.md §Native learning), not the
@@ -7507,14 +7639,20 @@ function liveAmong(v, u) {
       u.profession !== 'Indentured Servants') {
     showEvent('LEARNMASTER', S); return;
   }
-  if (v.taught) { showEvent('LEARNALREADY', S); return; }
+  // The taught latch (settlement +0x03 bit 1) only blocks NON-capitals: the
+  // @0x4A6EE test skips @LEARNALREADY when the capital flag (bit 2) is set.
+  if (v.taught && !v.capital) { showEvent('LEARNALREADY', S); return; }
   askEvent('LEARNSTAY', S, (choice) => {
     if (choice !== 0) { showEvent('LEARNLATER', S); return; }
-    if (1 + Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
+    // The failure roll only runs at attitude band > 0 (tension >= 25,
+    // @0x4A728) -- a content tribe always teaches. Roll @0x4A72C:
+    // random_int(1,1000) < 200*difficulty + 100 -> @LEARNSLOW, may retry.
+    if (attBand((t && t.tension) || 0) > 0 &&
+        1 + Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
       showEvent('LEARNSLOW', S);                    // unskilled -- may retry
       return;
     }
-    v.taught = true;
+    v.taught = true;                                // flags |= 2 @0x4A78A
     u.profession = DATA.jobexpert[job];
     showEvent('LEARNDONE', S);
   });
@@ -12170,6 +12308,12 @@ function importSav(bytes) {
   // census baseline (nibble 9 = the unique sweep minimum); the full value
   // stays unknowable from one frame.
   G.mapSeed = 1657;
+  // [0x8D80] (the plot/skill seed base) is the BIOS launch tick, per-SESSION
+  // -- also not in the save. Loads pin it to the census session's measured
+  // clock (1410965; & 0x7FFF = 0x795) exactly as the C's cr_reset_from_load
+  // does, so the seeded picks (colony layouts, village teach skills) agree
+  // across both engines and with the census baselines.
+  G.plotSeedBase = 1410965;
   // The globals block (0x5380, 0x8E bytes -- the serializer's block 3,
   // func_0734F8 @0x073562, full 43-block order read 2026-08-07) carries the
   // engine's own once-flags at fixed offsets; restore them verbatim:
@@ -12306,6 +12450,10 @@ function importSav(bytes) {
     t.musketsKnown = d[tb + 7];
     t.horsesKnown = d[tb + 8];
     t.herd = u16(tb + 0x0A);
+    // +0x0C: the word the teach-weight builder divides by the tribe's
+    // settlement count for the Silver Miner weight (@0x492B8). Its writer
+    // is unread -- imported verbatim, FLAGGED as "hoard".
+    t.hoard = u16(tb + 0x0C);
     t.stock = [];
     for (let g = 0; g < 16; g++) t.stock.push(u16(tb + 0x0E + g * 2));
   });
@@ -12330,7 +12478,8 @@ function importSav(bytes) {
       lastSold: d[b + 9] <= 15 ? d[b + 9] : undefined,
       mission: m === 0xFF ? null : { power: m & 0x0F, expert: !!(m & 0x10) },
       alarm: d[b + 0x0A + nation * 2],
-      tributePaid: false, taught: false, braveOwed: false,
+      // +0x03 bit 1 is the taught latch (`or [bx+3],2` @0x4A78A).
+      tributePaid: false, taught: !!(d[b + 3] & 0x02), braveOwed: false,
     });
   }
 
