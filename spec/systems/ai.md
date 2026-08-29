@@ -63,6 +63,53 @@ Decision pipeline (every step below is byte-cited to a `func_XXXX @0xNNNN`). The
     threat ⇒ wake, `0x314C=0`); if goto arrived and unit is a ship in state `'1'`, promote to `'B'`.
     Then `0x181F:0x934` (post-turn refresh) and return.
 
+## 2a. The goto stepper — `func_062D84` + the pathfinder `func_061F02` (B, read 2026-08-29)
+
+Order-driven movement (player Go To order 9/0xC, AI order 0xB) is stepped
+per turn by **`func_040E22`** (the orders-11/12 dispatch row): it calls the
+direction chooser **`func_062D84`** (`0x1a1f:0x210`) and executes the
+returned compass dir — humans through the move executor `func_03FDDE`
+(`0x191f:0x44e`, combat asks intact), AI through the stepper `0x1a1f:0x142`.
+
+`func_062D84` (goal from `+0x314D/+0x314E`):
+
+- **adjacent goal** (|dx|≤1 and |dy|≤1): the delta→dir converter
+  (`@0x62E55..@0x62E78`) — one straight step, no scoring;
+- **within 7** (`@0x62E94..@0x62EF1`): the 16×16 pathfinder (below) with
+  budget 0x3E7;
+- **farther**: a pre-check `0x1a1f:0x7d0`, then the pathfinder with budget
+  0x3E6 toward the goal; on failure the goal is replaced by a **4×4-sector
+  waypoint** (`[0xA572]/[0xA574]·4+1` chosen by `func_061E10` — unread) and
+  the pathfind retried (`@0x62F21..@0x62F51`);
+- an oscillation guard (`@0x62F58`: order 0xB, budget spent, found dir ==
+  heading XOR 4 → fall through) and a straight-line walker fallback for
+  European movers (`@0x62FB8..`).
+
+**`func_061F02` — the pathfinder** (`0x1a1f:0x5f0`): a Dijkstra over a
+**16×16 window centred on the GOAL** (origin g−8, byte cost plane
+`[0xA270]`, BFS queue `[0xA372]/[0xA472]` head/tail `[0x2D18]/[0x2D16]`,
+queue cap 0xE1=225 `@0x62055`, per-tile cap 0x63=99 `@0x6206B`), the wave
+running FROM the goal, with a **goal cache** (`[0x2D1A/C]` — an unchanged
+goal reuses the plane, `@0x61F83`). Tile admission: passable (`0x302`),
+element match (water = terrain ids 0x19/0x1A only; **colony tiles admit
+both elements** `@0x621A9`; ships may also enter when the `0x6b4` nibble
+== 1 — unread), tiles holding a FOREIGN unit or settlement excluded
+(owner query `0x6d2` `@0x6220A`), braves avoid `0x75e` (rumour) tiles
+(`@0x621E8`). **Step cost onto a tile** (`@0x622A1..@0x6230C`): `1` when
+BOTH tiles carry the improve road/river bits (`0x754 & 0xA`); else `1`
+when both carry the terrain-plane river bit `0x40` (`0x72c`); else `3`
+for a one-move unit (@UNIT movement ≤3 thirds, `@0x61F6B`); else **3× the
+terrain Movement column** `[0x2F76 + 16·terrain]`. A HUMAN mover pays
+**+8** for a tile beside a foreign settlement (`0x6e6` `@0x6225E`); AI
+powers and natives skip such tiles entirely. **Step selection**
+(`@0x62374..@0x625D3`): among the unit's 8 neighbours, lowest
+plane-cost + step-cost (≤ 99), ties broken by the straight distance
+`0x37a` to the goal. A debug overlay (`[0x894]&0x10`) draws the plane.
+
+Both engines run the model in `advanceGoTo` (`gotoPathStep` /
+`goto_path_step`); the sector waypoint is proxied by clamping the goal to
+7 along the line — flagged.
+
 ## 3. `func_046FFA` — tactical heading score formula (B)
 
 The candidate loop counter `[bp-0x34]` runs **0..8** (`@0x047371`/`@0x04738D`; **9 candidates** = 8

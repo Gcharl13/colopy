@@ -2735,6 +2735,113 @@ function setGoTo(u, x, y) {
   G.goTo = null;
   advance();
 }
+// The goto stepper -- func_062D84 (0x1a1f:0x210, the per-turn direction
+// chooser for goto orders) + its 16x16 pathfinder func_061F02
+// (0x1a1f:0x5f0), BYTE MODEL read 2026-08-29 (closes C1.20's
+// straight-line stand-in):
+//  * adjacent goal (|dx|<=1 and |dy|<=1): step straight (@0x62E55).
+//  * within 7 of the goal (@0x62E94): Dijkstra over the 16x16 window
+//    centred on the GOAL (origin gx-8/gy-8, byte cost plane [0xA270],
+//    queue cap 225 @0x62055, per-tile cost cap 99 @0x6206B), the wave
+//    running FROM the goal outward. Step cost onto a tile: 1 when BOTH
+//    tiles carry improve road/river bits (&0xA, @0x622A1); 1 when both
+//    carry the terrain-plane river bit 0x40 (@0x622C6); 3 for a
+//    one-move unit (@UNIT movement thirds <= 3, @0x61F6B/@0x622F2);
+//    else 3 x the terrain Movement column [0x2F76] (@0x622FA).
+//    Blockers: element mismatch (water = ids 0x19/0x1A only; colony
+//    tiles open to both elements @0x621A9), tiles holding a FOREIGN
+//    unit or settlement (@0x6220A via owner query 0x6d2), braves avoid
+//    rumour tiles (@0x621E8, 0x75e); a HUMAN pays +8 for a tile beside
+//    a foreign settlement (@0x6225E, 0x6e6).
+//  * step pick (@0x62374..@0x625D3): the neighbour with the lowest
+//    plane-cost + step-cost, ties broken by the straight distance
+//    0x181f:0x37a to the goal.
+//  * farther than 7: the engine paths to a 4x4-sector waypoint
+//    (func_061E10, unread) -- the port clamps the goal to a point 7
+//    away along the line and paths to that, a flagged proxy.
+// Returns [nx, ny] or null.
+function gotoPathStep(u, gx, gy) {
+  const adx = Math.abs(gx - u.x), ady = Math.abs(gy - u.y);
+  const enterable = (x, y, goalX, goalY) => {
+    if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) return false;
+    if (x === u.x && y === u.y) return true;
+    const t = tileTerrain(at(x, y));
+    const water = t === TERR.OCEAN || t === TERR.SEALANE;
+    const col = colonyAt(x, y);
+    if (col) {
+      // colony tiles open to both elements, but a FOREIGN colony blocks
+      if (col.nation !== undefined && col.nation !== G.nation) return false;
+    } else if (water !== !!u.ship) return false;
+    // a foreign unit or village on the tile blocks (0x6d2)
+    if (G.natives.some(n => n.x === x && n.y === y)) return false;
+    if (G.villages.some(v => v.x === x && v.y === y)) return false;
+    if (G.rivals.some(r => r.units.some(q => q.x === x && q.y === y)) ||
+        G.rivals.some(r => (r.colonies || []).some(c => c.x === x && c.y === y)))
+      return false;
+    void goalX; void goalY;
+    return true;
+  };
+  const stepCost = (fx, fy, tx, ty) => {
+    if ((impAt(fx, fy) & 0x0A) && (impAt(tx, ty) & 0x0A)) return 1;
+    if ((at(fx, fy) & 0x40) && (at(tx, ty) & 0x40)) return 1;
+    if ((unit(u.type) || {}).movement === 1) return 3;
+    return 3 * terrainMove(at(tx, ty));
+  };
+  const nearSettle = (x, y) =>
+    G.villages.some(v => Math.abs(v.x - x) <= 1 && Math.abs(v.y - y) <= 1) ||
+    G.rivals.some(r => (r.colonies || []).some(c =>
+      Math.abs(c.x - x) <= 1 && Math.abs(c.y - y) <= 1));
+  // adjacent goal steps straight (@0x62E55; the engine leaves validity
+  // to the move executor -- the port checks enterability here instead)
+  if (adx <= 1 && ady <= 1)
+    return enterable(gx, gy, gx, gy) ? [gx, gy] : null;
+  // clamp the goal into the window when farther than 7 (the sector proxy)
+  let wx = gx, wy = gy;
+  if (adx >= 7 || ady >= 7) {
+    wx = u.x + Math.max(-7, Math.min(7, gx - u.x));
+    wy = u.y + Math.max(-7, Math.min(7, gy - u.y));
+  }
+  const ox = wx - 8, oy = wy - 8;
+  const cost = new Array(256).fill(0);
+  const idx = (x, y) => (x - ox) * 16 + (y - oy);
+  const inWin = (x, y) => Math.abs(x - wx) < 8 && Math.abs(y - wy) < 8;
+  const queue = [[wx, wy]];
+  cost[idx(wx, wy)] = 1;
+  const DIRS8 = [[1, 0], [-1, 0], [0, 1], [0, -1],
+                 [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  let bound = 999;
+  for (let head = 0; head < queue.length && head < 225; head++) {
+    const [cx, cy] = queue[head];
+    const c0 = cost[idx(cx, cy)];
+    if (c0 > bound) continue;
+    if (cx === u.x && cy === u.y) { bound = c0; continue; }
+    for (const [ddx, ddy] of DIRS8) {
+      const nx = cx + ddx, ny = cy + ddy;
+      if (!inWin(nx, ny)) continue;
+      if (!enterable(nx, ny, wx, wy) && !(nx === wx && ny === wy)) continue;
+      let nc = c0 + stepCost(cx, cy, nx, ny);
+      if (nearSettle(nx, ny)) nc += 8;
+      const k = idx(nx, ny);
+      if (cost[k] !== 0 && cost[k] <= nc) continue;
+      cost[k] = nc;
+      if (queue.length < 256) queue.push([nx, ny]);
+    }
+  }
+  // step pick from the unit's tile
+  let best = null, bestTotal = 99, bestDist = 9999;
+  for (const [ddx, ddy] of DIRS8) {
+    const nx = u.x + ddx, ny = u.y + ddy;
+    if (!inWin(nx, ny) || !enterable(nx, ny, wx, wy)) continue;
+    const k = idx(nx, ny);
+    if (cost[k] === 0) continue;
+    const total = cost[k] + stepCost(u.x, u.y, nx, ny);
+    const dist = Math.max(Math.abs(nx - gx), Math.abs(ny - gy));
+    if (total < bestTotal || (total === bestTotal && dist < bestDist)) {
+      bestTotal = total; bestDist = dist; best = [nx, ny];
+    }
+  }
+  return best;
+}
 function advanceGoTo() {
   // Ships that reached their lane this turn. Collected, not sailed in place:
   // sailForEurope splices G.units and this loop is iterating it.
@@ -2747,21 +2854,16 @@ function advanceGoTo() {
       if (u.sailHome) arrived.push(u);
       continue;
     }
-    // One step a turn toward the goal, respecting the unit's element.
-    const dx = Math.sign(gx - u.x), dy = Math.sign(gy - u.y);
-    const tries = [[dx, dy], [dx, 0], [0, dy]];
+    // One step a turn along the pathfinder's route (func_061F02).
+    const next = gotoPathStep(u, gx, gy);
     let moved = false;
-    for (const [mx, my] of tries) {
-      if (!mx && !my) continue;
-      const nx = u.x + mx, ny = u.y + my;
-      if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) continue;
-      const water = tileWater(at(nx, ny));
-      if (u.ship !== water && !(colonyAt(nx, ny) && !u.ship)) continue;
-      if (G.natives.some(n => n.x === nx && n.y === ny)) continue;
-      u.x = nx; u.y = ny;
-      reveal(nx, ny, sightRadius(u));
-      moved = true;
-      break;
+    if (next) {
+      const [nx, ny] = next;
+      if (!(nx === u.x && ny === u.y)) {
+        u.x = nx; u.y = ny;
+        reveal(nx, ny, sightRadius(u));
+        moved = true;
+      }
     }
     if (moved && u.x === gx && u.y === gy) {
       u.orders = 0; u.goal = null;

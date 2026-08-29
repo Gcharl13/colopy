@@ -1493,6 +1493,166 @@ void advance_trade_routes(void) {
     }
 }
 
+/* gotoPathStep (game.js) — func_062D84 (0x1a1f:0x210, the goto direction
+ * chooser) + its 16x16 goal-centred pathfinder func_061F02 (0x1a1f:0x5f0),
+ * BYTE MODEL read 2026-08-29; mirrors the JS draw-for-draw (no RNG).
+ * Adjacent goal steps straight (@0x62E55); within the window a Dijkstra
+ * from the GOAL over a 16x16 byte cost plane (queue cap 225, tile cap 99)
+ * with step costs road/river-improve both = 1 (@0x622A1), terrain river
+ * bit 0x40 both = 1 (@0x622C6), one-move unit = 3, else 3 x the terrain
+ * Movement column (@0x622FA); foreign units/settlements block, +8 beside
+ * a foreign settlement; step picked by lowest plane+step cost, ties by
+ * straight distance (@0x62374..). Beyond 7 the engine paths to a
+ * 4x4-sector waypoint (func_061E10, unread) — the goal is clamped to 7
+ * along the line instead, a flagged proxy. The planes are STATIC like the
+ * engine's DGROUP buffers (0xA270/0xA372) — this chain runs deep in the
+ * end-turn stack (see the 2026-08-17 overflow note above). */
+static uint8_t gp_cost[256];
+static uint8_t gp_qx[256], gp_qy[256];
+static int gp_enterable(int ui, int x, int y) {
+    UnitRecord *u = &CS.units[ui];
+    if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 0;
+    if (x == u->map_x && y == u->map_y) return 1;
+    int t = tile_terrain(map_at(x, y));
+    int water = t == TERR_OCEAN || t == TERR_SEALANE;
+    int is_ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
+    int col_own = -1;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if (CS.colonies[ci].map_x == x && CS.colonies[ci].map_y == y) {
+            col_own = CS.colonies[ci].owner_power & 3;
+            break;
+        }
+    if (col_own >= 0) {
+        if (col_own != (int)cs_nation()) return 0;   /* foreign colony */
+    } else if (water != is_ship) return 0;
+    for (int q = 0; q < CR.n_natives; q++) {
+        int n = CR.natives_order[q];
+        if (unit_pos_x(n) == x && unit_pos_y(n) == y) return 0;
+    }
+    for (int v = 0; v < CS.n_villages; v++)
+        if (CS.villages[v].map_x == x && CS.villages[v].map_y == y) return 0;
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int q = 0; q < CR.n_runits[rn]; q++) {
+            int n = CR.runits_order[rn][q];
+            if (CS.units[n].map_x == x && CS.units[n].map_y == y) return 0;
+        }
+        for (int c = 0; c < CR.rivals[rn].n_col; c++)
+            if (CR.rivals[rn].col[c].x == x && CR.rivals[rn].col[c].y == y)
+                return 0;
+    }
+    return 1;
+}
+static int gp_step_cost(int ui, int fx, int fy, int tx, int ty) {
+    if ((map_improve(fx, fy) & 0x0A) && (map_improve(tx, ty) & 0x0A))
+        return 1;
+    if ((map_at(fx, fy) & 0x40) && (map_at(tx, ty) & 0x40)) return 1;
+    if (dat_units[CS.units[ui].type].movement == 1) return 3;
+    return 3 * terrain_move(map_at(tx, ty));
+}
+static int gp_near_settle(int x, int y) {
+    for (int v = 0; v < CS.n_villages; v++) {
+        int dx = CS.villages[v].map_x - x, dy = CS.villages[v].map_y - y;
+        if (dx < 0) dx = -dx;
+        if (dy < 0) dy = -dy;
+        if (dx <= 1 && dy <= 1) return 1;
+    }
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int c = 0; c < CR.rivals[rn].n_col; c++) {
+            int dx = CR.rivals[rn].col[c].x - x;
+            int dy = CR.rivals[rn].col[c].y - y;
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+            if (dx <= 1 && dy <= 1) return 1;
+        }
+    }
+    return 0;
+}
+static const int8_t GP_DX[8] = { 1, -1, 0, 0, 1, 1, -1, -1 };
+static const int8_t GP_DY[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
+/* returns 1 with nx_out/ny_out set, else 0 */
+static int goto_path_step(int ui, int gx, int gy, int *nx_out, int *ny_out) {
+    UnitRecord *u = &CS.units[ui];
+    int adx = gx - u->map_x, ady = gy - u->map_y;
+    if (adx < 0) adx = -adx;
+    if (ady < 0) ady = -ady;
+    if (adx <= 1 && ady <= 1) {
+        if (!gp_enterable(ui, gx, gy)) return 0;
+        *nx_out = gx;
+        *ny_out = gy;
+        return 1;
+    }
+    int wx = gx, wy = gy;
+    if (adx >= 7 || ady >= 7) {
+        int cx = gx - u->map_x, cy = gy - u->map_y;
+        if (cx > 7) cx = 7;
+        if (cx < -7) cx = -7;
+        if (cy > 7) cy = 7;
+        if (cy < -7) cy = -7;
+        wx = u->map_x + cx;
+        wy = u->map_y + cy;
+    }
+    int ox = wx - 8, oy = wy - 8;
+    memset(gp_cost, 0, sizeof(gp_cost));
+    int qn = 0;
+    gp_qx[qn] = (uint8_t)(wx - ox);
+    gp_qy[qn] = (uint8_t)(wy - oy);
+    qn = 1;
+    gp_cost[(wx - ox) * 16 + (wy - oy)] = 1;
+    int bound = 999;
+    for (int head = 0; head < qn && head < 225; head++) {
+        int cx = gp_qx[head] + ox, cy = gp_qy[head] + oy;
+        int c0 = gp_cost[(cx - ox) * 16 + (cy - oy)];
+        if (c0 > bound) continue;
+        if (cx == u->map_x && cy == u->map_y) { bound = c0; continue; }
+        for (int d = 0; d < 8; d++) {
+            int nx = cx + GP_DX[d], ny = cy + GP_DY[d];
+            int ddx = nx - wx, ddy = ny - wy;
+            if (ddx < 0) ddx = -ddx;
+            if (ddy < 0) ddy = -ddy;
+            if (ddx >= 8 || ddy >= 8) continue;
+            if (!gp_enterable(ui, nx, ny) && !(nx == wx && ny == wy))
+                continue;
+            int nc = c0 + gp_step_cost(ui, cx, cy, nx, ny);
+            if (gp_near_settle(nx, ny)) nc += 8;
+            int k = (nx - ox) * 16 + (ny - oy);
+            if (gp_cost[k] != 0 && gp_cost[k] <= nc) continue;
+            gp_cost[k] = (uint8_t)(nc > 255 ? 255 : nc);
+            if (qn < 256) {
+                gp_qx[qn] = (uint8_t)(nx - ox);
+                gp_qy[qn] = (uint8_t)(ny - oy);
+                qn++;
+            }
+        }
+    }
+    int best = -1, best_total = 99, best_dist = 9999;
+    for (int d = 0; d < 8; d++) {
+        int nx = u->map_x + GP_DX[d], ny = u->map_y + GP_DY[d];
+        int ddx = nx - wx, ddy = ny - wy;
+        if (ddx < 0) ddx = -ddx;
+        if (ddy < 0) ddy = -ddy;
+        if (ddx >= 8 || ddy >= 8) continue;
+        if (!gp_enterable(ui, nx, ny)) continue;
+        int k = (nx - ox) * 16 + (ny - oy);
+        if (gp_cost[k] == 0) continue;
+        int total = gp_cost[k] + gp_step_cost(ui, u->map_x, u->map_y, nx, ny);
+        int gdx = nx - gx, gdy = ny - gy;
+        if (gdx < 0) gdx = -gdx;
+        if (gdy < 0) gdy = -gdy;
+        int dist = gdx > gdy ? gdx : gdy;
+        if (total < best_total || (total == best_total && dist < best_dist)) {
+            best_total = total;
+            best_dist = dist;
+            best = d;
+        }
+    }
+    if (best < 0) return 0;
+    *nx_out = u->map_x + GP_DX[best];
+    *ny_out = u->map_y + GP_DY[best];
+    return 1;
+}
+
 static void advance_goto(void) {
     /* Ships that reached their sea lane this turn are MARKED, not sailed
      * in place: cmd_sail_for_europe calls unit_remove, which compacts the
@@ -1517,30 +1677,10 @@ static void advance_goto(void) {
             if (CR.unit_sail_home[ui]) CR.unit_sail_home[ui] = 2;
             continue;
         }
-        int dx = gx > u->map_x ? 1 : gx < u->map_x ? -1 : 0;
-        int dy = gy > u->map_y ? 1 : gy < u->map_y ? -1 : 0;
-        int is_ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
-        int tries[3][2] = { { dx, dy }, { dx, 0 }, { 0, dy } };
-        int moved = 0;
-        for (int ti = 0; ti < 3 && !moved; ti++) {
-            int mx = tries[ti][0], my = tries[ti][1];
-            if (!mx && !my) continue;
-            int nx = u->map_x + mx, ny = u->map_y + my;
-            if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H)
-                continue;
-            int water = tile_water(map_at(nx, ny));
-            int own_col = 0;
-            for (int ci = 0; ci < CS.n_colonies; ci++)
-                if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
-                    CS.colonies[ci].map_x == nx && CS.colonies[ci].map_y == ny)
-                    own_col = 1;
-            if ((is_ship != water) && !(own_col && !is_ship)) continue;
-            int blocked = 0;
-            for (int q = 0; q < CR.n_natives && !blocked; q++) {
-                int n = CR.natives_order[q];
-                if (unit_pos_x(n) == nx && unit_pos_y(n) == ny) blocked = 1;
-            }
-            if (blocked) continue;
+        /* one step along the pathfinder's route (func_061F02) */
+        int nx, ny, moved = 0;
+        if (goto_path_step(ui, gx, gy, &nx, &ny) &&
+            !(nx == u->map_x && ny == u->map_y)) {
             u->map_x = (uint8_t)nx;
             u->map_y = (uint8_t)ny;
             colopy_reveal(nx, ny, unit_sight_radius(ui));  /* game.js:2291 */
