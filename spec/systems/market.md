@@ -120,17 +120,33 @@ or `0x64`), affordability-check, then **inline gold debit** `sub [bx+0x2a],ax; s
 | EU-supply `+0xBC` s32 | `−= qty` @`0x3231c` | `+= qty` @`0x323b4` |
 | accumulator `+0xFC` s32 (`@0x8904`) | `−= qty` @`0x32324` | `+= qty` @`0x323bc` |
 | traded-volume `+0x7C` s32 (good·4) | `−= price·qty` @`0x32340` | `+= price·qty·(100−tax%)/100` @`0x32402` |
-| DGROUP pool array `[bx−0x779c]` (4-player × stride `0x9e`) | `−= scaled_qty` ×4 @`0x322ff` | `+= scaled_qty` ×4 @`0x32383` (4th player ×`2/3`) |
+| traffic pool `+0x5C` u16 (ALL FOUR powers) | `−= pressure` ×4 @`0x322ff` | `+= pressure` ×4 @`0x32383` (the **Dutch, power 3, ×`2/3`** @`0x32396`) |
 
-where `scaled_qty = func @0x32294 = ((market_byte − 2)·16 · qty)/100`, and the
-volume `price` uses the **second** price accessor `func @0x30590` = `PowerRecord
-[+0x4C + good] − 1`, clamped `≥0` (distinct from `func_030566`).
+where (re-read 2026-08-29, correcting the two errors below)
 
-> **Spec correction:** the **`+0x5C` market-pool field is NOT moved by the
-> per-transaction path** (it is drift-only, §3). The transaction moves `+0xBC`,
-> `+0xFC`, `+0x7C`, and the DGROUP pool array `[−0x779c]`. **Net direction:** a
-> **buy** decreases all (goods leave Europe, gold `−gross`, untaxed); a **sell**
-> increases supply/accumulator/pool, credits gold `+net`, REF `+tax`, tally `+net`.
+```
+pressure = qty << cargo_shift                 (@CARGO row byte +8, @0x32360)
+         + qty · k / 100,   k = (human ? difficulty − 2 : −2) · 16
+                            (func_032294 — [0x53A6] is the DIFFICULTY,
+                             not a market byte; AI sellers get −2)
+```
+
+and the volume `price` uses the **second** price accessor `func @0x30590` =
+`PowerRecord [+0x4C + good] − 1`, clamped `≥0` (distinct from `func_030566`).
+
+> **Correction 2026-08-29 (overturns the prior "spec correction"):** the
+> "DGROUP pool array `[−0x779c]` stride `0x9e`" IS **`PowerRecord +0x5C`** —
+> the index is `(p·0x9E + g)` in WORDS, and `0x9E·2 = 0x13C` is exactly the
+> PowerRecord stride; with power-0's base at `−0x77F8` (gold `[−0x77CE]` =
+> base + 0x2A), `−0x779C` = base + **0x5C**.  So the traffic accumulator IS
+> transaction-moved, per-power, and SAV-persistent; every power's pool moves
+> on every trade (the shared world market), with the Dutch accruing only 2/3
+> of sell pressure and full buy pressure — their prices fall slower and
+> recover faster.  Both engines now keep the accumulator in the record
+> (signed 16-bit words) and seed it from the save.
+> **Net direction:** a **buy** decreases all (goods leave Europe, gold
+> `−gross`, untaxed); a **sell** increases supply/accumulator/pool, credits
+> gold `+net`, REF `+tax`, tally `+net`.
 
 ### Finished-goods are price-coupled through a shared pool — **BYTE_VERIFIED**
 The same drift fn (`func_0305A8`, phases after the supply build) does **not** price
