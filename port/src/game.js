@@ -11714,9 +11714,11 @@ function drawCongressReport(ctx) {
 //               Tons and Gold in 0x0A bright green, the two prices in 0x61
 //   the Gold column and both price columns carry a trailing '$'
 //
-// The subtitle names a VIEW: @MISC 91 '(Building Upkeep)' / 92 'TOTAL UPKEEP'
-// belong to a second page of this report that the capture did not reach, so
-// only the European Trade view is drawn. TBD: how the view is switched.
+// There is NO second view (B3.2 closed 2026-08-29): @MISC 91 '(Building
+// Upkeep)' / 92 'TOTAL UPKEEP' have no consumer anywhere in VICEROY.EXE --
+// their pointer slots [0x2E70]/[0x2E72] are never read and no constant 91/92
+// reaches the by-index printer func_00C09A. They are orphans of the cut
+// building-upkeep feature; European Trade is the whole report.
 const F5_RULE0 = 33, F5_PITCH = 8;
 const F5_HEAD_X = [76, 131, 170, 220];
 const F5_VAL_X = [92, 145, 200, 251];

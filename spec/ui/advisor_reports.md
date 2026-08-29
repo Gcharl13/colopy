@@ -248,7 +248,11 @@ RTLink-resolved (`REPORTS.md` §1):
   Tally by NAMES `@JOB`. **B (grid) / R (counts).**
 - **F5 Economic** (`func_38A50`, retf @0x38ED2, N=5 → `@MISC 50`). Treasury gold
   (PowerRecord `+0x2A`), tax (`+0x01`), per-commodity price_level (`+0x4C`)/vol_accum
-  (`+0x5C`), "(Building Upkeep)"/"TOTAL UPKEEP". Header x = **76/170/220** at y=25
+  (`+0x5C`). (~~"(Building Upkeep)"/"TOTAL UPKEEP"~~ — **corrected 2026-08-29,
+  B3.2**: @MISC 91/92 have NO consumer in VICEROY.EXE — pointer slots
+  `[0x2E70]/[0x2E72]` never read, no constant 91/92 anywhere — they are
+  orphans of the cut building-upkeep feature, and F5 has no second view.)
+  Header x = **76/170/220** at y=25
   (`push 0x4C @0x38AF6`, `mov ax,0xAA @0x38B63`, `mov ax,0xDC @0x38B90`); commodity table
   x=2 stride **0x11=17** (@0x38F3C/@0x3903F); value column x=250/150 stride 12
   (@0x38FEF/@0x3916C); y-start 25/33, pitch 8 (@0x38AEB/@0x38BE2/@0x38E33);
