@@ -1387,6 +1387,8 @@ int route_create(const int16_t *stops, int n, int sea, const char *name) {
     r->sea = (int8_t)(sea ? 1 : 0);
     r->n_stops = (int8_t)(n > COLOPY_MAX_STOPS ? COLOPY_MAX_STOPS : n);
     for (int i = 0; i < r->n_stops; i++) r->stops[i] = stops[i];
+    memset(r->n_load, 0, sizeof(r->n_load));       /* lanes start empty */
+    memset(r->n_unload, 0, sizeof(r->n_unload));
     return CR.n_routes++;
 }
 
@@ -1441,8 +1443,40 @@ static void run_trade_route(int ui) {
     if (ci < 0) { u->orders = 0; return; }
     ColonyRecord *c = &CS.colonies[ci];
     if (u->map_x == c->map_x && u->map_y == c->map_y) {
+        /* per-stop cargo lanes (B3.4) — the automation loop @0x411D8:
+         * UNLOAD func_00B8D0 adds the unit's tons to the colony store,
+         * LOAD func_00B880 draws up to 100 (@0xB8A5).  Routes with no
+         * lanes anywhere keep the port's documented default below. */
+        int si = CR.unit_stop_index[ui] % r->n_stops;
+        int has_lists = 0;
+        for (int k = 0; k < r->n_stops; k++)
+            if (r->n_load[k] || r->n_unload[k]) has_lists = 1;
+        if (has_lists) {
+            int cap = dat_units[u->type].cargo;
+            for (int k = 0; k < r->n_unload[si]; k++) {
+                int g = r->unload[si][k];
+                for (int h = CR.unit_n_hold[ui] - 1; h >= 0; h--) {
+                    hold_slot hs = CR.unit_hold[ui][h];
+                    if (hs.good != g) continue;
+                    c->stock[g] = (uint16_t)(c->stock[g] + hs.qty);
+                    hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui],
+                             g, -hs.qty);
+                }
+            }
+            for (int k = 0; k < r->n_load[si]; k++) {
+                if (CR.unit_n_hold[ui] >= cap) break;
+                int g = r->load[si][k];
+                int take = c->stock[g] < 100 ? c->stock[g] : 100;
+                if (take <= 0) continue;
+                c->stock[g] = (uint16_t)(c->stock[g] - take);
+                hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui], g, take);
+            }
+            CR.unit_stop_index[ui] =
+                (uint8_t)((CR.unit_stop_index[ui] + 1) % r->n_stops);
+            return;
+        }
         /* first stop loads, every other unloads (the flagged default) */
-        if (CR.unit_stop_index[ui] % r->n_stops == 0) {
+        if (si == 0) {
             int cap = dat_units[u->type].cargo;
             for (int i = 0; i < 16 && CR.unit_n_hold[ui] < cap; i++) {
                 if (i == FOOD || c->stock[i] < 50) continue;

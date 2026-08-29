@@ -618,6 +618,11 @@ typedef struct {
         int8_t  sea;
         int8_t  n_stops;
         int16_t stops[4];
+        /* per-stop cargo lanes — the record's nibble-packed good lists
+         * (+0x03..+0x05 LOAD / +0x06..+0x08 UNLOAD, six nibbles each;
+         * trade_routes.md §2).  B3.4. */
+        uint8_t n_load[4], n_unload[4];
+        uint8_t load[4][6], unload[4][6];
     } routes[12];
     int8_t  n_routes;
     int16_t unit_route[COLOPY_MAX_UNITS];       /* u.route, -1 none */

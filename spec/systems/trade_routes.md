@@ -138,6 +138,15 @@ See `docs/SESSION_UI_CATALOG.md`, `docs/UI_DIALOGS.md`.
    stride `0x4A`, 4 stops × nibble-packed goods (§2). **B.**
 2. ~~Byte-trace the per-turn automation.~~ **Done 2026-06-20** — `func_041080` +
    LOAD/UNLOAD `func_00B880`/`func_00B8D0` (§3). **B.**
+3. ~~Port the per-stop good lists.~~ **Done 2026-08-29 (B3.4)** — both engines
+   carry the six-good LOAD/UNLOAD lanes per stop and honour them in the
+   automation (unload all carried tons of the listed goods, load ≤100 each per
+   `@0xB8A5`); the **Edit Trade Route** menu row opens the editor (route →
+   stop → `@CARGOLOAD` lane → `@CARGOUNLOAD` lane). A route with no lanes
+   keeps the port's first-stop-loads convenience default (the engine's empty
+   lanes would do nothing); Europe stops still sell through the crossing
+   (the `func_032914` scalar path), the per-lane Europe buy is not modelled —
+   FLAGGED.
 3. ~~Route count / stop limits / name storage.~~ **Done** — 12 routes / 4 stops /
    name at record `+0x00` (§2). **B.**
 4. ~~Load-list vs unload-list split + Europe-array write offset.~~ **Mostly resolved

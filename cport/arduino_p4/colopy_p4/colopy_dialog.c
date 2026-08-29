@@ -680,18 +680,36 @@ static int trade_geom(int mode, int step_no, const char *sofar,
                       char head[2][256], int *nh_out,
                       int *x, int *y, int *w, int *h, int *seed) {
     dresolve();
-    const dat_events_entry_t *e =
-        event_by_key(mode == 1 ? "TRADESTART"
-                   : mode == 3 ? "TRADEDELETE" : "TRADESELECT");
-    if (!e || !e->n_body) return 0;
-    rm_subs subs;
-    memset(&subs, 0, sizeof(subs));
-    subs.num[0] = step_no;
-    subs.num_set[0] = 1;
+    /* the cargo editor (B3.4) encodes its phase as mode 40+phase; for
+     * the two lane phases `sofar` carries the STOP NAME (the engine's
+     * @CARGOLOAD/@CARGOUNLOAD %STRING0, func_060D8C's pair) */
     int nh = 0;
-    fill_template(e->body[0], &subs, head[nh++], 256);
-    if (mode == 1 && sofar && sofar[0])
-        snprintf(head[nh++], 256, "%s", sofar);
+    if (mode == 41) {
+        snprintf(head[nh++], 256, "Select a stop to edit:");
+    } else if (mode == 42 || mode == 43) {
+        const dat_events_entry_t *ce =
+            event_by_key(mode == 42 ? "CARGOLOAD" : "CARGOUNLOAD");
+        rm_subs csubs;
+        memset(&csubs, 0, sizeof(csubs));
+        csubs.str[0] = sofar;
+        if (ce && ce->n_body)
+            fill_template(ce->body[0], &csubs, head[nh++], 256);
+        else
+            snprintf(head[nh++], 256, "Select a cargo to %s at %s.",
+                     mode == 42 ? "load" : "unload", sofar ? sofar : "");
+    } else {
+        const dat_events_entry_t *e =
+            event_by_key(mode == 1 ? "TRADESTART"
+                       : mode == 3 ? "TRADEDELETE" : "TRADESELECT");
+        if (!e || !e->n_body) return 0;
+        rm_subs subs;
+        memset(&subs, 0, sizeof(subs));
+        subs.num[0] = step_no;
+        subs.num_set[0] = 1;
+        fill_template(e->body[0], &subs, head[nh++], 256);
+        if (mode == 1 && sofar && sofar[0])
+            snprintf(head[nh++], 256, "%s", sofar);
+    }
     int cw = 190;
     for (int i = 0; i < nh; i++) {
         int lw = stripped_width(&D_TINY, head[i]);

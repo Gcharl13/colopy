@@ -9631,7 +9631,13 @@ function createRoute(stops, sea, name) {
     showEvent('TRADEMANY', { NUMBER0: MAX_ROUTES });
     return null;
   }
-  const r = { name: name || routeName(stops), sea, stops: stops.slice(0, MAX_STOPS), cursor: 0 };
+  const r = { name: name || routeName(stops), sea, stops: stops.slice(0, MAX_STOPS), cursor: 0,
+              // Per-stop cargo lists -- the route record's nibble-packed lanes
+              // (stop +0x03..+0x05 LOAD / +0x06..+0x08 UNLOAD, count nibbles at
+              // +0x02; trade_routes.md par.2). Six goods per lane. They start
+              // empty, exactly as a fresh record does; the Edit Trade Route
+              // screen fills them (B3.4).
+              loads: stops.map(() => []), unloads: stops.map(() => []) };
   G.routes.push(r);
   return r;
 }
@@ -9677,13 +9683,31 @@ function runTradeRoute(u) {
   const c = G.colonies[stop];
   if (!c) { u.orders = 0; return; }
   if (u.x === c.x && u.y === c.y) {
-    // The engine gives every stop its own load list and unload list. This build
-    // uses the simplest default that does not chase its own tail: the FIRST
-    // stop loads, every other stop unloads. Loading at every stop would have a
-    // wagon pick straight back up what it had just set down.
+    // Each stop has its own LOAD and UNLOAD good list (the route record's
+    // nibble lanes; automation loop @0x411D8..@0x4128C iterates them against
+    // the cargo primitives -- UNLOAD func_00B8D0 adds the unit's tons to
+    // ColonyRecord +0x9A+good*2, LOAD func_00B880 draws up to 100 (@0xB8A5)).
+    // When the route carries NO lists at all (they start empty, and the
+    // harness can never fill them), the port keeps its documented default:
+    // the FIRST stop loads everything worth moving, every other stop
+    // unloads -- a convenience stand-in, not the engine rule.
     u.hold = u.hold || [];
-    const isOrigin = (u.stopIndex % r.stops.length) === 0;
-    if (isOrigin) {
+    const si = u.stopIndex % r.stops.length;
+    const hasLists = (r.loads || []).some(l => l.length) ||
+                     (r.unloads || []).some(l => l.length);
+    if (hasLists) {
+      const cap = unit(u.type).cargo || 0;
+      for (const g of (r.unloads[si] || []))
+        for (const h of u.hold.slice())
+          if (h.good === g) { c.stock[g] += h.qty; holdAdd(u, g, -h.qty); }
+      for (const g of (r.loads[si] || [])) {
+        if (u.hold.length >= cap) break;
+        const take = Math.min(100, c.stock[g]);            // @0xB8A5 cap
+        if (take <= 0) continue;
+        c.stock[g] -= take;
+        holdAdd(u, g, take);
+      }
+    } else if (si === 0) {
       const cap = unit(u.type).cargo || 0;
       for (let i = 0; i < c.stock.length && (u.hold.length < cap); i++) {
         if (i === GOOD.FOOD || c.stock[i] < 50) continue;
@@ -9736,6 +9760,23 @@ function tradeRows() {
     if (t.stops.length >= 2) rows.push({ id: 'done', label: 'Done -- create the route' });
     return rows;
   }
+  // The cargo editor (B3.4): route -> stop -> LOAD lane -> UNLOAD lane. The
+  // lanes are the record's six-nibble good lists; a row toggles membership.
+  if (t.mode === 'edit') {
+    if (t.phase === 'stop') {
+      const r = G.routes[t.route];
+      return r.stops.map((s, i) => ({ id: i, label: routeStopName(s) }));
+    }
+    if (t.phase === 'load' || t.phase === 'unload') {
+      const r = G.routes[t.route];
+      const lane = (t.phase === 'load' ? r.loads : r.unloads)[t.stop];
+      const rows = DATA.cargo.map((g, i) =>
+        ({ id: i, label: `${lane.includes(i) ? '* ' : '  '}${g.name}` }));
+      rows.push({ id: 'done', label: t.phase === 'load'
+        ? 'Done -- choose what to unload' : 'Done' });
+      return rows;
+    }
+  }
   return G.routes.map((r, i) => ({ id: i, label: `${r.name} (${r.stops.map(routeStopName).join(' - ')})` }));
 }
 function tradeCommit() {
@@ -9759,6 +9800,29 @@ function tradeCommit() {
       return;
     }
     if (t.stops.length < MAX_STOPS && !t.stops.includes(row.id)) t.stops.push(row.id);
+    return;
+  }
+  if (t.mode === 'edit') {
+    if (!t.phase) {                       // route pick
+      const r = G.routes[row.id];
+      if (!r) { G.screen = 'map'; G.trade = null; return; }
+      r.loads = r.loads || r.stops.map(() => []);
+      r.unloads = r.unloads || r.stops.map(() => []);
+      t.route = row.id; t.phase = 'stop'; t.row = 0;
+      return;
+    }
+    if (t.phase === 'stop') { t.stop = row.id; t.phase = 'load'; t.row = 0; return; }
+    const r = G.routes[t.route];
+    const lane = (t.phase === 'load' ? r.loads : r.unloads)[t.stop];
+    if (row.id === 'done') {
+      if (t.phase === 'load') { t.phase = 'unload'; t.row = 0; return; }
+      G.screen = 'map'; G.trade = null;
+      G.msg = `${r.name}: cargo set for ${routeStopName(r.stops[t.stop])}.`;
+      return;
+    }
+    const at = lane.indexOf(row.id);
+    if (at >= 0) lane.splice(at, 1);
+    else if (lane.length < 6) lane.push(row.id);   // six nibble slots a lane
     return;
   }
   if (t.mode === 'delete') {
@@ -9798,10 +9862,19 @@ function drawTrade(ctx) {
   // Titles are the bundled GAME.TXT bodies (@TRADESTART/@TRADEDELETE/
   // @TRADESELECT), no longer paraphrased copies; the create mode's "So far"
   // line is the port's own running summary, kept.
+  const stopName = t.mode === 'edit' && t.phase && t.phase !== 'stop'
+    ? routeStopName((G.routes[t.route] || { stops: [] }).stops[t.stop] || 0) : '';
   const head = t.mode === 'create'
     ? [fillTemplate(DATA.events.TRADESTART.body[0], { NUMBER0: t.stops.length + 1 }),
        t.stops.length ? `So far: ${t.stops.map(routeStopName).join(' - ')}` : '']
     : t.mode === 'delete' ? [DATA.events.TRADEDELETE.body[0]]
+    // The cargo editor titles are the engine's own @CARGOLOAD / @CARGOUNLOAD
+    // ("Select a cargo to load/unload at {%STRING0}." -- func_060D8C's pair).
+    : t.mode === 'edit' && t.phase === 'load'
+      ? [fillTemplate((DATA.events.CARGOLOAD || { body: ['Select a cargo to load at {%STRING0}.'] }).body[0], { STRING0: stopName })]
+    : t.mode === 'edit' && t.phase === 'unload'
+      ? [fillTemplate((DATA.events.CARGOUNLOAD || { body: ['Select a cargo to unload at {%STRING0}.'] }).body[0], { STRING0: stopName })]
+    : t.mode === 'edit' && t.phase === 'stop' ? ['Select a stop to edit:']
     : [DATA.events.TRADESELECT.body[0]];
   const body = head.filter(Boolean);
   let cw = 190;
@@ -13802,7 +13875,9 @@ const COMMANDS = {
   'Center View': centreView,
   // TRADE
   'Create Trade Route': () => openTradeMenu('create'),
-  'Edit Trade Route': () => openTradeMenu('assign'),
+  // Edit = the DOS route editor's stop/cargo pass (func_060C34/func_060D8C):
+  // pick a route, a stop, then its LOAD and UNLOAD good lists (B3.4).
+  'Edit Trade Route': () => openTradeMenu('edit'),
   'Delete Trade Route': () => openTradeMenu('delete'),
   'Begin Trade Route': () => openTradeMenu('assign'),
   'Pillage': pillage,

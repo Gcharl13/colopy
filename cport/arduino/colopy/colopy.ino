@@ -432,7 +432,10 @@ static void draw_screen(void) {
         for (int i = 0; i < tn; i++) trp[i] = trows[i];
         char sofar[128];
         ui_trade_sofar(sofar, (int)sizeof(sofar));
-        rm_draw_trade(UI.trade_mode, UI.trade_n_stops + 1, sofar,
+        /* the cargo editor encodes its phase as 40+phase (B3.4) */
+        rm_draw_trade(UI.trade_mode == 4 ? 40 + UI.trade_phase
+                                         : UI.trade_mode,
+                      UI.trade_n_stops + 1, sofar,
                       trp, tn, UI.trade_row);
         break;
     }

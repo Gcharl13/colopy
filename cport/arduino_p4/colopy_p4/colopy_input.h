@@ -51,10 +51,14 @@ typedef struct {
     int8_t  options_which;           /* 0 game / 1 colony / 2 sound */
     int8_t  options_row;
     int8_t  trade_mode;              /* G.trade.mode: 1 create / 2 assign
-                                      * / 3 delete (0 = closed) */
+                                      * / 3 delete / 4 edit (0 = closed) */
     int8_t  trade_row;               /* G.trade.row */
     int8_t  trade_n_stops;           /* picked stops so far (create) */
     int16_t trade_stops[4];          /* player-colony ordinals / 999 */
+    int8_t  trade_phase;             /* edit: 0 route / 1 stop / 2 load
+                                      * lane / 3 unload lane (B3.4) */
+    int8_t  trade_route;             /* edit: the picked route */
+    int8_t  trade_stop;              /* edit: the picked stop index */
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
                                       *                2 build */
     int8_t  colonist_sel;            /* G.colonistSel (game.js:566) */

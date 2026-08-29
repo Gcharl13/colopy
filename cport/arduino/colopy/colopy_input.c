@@ -355,8 +355,11 @@ static void run_menu_row(void) {
     /* TRADE (game.js:11386-11389) */
     } else if (strcmp(l, "Create Trade Route") == 0) {
         open_trade_menu(1);
-    } else if (strcmp(l, "Edit Trade Route") == 0 ||
-               strcmp(l, "Begin Trade Route") == 0) {
+    } else if (strcmp(l, "Edit Trade Route") == 0) {
+        /* the DOS route editor's stop/cargo pass (func_060C34 dest picker
+         * + func_060D8C @CARGOLOAD/@CARGOUNLOAD lanes) — B3.4 */
+        open_trade_menu(4);
+    } else if (strcmp(l, "Begin Trade Route") == 0) {
         open_trade_menu(2);
     } else if (strcmp(l, "Delete Trade Route") == 0) {
         open_trade_menu(3);
@@ -1534,6 +1537,33 @@ static int player_colony_count2(void) {
 
 int ui_trade_rows(char out[][64], int cap) {
     int n = 0;
+    if (UI.trade_mode == 4 && UI.trade_phase == 1) {   /* edit: stop pick */
+        struct colopy_route *r = &CR.routes[UI.trade_route];
+        for (int k = 0; k < r->n_stops && n < cap; k++) {
+            char sn[26];
+            route_stop_name(r->stops[k], sn, (int)sizeof(sn));
+            snprintf(out[n++], 64, "%s", sn);
+        }
+        return n;
+    }
+    if (UI.trade_mode == 4 && UI.trade_phase >= 2) {   /* edit: cargo lane */
+        struct colopy_route *r = &CR.routes[UI.trade_route];
+        int load = UI.trade_phase == 2;
+        uint8_t *lane = load ? r->load[UI.trade_stop]
+                             : r->unload[UI.trade_stop];
+        int cnt = load ? r->n_load[UI.trade_stop]
+                       : r->n_unload[UI.trade_stop];
+        for (int g = 0; g < 16 && n < cap; g++) {
+            int in = 0;
+            for (int k = 0; k < cnt; k++) if (lane[k] == g) in = 1;
+            snprintf(out[n++], 64, "%s%s", in ? "* " : "  ",
+                     dat_cargo[g].name);
+        }
+        if (n < cap)
+            snprintf(out[n++], 64, "%s",
+                     load ? "Done -- choose what to unload" : "Done");
+        return n;
+    }
     if (UI.trade_mode == 1) {                /* create: stop choices */
         int pc = player_colony_count2(), o = -1;
         for (int i = 0; i < CS.n_colonies && n < cap; i++) {
@@ -1567,6 +1597,13 @@ int ui_trade_rows(char out[][64], int cap) {
 
 void ui_trade_sofar(char *out, int cap) {
     out[0] = 0;
+    /* edit lane phases: carry the STOP NAME (the @CARGOLOAD %STRING0) */
+    if (UI.trade_mode == 4) {
+        if (UI.trade_phase >= 2)
+            route_stop_name(
+                CR.routes[UI.trade_route].stops[UI.trade_stop], out, cap);
+        return;
+    }
     if (UI.trade_mode != 1 || !UI.trade_n_stops) return;
     int sp = snprintf(out, (size_t)cap, "So far: ");
     for (int k = 0; k < UI.trade_n_stops && sp < cap; k++) {
@@ -1586,6 +1623,9 @@ static void open_trade_menu(int mode) {
     UI.trade_mode = (int8_t)mode;
     UI.trade_row = 0;
     UI.trade_n_stops = 0;
+    UI.trade_phase = 0;
+    UI.trade_route = 0;
+    UI.trade_stop = 0;
     UI.screen = SCR_TRADE;
 }
 
@@ -1629,6 +1669,46 @@ static void trade_commit(void) {
             if (UI.trade_stops[k] == id) dup = 1;
         if (UI.trade_n_stops < COLOPY_MAX_STOPS && !dup)
             UI.trade_stops[UI.trade_n_stops++] = id;
+        return;
+    }
+    if (UI.trade_mode == 4) {                /* edit: the cargo editor */
+        if (UI.trade_phase == 0) {           /* route pick */
+            if (row >= CR.n_routes) {
+                UI.screen = SCR_MAP;
+                UI.trade_mode = 0;
+                return;
+            }
+            UI.trade_route = (int8_t)row;
+            UI.trade_phase = 1;
+            UI.trade_row = 0;
+            return;
+        }
+        struct colopy_route *r = &CR.routes[UI.trade_route];
+        if (UI.trade_phase == 1) {           /* stop pick */
+            UI.trade_stop = (int8_t)row;
+            UI.trade_phase = 2;
+            UI.trade_row = 0;
+            return;
+        }
+        int load = UI.trade_phase == 2;
+        uint8_t *lane = load ? r->load[UI.trade_stop]
+                             : r->unload[UI.trade_stop];
+        uint8_t *cnt = load ? &r->n_load[UI.trade_stop]
+                            : &r->n_unload[UI.trade_stop];
+        if (row >= 16) {                     /* Done */
+            if (load) { UI.trade_phase = 3; UI.trade_row = 0; return; }
+            UI.screen = SCR_MAP;
+            UI.trade_mode = 0;
+            return;
+        }
+        int at = -1;
+        for (int k = 0; k < *cnt; k++) if (lane[k] == row) at = k;
+        if (at >= 0) {                       /* toggle off */
+            for (int k = at; k + 1 < *cnt; k++) lane[k] = lane[k + 1];
+            (*cnt)--;
+        } else if (*cnt < 6) {               /* six nibble slots a lane */
+            lane[(*cnt)++] = (uint8_t)row;
+        }
         return;
     }
     if (UI.trade_mode == 3) {                /* delete: @SUREDELETE */
