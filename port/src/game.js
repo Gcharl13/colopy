@@ -7054,24 +7054,45 @@ function nativeRaid(v, c) {
                 STRING3: DATA.nations[G.nation].adjective };
     switch (raidOutcome()) {
       case 1: {                                    // @RAIDSTORES
-        const g = c.stock.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
-        if (!g || !g[0]) { showEvent('RAIDNOTHING', S); break; }
-        c.stock[g[1]] = 0;
+        // The good picker, BYTE-READ 2026-08-29 (@0x5C03E..@0x5C0C7): up
+        // to 100 tries of random_int(0,15), accepted at stock >= 10; on
+        // the FIRST try, a tribe with no horse counter facing a pick
+        // stocked past 52 flips a coin for HORSES instead (@0x5C05F..
+        // @0x5C084). The muskets magnitude check (@0x5C08F, the
+        // random(0,200)-diff*tries register) has an unread consumer --
+        // omitted, flagged. No pick in 100 tries -> @RAIDNOTHING.
+        const t2 = G.tribes[v.tribe] || {};
+        let good = -1;
+        for (let tries = 1; tries <= 100 && good < 0; tries++) {
+          const pick = Math.floor(Math.random() * 16);
+          if (tries === 1 && !(t2.horsesKnown || 0) &&
+              (c.stock[pick] || 0) > 52 &&
+              Math.floor(Math.random() * 2) === 0) { good = 8; break; }
+          if ((c.stock[pick] || 0) >= 10) good = pick;
+        }
+        if (good < 0 || !(c.stock[good] > 0)) {
+          showEvent('RAIDNOTHING', S); break;
+        }
+        // amount = clamp(1, stock, random_int(min(10, stock/2), stock/2))
+        // (@0x5C370..@0x5C3AD) -- the raid takes a LOAD, not the slot.
+        const half = c.stock[good] >> 1;
+        const lo = Math.min(10, half);
+        let qty = lo + Math.floor(Math.random() * (half - lo + 1));
+        qty = Math.max(1, Math.min(c.stock[good], qty));
+        c.stock[good] -= qty;
+        const g = [qty, good];
         // The haul arms the TRIBE (corrected 2026-08-29 -- the old
         // "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
         // pointer): stolen HORSES bump the herd-counter byte +0x08 and
         // add 25 to the herd word +0x0A (@0x5C3DD..@0x5C3E4); stolen
         // MUSKETS bump the muskets counter +0x07, twice at a 50+ load
         // (@0x5C3EE..@0x5C3FB). Other goods are simply gone.
-        {
-          const t2 = G.tribes[v.tribe] || {};
-          if (g[1] === 8) {
-            t2.horsesKnown = (t2.horsesKnown || 0) + 1;
-            t2.herd = (t2.herd || 0) + 25;
-          }
-          if (g[1] === 15)
-            t2.musketsKnown = (t2.musketsKnown || 0) + (g[0] >= 50 ? 2 : 1);
+        if (g[1] === 8) {
+          t2.horsesKnown = (t2.horsesKnown || 0) + 1;
+          t2.herd = (t2.herd || 0) + 25;
         }
+        if (g[1] === 15)
+          t2.musketsKnown = (t2.musketsKnown || 0) + (g[0] >= 50 ? 2 : 1);
         // The sated-raid tension credit, byte-read: -4 for a stores raid
         // (push -4 @0x5C416; the gold raid's is -16).
         adjustTension(v.tribe, -4, 0);

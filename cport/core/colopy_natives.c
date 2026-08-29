@@ -527,10 +527,32 @@ static void native_raid(int vi, int ci) {
     if (out < 0) out = 0;
     switch (out) {
     case 1: {                                        /* @RAIDSTORES */
-        int qty;
-        int g = top_stock(c, 0, &qty);
-        if (g < 0 || !qty) { ev_emit("RAIDNOTHING", 0, 0, 0, 0); break; }
-        c->stock[g] = 0;
+        /* the good picker, BYTE-READ 2026-08-29 (@0x5C03E..@0x5C0C7):
+         * up to 100 tries of random_int(0,15), accepted at stock >= 10;
+         * FIRST try + no tribe horse counter + the pick stocked past 52
+         * flips a coin for HORSES (@0x5C05F..@0x5C084); the muskets
+         * magnitude register (@0x5C08F) has an unread consumer --
+         * omitted, flagged (mirrors game.js) */
+        int g = -1;
+        for (int tries = 1; tries <= 100 && g < 0; tries++) {
+            int pick = R(16);
+            if (tries == 1 && tribe >= 0 && tribe < 8 &&
+                CR.tribe_horses_known[tribe] == 0 &&
+                c->stock[pick] > 52 && R(2) == 0) { g = 8; break; }
+            if (c->stock[pick] >= 10) g = pick;
+        }
+        if (g < 0 || c->stock[g] <= 0) {
+            ev_emit("RAIDNOTHING", 0, 0, 0, 0);
+            break;
+        }
+        /* amount = clamp(1, stock, random_int(min(10,stock/2), stock/2))
+         * (@0x5C370..@0x5C3AD) -- a LOAD, not the whole slot */
+        int half = c->stock[g] >> 1;
+        int lo = half < 10 ? half : 10;
+        int qty = lo + R(half - lo + 1);
+        if (qty > c->stock[g]) qty = c->stock[g];
+        if (qty < 1) qty = 1;
+        c->stock[g] = (int16_t)(c->stock[g] - qty);
         /* the haul arms the TRIBE (corrected 2026-08-29 — the old
          * "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
          * pointer): stolen HORSES bump the herd-counter byte +0x08 and
