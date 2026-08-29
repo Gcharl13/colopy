@@ -6456,21 +6456,47 @@ function seedNatives() {
   G.natives = [];
   G.tribes.forEach((t, ti) => {
     const sites = DATA.tribesites[t.singular.toUpperCase()] || [];
-    sites.forEach(([sx, sy], k) => {
-      const x = sx + TRIBE_SITE_DX, y = sy + TRIBE_SITE_DY;
-      if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) return;
-      // mission: null, or {power, expert} -- the engine's settlement +0x05
-      // byte, low nibble = owning power, bit 0x10 = expert (Jean de Brebeuf).
-      // The CAPITAL is @LEVELS row 4 and carries the bigger growth cap; which
-      // site is the capital is not in TRIBE.TXT, so the port takes the tribe's
-      // first listed site. Flagged.
-      // Starting population is likewise not in the evidence -- villages open at
-      // their target size (func_046DE0: 2*level+3, capital 3*level+4), which is
-      // where a long-settled village would already sit.
-      const v = { x, y, tribe: ti, name: t.name, level: t.level,
+    // Placement is the BYTE MODEL of func_065D26's TRIBE.TXT mode
+    // (@0x660C4..@0x66246, read 2026-08-29): each file site scatters by a
+    // TRIANGULAR +-2 jitter (random_int(-1,1) + random_int(-1,1) per
+    // axis), retried up to 100 times against: passable tile, improve
+    // bits & 3 clear, terrain < 0x18 with (id & 7) not Desert(1) and not
+    // Swamp(7) (@0x6618B..@0x661A3), and a nearest-settlement distance
+    // over 3 (tries < 0x21), 2 (< 0x42), then 1 (@0x661BB..@0x661E4).
+    // The FIRST placed site is the capital (flags |= 4, @0x66222) --
+    // byte-confirmed, no longer flagged. TRIBE_SITE_DX/DY stays the
+    // port's coordinate calibration, flagged as before.
+    let placedFirst = false;
+    sites.forEach(([sx, sy]) => {
+      const bx = sx + TRIBE_SITE_DX, by = sy + TRIBE_SITE_DY;
+      let px = -1, py = -1;
+      for (let tries = 1; tries <= 100; tries++) {
+        const dx = (Math.floor(Math.random() * 3) - 1) +
+                   (Math.floor(Math.random() * 3) - 1);
+        const dy = (Math.floor(Math.random() * 3) - 1) +
+                   (Math.floor(Math.random() * 3) - 1);
+        const x = bx + dx, y = by + dy;
+        if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
+        const tv = at(x, y), tt = tileTerrain(tv);
+        if (tileWater(tv) || tt >= 0x18) continue;
+        if ((tt & 7) === 1 || (tt & 7) === 7) continue;   // Desert, Swamp
+        if (impAt(x, y) & 3) continue;
+        const need = tries < 0x21 ? 3 : tries < 0x42 ? 2 : 1;
+        const nearD = G.villages.reduce((m, w) =>
+          Math.min(m, Math.max(Math.abs(w.x - x), Math.abs(w.y - y))), 99);
+        if (nearD <= need) continue;
+        px = x; py = y;
+        break;
+      }
+      if (px < 0) return;                    // 100 tries exhausted: skip
+      // mission: null, or {power, expert} -- settlement +0x05.
+      // Starting population is not in the evidence -- villages open at
+      // their target size (func_046DE0: 2*level+3, capital 3*level+4).
+      const v = { x: px, y: py, tribe: ti, name: t.name, level: t.level,
                   alarm: t.tension, mission: null, tributePaid: false,
-                  capital: k === 0, growth: 0, taught: false, chiefSeen: false,
-                  braveOwed: false, pop: 1 };
+                  capital: !placedFirst, growth: 0, taught: false,
+                  chiefSeen: false, braveOwed: false, pop: 1 };
+      placedFirst = true;
       v.pop = settlementCap(v);
       G.villages.push(v);
     });

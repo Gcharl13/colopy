@@ -152,26 +152,65 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
         int off = ti * 0x4E + 0x46 + nation * 2;
         put16(CS.tribes + off, tension[ti]);
     }
+    /* placement = func_065D26's TRIBE.TXT mode (@0x660C4..@0x66246,
+     * 2026-08-29): per site a triangular +-2 jitter (random_int(-1,1) +
+     * random_int(-1,1) per axis), up to 100 tries against passable,
+     * improve & 3 clear, terrain < 0x18 with (id & 7) not Desert/Swamp,
+     * nearest-settlement distance > 3/2/1 by tries; the FIRST placed
+     * site is the capital (byte-confirmed).  Mirrors game.js
+     * draw-for-draw. */
     for (int ti = 0; ti < 8; ti++) {
         int lv = dat_tribes[ti].level;
+        int placed_first = 0;
         for (int k = 0; k < SITES_N[ti]; k++) {
-            int x = (int)SITES[ti][k][0] + TRIBE_SITE_DX;
-            int y = (int)SITES[ti][k][1] + TRIBE_SITE_DY;
-            if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H)
-                continue;
+            int bx = (int)SITES[ti][k][0] + TRIBE_SITE_DX;
+            int by = (int)SITES[ti][k][1] + TRIBE_SITE_DY;
+            int px = -1, py = -1;
+            for (int tries = 1; tries <= 100; tries++) {
+                int dx = ((int)((rng_next() * 3u) >> 15) - 1) +
+                         ((int)((rng_next() * 3u) >> 15) - 1);
+                int dy = ((int)((rng_next() * 3u) >> 15) - 1) +
+                         ((int)((rng_next() * 3u) >> 15) - 1);
+                int x = bx + dx, y = by + dy;
+                if (x < 0 || y < 0 || x >= COLOPY_MAP_W ||
+                    y >= COLOPY_MAP_H)
+                    continue;
+                uint8_t tv = map_at(x, y);
+                int tt = tile_terrain(tv);
+                if (tile_water(tv) || tt >= 0x18) continue;
+                if ((tt & 7) == 1 || (tt & 7) == 7) continue;
+                if (map_improve(x, y) & 3) continue;
+                int need = tries < 0x21 ? 3 : tries < 0x42 ? 2 : 1;
+                int near_d = 99;
+                for (int w = 0; w < CS.n_villages; w++) {
+                    int ddx = CS.villages[w].map_x - x;
+                    int ddy = CS.villages[w].map_y - y;
+                    if (ddx < 0) ddx = -ddx;
+                    if (ddy < 0) ddy = -ddy;
+                    int d = ddx > ddy ? ddx : ddy;
+                    if (d < near_d) near_d = d;
+                }
+                if (near_d <= need) continue;
+                px = x;
+                py = y;
+                break;
+            }
+            if (px < 0) continue;
             if (CS.n_villages >= COLOPY_MAX_SETTLEMENTS) continue;
             NativeSettlement *v = &CS.villages[CS.n_villages++];
             memset(v, 0, sizeof(*v));
-            v->map_x = (uint8_t)x;
-            v->map_y = (uint8_t)y;
+            v->map_x = (uint8_t)px;
+            v->map_y = (uint8_t)py;
             v->owner_tribe = (uint8_t)(ti + 4);
-            v->flags = (uint8_t)(k == 0 ? 0x04 : 0);   /* first = capital
-                                                        * (FLAGGED, 5161) */
-            /* villages open at their target size (settlementCap 5917):
-             * capital 3*level+4, else 2*level+3 */
-            v->population = (uint8_t)(k == 0 ? 3 * lv + 4 : 2 * lv + 3);
+            v->flags = (uint8_t)(placed_first ? 0 : 0x04);
+            v->population = (uint8_t)(placed_first ? 2 * lv + 3
+                                                   : 3 * lv + 4);
+            placed_first = 1;
             v->mission = 0xFF;                          /* none */
             v->alarm[nation] = tension[ti];             /* v.alarm (5167) */
+            v->walked_good = 0xFF;
+            v->last_bought = 0xFF;
+            v->last_sold = 0xFF;
         }
     }
 
