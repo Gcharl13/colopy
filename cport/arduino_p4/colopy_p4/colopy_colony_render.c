@@ -456,7 +456,7 @@ int rm_plaza_hit(int ci, int mx, int my) {
         int ui = CR.units_order[q];
         if (dat_units[CS.units[ui].type].cargo > 0) continue;  /* dock strip */
         if (CS.units[ui].map_x == c->map_x && CS.units[ui].map_y == c->map_y)
-            icons[nicons++] = (int)dat_units[CS.units[ui].type].icon - 1;
+            icons[nicons++] = unit_icon_of(ui);
     }
     if (!nicons) return -1;
     int total_w = 0;
@@ -495,7 +495,7 @@ int rm_plaza_unit_hit(int ci, int mx, int my) {
         int ui = CR.units_order[q];
         if (dat_units[CS.units[ui].type].cargo > 0) continue;  /* dock strip */
         if (CS.units[ui].map_x == c->map_x && CS.units[ui].map_y == c->map_y) {
-            icons[nicons] = (int)dat_units[CS.units[ui].type].icon - 1;
+            icons[nicons] = unit_icon_of(ui);
             order[nicons++] = q;
         }
     }
@@ -759,7 +759,7 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
             if (dat_units[CS.units[ui].type].cargo > 0) continue;
             if (CS.units[ui].map_x == c->map_x &&
                 CS.units[ui].map_y == c->map_y)
-                icons[nicons++] = (int)dat_units[CS.units[ui].type].icon - 1;
+                icons[nicons++] = unit_icon_of(ui);
         }
         if (nicons) {
             int total_w = 0;
@@ -831,7 +831,7 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
             int ui = CR.units_order[q];
             if (CS.units[ui].map_x != c->map_x ||
                 CS.units[ui].map_y != c->map_y) continue;
-            int ic = (int)dat_units[CS.units[ui].type].icon - 1;
+            int ic = unit_icon_of(ui);
             rd_frame f;
             rd_sheet_frame(&RD.icons, ic, &f);
             rd_blit(&RD.icons, ic, 209 + n * 15, 162 - f.h);

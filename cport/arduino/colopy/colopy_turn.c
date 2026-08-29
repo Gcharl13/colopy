@@ -435,7 +435,7 @@ int colonist_to_fence(int ci, int k) {
      * accepts 1..DAT_JOBEXPERT_COUNT-1 and reads everything else as null,
      * and the record's "no specialty" value is out of that range — storing
      * it verbatim would hand the unit a profession index nothing decodes. */
-    if (ui >= 0 && prof >= 1 && prof < DAT_JOBEXPERT_COUNT)
+    if (ui >= 0 && prof < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none */)
         CS.units[ui].profession = prof;
     return ui;
 }
@@ -1288,28 +1288,12 @@ void turn_step_prefix(void) {
         else if (p->gold >= due) { p->gold -= due; CR.upkeep_unpaid = 0; }
         else { CR.upkeep_unpaid = 1; ev_emit("UPKEEP", due, 0, 0, 0); }
     }
-    /* the colony loop (player colonies, record order, like JS G.colonies) */
-    /* THE HUMAN'S COLONIES ONLY — and that is a known divergence, not the
-     * engine's shape.  func_02F052 @0x59EA is a PER-POWER pass: it loops
-     * every colony once per power and processes the ones that power owns
-     * (`ColonyRecord +0x1A == power` @0x2F256), so in the original a
-     * rival's colonies run the SAME production code the human's do.  That
-     * is all "rival colony development" ever was; there is no separate AI
-     * for it (ledger B3.6, re-scoped 2026-08-19).
-     *
-     * Turning it on here is a two-line change and it is NOT the blocker.
-     * The blocker is the DATA MODEL: the C imports every colony into
-     * CS.colonies with its owner byte (COLONY01 = 8 human + 6 rival, fully
-     * populated), but the JS reference port keeps only the human's in
-     * G.colonies and models rivals as a separate stub. Processing rivals
-     * on this side alone would break the reference relationship the whole
-     * oracle suite rests on. Unifying the two models means auditing ~374
-     * owner-correctness sites across both engines (127 G.colonies + 247
-     * CS.colonies), which is its own piece of work.
-     *
-     * The scaffolding above (turn_power / cur_power / cev / cask) is the
-     * prerequisite and is already in place and oracle-verified neutral, so
-     * that change becomes the loop below plus the JS model. */
+    /* the colony loop (player colonies, record order, like JS G.colonies).
+     * func_02F052 @0x59EA is a PER-POWER pass (`ColonyRecord +0x1A ==
+     * power` @0x2F256): the human's slice runs here; each RIVAL power's
+     * slice runs in its own turn slot — rival_colony_pass() from
+     * rival_turn(), same body, popups silenced by cev/cask (B3.6, landed
+     * 2026-08-29 in lockstep with the JS full rival colony model). */
     blockade_census(0, 0);       /* +0x1B bits for the Custom-House skip */
     turn_power = (int)cs_nation();
     for (int ci = 0; ci < CS.n_colonies; ci++)
@@ -1388,6 +1372,9 @@ int unit_append(int type, int owner, int x, int y) {
     u->type = (uint8_t)type;
     u->owner_flags = (uint8_t)(owner & 0x0F);
     u->moves_remaining = (uint8_t)(dat_units[type].movement * 3);
+    /* profession byte 0 = Expert Farmers (C4.26); "none" is the engine's
+     * 28 sentinel, matching the JS object's missing field */
+    u->profession = DAT_JOBEXPERT_COUNT;
     CR.runit_x[i] = (int16_t)x;
     CR.runit_y[i] = (int16_t)y;
     if ((owner & 0x0F) == cs_nation()) units_push(i);   /* G.units.push */
@@ -1668,7 +1655,7 @@ static void advance_improvements(void) {
         CR.unit_work[ui]++;
         /* workThreshold (game.js:2327): column + 2 off-road, Hardy halves */
         int thr = improve_work(map_at(u->map_x, u->map_y)) + (road ? 0 : 2);
-        if (u->profession >= 1 && u->profession < DAT_JOBEXPERT_COUNT &&
+        if (u->profession < DAT_JOBEXPERT_COUNT /* 0 counts; 28 = none */ &&
             strcmp(dat_jobexpert[u->profession], "Hardy Pioneers") == 0)
             thr >>= 1;
         if (thr < 1) thr = 1;
@@ -1694,7 +1681,7 @@ static void advance_improvements(void) {
              * hard rule 3: fold 16..23 first; `sub es:[bx],8`
              * @0x40896). */
             int mult = tile_yield(map_at(u->map_x, u->map_y), 5);
-            int hardy = u->profession >= 1 &&
+            int hardy =
                         u->profession < DAT_JOBEXPERT_COUNT &&
                         strcmp(dat_jobexpert[u->profession],
                                "Hardy Pioneers") == 0;

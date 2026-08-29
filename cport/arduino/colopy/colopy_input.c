@@ -1131,7 +1131,7 @@ static int teacher_guard(int cci, int k) {
     if (!lvl) return 0;
     const ColonyRecord *c = &CS.colonies[cci];
     uint8_t prof = c->profession[k];
-    int has_prof = prof >= 1 && prof < DAT_JOBEXPERT_COUNT;
+    int has_prof = prof < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none */;
     int cls = colony_profession_class(prof);
     if (!has_prof || cls >= 4) { ev_emit("NOTEACHER", 0, 0, 0, 0); return 1; }
     if (cls > lvl) {

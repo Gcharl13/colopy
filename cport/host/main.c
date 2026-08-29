@@ -438,7 +438,7 @@ static void print_projection(int job_convert) {
             if (CR.unit_moves_undef[ui]) printf("null");
             else printf("%u", CS.units[ui].moves_remaining);
             printf(",%u,%d]", CS.units[ui].tools,
-                   CS.units[ui].profession >= 1 &&
+                   /* 0 = Expert Farmers counts; 28 = none (C4.26) */
                    CS.units[ui].profession < DAT_JOBEXPERT_COUNT
                        ? CS.units[ui].profession : -1);
         }

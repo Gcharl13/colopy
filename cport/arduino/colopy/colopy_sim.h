@@ -38,6 +38,8 @@ int  tile_hills(uint8_t v);
 int  tile_mountains(uint8_t v);
 int  tile_river(uint8_t v);                 /* 0 none / 1 minor / 2 major */
 int  tile_yield_class(uint8_t v);           /* func_00624E: hills/mtn rows */
+int  unit_icon_parts(int type, int prof, int damaged); /* func_003710 (png) */
+int  unit_icon_of(int ui);                  /* the resolver over CS.units */
 uint8_t map_improve_raw(int x, int y);      /* unmasked plane 2 byte */
 int  map_count8_terr(int x, int y, int lo, int hi); /* func_0099EE */
 int  tile_yield(uint8_t v, int col);        /* the nine-column terrain tables */

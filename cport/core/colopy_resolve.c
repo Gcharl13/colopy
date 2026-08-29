@@ -47,7 +47,7 @@ static int ff(int idx) {
 }
 static int prof_is(int ui, int row) {
     uint8_t p = CS.units[ui].profession;
-    return row >= 0 && p >= 1 && p < DAT_JOBEXPERT_COUNT &&
+    return row >= 0 && p < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none (C4.26 unit side) */ &&
            strcmp(dat_jobexpert[p], dat_jobexpert[row]) == 0;
 }
 static int is_rival_side(int ui) {
@@ -218,11 +218,11 @@ static int apply_defeat(int loser, int winner) {
                 /* first crossing off the rival side: shed the record's
                  * stale import bytes — the JS object had neither */
                 CS.units[loser].tools = 0;
-                CS.units[loser].profession = 0;
+                CS.units[loser].profession = DAT_JOBEXPERT_COUNT; /* none (28) */
             }
             CS.units[loser].owner_flags =
                 (uint8_t)((CS.units[loser].owner_flags & 0xF0) | (wn & 0x0F));
-            if (vet_lost) CS.units[loser].profession = 0;
+            if (vet_lost) CS.units[loser].profession = DAT_JOBEXPERT_COUNT; /* none (28) */
             CS.units[loser].orders = 0;
             /* winner.nation === -2: the Crown's own captures go to
              * G.refUnits with @SEIZURELAND/@SEIZURESEA, and the capture
@@ -280,7 +280,7 @@ static int apply_defeat(int loser, int winner) {
             if (strcmp(down, "Colonists") == 0 && prof_is(loser, JX_JESUIT))
                 become_type(loser, "Missionaries");
             else become_type(loser, down);
-            if (was_vet) CS.units[loser].profession = 0;
+            if (was_vet) CS.units[loser].profession = DAT_JOBEXPERT_COUNT; /* none (28) */
             ev_emit("DEMOTE", 0, 0, dat_units[CS.units[loser].type].name, 0);
             return -1;
         }

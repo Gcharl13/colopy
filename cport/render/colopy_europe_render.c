@@ -71,28 +71,19 @@ static void draw_sack(int x, int y) {
         }
 }
 
-/* professionIconByName (game.js:9599) over an immigrant entry: the
- * @JOBEXPERT row's figure, or -1 when the name is not a profession
- * (a @UNIT type string / an armed entry draws its unit sprite). */
-static int entry_prof_figure(const immigrant *e) {
-    /* A professioned entry is {name, type}: name is what the man IS, type
-     * what he is EQUIPPED as.  The port bailed out on ANY type override, so
-     * every professioned passenger drew as the generic Colonists sprite --
-     * three identical grey figures where the original draws three different
-     * ones.  type_ov holds type + 1, so type_ov == 1 is a plain colonist and
-     * his PROFESSION decides the figure.
-     *
-     * FLAGGED: an entry equipped as something else (Soldiers, Dragoons,
-     * Pioneers) still falls through to its unit sprite.  No frame available
-     * shows an armed crossing passenger, so which of the two the original
-     * picks in that case is untested. */
-    if (e->type_ov && e->type_ov != 1) return -1;
+/* entryIcon (game.js): the func_003710 resolver over a dock/crossing
+ * entry — a {name,type} armed pair carries its profession in `name`, a
+ * bare profession string IS the profession, a bare type name has none.
+ * Settles the old FLAG: an armed passenger draws the veteran art only
+ * with the matching profession, else the plain gray variant. */
+static int entry_icon(const immigrant *e) {
     const char *name = immigrant_name(e);
+    int prof = -1;
     for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
-        if (strcmp(dat_jobexpert[i], name) == 0)
-            return rm_profession_icon(i);
-    return -1;
+        if (strcmp(dat_jobexpert[i], name) == 0) { prof = i; break; }
+    return unit_icon_parts(entry_unit_type(e), prof, 0);
 }
+
 
 /* one crossing band: ship + its manifest (drawEurope crossingCell) */
 static const int16_t CROSS_BANDS[3] = { 146, 137, 132 };
@@ -121,9 +112,7 @@ static void crossing_cell(const euro_crossing *e, int x, int k) {
     for (int i = 0; i < np; i++) {
         int px = x + 20 + i * 17;
         draw_sack(px + 5, y + 7);
-        int fig = entry_prof_figure(&e->pass[i]);
-        if (fig < 0)
-            fig = (int)dat_units[entry_unit_type(&e->pass[i])].icon - 1;
+        int fig = entry_icon(&e->pass[i]);   /* func_003710 */
         rd_blit_silhouette(&RD.icons, fig, px - 2, y, 0);
         rd_blit(&RD.icons, fig, px, y);
     }
@@ -268,9 +257,7 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
         const immigrant *e = &CR.dock_units[d];
         int x = 232 + d * 17;
         draw_sack(x + 9, 137 + 8);
-        int fig = entry_prof_figure(e);
-        if (fig < 0)
-            fig = (int)dat_units[entry_unit_type(e)].icon - 1;
+        int fig = entry_icon(e);             /* func_003710 */
         rd_blit_silhouette(&RD.icons, fig, x + 1, 137 + 1, 0);
         rd_blit(&RD.icons, fig, x + 3, 137 + 1);
         if (d == dock_sel) rm_hollow_rect(x, 137, 18, 18, 0x0A);

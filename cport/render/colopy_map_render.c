@@ -448,7 +448,7 @@ void rm_nation_plate(int x, int y, int colour, int orders) {
 /* the JS unit table maps the @UNIT icon column to the bundle's ICONS
  * numbering with -1 (game.js:619 `icon: r.icon - 1` — the EXE-vs-atlas
  * off-by-one recorded in spec/ui/colony_screen.md §3.7) */
-static int unit_icon(int ui) { return (int)dat_units[CS.units[ui].type].icon - 1; }
+static int unit_icon(int ui) { return unit_icon_of(ui); }  /* func_003710 */
 
 int rm_owner_colour_ui(int ui);
 int rm_owner_colour_ui(int ui) {

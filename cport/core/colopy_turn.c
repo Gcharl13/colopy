@@ -435,7 +435,7 @@ int colonist_to_fence(int ci, int k) {
      * accepts 1..DAT_JOBEXPERT_COUNT-1 and reads everything else as null,
      * and the record's "no specialty" value is out of that range — storing
      * it verbatim would hand the unit a profession index nothing decodes. */
-    if (ui >= 0 && prof >= 1 && prof < DAT_JOBEXPERT_COUNT)
+    if (ui >= 0 && prof < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none */)
         CS.units[ui].profession = prof;
     return ui;
 }
@@ -1372,6 +1372,9 @@ int unit_append(int type, int owner, int x, int y) {
     u->type = (uint8_t)type;
     u->owner_flags = (uint8_t)(owner & 0x0F);
     u->moves_remaining = (uint8_t)(dat_units[type].movement * 3);
+    /* profession byte 0 = Expert Farmers (C4.26); "none" is the engine's
+     * 28 sentinel, matching the JS object's missing field */
+    u->profession = DAT_JOBEXPERT_COUNT;
     CR.runit_x[i] = (int16_t)x;
     CR.runit_y[i] = (int16_t)y;
     if ((owner & 0x0F) == cs_nation()) units_push(i);   /* G.units.push */
@@ -1652,7 +1655,7 @@ static void advance_improvements(void) {
         CR.unit_work[ui]++;
         /* workThreshold (game.js:2327): column + 2 off-road, Hardy halves */
         int thr = improve_work(map_at(u->map_x, u->map_y)) + (road ? 0 : 2);
-        if (u->profession >= 1 && u->profession < DAT_JOBEXPERT_COUNT &&
+        if (u->profession < DAT_JOBEXPERT_COUNT /* 0 counts; 28 = none */ &&
             strcmp(dat_jobexpert[u->profession], "Hardy Pioneers") == 0)
             thr >>= 1;
         if (thr < 1) thr = 1;
@@ -1678,7 +1681,7 @@ static void advance_improvements(void) {
              * hard rule 3: fold 16..23 first; `sub es:[bx],8`
              * @0x40896). */
             int mult = tile_yield(map_at(u->map_x, u->map_y), 5);
-            int hardy = u->profession >= 1 &&
+            int hardy =
                         u->profession < DAT_JOBEXPERT_COUNT &&
                         strcmp(dat_jobexpert[u->profession],
                                "Hardy Pioneers") == 0;

@@ -56,7 +56,7 @@ static int scout_level(int ui) {          /* scoutLevel (game.js:8726) */
     int s = 0;
     if (strcmp(dat_units[CS.units[ui].type].name, "Scouts") == 0) s++;
     uint8_t p = CS.units[ui].profession;
-    if (p >= 1 && p < DAT_JOBEXPERT_COUNT &&
+    if (p < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none (C4.26 unit side) */ &&
         strcmp(dat_jobexpert[p], "Seasoned Scouts") == 0) s++;
     if (father_owned(father_by_name("Hernando de Soto"))) s++;
     return s;

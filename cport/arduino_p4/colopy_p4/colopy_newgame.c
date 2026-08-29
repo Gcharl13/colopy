@@ -100,6 +100,7 @@ static int add_unit(int type, int x, int y, int owner) {
     u->map_y = (uint8_t)y;
     u->type = (uint8_t)type;
     u->owner_flags = (uint8_t)owner;
+    u->profession = DAT_JOBEXPERT_COUNT;   /* none (28); 0 = Expert Farmers */
     return CS.n_units++;
 }
 

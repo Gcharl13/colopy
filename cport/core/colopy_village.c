@@ -44,7 +44,7 @@ static int jxrow(const char *name) {
 }
 static int prof_named(int ui, const char *name) {
     uint8_t p = CS.units[ui].profession;
-    return p >= 1 && p < DAT_JOBEXPERT_COUNT &&
+    return p < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none (C4.26 unit side) */ &&
            strcmp(dat_jobexpert[p], name) == 0;
 }
 
@@ -397,7 +397,7 @@ static void live_among(int vi, int ui) {
         return;
     }
     uint8_t p = CS.units[ui].profession;
-    int has_prof = p >= 1 && p < DAT_JOBEXPERT_COUNT;
+    int has_prof = p < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none (C4.26 unit side) */;
     if (has_prof && !prof_named(ui, "Free Colonists") &&
         !prof_named(ui, "Indentured Servants")) {
         ev_emit("LEARNMASTER", 0, 0, 0, 0);

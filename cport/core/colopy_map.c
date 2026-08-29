@@ -168,3 +168,42 @@ void colopy_reveal_all(void) {
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())
             colopy_reveal(CS.colonies[ci].map_x, CS.colonies[ci].map_y, 2);
 }
+
+/* func_003710 — the unit ICON RESOLVER (byte-read 2026-08-30).  The @UNIT
+ * icon column is only the BASE: type 0 Colonists resolve per profession
+ * (@0x3749 -> the sub-resolver @0x36B2: experts icon = prof + 0x52 -> png
+ * 81+row; the class rows via the inline jump table @0x36C4 = the F4 figure
+ * cluster), and the five equipment types fall back to the PLAIN gray
+ * variants when the matching expert profession is absent: Pioneers png 73
+ * unless Hardy (@0x3751), Soldiers 74 unless Veteran (@0x3761), Scouts 75
+ * unless Seasoned (@0x377B), Dragoons 76 unless Veteran SOLDIERS
+ * (@0x376E — a mounted veteran keeps his 0x15 byte), Missionaries 77
+ * unless Jesuit (@0x378B); damaged Artillery draws the broken cart, png 65
+ * (@0x37A5, record +0x04 bit 0x80).  Braves and ships fall through.
+ * Returns png space (VICEROY index − 1).  Profession byte semantics are
+ * UNIFORM here: 0 = Expert Farmers (the +0x52 arithmetic applies to 0,
+ * corroborating the manifest capture), 28 = no specialty (the 0x36B2
+ * table maps 0x1C to the plain-colonist icon 101) — C4.26's unit side. */
+int unit_icon_parts(int type, int prof, int damaged) {
+    int has = prof >= 0 && prof < DAT_JOBEXPERT_COUNT;
+    if (type == 0) {                              /* Colonists */
+        if (has && prof <= 18) return 81 + prof;  /* prof + 0x52 */
+        switch (has ? prof : -1) {
+        case 19: return 100; case 20: return 58; case 21: return 59;
+        case 22: return 60;  case 23: return 104; case 24: return 61;
+        case 25: return 106; case 26: return 107; case 27: return 66;
+        default: return 100;
+        }
+    }
+    if (type == 2 && !(has && prof == 20)) return 73;   /* Pioneers */
+    if (type == 1 && !(has && prof == 21)) return 74;   /* Soldiers */
+    if (type == 5 && !(has && prof == 22)) return 75;   /* Scouts */
+    if (type == 4 && !(has && prof == 21)) return 76;   /* Dragoons */
+    if (type == 3 && !(has && prof == 24)) return 77;   /* Missionaries */
+    if (type == 11 && damaged) return 65;               /* Artillery */
+    return (int)dat_units[type].icon - 1;
+}
+int unit_icon_of(int ui) {
+    return unit_icon_parts(CS.units[ui].type, CS.units[ui].profession,
+                           CR.unit_damaged[ui]);
+}

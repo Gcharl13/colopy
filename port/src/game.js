@@ -694,6 +694,38 @@ for (const r of DATA.units) {
 }
 const unit = (n) => UNITS[n];
 
+// func_003710 -- the unit ICON RESOLVER (byte-read 2026-08-30). The @UNIT
+// icon column is only the BASE: type 0 Colonists resolve per profession
+// (@0x3749 -> sub @0x36B2: experts icon = prof + 0x52 -> png 81+row; the
+// class rows via the inline jump table @0x36C4 -> the F4 figure cluster),
+// and the five equipment types fall back to the PLAIN gray variants when
+// the matching expert profession is absent:
+//   Pioneers   png 73 unless Hardy Pioneers    (@0x3751, prof 0x14)
+//   Soldiers   png 74 unless Veteran Soldiers  (@0x3761, prof 0x15)
+//   Scouts     png 75 unless Seasoned Scouts   (@0x377B, prof 0x16)
+//   Dragoons   png 76 unless Veteran Soldiers  (@0x376E -- SOLDIERS, the
+//              mounted veteran keeps his 0x15 byte; Veteran Dragoons is
+//              never written by the engine's own equipping)
+//   Missionaries png 77 unless Jesuit          (@0x378B, prof 0x18)
+// and damaged Artillery draws the broken cart, png 65 (@0x37A5, the
+// record +0x04 bit 0x80). Braves/ships fall through to the base icon.
+const CLASS_ICON = { 19: 100, 20: 58, 21: 59, 22: 60, 23: 104, 24: 61,
+                     25: 106, 26: 107, 27: 66 };
+function unitIconOf(u) {
+  const prof = u.profession ? (DATA.jobexpert || []).indexOf(u.profession) : -1;
+  if (u.type === 'Colonists') {
+    if (prof >= 0 && prof <= 18) return 81 + prof;      // prof + 0x52
+    return CLASS_ICON[prof] !== undefined ? CLASS_ICON[prof] : 100;
+  }
+  if (u.type === 'Pioneers' && u.profession !== 'Hardy Pioneers') return 73;
+  if (u.type === 'Soldiers' && u.profession !== 'Veteran Soldiers') return 74;
+  if (u.type === 'Scouts' && u.profession !== 'Seasoned Scouts') return 75;
+  if (u.type === 'Dragoons' && u.profession !== 'Veteran Soldiers') return 76;
+  if (u.type === 'Missionaries' && u.profession !== 'Jesuit Missionaries') return 77;
+  if (u.type === 'Artillery' && u.damaged) return 65;
+  return u.icon;
+}
+
 // Starting conditions, §18.11: gold 1000 (d=0) / 300 (d=1) / 0 (d>=2), human only.
 const START_GOLD = [1000, 300, 0, 0, 0];
 // One whole move = three movement points.
@@ -1725,7 +1757,7 @@ function drawMap(ctx) {
     if (!isSeen(n.x, n.y)) continue;
     if (onAnyColony(n.x, n.y)) continue;
     unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, n.type,
-              n.flags || 0, n.orders || 0, ownerColour(n), n.icon);
+              n.flags || 0, n.orders || 0, ownerColour(n), unitIconOf(n));
   }
 
   // Rival powers: their colonies and units, in their own @COUNTRY colours.
@@ -1748,7 +1780,7 @@ function drawMap(ctx) {
       if (!isSeen(ru.x, ru.y)) continue;
       if (onAnyColony(ru.x, ru.y)) continue;
       unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
-                ru.flags || 0, ru.orders || 0, ownerColour(ru), ru.icon);
+                ru.flags || 0, ru.orders || 0, ownerColour(ru), unitIconOf(ru));
     }
   }
 
@@ -1760,7 +1792,7 @@ function drawMap(ctx) {
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     if (onAnyColony(ru.x, ru.y)) continue;
     unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
-              ru.flags || 0, ru.orders || 0, KING_COLOUR, ru.icon);
+              ru.flags || 0, ru.orders || 0, KING_COLOUR, unitIconOf(ru));
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -1926,7 +1958,7 @@ function drawUnit(ctx, u, px, py) {
   // baseline's ships wear the class-1 plate at the sprite's top-RIGHT with
   // the silhouette layer, exactly like the sidebar and the dock.
   unitPanel(ctx, px, py, 16, u.type, u.flags || 0, u.orders || 0,
-            ownerColour(u), u.icon);
+            ownerColour(u), unitIconOf(u));
 }
 
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
@@ -2271,7 +2303,7 @@ function drawSidebar(ctx) {
     // neighbour >= 9,489). The old centred sprite + 8x9 plate was
     // capture-era guesswork.
     unitPanel(ctx, 242, 68, 0, u.type, u.flags || 0, u.orders || 0,
-              ownerColour(u), u.icon);
+              ownerColour(u), unitIconOf(u));
     // The budget is in thirds; the HUD shows whole moves, with the odd third
     // spelled out so a road march reads correctly.
     const whole = Math.floor(u.movesLeft / MOVE_UNIT), frac = u.movesLeft % MOVE_UNIT;
@@ -2289,7 +2321,7 @@ function drawSidebar(ctx) {
     let cy = 128;
     for (const c of u.cargo) {
       const cu = unit(entryType(c));
-      if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 244, cy - 4);
+      if (cu) sheetFrame(ctx, 'ICONS', entryIcon(c), 244, cy - 4);
       nationPlate(ctx, 244, cy - 4, DATA.nations[G.nation].color, 1);
       FONT.tiny.draw(ctx, carriedLabel(c), 268, cy, lut(HUD_INK));
       FONT.tiny.draw(ctx, 'Sentry', 268, cy + 8, lut(HUD_INK));
@@ -4769,7 +4801,7 @@ function plazaRow(c) {
     .filter(([u]) => u.x === c.x && u.y === c.y &&
                      !(Number((unit(u.type) || {}).cargo) > 0))
     .map(([, i]) => i);
-  const icons = people.concat(garrisonIdx.map(i => G.units[i].icon));
+  const icons = people.concat(garrisonIdx.map(i => unitIconOf(G.units[i])));
   if (!icons.length) return [];
   const totalW = icons.reduce((a, i) => a + frameSize('ICONS', i)[0], 0);
   const extra = garrisonIdx.length ? PLAZA_GARRISON_GAP : 0;
@@ -5248,7 +5280,7 @@ function drawColonyDock(ctx, c) {
     const isShipType = Number((unit(u.type) || {}).hull) > 0;
     const y = COLONY_DOCK.shipY - (isShipType ? 1 + (k > 0 ? 1 : 0) : 0);
     unitPanel(ctx, x, y, 16, u.type, u.flags || 0, u.orders || 0,
-              DATA.nations[G.nation].color, u.icon);
+              DATA.nations[G.nation].color, unitIconOf(u));
     if (k === G.colonyShipSel)
       hollowRect(ctx, x - 1, COLONY_DOCK.shipY - 1, 18, 18, 0x0A);
     // The drop highlight while a goods payload is over the dock. The engine's
@@ -5274,7 +5306,7 @@ function drawColonyDock(ctx, c) {
       // A carried unit's own icon marks its hold -- the port's convention;
       // which query the engine answers for a unit-held slot is unread.
       const cu = unit(entryType(ship.cargo[k]));
-      if (cu) sheetFrame(ctx, 'ICONS', cu.icon, x, 168);
+      if (cu) sheetFrame(ctx, 'ICONS', entryIcon(ship.cargo[k]), x, 168);
       continue;
     }
     // The runtime hold MERGES same-good slots; the engine draws per RECORD
@@ -5319,8 +5351,8 @@ function drawColonyPanel(ctx, c) {
     FONT.tiny.center(ctx, cmisc[1] || 'Units Present', 254, 132, lut(PANEL_INK));
     const inside = G.units.filter(u => u.x === c.x && u.y === c.y);
     inside.slice(0, 6).forEach((u, i) => {
-      const [fw, fh] = frameSize('ICONS', u.icon);
-      sheetFrame(ctx, 'ICONS', u.icon, 209 + i * 15, 162 - fh);
+      const [fw, fh] = frameSize('ICONS', unitIconOf(u));
+      sheetFrame(ctx, 'ICONS', unitIconOf(u), 209 + i * 15, 162 - fh);
       nationPlate(ctx, 209 + i * 15, 150, ownerColour(u), u.orders);
     });
   } else if (G.colonyView === VIEW_BUILD) {
@@ -5747,10 +5779,10 @@ function drawEurope(ctx) {
       // (Soldiers, Dragoons, Pioneers) draws its UNIT sprite here. No frame
       // available shows an armed crossing passenger, so which of the two the
       // original picks in that case is untested.
-      const fig = entryType(p) === 'Colonists'
-        ? professionIconByName(entryName(p)) : null;
-      const u = unit(entryType(p)) || unit('Colonists');
-      const fi = fig !== null && fig !== undefined ? fig : u.icon;
+      // func_003710 settles the old FLAG: an armed passenger resolves
+      // like any unit -- veteran art with the matching profession, the
+      // plain gray variant without (entryIcon routes through it).
+      const fi = entryIcon(p);
       sheetSilhouette(ctx, 'ICONS', fi, px - 2, y, 0);
       sheetFrame(ctx, 'ICONS', fi, px, y);
     });
@@ -5830,9 +5862,7 @@ function drawEurope(ctx) {
     // switches to the @UNIT sprite once Europe arms him as something else.
     // Kept in step with the C, whose entry_prof_figure() is shared by the dock
     // and the crossings.
-    const fig = entryType(e) === 'Colonists'
-      ? professionIconByName(entryName(e)) : null;
-    const fi = fig !== null && fig !== undefined ? fig : u.icon;
+    const fi = entryIcon(e);   // func_003710, like the crossings
     // func_00380C silhouette layer, 2 px left of the sprite (neutral on the
     // census fixture -- no dock unit in frame -- kept for the shared verb).
     sheetSilhouette(ctx, 'ICONS', fi, x + 1, EURO_DOCK.y + 1, 0);
@@ -5928,6 +5958,15 @@ function drawEurope(ctx) {
 const entryName = (e) => typeof e === 'object' ? e.name : e;
 const entryType = (e) => typeof e === 'object' ? e.type
   : unit(e) ? e : (PROFESSION_UNIT[e] || 'Colonists');
+// A carried/dock entry's icon through the same resolver: a {name,type}
+// armed pair carries its profession in `name`; a bare profession string IS
+// the profession; a bare type name has none.
+const entryIcon = (e) => unitIconOf({
+  type: entryType(e),
+  profession: typeof e === 'object' ? (e.name && !unit(e.name) ? e.name : null)
+            : (unit(e) ? null : e),
+  icon: (unit(entryType(e)) || {}).icon,
+});
 
 // ---- the Europe dock-unit menu: GAME @EUROPEARM + @ARMOPTIONS -------------
 // The 12 @ARMOPTIONS rows are grep-verified GAME.TXT (spec/ui/context_dialogs.md
@@ -9036,8 +9075,8 @@ function resolveAttack(att, def) {
   // the port applies the result first and then shows the same numbers over the
   // map, which changes nothing about the arithmetic. Flagged in the tracker.
   if (G.combatAnalysis) {
-    G.combat = { att: { type: att.type, icon: att.icon, ...AA },
-                 def: { type: def.type, icon: def.icon, ...DD },
+    G.combat = { att: { type: att.type, icon: unitIconOf(att), ...AA },
+                 def: { type: def.type, icon: unitIconOf(def), ...DD },
                  roll, win };
   }
   const loser = win ? def : att, winner = win ? att : def;
@@ -12845,7 +12884,13 @@ function importSav(bytes) {
       if (u.orders === 8 || u.orders === 9 || u.damaged ||
           d[b + 0x17] === 27)
         u.work = d[b + 0x16];
-      const prof = SAV_PROFESSION(d[b + 0x17]);
+      // Row 0 counts here too (C4.26 unit side, resolved 2026-08-30): the
+      // icon resolver func_003710 applies its `prof + 0x52` arithmetic to
+      // byte 0 unconditionally and maps the 0x1C sentinel to the plain
+      // colonist -- the same semantics the manifest capture proved. The
+      // combat consumers (scoutLevel/profIs) test rows >= 20 by name and
+      // are untouched by an Expert Farmers profession.
+      const prof = SAV_PROFESSION0(d[b + 0x17]);
       if (prof) u.profession = prof;
       if (d[b + 0x15]) u.tools = d[b + 0x15];
       if (isShip) {
