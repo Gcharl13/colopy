@@ -1524,7 +1524,7 @@ function haloGround(mx, my) {
   return g;
 }
 
-function drawTile(ctx, mx, my, px, py) {
+function drawTile(ctx, mx, my, px, py, scene) {
   // An unexplored tile is black. The visibility bit is sticky, so once seen a
   // tile stays drawn even with nothing standing near it.
   // §6.11 fog path (O513 @0x68212 -> @0x68244). An unexplored tile is NOT black:
@@ -1562,8 +1562,13 @@ function drawTile(ctx, mx, my, px, py) {
       const m = mask4(mx, my, riverConnects) || 0xF;   // isolated river forced to 0xF
       sheetFrame(ctx, 'PHYS0', (r === 2 ? PHYS.RIVER_MAJOR : PHYS.RIVER_MINOR) + m, px, py);
     }
-    const df = detailFrame(mx, my, v);
-    if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
+    // The SCENE LATCH gate @0x683ED: O513 skips the detail sprites when
+    // [0x18A] is set -- the colony area view never shows them. The rumour
+    // medallion draw @0x68405 is NOT scene-gated.
+    if (!scene) {
+      const df = detailFrame(mx, my, v);
+      if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
+    }
     // A Lost City Rumour square. Presence is computed, not stored, so the marker
     // is drawn wherever the hash says one stands.
     //
@@ -2517,6 +2522,22 @@ function buildColony() {
     // The founder stands down like any joiner: a founding Pioneer's tools
     // seed the new warehouse.
     nc.colonists.push(unitToColonist(u, nc));
+    // The engine seats the founder AS A FARMER: the create path calls the
+    // colonist op with job 0 (0x181F:0xC36(slot, 0) @0x2ED3A -> the mode-0
+    // occupation write @0x94D6). The +0x70 cell array stays 0xFF in the
+    // create path, so WHICH field he farms is the port's own best-food
+    // pick over the eight worker cells (N,E,S,W,NW,NE,SE,SW), FLAGGED.
+    {
+      const f = nc.colonists[0];
+      f.job = DATA.jobs[0];                          // Farmer
+      let best = null, bestY = -1;
+      for (const cell of [[0, -1], [1, 0], [0, 1], [-1, 0],
+                          [-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        const y = fieldYield(nc, { ...f, cell });
+        if (y > bestY) { bestY = y; best = cell; }
+      }
+      f.cell = best;
+    }
     G.colonies.push(nc);
     // The founder joins the colony, so it leaves the map.
     G.units.splice(G.sel, 1);
@@ -4530,7 +4551,7 @@ function drawColony(ctx) {
       const wx = c.x - 2 + tx, wy = c.y - 2 + ty;
       // drawTile composites the improvements itself -- calling
       // drawImprovements again here double-blitted roads and ploughs.
-      drawTile(sg, wx, wy, tx * 16, ty * 16);
+      drawTile(sg, wx, wy, tx * 16, ty * 16, true);   // [0x18A] scene mode
       // The scene is the same composited map the main view shows, so the
       // settlements land on their tiles too -- above all, THE COLONY ITSELF on
       // the centre tile, which the panel used to leave as bare terrain.
@@ -6605,6 +6626,24 @@ function seedNatives() {
       placedFirst = true;
       v.pop = settlementCap(v);
       G.villages.push(v);
+      // HOMELAND CLAIM: settlement creation writes the tribe into the
+      // plane-3 owner nibble via the claim writer func_005E18
+      // ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create path
+      // calls it on the village tile @0x46E9E). The RADIUS is the
+      // manual's homeland rule (camps/villages 1, cities 2) -- the
+      // engine's own radius pass is unread, first claim wins, both
+      // FLAGGED. This keeps rumour medallions off native country: the
+      // marker predicate needs an UNCLAIMED nibble (func_006188 @0x61BC).
+      {
+        const rad = (t.level || 0) >= 2 ? 2 : 1;
+        for (let cy = py - rad; cy <= py + rad; cy++)
+          for (let cx = px - rad; cx <= px + rad; cx++) {
+            if (cx < 0 || cy < 0 || cx >= MAP.w || cy >= MAP.h) continue;
+            const mi = cy * MAP.w + cx;
+            if (RESOURCE[mi] !== 0x0F) continue;
+            RESOURCE[mi] = ti + 4;
+          }
+      }
     });
   });
   // §19.11: map creation spawns exactly ONE brave per village, linked to it;
@@ -13318,6 +13357,20 @@ function step(u, nx, ny) {
   u.movesLeft = (cost > u.movesLeft) ? 0 : u.movesLeft - cost;
   u.x = nx; u.y = ny;
   reveal(nx, ny, sightRadius(u));
+  // DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
+  // land first enters a player ship's view (running-game observation,
+  // 2026-08-30 -- the top trust tier; the handler is func_020EFE, called
+  // from the ship-move chain func_03FDDE, its exact sighting predicate
+  // unread -- the any-land-within-sight scan here is FLAGGED). The old
+  // landfall-time trigger fired a whole voyage later.
+  if (!G.landHo && u.ship && u.nation === G.nation) {
+    const r = sightRadius(u);
+    let land = false;
+    for (let dy = -r; dy <= r && !land; dy++)
+      for (let dx = -r; dx <= r && !land; dx++)
+        if (!tileWater(at(nx + dx, ny + dy))) land = true;
+    if (land) { G.landHo = true; woodcutOnce(1); }
+  }
   // Tutorial bindings (flagged; the byte sites are the dispatcher
   // func_020F50 / func_02C5D4): a ship docking at a colony teaches loading
   // (12) -- or colonist delivery (15) when it carries passengers; a pioneer

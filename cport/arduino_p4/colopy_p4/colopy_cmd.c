@@ -455,6 +455,22 @@ int cmd_found_colony(int ui, const char *name) {
     uint8_t prof = u->profession;
     colonist_add(c);
     if (c->population > 0) c->profession[c->population - 1] = prof;
+    /* the engine seats the founder AS A FARMER: the create path calls
+     * the colonist op with job 0 (0x181F:0xC36(slot, 0) @0x2ED3A ->
+     * the mode-0 occupation write @0x94D6).  The +0x70 cell array
+     * stays 0xFF there, so WHICH field is the port's best-food pick
+     * over the eight worker cells, FLAGGED — mirrors the JS. */
+    if (c->population > 0) {
+        int slot = c->population - 1;
+        c->occupation[slot] = 0;                 /* Farmer */
+        int best = -1, best_y = -1;
+        for (int k = 0; k < 8; k++) {
+            int y = field_yield(c, CR.col[ci].sol, 0, prof,
+                                colony_cell_dx[k], colony_cell_dy[k]);
+            if (y > best_y) { best_y = y; best = k; }
+        }
+        if (best >= 0) c->tiles[best] = (int8_t)slot;
+    }
     unit_remove(ui);
     /* the FIRST colony fires woodcut 2, BUILDING A COLONY
      * (buildColony game.js:2150; dismissal opens the colony, 12093) */
@@ -926,4 +942,26 @@ void cmd_move(int ui, int dx, int dy) {
     u->map_x = (uint8_t)nx;
     u->map_y = (uint8_t)ny;
     colopy_reveal(nx, ny, unit_sight_radius(ui));
+    /* DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
+     * land first enters a player ship's view (running-game observation,
+     * 2026-08-30 — top trust tier; handler func_020EFE from the
+     * ship-move chain func_03FDDE, its exact predicate unread — the
+     * any-land-within-sight scan is FLAGGED; mirrors the JS step()). */
+    if (!CR.land_ho && ship &&
+        (u->owner_flags & 0x0F) == cs_nation()) {
+        int r = unit_sight_radius(ui), land = 0;
+        for (int dy = -r; dy <= r && !land; dy++)
+            for (int dx = -r; dx <= r && !land; dx++)
+                if (!tile_water(map_at(nx + dx, ny + dy))) land = 1;
+        if (land) {
+            CR.land_ho = 1;
+            if (!(CR.wc_seen & (1u << 1))) {
+                CR.wc_seen |= 1u << 1;
+                if (colopy_front_live) {
+                    CR.wc_show = 1;
+                    CR.wc_after = 0;
+                }
+            }
+        }
+    }
 }

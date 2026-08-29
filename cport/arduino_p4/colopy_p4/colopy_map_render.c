@@ -243,6 +243,7 @@ static void draw_improvements(int mx, int my, int px, int py) {
 }
 
 /* drawTile (game.js:1422) — the O514 -> O513 -> O512 chain */
+static int rm_scene_mode = 0;   /* the [0x18A] scene latch */
 static void rm_draw_tile(const rm_view *vw, int mx, int my, int px, int py) {
     if (!is_seen_rm(vw, mx, my)) {
         rd_blit(&RD.phys0, PH_FOG, px, py);
@@ -276,8 +277,13 @@ static void rm_draw_tile(const rm_view *vw, int mx, int my, int px, int py) {
             rd_blit(&RD.phys0,
                     (r == 2 ? PH_RIVER_MAJOR : PH_RIVER_MINOR) + m, px, py);
         }
-        int df = detail_frame(mx, my, v);
-        if (df >= 0) rd_blit(&RD.phys0, df, px, py);
+        /* the SCENE LATCH gate @0x683ED: O513 skips the detail sprites
+         * when [0x18A] is set — the colony area view never shows them.
+         * The rumour medallion draw @0x68405 is NOT scene-gated. */
+        if (!rm_scene_mode) {
+            int df = detail_frame(mx, my, v);
+            if (df >= 0) rd_blit(&RD.phys0, df, px, py);
+        }
         if (rumour_at(mx, my)) rd_blit(&RD.phys0, PH_RUMOUR, px, py);
         draw_improvements(mx, my, px, py);
         return;
@@ -800,7 +806,9 @@ static void rm_use_map_palette(void) {
  * chain (game.js:3565) — exported for colopy_colony_render.c */
 void rm_scene_tile(int mx, int my, int px, int py) {
     rm_view vw = { 0, 0, -1, 0, 0 };
+    rm_scene_mode = 1;               /* [0x18A] set for the area view */
     rm_draw_tile(&vw, mx, my, px, py);
+    rm_scene_mode = 0;
     /* settlements land on their tiles too (game.js:3568) */
     for (int q = 0; q < CS.n_colonies; q++) {
         const ColonyRecord *oc = &CS.colonies[q];

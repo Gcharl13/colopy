@@ -212,6 +212,28 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
             v->walked_good = 0xFF;
             v->last_bought = 0xFF;
             v->last_sold = 0xFF;
+            /* HOMELAND CLAIM: settlement creation writes the tribe into
+             * the plane-3 owner nibble via the claim writer func_005E18
+             * ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create
+             * path calls it on the village tile @0x46E9E).  The RADIUS
+             * is the manual's homeland rule (camps/villages 1, cities
+             * 2) — the engine's own radius pass is unread, and the
+             * first claim wins here, both FLAGGED.  This is what keeps
+             * rumour medallions (and details) off native country: the
+             * marker predicate requires an UNCLAIMED nibble
+             * (func_006188 @0x61BC). */
+            {
+                int rad = lv >= 2 ? 2 : 1;
+                for (int cy = py - rad; cy <= py + rad; cy++)
+                    for (int cx = px - rad; cx <= px + rad; cx++) {
+                        if (cx < 0 || cy < 0 || cx >= COLOPY_MAP_W ||
+                            cy >= COLOPY_MAP_H) continue;
+                        int mi = cy * COLOPY_MAP_W + cx;
+                        if ((CS.region[mi] >> 4) != 0x0F) continue;
+                        CS.region[mi] = (uint8_t)
+                            ((CS.region[mi] & 0x0F) | ((ti + 4) << 4));
+                    }
+            }
         }
     }
 

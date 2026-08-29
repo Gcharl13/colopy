@@ -32,7 +32,7 @@
 | n | caption | trigger |
 |---|---|---|
 | 0 | A NEW WORLD | **no caller** (latent popup mode; possibly COLONIZE.EXE-era) |
-| 1 | DISCOVERY OF THE NEW WORLD | first landfall — `func_020EFE` @0x020F00 (sole caller `func_03FDDE`, after `[0x543E]|=0x80`) |
+| 1 | DISCOVERY OF THE NEW WORLD | first **SIGHTING** of land from a ship (running-game observation 2026-08-30; the old "first landfall" gloss was wrong) — `func_020EFE` @0x020F00 (woodcut + @LANDHO name prompt + T2), reached from the ship-move chain `func_03FDDE`; the exact sighting predicate is unread |
 | 2 | BUILDING A COLONY | first colony — Build-Colony executor `func_040C1E` @0x040E00 (human only, sfx 0x54) |
 | 3 | MEETING THE NATIVES | first tribe contact, tribe ≥2 — `func_056C3E` @0x056DA6 (then `@INDIANWELCOME`) |
 | 4 | THE AZTEC EMPIRE | same site, tribe 1 = Aztec |

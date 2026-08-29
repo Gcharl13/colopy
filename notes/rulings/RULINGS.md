@@ -10668,3 +10668,44 @@ both engines is replaced by the real floor.
    siege model, no per-power market (the player's bid stands in,
    untaxed), wagon cap and building upkeep bypass rivals, and the AI
    overflow-sale path (`@0x2E86B`) still spoils silently.
+
+## 2026-08-30 — user playtest batch: unit icons, founder seat, scene gates, homeland claims, discovery timing
+
+1. **func_003710 is the unit ICON RESOLVER** (see the 2026-08-30 commit):
+   plain gray variants for unmatched equipment types, per-profession
+   colonist figures, damaged-artillery cart.  Its `prof + 0x52`
+   arithmetic and 0x1C→plain mapping resolve C4.26's UNIT side: byte 0
+   = Expert Farmers, 28 = the none sentinel — importer relaxed, C
+   guards updated, the C record model now writes 28 for "none".
+2. **The colony founder is seated as a FARMER**: the create path
+   (func_02EB78 @0x2ED3A) runs the colonist op with job 0 — the mode-0
+   occupation write @0x94D6 (classify_pair_bounds @0x929A picks the
+   mode).  His field CELL is not in the create path (+0x70 stays 0xFF);
+   both ports seat him on the best food cell, FLAGGED.  Also byte-read
+   in the join op func_009318: equipment banks 50 per listed good with
+   TOOLS from the unit's own +0x15 byte, and profession 0x17 (Veteran
+   Dragoons) normalizes to 0x15 on joining.
+3. **The colony area view draws NO detail sprites**: O513's scene-latch
+   gate ([0x18A] @0x683ED) skips the 0x5A+detail band; the rumour
+   medallion (frame 0x68 @0x68405) is NOT scene-gated.  Both ports now
+   carry the gate (the port used to draw fish/deer/minerals in the
+   scene panel — part of the user's "sprites for no reason").
+4. **Homeland claims**: settlement creation writes the tribe into the
+   plane-3 owner nibble via the claim writer func_005E18
+   ((byte&0xF)|owner<<4 @0x5E7E; called on the village tile @0x46E9E in
+   the settlement-create path; colony workers ENCROACH on tribe-claimed
+   tiles @0x489E5, unported).  Both newgames now claim the manual's
+   homeland radius (camps/villages 1, cities 2 — the engine's radius
+   pass unread, first claim wins, FLAGGED), which is what keeps rumour
+   medallions off native country (func_006188's owner gate @0x61BC
+   requires UNCLAIMED — the byte reads owner<0, i.e. func_005DF0's −1
+   for nibble 0xF).  **The manual's totem-pole MARKER is cut content**:
+   no totem sprite exists in ICONS/PHYS0/TERRAIN and no totem string in
+   the EXE; ICONS 0x3A (png 57) is the fisherman's FISH yield icon
+   (tile panel @0x266D2), not a totem.
+5. **Discovery fires on first SIGHTING, not landfall**: running-game
+   observation (top trust) — the woodcut-1 handler func_020EFE (woodcut
+   + @LANDHO name prompt + T2) hangs off the ship-move chain
+   func_03FDDE; the exact predicate is unread, so both ports scan for
+   any land within the ship's sight after each step, FLAGGED.  The
+   woodcut spec's "first landfall" gloss is corrected.
