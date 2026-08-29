@@ -172,15 +172,21 @@ int village_action_rows(uint8_t *ids) {
     int mine = has_mission && (v->mission & 0x0F) == cs_nation();
     int miss_row = urow("Missionaries"), scout_row = urow("Scouts");
     int is_ship = dat_units[CS.units[ui].type].hull > 0;
+    /* the "+0x5236 posture" RESOLVED 2026-08-29: func_04B308 gates on the
+     * VISITOR's @UNIT ATTACK column ([type*14+0x5236], the imul-14 chain
+     * @0x4B820..@0x4B838); armed rows need attack != 0 and not a ship,
+     * Live Among attack < 2, the Attack row attack > 1 (mirrors game.js) */
+    int atk = dat_units[CS.units[ui].type].attack;
+    int armed = !is_ship && atk != 0;
     int n = 0;
     ids[n++] = (uint8_t)(hostile ? 1 : 0);
     if (CS.units[ui].type == miss_row && !has_mission) ids[n++] = 2;
     if (has_mission && !mine) ids[n++] = 3;
-    if (!hostile && CS.units[ui].type != scout_row) ids[n++] = 4;
+    if (!hostile && CS.units[ui].type != scout_row && atk < 2) ids[n++] = 4;
     if (CS.units[ui].type == scout_row) ids[n++] = 5;
-    ids[n++] = 6;
-    if (!is_ship) ids[n++] = 7;
-    ids[n++] = 8;
+    if (armed) ids[n++] = 6;
+    if (armed) ids[n++] = 7;
+    if (!is_ship && atk > 1) ids[n++] = 8;
     ids[n++] = 9;
     return n;
 }

@@ -8029,15 +8029,23 @@ function villageActions() {
   const v = G.village, u = G.villageVisitor, t = G.tribes[v.tribe] || {};
   const hostile = (t.tension || 0) >= TENSION_HOSTILE;
   const mine = v.mission && v.mission.power === G.nation;
+  // The "+0x5236 posture byte" is RESOLVED 2026-08-29: func_04B308's row
+  // gates read [visitor_type x 14 + 0x5236] -- the VISITOR's @UNIT
+  // ATTACK column (the imul-14 chain @0x4B820..@0x4B838), not a tribe
+  // field. Armed rows need attack != 0 and not a ship (@0x4B838/@0x4B883
+  // with the 0xD..0x12 excludes); Live Among needs attack < 2; the
+  // Attack row needs attack > 1 (context_dialogs.md par.6, corrected).
+  const atk = u ? (Number((unit(u.type) || {}).attack) || 0) : 0;
+  const armed = u && !u.ship && atk !== 0;
   const rows = [];
   rows.push({ id: hostile ? 1 : 0 });                       // r0 / r1, exclusive
   if (u && u.type === 'Missionaries' && !v.mission) rows.push({ id: 2 });
   if (v.mission && !mine) rows.push({ id: 3 });
-  if (!hostile && u && u.type !== 'Scouts') rows.push({ id: 4 });
+  if (!hostile && u && u.type !== 'Scouts' && atk < 2) rows.push({ id: 4 });
   if (u && u.type === 'Scouts') rows.push({ id: 5 });
-  rows.push({ id: 6 });
-  if (u && !u.ship) rows.push({ id: 7 });
-  rows.push({ id: 8 });
+  if (armed) rows.push({ id: 6 });
+  if (armed) rows.push({ id: 7 });
+  if (u && !u.ship && atk > 1) rows.push({ id: 8 });
   rows.push({ id: 9 });
   return rows.map(r => ({ ...r, label: actionLabel(r.id) }));
 }

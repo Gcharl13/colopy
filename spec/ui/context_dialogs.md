@@ -224,11 +224,14 @@ section content and the gameplay predicates (row gating, build availability) dif
     (`<75`→Trade, else Hostile).
   - **r2 Establish Mission** — unit type==3 AND village mission `[+5] < 0` (none present).
   - **r3 Denounce Heresy** — mission present (`[+5]≥0`) AND foreign owner (`[+5]&0xF ≠ self`).
-  - **r4 Live Among** — player-relation ≥0 AND tribe-record `[+0x5236] < 2` AND not Scout.
+  - **r4 Live Among** — player-relation ≥0 AND the VISITOR's `@UNIT` ATTACK
+    `[type·14+0x5236] < 2` AND not Scout. *(Corrected 2026-08-29: the `+0x5236`
+    reads are the `@UNIT` attack column — the imul-14 chain on the unit TYPE
+    `@0x4B820..@0x4B838` — not a tribe field.)*
   - **r5 Speak With Chief** — unit type==5 (Scout).
-  - **r6 Incite / r7 Demand Tribute** — tribe-record `[+0x5236] ≠ 0` (tribute also excludes ships
-    0xD–0x12).
-  - **r8 Attack** — tribe-record `[+0x5236] > 1`. **r9 Cancel** — always.
+  - **r6 Incite / r7 Demand Tribute** — the visitor's ATTACK `≠ 0` (and not a ship
+    0xD–0x12, `@0x4B83F`/`@0x4B88A`).
+  - **r8 Attack** — the visitor's ATTACK `> 1`. **r9 Cancel** — always.
 - **Render/run:** the enabled rows are then sized by §2 and run by §3 (`func_06E3D0`, `0x181F:0xCE`
   highlight). **Tier:** action list **B**; per-row gating **B**; outcome keys **B**; trigger **A**.
 
