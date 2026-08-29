@@ -7092,7 +7092,61 @@ function headingScore(u, home) {
     }
     if (home) {
       const d = Math.max(Math.abs(x - home.x), Math.abs(y - home.y));
-      if (d > 2) s -= 3 * d;
+      if (d > 2) {
+        // the leash penalty 3*d, HALVED for an armed unit (func_00765C:
+        // types 1/4/0xB/0x14/0x16 -- Armed Braves, Mtd. Warriors here,
+        // @0x47B14) and QUARTERED for a mounted one (func_007630: types
+        // 4/5/0x15/0x16 -- Mtd. Braves, Mtd. Warriors, @0x47B26); both
+        // stack to an eighth. (The war-party halving @0x47B05 never
+        // applies here -- war-footing braves ride the raid mission.)
+        let pen = 3 * d;
+        const armed = u.type === 'Armed Braves' || u.type === 'Mtd. Warriors';
+        const mounted = u.type === 'Mtd. Braves' || u.type === 'Mtd. Warriors';
+        if (armed) pen >>= 1;
+        if (mounted) pen >>= 2;
+        s -= pen;
+      }
+    }
+    // the FRONTIER term (@0x47B3C..@0x47C96, gate func_00704C: a foreign
+    // party adjacent to the candidate on the same landmass -- the port
+    // skips the landmass check, flagged):
+    //   another TRIBE's brave adjacent: -25 (@0x47C96)
+    //   a European adjacent: +50 unless the 0x20 peace bit stands
+    //   (unmodeled for tribes -> always, flagged), and when the attitude
+    //   band (func_008262) is above Content, a further
+    //   (tension - 50) >> 2 (@0x47B5F..@0x47BB2). The port scans the
+    //   player's pieces only (rival tension is unmodeled, B3.6-adjacent).
+    {
+      const t = G.tribes[u.tribe] || {};
+      let foreignTribe = false, euro = false;
+      for (const [ddx, ddy] of DIRS) {
+        const nx = x + ddx, ny = y + ddy;
+        if (G.natives.some(q => q !== u && q.tribe !== u.tribe &&
+                                q.x === nx && q.y === ny)) foreignTribe = true;
+        if (G.units.some(q => q.x === nx && q.y === ny) ||
+            G.colonies.some(c => c.x === nx && c.y === ny)) euro = true;
+      }
+      if (euro) {
+        s += 50;
+        if (attBand(t.tension || 0) > 0) s += ((t.tension || 0) - 50) >> 2;
+      } else if (foreignTribe) s -= 25;
+    }
+    // the COLONY-DRIFT term (@0x47C9A..@0x47D45): the nearest player
+    // colony within distance 12 pulls by (attitude band + 1)*(12-d)/4 --
+    // idle braves loiter nearer colonies the worse relations get. (The
+    // engine gates on same-region (0x181f:0x6b4) and a preselected
+    // colony index from the function head; the port takes the nearest
+    // player colony and skips the region check, flagged. The +5 term on
+    // the unknown [bp-6] flag @0x47CA4 is omitted, not invented.)
+    {
+      const t = G.tribes[u.tribe] || {};
+      let bestD = 99;
+      for (const c of G.colonies) {
+        const d2 = Math.max(Math.abs(x - c.x), Math.abs(y - c.y));
+        if (d2 < bestD) bestD = d2;
+      }
+      if (bestD < 12)
+        s += ((attBand(t.tension || 0) + 1) * (12 - bestD)) >> 2;
     }
     s += 1 + Math.floor(Math.random() * 5);
     if (s < 0) s = 0;

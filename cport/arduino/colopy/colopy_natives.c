@@ -635,6 +635,11 @@ static void native_raid(int vi, int ci) {
     }
 }
 
+/* func_008262 (0x181f:0xa60): tension <25 -> 0, <50 -> 1, <75 -> 2, else 3 */
+static int tension_band4(int tension) {
+    return tension >= 75 ? 3 : tension >= 50 ? 2 : tension >= 25 ? 1 : 0;
+}
+
 /* ---- the idle mover (headingScore, game.js:5825 / func_046FFA) --------- */
 static const int8_t DIRS_DX[8] = { 1, -1, 0, 0, 1, 1, -1, -1 };
 static const int8_t DIRS_DY[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
@@ -678,13 +683,83 @@ static void heading_score(int ui, int home_vi) {
                 s += 3;                              /* @0x047A99 */
             else if ((h ^ 4) == cand) s -= 6;        /* @0x047AB0 */
         }
-        /* the home-settlement leash @0x047AD0-0x047B39 */
+        /* the home-settlement leash @0x047AD0-0x047B39, HALVED for an
+         * armed unit (func_00765C @0x47B14: Armed Braves / Mtd. Warriors
+         * here) and QUARTERED for a mounted one (func_007630 @0x47B26:
+         * Mtd. Braves / Mtd. Warriors); both stack to an eighth.  (The
+         * war-party halving @0x47B05 never applies -- war braves ride
+         * the raid mission.) */
         {
             int dx = x - home->map_x, dy = y - home->map_y;
             if (dx < 0) dx = -dx;
             if (dy < 0) dy = -dy;
             int d = dx > dy ? dx : dy;
-            if (d > 2) s -= 3 * d;
+            if (d > 2) {
+                int pen = 3 * d;
+                const char *tn = dat_units[u->type].name;
+                int armed = strcmp(tn, "Armed Braves") == 0 ||
+                            strcmp(tn, "Mtd. Warriors") == 0;
+                int mounted = strcmp(tn, "Mtd. Braves") == 0 ||
+                              strcmp(tn, "Mtd. Warriors") == 0;
+                if (armed) pen >>= 1;
+                if (mounted) pen >>= 2;
+                s -= pen;
+            }
+        }
+        /* the FRONTIER term (@0x47B3C..@0x47C96, func_00704C): a foreign
+         * party adjacent to the candidate -- another tribe's brave -25;
+         * a European +50 (the 0x20 peace bit unmodeled for tribes) plus
+         * (tension-50)>>2 when the attitude band is above Content.
+         * Player pieces only; landmass check skipped -- both flagged
+         * (mirrors game.js headingScore). */
+        {
+            int tr2 = (u->owner_flags & 0x0F) - 4;
+            int foreign_tribe = 0, euro = 0;
+            for (int nd = 0; nd < 8; nd++) {
+                int nx = x + DIRS_DX[nd], ny = y + DIRS_DY[nd];
+                for (int q = 0; q < CR.n_natives && !foreign_tribe; q++) {
+                    int qi = CR.natives_order[q];
+                    if (qi == ui) continue;
+                    if (((CS.units[qi].owner_flags & 0x0F) - 4) != tr2 &&
+                        CS.units[qi].map_x == nx && CS.units[qi].map_y == ny)
+                        foreign_tribe = 1;
+                }
+                for (int q = 0; q < CR.n_units_order && !euro; q++) {
+                    int qi = CR.units_order[q];
+                    if (CS.units[qi].map_x == nx && CS.units[qi].map_y == ny)
+                        euro = 1;
+                }
+                for (int ci = 0; ci < CS.n_colonies && !euro; ci++)
+                    if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
+                        CS.colonies[ci].map_x == nx &&
+                        CS.colonies[ci].map_y == ny) euro = 1;
+            }
+            if (euro) {
+                s += 50;
+                if (tr2 >= 0 && tr2 < 8 &&
+                    tension_band4(CR.tension[tr2]) > 0)
+                    s += ((int)CR.tension[tr2] - 50) >> 2;
+            } else if (foreign_tribe) s -= 25;
+        }
+        /* the COLONY-DRIFT term (@0x47C9A..@0x47D45): the nearest player
+         * colony within 12 pulls by (band+1)*(12-d)/4; region gate and
+         * the [bp-6] +5 omitted -- flagged (mirrors game.js). */
+        {
+            int tr2 = (u->owner_flags & 0x0F) - 4;
+            int best_d = 99;
+            for (int ci = 0; ci < CS.n_colonies; ci++) {
+                if ((CS.colonies[ci].owner_power & 3) != cs_nation())
+                    continue;
+                int dx = x - CS.colonies[ci].map_x;
+                int dy = y - CS.colonies[ci].map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                int d2 = dx > dy ? dx : dy;
+                if (d2 < best_d) best_d = d2;
+            }
+            if (best_d < 12 && tr2 >= 0 && tr2 < 8)
+                s += ((tension_band4(CR.tension[tr2]) + 1) * (12 - best_d))
+                     >> 2;
         }
         s += 1 + R(5);                               /* jitter @0x047F44 */
         if (s < 0) s = 0;                            /* clamp @0x047F6E */
