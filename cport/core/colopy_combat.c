@@ -10,11 +10,13 @@ int terrain_defence(uint8_t v);
 
 /* defenceBonus (game.js): terrain + colony(+2) + fortify orders(+4) +
  * river(+2). Orders 5/6 are Fortify/Fortified. */
-static int defence_bonus(uint8_t terrain, int on_colony, uint8_t orders) {
-    int b = terrain_defence(terrain);
-    if (on_colony) b += 2;
-    if (orders == 5 || orders == 6) b += 4;
-    if (tile_river(terrain)) b += 2;
+static int defence_bonus(const combat_params *p) {
+    /* func_007D3E settlement branch (exclusive, @0x7D8D..@0x7DD9) */
+    if (p->village_def) return p->village_def;
+    int b = terrain_defence(p->terrain);
+    if (p->on_colony) b += 2;
+    if (p->orders == 5 || p->orders == 6) b += 4;
+    if (tile_river(p->terrain)) b += 2;
     return b;
 }
 
@@ -34,7 +36,7 @@ int combat_total(const combat_params *p) {
         s = s * (8 - h) / 8;
     }
     /* §14.3 step 1: accumulated terrain/fort bonus, then the flat 3/2 */
-    s = (s * (defence_bonus(p->terrain, p->on_colony, p->orders) + 4) / 4) * 3 / 2;
+    s = (s * (defence_bonus(p) + 4) / 4) * 3 / 2;
     /* step 2: difficulty handicap, both sides */
     s += 4 - p->difficulty;
     /* step 4: a colony on the defending tile */

@@ -91,6 +91,16 @@ int analysis_total(int ui, int is_defender) {
     p.type = u->type;
     p.terrain = map_at(unit_pos_x(ui), unit_pos_y(ui));
     p.on_colony = player_colony_at(unit_pos_x(ui), unit_pos_y(ui)) >= 0;
+    /* func_007D3E settlement branch: 2 / 4 at tribe tech >= 2 / x2 for
+     * the capital (@0x7D8D..@0x7DD9) — exclusive of the tile bonus */
+    for (int v = 0; v < CS.n_villages; v++)
+        if (CS.villages[v].map_x == unit_pos_x(ui) &&
+            CS.villages[v].map_y == unit_pos_y(ui)) {
+            int b = tribe_level(CS.villages[v].owner_tribe - 4) >= 2 ? 4 : 2;
+            if (CS.villages[v].flags & 0x04) b *= 2;
+            p.village_def = (uint8_t)b;
+            break;
+        }
     /* runtime orders: the importer starts every unit at 0, but the
      * slice-2 command layer can Fortify a player unit (orders 5/6 → the
      * +4 defence bonus).  Rival unit OBJECTS always carry orders 0

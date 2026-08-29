@@ -133,6 +133,9 @@ typedef struct {
     uint8_t is_defender;
     uint8_t damaged, veteran, fatigue, holds, artillery;
     uint8_t privateer_drake, spain_attacker, woi_ref_bombard;
+    uint8_t village_def;     /* func_007D3E settlement branch: 0 = none,
+                              * else the 2/4/x2-capital bonus REPLACES the
+                              * whole tile bonus (exclusive, @0x7D8D..) */
     int8_t  difficulty;
 } combat_params;
 int combat_total(const combat_params *p);

@@ -175,9 +175,15 @@ confirmed present in `data_extracted/text/GAME_sections.json`:
    per-terrain *values* in `@TERRAIN` data.** The filler is `func_007D3E`: it zeroes
    `[0x8D04]`/`[0x8D02]`, then accumulates a defense bonus in `[bp-0x18]` with a
    bonus-type flag in `[0x8D02]`:
-   - **colony present → `+2`** (`@0x7D8D`);
-   - **fortified building** (settlement build-level `≥ 2`) → **`+4`**, flag `0x10`
-     (`@0x7DBC`); a further condition **doubles** it (`×2`), flag `0x20` (`@0x7DD1`);
+   - **CORRECTED 2026-08-29 — the `@0x7D8D` block is the NATIVE-SETTLEMENT
+     branch**, entered when `0x37f:0x392(x,y)` finds a settlement on the tile
+     (`@0x7D81..@0x7D8B`): base **`+2`** (`@0x7D8D`); the owning TRIBE's tech
+     level (TribeRecord `+0x02`) `≥ 2` → **`+4`**, flag `0x10` (`@0x7DB5..@0x7DC1`);
+     the settlement **CAPITAL flag** (`+0x03 & 4`) **doubles** it, flag `0x20`
+     (`@0x7DCA..@0x7DD4`) — the old "colony +2 / fortified-building +4 /
+     difficulty-gated doubling" glosses all misread this one branch. The
+     branches are EXCLUSIVE (each ends `jmp @0x7EFE`): settlement > feature >
+     terrain;
    - **river/road feature** present → **`+(n+1)·2`**, flag `0x40` (`@0x7E12`);
    - **open terrain** → add the **per-terrain `@TERRAIN` "Defensive" value** (column 2
      of the `$TERRAIN` row; legend byte-verified in `map_system.md`), read at

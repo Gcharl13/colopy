@@ -8274,9 +8274,15 @@ function villageCommit() {
 //  difficulty      strength * difficulty/20
 //  roll            random_int(1, ATK+DEF); the attacker wins iff roll <= ATK
 //
-// Step 8 of §14.3 -- "a further doubling gated on game.difficulty, exact
-// condition an open item" -- is NOT implemented: the condition is unknown, so
-// applying it would be a guess.
+// Step 8 of §14.3 -- RESOLVED 2026-08-29: the "further doubling" is the
+// NATIVE SETTLEMENT branch of the tile-defence filler func_007D3E
+// (@0x7D8B: a settlement on the tile takes its own EXCLUSIVE branch --
+// base 2, owning tribe tech level >= 2 -> 4 (@0x7DB5), and the CAPITAL
+// flag (settlement +0x03 & 4) DOUBLES it (@0x7DCA..@0x7DD4, the [0x8D02]
+// 0x20 flag). Not a difficulty gate at all. defenceBonus below carries
+// the branch; the filler's other branches are exclusive too (settlement
+// > feature > terrain, each jmp @0x7EFE) -- the port's additive shape
+// for the European cases stays, flagged.
 function terrainDefence(v) {
   let t = v & 0x1F;
   if (t >= 16 && t <= 23) t = (t & 7) | 8;
@@ -8285,6 +8291,14 @@ function terrainDefence(v) {
   return row || 0;
 }
 function defenceBonus(u) {
+  // func_007D3E's settlement branch (exclusive, @0x7D8D..@0x7DD9):
+  // 2 / 4 at tribe tech >= 2 / x2 for the capital.
+  const vil = G.villages.find(w => w.x === u.x && w.y === u.y);
+  if (vil) {
+    let b = ((G.tribes[vil.tribe] || {}).level || 0) >= 2 ? 4 : 2;
+    if (vil.capital) b *= 2;
+    return b;
+  }
   let bonus = terrainDefence(at(u.x, u.y));
   if (colonyAt(u.x, u.y)) bonus += 2;
   if (u.orders === 5 || u.orders === 6) bonus += 4;      // Fortify / Fortified
