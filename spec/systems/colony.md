@@ -151,7 +151,16 @@ yield = max(yield, 0); if yield != 0 and pen < 0: yield = max(0, yield + pen)  #
 the bytes** and is gone (difficulty enters field yields only through the tory
 divisor). Side effects while computing: `[0xA896]` accrues depletion pressure
 (+1 detail-6 ore, +2 detail-6 silver, +1 detail-12 silver, `@0x9E13..@0x9E41`)
-and the producer sums fisher yields into `[0xA895]`.
+and the producer sums fisher yields into `[0xA895]`. **`[0xA895]`'s
+consumer (found 2026-08-29) is the colony-screen FOOD ROW renderer**
+(`@0x27337`/`@0x2737E`, in the colony-screen panel painter): the food
+figures are drawn as icon runs (format ids `0x4017`/`0x8017` = flags +
+glyph `0x17`) with the FISH portion split out of the eaten segment
+(`[0x8E0A]`, fish clamped to it) and the surplus segment
+(`[0x8DC8] − [0x8E0A]`, the leftover fish), so ocean food renders as
+fish glyphs and grain as corn glyphs; when the food outage word
+`[0x8E32]` is set the whole row draws through the deficit form
+(`0x8017`). Display-only — no sim consumer exists.
 
 ### Indoor production — **BYTE_VERIFIED** (`func_009FFC`, file `0x9FFC..0xA221`)
 expert = profession byte == occupation byte (`@0xA01A`). Class rate from the
