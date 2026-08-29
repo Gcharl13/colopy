@@ -58,6 +58,26 @@ gate, no `[0x53D0]` read). See `spanish_succession.md`. Tory population fraction
 - Declare eligibility (SoL% threshold), intervention-force trigger, Tory uprising odds: **RESOLVED.** (1) Declare eligibility = SoL meter `[0x53D0] ≥ 50` (`cmp [0x53D0],0x32; jge` `@0x3E99E`, §2/§6.1). (2) **Intervention-force arrival** = `func_03D510`: weighted colony pick `random_int(1, Σ weights)` (`lcall 0x181f,0x4d4` `@0x3D57E`), per `tory_uprising.md` §3 / §6.3. (3) **Tory-uprising odds** = `func_03CAC6`: rolls `random_int(0, [0x53a6]+1)` (`@0x3CADD`); uprising fires when result ≠ 0 (`or ax,ax; jne` `@0x3CAE5`), i.e. probability `(diff+1)/(diff+2)` (§6.3). **B.**
 - "No wars during revolution" rule (`@NOWARSDURINGREV` = "Foreign colonies cannot be attacked during the {War of Independence}.") — **enforcement site BYTE_VERIFIED (2026-06-27).** The string's handle = `file_off − DGROUP base 0x1D9A0` = `0x1F493 − 0x1D9A0 = 0x1AF3` (formula self-verified against the siblings: `@NOCOLONIESEITHER` `0x1E32A−0x1D9A0=0x98A` ✓, `@NOMAYORSDURINGREV` `0x1F410−0x1D9A0=0x1A70` ✓, per `tools/rtlink/event_map.py` lines 6-7). The emit site is in the foreign-colony **attack handler `func_05A862`** (page `0F`, prologue `ENTER 0x0004,0`) at **`@0x5A912`**: bytes `8D1EF31A 9AFE031F18` = `lea bx,[0x1af3]; lcall 0x181f,0x3fe` (the `func_06F57E` notice-emit thunk — the SAME emit idiom as the page-07 sibling gate `@0x3FEAD`). It is reached only inside the `test [0x5382],1; je` (WoI bit-0 declared) gate at **`@0x5A8C8`**, after a chain of skip-tests that allow the attack unless the target is a rival European power/colony: owner-power load via current-colony struct `[0x8542]+0x1A` (`@0x5A8D5`, CLAUDE.md hard rule #8), King/REF id compare `[0x53D2]` (`@0x5A8ED`), and target UnitRecord (stride `0x1C`) owner nibble `[bx+0x3147]&0xF < 4` with PowerRecord (stride `0x34`) `[bx+0x543F]` active-power check (`@0x5A8F9..0x5A910`). On a match it emits `@NOWARSDURINGREV` and sets the cancel flag `[bp-4]=1`, which skips the attack-execution call `lcall 0x181f,0x934`→`func_007BCE` at `@0x5A92C`. The earlier "absent" finding was a tooling blind-spot: `tools/rtlink/event_map.py` scans only for the `push <handle>` byte pattern (`68 F3 1A`), so it (and the derived `event_emitters.json` / `event_catalog.json` `func:null`) missed the `lea bx,[handle]` (`8D 1E F3 1A`) emit form — which is the ONLY occurrence of handle `0x1AF3` in `VICEROY.EXE`. **B.**
 
+**Rival independence bulletins — BYTE_VERIFIED end to end (2026-08-29).**
+Per AI power, `func_02F736..@0x2F962`: the bulletin meter =
+`min(100, PowerRecord[+0x19] × population_census[0x9410+p] / 100)`
+(`@0x2F8B1`); GRANT threshold `(8 − difficulty) × 10` (`@0x2F8CA..@0x2F8DE`,
+Discoverer 80 .. Viceroy 40).  A new maximum vs the stored `+0x1A` posts
+`@OTHERMIGHT` and stores; a fall 5 below it posts `@OTHERLESS` and stores
+(`@0x2F774..@0x2F87D` — NUMBER0 = pct, NUMBER1 = the census population,
+NUMBER2 = the threshold).  At the threshold `@OTHERGRANTED` sets the
+power's flag `+0x00` bit 2 and resets its diplomacy vs everyone
+(`@0x2F94D..@0x2F95E`; the write pair's exact bits are unread).
+**The `+0x19` driver** is `func_03C424`, stored by the per-power updater
+`func_03E844` (`@0x3E8AA`; its human path also refreshes the rebel meter
+`[0x53D0]` — the declare-eligibility value): the power's
+**population-weighted average colony SoL**, `Σ(size × colonySoL) / Σ(size)`
+over its colonies, with `colonySoL = func_008524 =
+100 × sol_dividend(+0xC2) / sol_divisor(+0xC6)` plus a Bolívar (father 18)
+check (`@0x8578`).  Both engines implement the chain; the value is static
+until rival colonies produce bells (B3.6), and the father-18 boost is
+skipped (rival fathers unmodeled) — both flagged.  **B.**
+
 ## 4. UI
 Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`; Tory outcomes `@TORYUPRISING @TORYMAJORITY @TORYMINORITY @TOOTORY`; victory `@KINGVICTORY`. **All BYTE_VERIFIED present** (GAME.TXT). See `docs/SESSION_UI_CATALOG.md`, `spec/systems/king.md` §UI.
 

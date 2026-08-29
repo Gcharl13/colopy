@@ -376,7 +376,10 @@ void hold_add(hold_slot *hold, uint8_t *n, int good, int qty); /* holdAdd */
  * all.  Coordinates are SIGNED like the JS numbers: the sailer's y-drift
  * can step off the map edge (off-map reads Ocean, game.js:469), and the
  * port mirrors that arithmetic rather than wrapping it. */
-typedef struct { int16_t x, y; uint8_t level, pop, spared; } rival_colony;
+/* sol: the colony's rebel/SoL % (func_008524: 100·(+0xC2)/(+0xC6)),
+ * imported once — rival colonies produce no bells (B3.6), so it is
+ * static; runtime-founded ones start at 0. */
+typedef struct { int16_t x, y; uint8_t level, pop, spared, sol; } rival_colony;
 typedef struct {
     uint8_t met, greeted;
     uint8_t next_colony;         /* colony-name rotation counter */

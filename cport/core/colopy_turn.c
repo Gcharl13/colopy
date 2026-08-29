@@ -196,6 +196,7 @@ void cr_reset_from_load(void) {
         r->col[r->n_col].y = CS.colonies[i].map_y;
         r->col[r->n_col].level = (uint8_t)lvl;
         r->col[r->n_col].pop = CS.colonies[i].population;
+        r->col[r->n_col].sol = (uint8_t)colony_sol(&CS.colonies[i]);
         r->n_col++;
     }
     /* tribes: tension toward the player from the 0x4E-stride TribeData

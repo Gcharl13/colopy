@@ -398,6 +398,7 @@ void rival_turn(void) {
                             r->col[r->n_col].y = (int16_t)ly;
                             r->col[r->n_col].level = 0;
                             r->col[r->n_col].pop = 1;
+                            r->col[r->n_col].sol = 0;
                             r->n_col++;
                         }
                         r->next_colony++;    /* name rotation (names unused) */
@@ -521,6 +522,7 @@ void rival_turn(void) {
                             r->col[r->n_col].level = 0;
                             r->col[r->n_col].pop = (uint8_t)tpop;
                             r->col[r->n_col].spared = 0;
+                            r->col[r->n_col].sol = 0;
                             r->n_col++;
                         }
                         /* the @CAPTURED family split @0x5DED1, same gate
@@ -604,7 +606,7 @@ static void news_tick(void) {
         if (rn == me) continue;
         rival_rt *r = &CR.rivals[rn];
         if (!r->met) continue;
-        /* the independence bulletin — FRAMEWORK BYTE_VERIFIED 2026-08-29
+        /* the independence bulletin — BYTE_VERIFIED end to end 2026-08-29
          * (func_02F736..@0x2F962, per AI power): pct = min(100,
          * PowerRecord[+0x19] × population_census / 100) (@0x2F8B1) against
          * a GRANT threshold of (8 − difficulty) × 10
@@ -615,26 +617,29 @@ static void news_tick(void) {
          * census, NUMBER2 = the threshold).  At the threshold
          * @OTHERGRANTED sets the power's flag +0x00 bit 2 and resets its
          * diplomacy vs everyone (@0x2F94D..@0x2F95E — the 0xa06/0xa10
-         * write pair's semantics are unread, not modeled).  The +0x19
-         * SENTIMENT DRIVER is still unread — a flagged rare-step random
-         * walk stands in for the pct itself (the old ±1-per-turn walk
-         * flooded the byte model's every-new-maximum announcements). */
+         * write pair's semantics are unread, not modeled).
+         *
+         * The +0x19 SENTIMENT DRIVER is func_03C424 (stored @0x3E8AA by
+         * the per-power updater func_03E844): the power's population-
+         * weighted average colony SoL, Σ(size × colonySoL) / Σ(size),
+         * with colonySoL = func_008524 = 100·(+0xC2)/(+0xC6).  The port
+         * carries each rival colony's imported SoL — static, since rival
+         * colonies produce no bells (B3.6); the old random-walk stand-in
+         * is gone. */
         if (cs_year() >= 1650 && !r->independent &&
             !(CR.woi_flags & WOI_DECLARED)) {
-            int v = r->rebel_pct;
-            {
-                int k = (int)rng_next();
-                if (k <= 3276) v += 5;         /* ~10%% up */
-                else if (k <= 5461) v -= 5;    /* ~6.7%% down */
+            int sp = 0, ss = 0;
+            for (int k = 0; k < r->n_col; k++) {
+                sp += r->col[k].pop;
+                ss += r->col[k].pop * r->col[k].sol;
             }
-            if (v < 0) v = 0;
+            int sent = sp ? ss / sp : 0;         /* PowerRecord +0x19 */
+            int thr = (8 - (int)cs_difficulty()) * 10;
+            int pop = CR.n_runits[rn];           /* the census population */
+            for (int k = 0; k < r->n_col; k++) pop += r->col[k].pop;
+            int v = sent * pop / 100;            /* @0x2F8B1 */
             if (v > 100) v = 100;
             r->rebel_pct = (uint8_t)v;
-            int thr = (8 - (int)cs_difficulty()) * 10;
-            int pop = CR.n_runits[rn];
-            for (int ci = 0; ci < CS.n_colonies; ci++)
-                if ((CS.colonies[ci].owner_power & 3) == rn)
-                    pop += CS.colonies[ci].population;
             if (v >= thr) {
                 r->independent = 1;
                 ev_emit("OTHERGRANTED", v, pop, dat_nations[rn].country, 0);
