@@ -216,14 +216,15 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
              * the plane-3 owner nibble via the claim writer func_005E18
              * ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create
              * path calls it on the village tile @0x46E9E).  The RADIUS
-             * is the manual's homeland rule (camps/villages 1, cities
-             * 2) — the engine's own radius pass is unread, and the
-             * first claim wins here, both FLAGGED.  This is what keeps
+             * is the engine's own getter func_00822A: 1/1/2/3 by
+             * TRIBE TECH (byte-read 2026-08-30; the manual's "1/2" was
+             * short).  First claim wins here, FLAGGED.  This keeps
              * rumour medallions (and details) off native country: the
              * marker predicate requires an UNCLAIMED nibble
              * (func_006188 @0x61BC). */
             {
-                int rad = lv >= 2 ? 2 : 1;
+                static const int HRAD[4] = { 1, 1, 2, 3 };
+                int rad = HRAD[lv & 3];          /* func_00822A */
                 for (int cy = py - rad; cy <= py + rad; cy++)
                     for (int cx = px - rad; cx <= px + rad; cx++) {
                         if (cx < 0 || cy < 0 || cx >= COLOPY_MAP_W ||

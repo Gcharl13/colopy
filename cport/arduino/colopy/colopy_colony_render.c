@@ -724,6 +724,40 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                 if (stander >= 0)
                     rd_blit(&RD.phys0, 0x5A + CS.units[stander].type,
                             x + 4, y + 4);
+                /* THE TOTEM POLE — ICONS png 108 (EXE 0x6D), byte-read
+                 * 2026-08-30 after a user correction.  The prep loop
+                 * (@0xA9C8..@0xAAC5) fills a per-cell byte drawn at
+                 * cell+(8,4) when >= 0 (@0x2658F..@0x265BF, flags 0):
+                 * the NEAREST settlement's owner (func_046056) within
+                 * the tribe's homeland radius func_00822A = 1/1/2/3 BY
+                 * TECH; dropped for a worked cell, water (func_0062B4),
+                 * an unmet tribe (relation bit 0x20) or Peter Minuit
+                 * (father 2, @0xAAA0).  Chebyshev nearest stands in for
+                 * the scan metric, FLAGGED — mirrors the JS. */
+                if (stander < 0 && k < 0 && !blocked &&
+                    !tile_water(map_at(wx, wy)) &&
+                    wx >= 1 && wx <= COLOPY_MAP_W - 2 &&
+                    wy >= 1 && wy <= COLOPY_MAP_H - 2 &&
+                    !father_owned(father_by_name("Peter Minuit"))) {
+                    int bvi = -1, bd = 99;
+                    for (int v = 0; v < CS.n_villages; v++) {
+                        int ax = CS.villages[v].map_x - wx;
+                        int ay = CS.villages[v].map_y - wy;
+                        if (ax < 0) ax = -ax;
+                        if (ay < 0) ay = -ay;
+                        int dd = ax > ay ? ax : ay;
+                        if (dd < bd) { bd = dd; bvi = v; }
+                    }
+                    if (bvi >= 0) {
+                        int tr = (CS.villages[bvi].owner_tribe & 0x0F) - 4;
+                        if (tr >= 0 && tr < 8 && CR.tribe_met[tr]) {
+                            static const int RAD[4] = { 1, 1, 2, 3 };
+                            int lvv = dat_tribes[tr].level;
+                            if (bd <= RAD[lvv & 3])
+                                rd_blit(&RD.icons, 108, x + 8, y + 4);
+                        }
+                    }
+                }
                 if (k >= 0)
                     rd_blit(&RD.icons, colonist_figure(c->profession[k]),
                             x + 14, y + 6);

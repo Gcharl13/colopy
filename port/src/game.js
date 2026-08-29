@@ -4727,10 +4727,10 @@ function drawColonyTiles(ctx, c) {
       // settlement holds the tile" is the port's reading of when that bit is
       // set (the two commonest causes); still a flagged approximation of the
       // full runtime state.
-      if (G.villages.some(q => q.x === wx && q.y === wy) ||
+      const blockedCell = G.villages.some(q => q.x === wx && q.y === wy) ||
           G.colonies.some(q => q !== c && q.x === wx && q.y === wy) ||
-          G.rivals.some(rv => rv.colonies.some(q => q.x === wx && q.y === wy)))
-        hollowRect(ctx, x, y, 24, 24, 0x0C);
+          G.rivals.some(rv => rv.colonies.some(q => q.x === wx && q.y === wy));
+      if (blockedCell) hollowRect(ctx, x, y, 24, 24, 0x0C);
       const p = c.colonists.find(q => q.cell && q.cell[0] === dx && q.cell[1] === dy);
       const good = p ? JOB_GOOD[jobIndex(p.job)] : undefined;
       const amount = p ? fieldYield(c, p) : 0;
@@ -4757,6 +4757,34 @@ function drawColonyTiles(ctx, c) {
         const ti = DATA.units.findIndex(r => r.name === stander.type);
         if (ti >= 0 && DATA.sheets.PHYS0.frames[0x5A + ti])
           sheetFrame(ctx, 'PHYS0', 0x5A + ti, x + 4, y + 4);
+      }
+      // THE TOTEM POLE -- ICONS png 108 (EXE 0x6D), byte-read 2026-08-30
+      // after a user correction (the earlier "cut content" call was wrong;
+      // the sprite was misread at thumbnail scale). The tile-panel prep
+      // (@0xA9C8..@0xAAC5) fills a per-cell byte drawn at cell+(8,4) when
+      // >= 0 (@0x2658F..@0x265BF, flags byte 0 -- so a blocked cell or a
+      // standing unit suppresses it):
+      //   candidate = the NEAREST settlement's owner (func_046056 scan)
+      //     when its distance <= the tribe's homeland radius, which is
+      //     func_00822A BY TECH: 1/1/2/3 (the manual's "1/2" was short);
+      //   dropped for: a cell this colony WORKS (occupant @0x8956), a
+      //     WATER tile (func_0062B4), an unmet tribe (relation bit 0x20
+      //     via func_007F34), or the owner holding father 2 PETER MINUIT
+      //     (@0xAAA0 -- his power erases the claims). The 0x88D0 override
+      //     and func_046056's exact metric are unread; Chebyshev
+      //     nearest-village stands in, FLAGGED.
+      if (!stander && !p && !blockedCell && !tileWater(at(wx, wy)) &&
+          wx >= 1 && wx <= MAP.w - 2 && wy >= 1 && wy <= MAP.h - 2 &&
+          !G.fathersOwned.includes('Peter Minuit')) {
+        let best = null, bd = 99;
+        for (const v of G.villages) {
+          const d = Math.max(Math.abs(v.x - wx), Math.abs(v.y - wy));
+          if (d < bd) { bd = d; best = v; }
+        }
+        const bt = best && G.tribes[best.tribe];
+        const rad = bt ? [1, 1, 2, 3][bt.level || 0] || 1 : 0;
+        if (bt && bd <= rad && bt.met)
+          sheetFrame(ctx, 'ICONS', 108, x + 8, y + 4);
       }
       // The WORKER is the last thing the cell draws, through `0x181F:0x24A`
       // fed by the colony enumerator `0x181F:0xA74` (@0x026763-0x02677C) -- NOT
@@ -6630,12 +6658,13 @@ function seedNatives() {
       // plane-3 owner nibble via the claim writer func_005E18
       // ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create path
       // calls it on the village tile @0x46E9E). The RADIUS is the
-      // manual's homeland rule (camps/villages 1, cities 2) -- the
-      // engine's own radius pass is unread, first claim wins, both
-      // FLAGGED. This keeps rumour medallions off native country: the
+      // engine's own getter func_00822A: 1/1/2/3 by TRIBE TECH
+      // (byte-read 2026-08-30; the manual's "1/2" was short). First
+      // claim wins, FLAGGED. This keeps rumour medallions off native
+      // country: the
       // marker predicate needs an UNCLAIMED nibble (func_006188 @0x61BC).
       {
-        const rad = (t.level || 0) >= 2 ? 2 : 1;
+        const rad = [1, 1, 2, 3][(t.level || 0) & 3];   // func_00822A
         for (let cy = py - rad; cy <= py + rad; cy++)
           for (let cx = px - rad; cx <= px + rad; cx++) {
             if (cx < 0 || cy < 0 || cx >= MAP.w || cy >= MAP.h) continue;

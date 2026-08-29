@@ -10709,3 +10709,37 @@ both engines is replaced by the real floor.
    func_03FDDE; the exact predicate is unread, so both ports scan for
    any land within the ship's sight after each step, FLAGGED.  The
    woodcut spec's "first landfall" gloss is corrected.
+
+## 2026-08-30b — CORRECTION: the totem pole exists (user was right)
+
+The 2026-08-30 batch's point 4 called the manual's totem-pole marker
+"cut content".  **Wrong** — the user pointed at ICONS png 108 (EXE
+0x6D), and it is unmistakably the totem: the sprite was misread at
+thumbnail scale in the sheet sweep.  With the frame known, the draw
+chain fell out of the bytes:
+
+- **Draw site**: the colony tile panel draws ICONS 0x6D at cell+(8,4)
+  when the per-cell prep byte is >= 0 and the cell's flag byte is 0
+  (`@0x2658F..@0x265BF`; flag 0x40 = blocked box, 0x80 = a standing
+  map unit — either suppresses the totem).
+- **Prep loop** (`@0xA9C8..@0xAAC5`, filling the 25-byte tables at
+  DGROUP 0x8D9E/0x8D84): candidate = the NEAREST settlement's owner
+  byte (+0x02, via the func_046056 scan into [0x8D4A]/[0x8DB8]) when
+  its distance <= the tribe's homeland radius; dropped for a cell this
+  colony WORKS (occupant via 0x8956), a WATER tile (func_0062B4), an
+  unmet tribe (relation bit 0x20 via func_007F34), the 0x88D0 override
+  (unread), or the owner holding **father 2 = Peter Minuit**
+  (`@0xAAA0`) — his power erases the claims from the view.
+- **The homeland radius getter is func_00822A, BY TRIBE TECH:
+  1/1/2/3** — the manual's "camps/villages 1, cities 2" was
+  incomplete.  The newgame homeland CLAIMS from the earlier batch now
+  use the same 1/1/2/3 table.
+- Both engines draw the totem in the colony tile panel; func_046056's
+  exact metric is unread — Chebyshev nearest-village stands in,
+  FLAGGED.  The colony render baseline (no native land in frame) stays
+  0 structural.
+
+Method note for the record: a running-game observation beat a sprite-
+sheet sweep — the sweep looked at 131 frames at 3px scale and pattern-
+matched a 7x12 pole as a person.  Sheet sweeps need zoom passes before
+"no such sprite" claims.
