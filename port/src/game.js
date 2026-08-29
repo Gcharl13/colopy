@@ -4021,13 +4021,18 @@ function advanceConstruction(c, hammers) {
 }
 
 // The rush-buy (@BUYME0 info / @BUYME1 confirm, width 160): pay gold to
-// finish the construction target now. The engine's AMOUNT formula is
-// unread; the stand-in prices remaining hammers at 26$ -- the census3 BUY
-// prompt is EXACT at that rate ("Cost to complete Docks: 1352$" = 52 x 26,
-// zero banked, tax 0, Explorer) -- and remaining tools at the market ask.
-// The older 81_colony_build_prompt frame ("1552$", game state unknown)
-// does not fit 26/hammer flat, so a second term (tax? difficulty?) is
-// still open. FLAGGED.
+// finish the construction target now. BYTE_VERIFIED 2026-08-29
+// (@0x2B779..@0x2B8C2, the @BUYME dialog builder):
+//   price = 13 x remaining hammers (@0x2B7B2, the x3 x4 +1 chain)
+//         + (tools price level [+0x4C+14] + 4) x missing tools (@0x2B7CF)
+//   ... then DOUBLED when NO hammers are banked yet (+0x92 == 0,
+//   @0x2B7E9) -- which is why census3's untouched Docks quoted 26$/hammer
+//   (13 x 2, zero banked) while the older started build did not fit.
+// gold >= price -> the @BUYME1 confirm (row 2 = Complete it, [bp-4]==2
+// @0x2B872); short -> the @BUYME0 info. Accepting tops the hammer bank to
+// the cost (the overage into the +0x98 bought tally @0x2B88A), adds the
+// MISSING TOOLS to stock (+0xB6 += shortfall @0x2B8BA) and debits the
+// gold (0x181f:0xaf6 @0x2B8A5).
 // @CUSTOM "Which cargos shall our {Custom House} export?" -- the per-good
 // export toggle. The engine's picker format (runtime rows) is unread; the
 // port re-opens the single-pick popup per toggle, '*' marking exported
@@ -4051,14 +4056,15 @@ function rushBuy() {
   if (!b) return;
   const remH = Math.max(0, b.cost - c.hammers);
   const remT = Math.max(0, b.tools_x10 * 10 - c.stock[GOOD.TOOLS]);
-  const cost = 26 * remH + askPrice(GOOD.TOOLS) * remT;
+  let cost = 13 * remH + (G.market[GOOD.TOOLS] + 4) * remT;
+  if (c.hammers === 0) cost *= 2;                /* unstarted: x2 @0x2B7E9 */
   const S = { STRING0: b.name, NUMBER0: cost, NUMBER1: G.gold };
   if (cost > G.gold) { showEvent('BUYME0', S); return; }
   askEvent('BUYME1', S, (choice) => {
     if (choice !== 1) return;                    // row 2 = "Complete it."
     G.gold -= cost;
     c.hammers = Math.max(c.hammers, b.cost);
-    c.stock[GOOD.TOOLS] = Math.max(c.stock[GOOD.TOOLS], b.tools_x10 * 10);
+    c.stock[GOOD.TOOLS] += remT;                 /* the shortfall @0x2B8BA */
     advanceConstruction(c, 0);
   });
 }

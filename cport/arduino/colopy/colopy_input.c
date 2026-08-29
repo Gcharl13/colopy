@@ -1054,12 +1054,13 @@ static void open_build_picker(void) {
     UI.colony_popup = 2;
     UI.colony_popup_row = (int8_t)(at < 0 ? 0 : at);
 }
-/* rushBuy (game.js:3208): the B key on the colony screen — 26 gold per
- * missing hammer plus the market ASK per missing tool; @BUYME0 refuses
- * past the purse, @BUYME1 row 2 ("Complete it.") banks the shortfall
- * and runs the construction step at once.  A unit target prices via
- * unitBuildRow (game.js:2965: cost x32, the Wagon Train off-scale at
- * 40, tools_x10 = the @UNIT tools column). */
+/* rushBuy — BYTE_VERIFIED 2026-08-29 (@0x2B779..@0x2B8C2): price =
+ * 13 x remaining hammers + (tools price level + 4) x missing tools,
+ * DOUBLED when no hammers are banked (+0x92 == 0, @0x2B7E9); @BUYME0
+ * refuses past the purse, @BUYME1 row 2 ("Complete it.") tops the
+ * hammer bank, adds the MISSING tools to stock (@0x2B8BA) and runs the
+ * construction step.  A unit target prices via unitBuildRow
+ * (func_00B65A: cost x32, clamp <40 -> 40, 40..51 -> 52). */
 static void rush_buy(void) {
     int cci = player_colony_rec(UI.colony);
     if (cci < 0) return;
@@ -1091,7 +1092,9 @@ static void rush_buy(void) {
     if (rem_h < 0) rem_h = 0;
     int32_t rem_t = tools10 * 10 - c->stock[TOOLS];
     if (rem_t < 0) rem_t = 0;
-    int32_t cost = 26 * rem_h + market_ask(TOOLS) * rem_t;
+    /* market level = bid + 1 (the JS G.market byte) */
+    int32_t cost = 13 * rem_h + (market_bid(TOOLS) + 1 + 4) * rem_t;
+    if (c->hammers == 0) cost *= 2;          /* unstarted: x2 @0x2B7E9 */
     PowerRecord *p = &CS.powers[cs_nation()];
     if (cost > p->gold) {
         ev_emit("BUYME0", cost, p->gold, nm, 0);
@@ -1101,8 +1104,7 @@ static void rush_buy(void) {
     if (ask_choice() != 1) return;
     p->gold -= cost;
     if (c->hammers < cost_h) c->hammers = (uint16_t)cost_h;
-    if (c->stock[TOOLS] < tools10 * 10)
-        c->stock[TOOLS] = (uint16_t)(tools10 * 10);
+    c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] + rem_t);
     colony_advance_construction(cci, 0);
 }
 
