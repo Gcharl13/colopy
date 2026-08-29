@@ -6387,46 +6387,68 @@ function villageDemand(v) {
   v.demand = d;
   return d;
 }
-// The sell offer, §19.5:
-//   mood = random(1..5)
-//   base = 6 raw / 7 manufactured, plus per-good colour
-//   seed = 2*(base - difficulty - want + mood + 4)
-//   offer = max(1, (max(0, seed*demand) + 5*mood) * qty/100 / 2)
-// want is the village's interest rank in the good, halved once its stock
-// reaches 20 and forced to 0 for muskets and horses.
-function villageOffer(v, good, qty) {
-  const t = G.tribes[v.tribe];
-  const demand = villageDemand(v)[good] || 0;
-  const mood = 1 + Math.floor(Math.random() * 5);
-  let base = MANUFACTURES.includes(good) || good >= 13 ? 7 : 6;
-  if (good === 4) base -= Math.floor(Math.random() * 8);              // Furs
-  if (good === 15) base += 12 - (t.musketsKnown || 0);                // Muskets
-  if (good === 8) base += 10 - (t.horsesKnown || 0);                  // Horses
-  if (good === 13) base += 1;                                        // Trade Goods
-  const stock = (v.stock && v.stock[good]) || 0;
-  let want = Math.min(8, Math.floor(demand / 4));
-  if (stock >= 20) want = Math.floor(want / 2);
-  if (good === 15 || good === 8) want = 0;
-  const seed = 2 * (base - G.difficulty - want + mood + 4);
-  return Math.max(1, Math.floor((Math.max(0, seed * demand) + 5 * mood) * qty / 100 / 2));
+// func_008262 (0x181f:0xa60): the attitude band the haggle prices off --
+// tension <25 -> 0, <50 -> 1, <75 -> 2, else 3. BYTE_VERIFIED.
+function attBand(tension) {
+  return tension >= 75 ? 3 : tension >= 50 ? 2 : tension >= 25 ? 1 : 0;
 }
+// The sell quote -- the BYTE MODEL of func_049600 @0x4999C..@0x49B02
+// (tail read 2026-08-29; §19.5's reconstruction corrected against it):
+//   mood = random_int(1,5)                                   @0x4999C
+//   base = 6, or 7 for goods 9..15                           @0x499AB
+//     Trade Goods (13): -random_int(0,7)                     @0x499C3
+//     Muskets (15): +12 - tribe muskets counter (+0x07)      @0x499D9
+//     Horses (8):   +10 - tribe horses counter (+0x08)       @0x499F0
+//     Tools (14):   +1                                       @0x49A05
+//   att = 2 x attBand(tension), 0 for muskets/horses, HALVED
+//     when the good's want >= 20                             @0x49A0A..@0x49A3B
+//   seed = 2*(base - difficulty - att + mood + 4)            @0x49A42
+//   offer = max(1, (max(0, seed*want) + 5*mood)*qty/100 / 2) @0x49A5C..@0x49A93
+// want is func_048F34's per-good want table [0x9E58+g*2]; the port's
+// villageDemand() terrain scan stands in for that builder (flagged).
+// (The old §19.5 guesses -- Furs -rand8, Trade Goods +1, the want term
+// inside the seed -- are corrected: the -rand belongs to Trade Goods,
+// the +1 to Tools, and the seed subtracts the ATTITUDE, not the want.)
+function sellQuote(v, good, qty) {
+  const t = G.tribes[v.tribe] || {};
+  const want = villageDemand(v)[good] || 0;
+  const mood = 1 + Math.floor(Math.random() * 5);
+  let base = good >= 9 ? 7 : 6;
+  if (good === 13) base -= Math.floor(Math.random() * 8);            // Trade Goods
+  if (good === 15) base += 12 - (t.musketsKnown || 0);               // Muskets
+  if (good === 8) base += 10 - (t.horsesKnown || 0);                 // Horses
+  if (good === 14) base += 1;                                        // Tools
+  let att = 2 * attBand(t.tension || 0);
+  if (good === 15 || good === 8) att = 0;
+  if (want >= 20) att >>= 1;
+  const seed = 2 * (base - G.difficulty - att + mood + 4);
+  const offer = Math.max(1,
+    Math.floor(Math.floor((Math.max(0, seed * want) + 5 * mood) * qty / 100) / 2));
+  return { offer, want, att, mood };
+}
+function villageOffer(v, good, qty) { return sellQuote(v, good, qty).offer; }
 // Selling cools the village directly -- alarm drops by the quantity and a full
 // 100-load zeroes it -- and muskets or horses ARM the tribe: +1 lore at 25
 // units, +2 at 50, with horses also adding a quarter of the load to the herd.
 // A -4 tension credit rides along.
-function villageSell(v, good, qty, price) {
+function villageSell(v, good, qty, price, tensionCredit) {
   const t = G.tribes[v.tribe];
   // The haggle loop passes the negotiated price; a bare call takes the quote.
   const paid = price !== undefined ? price : villageOffer(v, good, qty);
   G.gold += paid;
-  v.stock = v.stock || DATA.cargo.map(() => 0);
-  v.stock[good] += qty;
+  // the goods land in the TRIBE's stock words (TribeRecord +0x0E..+0x2D,
+  // @0x49BAC) -- there is no per-village store.
+  t.stock = t.stock || DATA.cargo.map(() => 0);
+  t.stock[good] += qty;
   // TWO separate credits, and they land on the two separate meters:
-  //   * the TRIBE's tension meter takes the flat -4 goodwill credit (@0x5C41E);
-  //   * the VILLAGE's alarm word drops by the QUANTITY sold, and a full 100-load
-  //     zeroes it outright (RULINGS.md 2026-08-01 native-economy pass, item 8).
+  //   * the TRIBE's tension credit: the haggle loop passes its own byte
+  //     amount (-2 x remaining budget on a sale @0x49BD0, -4 x (budget+1)
+  //     on a gift @0x49E8D); a bare call keeps the flat -4 (@0x5C41E, the
+  //     non-haggle path);
+  //   * the VILLAGE's alarm word drops by the QUANTITY sold, and a full
+  //     100-load zeroes it outright (@0x49BE4..@0x49BF8).
   v.alarm = qty >= 100 ? 0 : Math.max(0, (v.alarm || 0) - qty);
-  adjustTension(v.tribe, -4);
+  adjustTension(v.tribe, tensionCredit !== undefined ? tensionCredit : -4);
   if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + (qty >= 50 ? 2 : qty >= 25 ? 1 : 0);
   if (good === 8) {
     t.horsesKnown = (t.horsesKnown || 0) + (qty >= 50 ? 2 : qty >= 25 ? 1 : 0);
@@ -6434,21 +6456,23 @@ function villageSell(v, good, qty, price) {
   }
   return paid;
 }
-// §19.5 buying -- the village prices its own goods the other way up:
-//   ask = 200, or (8 - tribe.level)*50 for horses and manufactures
-//   for silver and better: + market price * (2*difficulty + 15)
-//   price = max(50, qty*ask/100 + (difficulty + random(0..2))*10)
-//           + random(0..ask) - 4*(village surplus) + 4*(tribe tension)
+// The buy ask -- the BYTE MODEL (@0x4A025..@0x4A0E1, read 2026-08-29):
+//   ask = 200; goods >= 8: (8 - tribe tech byte +0x02) * 50 REPLACES it
+//   goods >= 7 (silver up): += goods-value[0x84BC+p*16+g] * (15 + 2*diff)
+//     (the port's market level stands in for the value table, flagged)
+//   += random_int(0, ask); -= 4 * the good's DEMAND entry ([0x9E78]);
+//   += 4 * tension; ask = qty*ask/100; += (random_int(0,2)+diff)*10;
+//   floor 50 (applied once, at the end).
 function villageAsk(v, good, qty) {
   const t = G.tribes[v.tribe];
-  let ask = (good === 8 || MANUFACTURES.includes(good)) ? (8 - t.level) * 50 : 200;
+  let ask = good >= 8 ? (8 - t.level) * 50 : 200;
   if (good >= 7) ask += G.market[good] * (2 * G.difficulty + 15);
-  let price = Math.max(50, Math.floor(qty * ask / 100) +
-                          (G.difficulty + Math.floor(Math.random() * 3)) * 10);
-  price += Math.floor(Math.random() * (ask + 1));
-  price -= 4 * ((v.stock && v.stock[good]) || 0);
-  price += 4 * t.tension;
-  return Math.max(50, price);
+  ask += Math.floor(Math.random() * (ask + 1));
+  ask -= 4 * (villageDemand(v)[good] || 0);
+  ask += 4 * (t.tension || 0);
+  ask = Math.floor(qty * ask / 100);
+  ask += (G.difficulty + Math.floor(Math.random() * 3)) * 10;
+  return Math.max(50, ask);
 }
 // What the village will part with: the goods its land yields a surplus of.
 function villageSurplus(v) {
@@ -6458,11 +6482,12 @@ function villageSurplus(v) {
           .slice(0, 3);
 }
 function villageBuy(v, good, qty, price) {
+  const t = G.tribes[v.tribe] || {};
   if (price === undefined) price = villageAsk(v, good, qty);
   if (price > G.gold) return 0;
   G.gold -= price;
-  v.stock = v.stock || DATA.cargo.map(() => 0);
-  v.stock[good] = Math.max(0, (v.stock[good] || 0) - qty);
+  t.stock = t.stock || DATA.cargo.map(() => 0);
+  t.stock[good] = Math.max(0, (t.stock[good] || 0) - qty);
   // (No tension credit here: the byte-cited -4 trade credit @0x5C41E is the
   // SELL side's; the -2 this used to apply was the port's invention.)
   return price;
@@ -6470,10 +6495,21 @@ function villageBuy(v, good, qty, price) {
 
 // A gift cools anger faster than a sale (manual-attested; the exact credit is
 // untraced, so the port uses twice the sale credit and says so).
-function villageGift(v, good, qty) {
-  v.stock = v.stock || DATA.cargo.map(() => 0);
-  v.stock[good] += qty;
-  adjustTension(v.tribe, -8);
+// A gift (@0x49E4C): the tension credit is the haggle loop's
+// -4 x (budget+1) (@0x49E8D; -8 stands for a bare call), the village
+// alarm drops DOUBLE the quantity (100-load zeroes, @0x49EAC..@0x49ED0),
+// and muskets/horses arm the tribe exactly as a sale does (@0x49ED5..).
+function villageGift(v, good, qty, credit) {
+  const t = G.tribes[v.tribe] || {};
+  t.stock = t.stock || DATA.cargo.map(() => 0);
+  t.stock[good] += qty;
+  v.alarm = qty >= 100 ? 0 : Math.max(0, (v.alarm || 0) - 2 * qty);
+  adjustTension(v.tribe, credit !== undefined ? credit : -8);
+  if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + 1;
+  if (good === 8) {
+    t.herd = (t.herd || 0) + Math.floor(qty / 4);
+    t.horsesKnown = (t.horsesKnown || 0) + 1;   /* @0x49EFA -> @0x49C66 */
+  }
 }
 
 // ------------------------------------------------- missions and conversion
@@ -6913,11 +6949,21 @@ function nativeRaid(v, c) {
         const g = c.stock.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
         if (!g || !g[0]) { showEvent('RAIDNOTHING', S); break; }
         c.stock[g[1]] = 0;
-        // "the village banks the haul" -- settlement raid-budget +0x08 and
-        // wealth +0x0A += 0x19 (@0x5C3E1 / @0x5C3E4).
-        v.stock = v.stock || DATA.cargo.map(() => 0);
-        v.stock[g[1]] += g[0];
-        v.wealth = (v.wealth || 0) + 0x19;
+        // The haul arms the TRIBE (corrected 2026-08-29 -- the old
+        // "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
+        // pointer): stolen HORSES bump the herd-counter byte +0x08 and
+        // add 25 to the herd word +0x0A (@0x5C3DD..@0x5C3E4); stolen
+        // MUSKETS bump the muskets counter +0x07, twice at a 50+ load
+        // (@0x5C3EE..@0x5C3FB). Other goods are simply gone.
+        {
+          const t2 = G.tribes[v.tribe] || {};
+          if (g[1] === 8) {
+            t2.horsesKnown = (t2.horsesKnown || 0) + 1;
+            t2.herd = (t2.herd || 0) + 25;
+          }
+          if (g[1] === 15)
+            t2.musketsKnown = (t2.musketsKnown || 0) + (g[0] >= 50 ? 2 : 1);
+        }
         // The sated-raid tension credit, byte-read: -4 for a stores raid
         // (push -4 @0x5C416; the gold raid's is -16).
         adjustTension(v.tribe, -4, 0);
@@ -7747,7 +7793,10 @@ function openVillageTrade(v, u) {
   if ((t.tension || 0) >= 40 && u && u.type === 'Wagon Train')
     showEvent('GRUDGEWAGONS', { STRING0: t.name }, tradeSpeaker(v));
   const cargo = ((u && u.hold) || []).filter(h => h.qty > 0);
-  if (!cargo.length) { showEvent('TRADENOCARGO', {}, tradeSpeaker(v)); return; }
+  // an empty hold meets @DEFICIT and the visit ends (@0x49F0E -- the
+  // engine reaches the buy-phase precheck with no sale and bails there);
+  // @TRADENOCARGO is not this site's key.
+  if (!cargo.length) { showEvent('DEFICIT', {}, tradeSpeaker(v)); return; }
   tradeSellPick(v, u);
 }
 function tradeSellPick(v, u) {
@@ -7757,22 +7806,27 @@ function tradeSellPick(v, u) {
   // @TRADEWHICH heads a picker built from the hold, like @PICKACARGO; its
   // engine trigger is unestablished (audit L83), so >1 cargo is the binding.
   askEvent('TRADEWHICH', {}, (k) => {
+    // cancel ends the session (@0x49845 -> @0x4A362) -- no buy phase.
     if (k >= 0 && k < cargo.length) tradeSellOffer(v, u, cargo[k]);
-    else tradeBuyPhase(v, u);
   }, cargo.map(h => `${h.qty} ${DATA.cargo[h.good].name}.`).concat(['Never mind.']),
      tradeSpeaker(v));
 }
 function tradeSellOffer(v, u, h) {
   const good = h.good, qty = h.qty, name = DATA.cargo[good].name;
-  v.haggleSell = v.haggleSell || {};
-  if (v.haggleSell[good]) {
+  // settlement +0x07 is the single "walked away" memory: offering THAT good
+  // again meets @BADHAGGLE1 (@0x49976); a sale or gift clears it to 0xFF
+  // (@0x49BB3/@0x49E65). (The old per-good v.haggleSell latch is gone --
+  // the byte model keeps ONE slot.)
+  if (v.walkedGood === good) {
     showEvent('BADHAGGLE1', { STRING0: name }, tradeSpeaker(v));
-    tradeBuyPhase(v, u); return;
+    tradeBuyPhase(v, u, good); return;
   }
   const demand = villageDemand(v)[good] || 0;
   // "A village never buys the same good twice in a row -- muskets excepted"
-  // (settlement +0x08 last_bought); the steering trio is the sorted demand
-  // top-3 (§10.4's reading of @BADCARGO's list, not byte-traced).
+  // (settlement +0x08 last_bought). The engine's 0xFF-exception check
+  // compares the UNIT INDEX against 15/8 (@0x49BFD `cmp [bp+6],0xf`) -- an
+  // authentic engine bug (the good was meant); the port keeps the intended
+  // good semantics, noted in natives.md.
   if (v.lastBought === good && good !== 15) {
     const wantList = villageDemand(v).map((d, i) => [d, i])
       .filter(x => x[1] !== good).sort((a, b) => b[0] - a[0])
@@ -7780,73 +7834,106 @@ function tradeSellOffer(v, u, h) {
     showEvent('BADCARGO', { STRING0: name, STRING1: wantList[0] || '',
                             STRING2: wantList[1] || '', STRING3: wantList[2] || '' },
               tradeSpeaker(v));
-    tradeBuyPhase(v, u); return;
+    return;                      // @BADCARGO ends the session (@0x4996F)
   }
   if (demand <= 1) {
     showEvent('TRADENOWANT', { NUMBER0: qty, STRING0: name }, tradeSpeaker(v));
-    tradeBuyPhase(v, u); return;
+    tradeBuyPhase(v, u, good); return;
   }
-  const want = Math.min(8, Math.floor(demand / 4));   // the port's want stand-in
-  const rounds = Math.max(1, Math.min(3, Math.floor((demand - want + 4) / 10)));
+  // -- the byte model of the session setup (@0x4999C..@0x49B02) --
+  const q = sellQuote(v, good, qty);
   tradeSellRound(v, u, h, {
-    offer: villageOffer(v, good, qty), round: 0,
-    budget: 1 + Math.floor(Math.random() * rounds) + (qty >> 2),
+    offer: q.offer, round: 0, want: q.want, att: q.att,
+    // haggle budget = random_int(0,1) + (want - att + 4)>>2   @0x49AB4
+    budget: Math.floor(Math.random() * 2) + ((q.want - q.att + 4) >> 2),
+    // ask ceiling = (want+1)*4 + the opening offer            @0x49AD1
+    ceiling: (q.want + 1) * 4 + q.offer,
   });
 }
-// @BRING rides the sell completion (see tradeSellRound's caller sites).
+// The sell rounds -- func_049600's @TRADE<n> loop, BYTE_VERIFIED 2026-08-29
+// (@0x49B02..@0x49E4C). Rows: accept / haggle / gift (round 0 only) /
+// never mind. There is NO player-named counter-price: a haggle asks the
+// village to raise its OWN offer.
 function tradeSellRound(v, u, h, st) {
   const good = h.good, qty = h.qty, name = DATA.cargo[good].name;
-  const counter = st.offer + Math.max(1, st.offer >> 1);        // TBD stand-in
-  // @TRADE0 rows: accept / fairer price / gift / never mind; @TRADE1 drops
-  // the gift row. %STRING0 is the @VALUES quality ladder ("low quality /
-  // good / fine / excellent"), byte-found at the emit (@0x49AE6: the word
-  // table indexed by clamp((v+4)/10, ..3) -- the port banks the index off
-  // the OFFER, the exact operand pair being one register deep, flagged).
+  // %STRING0 = the @VALUES quality ladder, index clamp3((want-att+4)/10)
+  // (@0x49A96..@0x49AB0 -- the same numerator the budget shifts).
   const quality = (DATA.values || [])[
-    Math.max(0, Math.min(3, Math.floor((st.offer + 4) / 10)))] || '';
+    Math.max(0, Math.min(3, Math.floor((st.want - st.att + 4) / 10)))] || '';
   askEvent(st.round === 0 ? 'TRADE0' : 'TRADE1',
-           { STRING0: quality, STRING1: name, NUMBER0: st.offer, NUMBER1: counter },
+           { STRING0: quality, STRING1: name, NUMBER0: st.offer, NUMBER1: st.ceiling },
            (k) => {
     const giftRow = st.round === 0 ? 2 : -1;
     if (k === 0) {
-      villageSell(v, good, qty, st.offer);
-      // @BRING: "We are in need of X and Y" -- the demand top-2, rare so
-      // it does not nag (rate flagged).
-      if (Math.floor(Math.random() * 4) === 0) {
-        const dW = villageDemand(v).map((n, i) => [n, i])
-          .sort((a, b) => b[0] - a[0]);
-        showEvent('BRING', { STRING0: DATA.cargo[dW[0][1]].name,
-                             STRING1: DATA.cargo[dW[1][1]].name,
-                             STRING2: DATA.cargo[dW[0][1]].name },
-                  tradeSpeaker(v));
-      }
+      // accept (@0x49B80): cargo out, gold in, village stock in, the walked
+      // memory cleared, tension credit -2 x remaining budget (@0x49BD0).
+      villageSell(v, good, qty, st.offer, -2 * Math.max(0, st.budget));
       holdAdd(u, good, -qty);
-      v.lastBought = good;
-      v.haggleBuy = false;
-      tradeBuyPhase(v, u); return;
+      v.walkedGood = undefined;
+      v.lastBought = good === 15 || good === 8 ? undefined : good;
+      tradeBuyPhase(v, u, good); return;
     }
     if (k === 1) {
-      st.budget -= 10;                                          // TBD spend
-      if (st.budget <= 0) {
-        v.haggleSell[good] = true;
-        showEvent('BADHAGGLE0', { STRING1: name }, tradeSpeaker(v));
-        tradeBuyPhase(v, u); return;
+      // haggle (@0x49D76): while budget lasts, the village folds when
+      // random_int(1, 8 x budget) > difficulty -- one budget point per
+      // fold -- and raises its offer by
+      // random_int(want/2+1, 2*want+1) x qty/100 (min 1) (@0x49DA0..);
+      // at the ceiling the ceiling stretches +10 (@0x49DDC).
+      if (st.budget > 0 &&
+          1 + Math.floor(Math.random() * (8 * st.budget)) > G.difficulty) {
+        st.budget -= 1;
+        const lo = (st.want >> 1) + 1, hi = 2 * st.want + 1;
+        const bump = Math.max(1, Math.floor(
+          (lo + Math.floor(Math.random() * (hi - lo + 1))) * qty / 100));
+        st.offer += bump;
+        if (st.offer >= st.ceiling) st.ceiling = st.offer + 10;
+        st.round = 1;
+        tradeSellRound(v, u, h, st); return;
       }
-      st.offer += Math.max(1, (counter - st.offer) >> 1);       // TBD raise
-      st.round += 1;
-      tradeSellRound(v, u, h, st); return;
+      // the walk-away (@0x49DFE): the village remembers the good
+      // (settlement +0x07), tension rises att/2+1, and the session ENDS
+      // (the buy phase is skipped, [bp-0xc4]=0). @BADHAGGLE0's emit is
+      // gated on a relation-0x40 test in the engine (@0x49E21) the port
+      // has no tribe analogue for -- shown unconditionally, flagged.
+      v.walkedGood = good;
+      adjustTension(v.tribe, (st.att >> 1) + 1);
+      showEvent('BADHAGGLE0', { STRING1: name }, tradeSpeaker(v));
+      return;
     }
     if (k === giftRow) {
-      villageGift(v, good, qty);
+      // gift (@0x49E4C, round 0 only): tension credit -4 x (budget+1)
+      // (@0x49E8D), alarm drops DOUBLE the quantity (@0x49EAC, 100-load
+      // zeroes), counters as a sale, then on to the buy phase.
+      villageGift(v, good, qty, -4 * (Math.max(0, st.budget) + 1));
       holdAdd(u, good, -qty);
-      v.haggleBuy = false;
-      tradeBuyPhase(v, u); return;
+      v.walkedGood = undefined;
+      v.lastBought = good === 15 || good === 8 ? undefined : good;
+      tradeBuyPhase(v, u, good); return;
     }
-    tradeBuyPhase(v, u);                                        // never mind
+    // never mind (@0x49B7D -> @0x49E42): the session ends -- no buy phase.
   }, undefined, tradeSpeaker(v));
 }
-function tradeBuyPhase(v, u) {
-  if (v.haggleBuy) { showEvent('BADHAGGLE3', {}, tradeSpeaker(v)); return; }
+// The buy phase -- @0x49C72..@0x4A362. Entered only off a completed sale
+// or gift; needs a free cargo slot (@UNIT cargo column vs load @0x49C92).
+function tradeBuyPhase(v, u, soldGood) {
+  const cap = Number((unit(u.type) || {}).cargo) || 0;
+  const used = ((u.cargo || []).length + (u.hold || []).length);
+  if (cap - used < 1) return;
+  // the insult latch shares settlement +0x07 with the walked-good memory:
+  // 0xFE there means @BADHAGGLE3 (@0x49D5E)
+  if (v.walkedGood === 'insult') {
+    showEvent('BADHAGGLE3', {}, tradeSpeaker(v)); return;
+  }
+  // @BRING (@0x49CF0..@0x49D52): when the sold good is not among the top
+  // two wants, the village names its want trio.
+  const wants = villageDemand(v).map((n, i) => [n, i]).sort((a, b) => b[0] - a[0]);
+  if (soldGood !== undefined &&
+      wants[0][1] !== soldGood && wants[1][1] !== soldGood) {
+    showEvent('BRING', { STRING0: DATA.cargo[wants[0][1]].name,
+                         STRING1: DATA.cargo[wants[1][1]].name,
+                         STRING2: DATA.cargo[wants[2][1]].name },
+              tradeSpeaker(v));
+  }
   const offers = villageSurplus(v);
   if (!offers.length) return;
   const names = offers.map(r => DATA.cargo[r.good].name);
@@ -7861,39 +7948,61 @@ function tradeBuyOffer(v, u, r) {
   const slot = (u.hold || []).find(x => x.good === r.good);
   const used = (u.cargo || []).length + (u.hold || []).length;
   const space = Math.max(0, cap - used) * 100 + (slot ? Math.max(0, 100 - slot.qty) : 0);
-  const qty = Math.min(r.qty, space);
+  // ships carry away a QUARTER load (@0x4A012 `sar [0x8dc4],2` for types
+  // 0xD..0x12).
+  const qty = Math.min(u.ship ? r.qty >> 2 : r.qty, space);
   if (qty <= 0) return;
   const demand = villageDemand(v)[r.good] || 0;
-  const want = Math.min(8, Math.floor(demand / 4));
-  const rounds = Math.max(1, Math.min(3, Math.floor((demand - want + 4) / 10)));
+  const ask = villageAsk(v, r.good, qty);
   tradeBuyRound(v, u, r.good, qty, {
-    quote: villageAsk(v, r.good, qty), round: 0,
-    budget: 1 + Math.floor(Math.random() * rounds) + (qty >> 2),
+    ask, round: 0, demand,
+    // floor = max(10, ask/2), step = max(1, ask/4)  @0x4A15F..@0x4A17E
+    floor: Math.max(10, ask >> 1), step: Math.max(1, ask >> 2),
   });
 }
+// The buy rounds -- @0x4A144..@0x4A34C. Rows: pay / haggle / never mind.
 function tradeBuyRound(v, u, good, qty, st) {
-  const counter = Math.max(1, Math.floor(st.quote * 3 / 4));    // TBD stand-in
   askEvent(st.round === 0 ? 'BUY0' : 'BUY1',
-           { STRING0: DATA.cargo[good].name, STRING1: u.type, NUMBER0: st.quote,
-             NUMBER1: counter, NUMBER2: qty, NUMBER3: G.gold },
+           { STRING0: DATA.cargo[good].name, STRING1: u.type, NUMBER0: st.ask,
+             NUMBER1: st.floor, NUMBER2: qty, NUMBER3: G.gold },
            (k) => {
     if (k === 0) {
-      if (st.quote > G.gold) { showEvent('NOTENOUGH', { NUMBER0: G.gold }, tradeSpeaker(v)); return; }
-      villageBuy(v, good, qty, st.quote);
+      // pay (@0x4A1C8): short of gold -> @NOTENOUGH and tension +1
+      // (@0x4A24E); else pay, stock out, cargo in, the rum exception on
+      // the last-sold memory (settlement +0x09, @0x4A1F2), tension
+      // credit -random_int(0, ask/25 + 1) (@0x4A21D).
+      if (st.ask > G.gold) {
+        showEvent('NOTENOUGH', { NUMBER0: G.gold }, tradeSpeaker(v));
+        adjustTension(v.tribe, 1);
+        return;
+      }
+      villageBuy(v, good, qty, st.ask);
       u.hold = u.hold || [];
       holdAdd(u, good, qty);
+      v.lastSold = good === 9 ? undefined : good;
+      adjustTension(v.tribe,
+        -Math.floor(Math.random() * (Math.floor(st.ask / 25) + 2)));
       return;
     }
     if (k === 1) {
-      st.budget -= 10;                                          // TBD spend
-      if (st.budget <= 0) {
-        v.haggleBuy = true;
-        showEvent('BADHAGGLE2', {}, tradeSpeaker(v));
-        return;
+      // haggle (@0x4A27E): the village folds when
+      // random_int(0, demand/25 + 8) > difficulty+1 and the ask is still
+      // above 10 -- dropping one step (floor 10), with a
+      // 1-in-(8-difficulty) chance of tension +1 (@0x4A2CA); otherwise
+      // tension +2, the INSULT latch (settlement +0x07 = 0xFE) and
+      // @BADHAGGLE2 end the session (@0x4A30E).
+      const roll = Math.floor(Math.random() * (Math.floor(st.demand / 25) + 9));
+      if (st.ask > 10 && roll > G.difficulty + 1) {
+        st.ask = Math.max(10, st.ask - st.step);
+        if (1 + Math.floor(Math.random() * (8 - G.difficulty)) === 1)
+          adjustTension(v.tribe, 1);
+        st.round = 1;
+        tradeBuyRound(v, u, good, qty, st); return;
       }
-      st.quote -= Math.max(1, (st.quote - counter) >> 1);       // TBD drop
-      st.round += 1;
-      tradeBuyRound(v, u, good, qty, st); return;
+      adjustTension(v.tribe, 2);
+      v.walkedGood = 'insult';            /* settlement +0x07 = 0xFE */
+      showEvent('BADHAGGLE2', {}, tradeSpeaker(v));
+      return;
     }
   }, undefined, tradeSpeaker(v));
 }
@@ -11497,8 +11606,8 @@ function drawIndianReport(ctx) {
     const armed = G.natives.filter(u => u.tribe === i &&
       (u.type === (DATA.units[0x14] || {}).name ||
        u.type === (DATA.units[0x16] || {}).name)).length;
-    const muskets = ((t.recMuskets || 0) + armed) * 50;
-    const horses = t.recHerds || 0;
+    const muskets = ((t.musketsKnown || 0) + armed) * 50;
+    const horses = t.horsesKnown || 0;
     if (muskets)
       FONT.tiny.draw(ctx, `${muskets} ${DATA.cargo[15].name}`, F9_MUSKET_X, y + 8, black);
     if (horses)
@@ -11514,7 +11623,7 @@ const TRIBE_LEVELS = [
 ];
 const tribeLevel = (t) => TRIBE_LEVELS[Math.min(t.level || 0, 3)];
 const tribeStock = (ti, good) =>
-  G.villages.reduce((n, v) => n + (v.tribe === ti && v.stock ? (v.stock[good] || 0) : 0), 0);
+  (((G.tribes[ti] || {}).stock || [])[good] || 0);
 const tensionBand = (n) => n >= TENSION_WAR ? 'War'
   : n >= TENSION_HOSTILE ? 'Hostile' : n >= 40 ? 'Restless'
   : n >= 20 ? 'Uneasy' : 'Content';
@@ -11803,8 +11912,9 @@ function importSav(bytes) {
     const tb = tribeBase + i * 0x4E;
     t.relation = d[tb + 0x3A + nation];
     t.recFlags = d[tb + 3];
-    t.recMuskets = d[tb + 7];        // F9 muskets seed, x50 (@0x03766D)
-    t.recHerds = d[tb + 8];          // F9 horse herds, verbatim (@0x0377D6)
+    // (+0x07/+0x08 feed both the F9 census row -- x50 muskets, herds
+    // verbatim (@0x03766D/@0x0377D6) -- and the haggle counters above;
+    // one pair of fields serves both.)
     t.met = !!(t.relation & 0x20);
   });
   // PowerRecord +0x2E is the CROSSES ACCUMULATOR -- byte-verified at the F2
@@ -11887,6 +11997,15 @@ function importSav(bytes) {
     const tb = tribeBase + i * 0x4E;
     t.level = d[tb + 2];
     t.tension = Math.max(0, Math.min(100, u16(tb + 0x46 + nation * 2)));
+    // The trade state the haggle reads (func_049600, read 2026-08-29):
+    // +0x07/+0x08 muskets/horses-bought counters, +0x0A the horse herd
+    // word, +0x0E..+0x2D the tribe's sixteen goods-stock words (a sale
+    // adds there @0x49BAC, a purchase draws there @0x4A20A).
+    t.musketsKnown = d[tb + 7];
+    t.horsesKnown = d[tb + 8];
+    t.herd = u16(tb + 0x0A);
+    t.stock = [];
+    for (let g = 0; g < 16; g++) t.stock.push(u16(tb + 0x0E + g * 2));
   });
 
   // Villages.
@@ -11900,6 +12019,13 @@ function importSav(bytes) {
       level: (G.tribes[tribe] || {}).level || 0,
       capital: !!(d[b + 3] & 0x04), chiefSeen: !!(d[b + 3] & 0x08),
       pop: d[b + 4], growth: d[b + 6],
+      // settlement +0x07/+0x08/+0x09 -- the haggle memories (func_049600):
+      // walked-away good (0xFE = the buy-insult latch, 0xFF = none), last
+      // good bought, last good sold. Out-of-range bytes read as none.
+      walkedGood: d[b + 7] === 0xFE ? 'insult'
+                : d[b + 7] <= 15 ? d[b + 7] : undefined,
+      lastBought: d[b + 8] <= 15 ? d[b + 8] : undefined,
+      lastSold: d[b + 9] <= 15 ? d[b + 9] : undefined,
       mission: m === 0xFF ? null : { power: m & 0x0F, expert: !!(m & 0x10) },
       alarm: d[b + 0x0A + nation * 2],
       tributePaid: false, taught: false, braveOwed: false,

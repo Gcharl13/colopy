@@ -73,14 +73,11 @@ def probe_b42() -> bool:
 
 
 def probe_b43() -> bool:
-    """B4.3: the village trade HAGGLE (tradeSellPick..tradeBuyRound) is not
-    ported. Proxy: open_village_trade still ends after the refusal/laden
-    gates without entering a sell pick. NOTE the row's stated blocker --
-    "unreachable until a load-cargo command exists" -- is itself doubtful:
-    run_trade_route loads a Wagon Train (colopy_rivals.c:1296). Re-check the
-    blocker before quoting it."""
+    """B4.3 was STALE and is now CLOSED (2026-08-29): the C carries the
+    byte-model haggle. Pinned: trade_sell_pick..trade_buy_round stay
+    present in colopy_village.c."""
     v = _strip_comments((ROOT / "cport/core/colopy_village.c").read_text())
-    return "trade_sell_pick" not in v
+    return "trade_sell_pick" in v and "trade_buy_round" in v
 
 
 def probe_b45_fixed() -> bool:
@@ -175,7 +172,7 @@ def probe_unit_builds() -> bool:
 
 CLAIMS = [
     ("B4.2", "docs/REMAINING_WORK.md", "tutorial bindings not ported", probe_b42),
-    ("B4.3", "docs/REMAINING_WORK.md", "village trade haggle unported", probe_b43),
+    ("B4.3", "docs/REMAINING_WORK.md", "village trade haggle ported (closed)", probe_b43),
     ("FIXED-2026-08-19c", "cport/core/colopy_cmd.c",
      "every move target is handled", probe_b45_fixed),
     ("B4.7", "docs/REMAINING_WORK.md", "only the drag layer is absent", probe_b47),

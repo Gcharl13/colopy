@@ -196,11 +196,81 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   `floor = 5·difficulty + 50`; the offer is `max(floor, 2·PowerRecord.tax_pct)`
   (`@0x5C985`) then **capped at 90 (`0x5A`)** (`@0x5C9A3`); the floor applies only
   when the per-power attribute bit `(0x0A, power) == 0` (`@0x5C96A`). A successful
-  trade lowers tension by 4 (`@0x5C41E`) and bumps the settlement's wealth/goodwill
-  bytes `+0x07`/`+0x08`/`+0x0A` (`@0x5C3E4`). **Tribute-gold *amount* RESOLVED (see §6.3):**
+  trade lowers tension by 4 (`@0x5C41E`); the `@0x5C3E1/@0x5C3E4` writes are
+  the TRIBE's arming counters, not settlement wealth (corrected 2026-08-29:
+  a raided HORSES load bumps the tribe herd counter `+0x08` and adds 25 to
+  the herd word `+0x0A`; raided MUSKETS bump `+0x07`, twice at 50+). **Tribute-gold *amount* RESOLVED (see §6.3):**
   the demand (Demand Tribute, func_04AC00) is `raw = [bp-2] − colony_stock[good]` then
   clamped to `[10, min(3·tribe_wealth[0x9E96]+10, 100)]` (func_04AC00 @0x4AE95..@0x4AEB8:
   ceiling 100 @0x4AEA2, floor 10 @0x4AEB0). **B.**
+
+### The village trade haggle — **BYTE_VERIFIED** (`func_049600`, tail `0x0496BA..0x04A37A` read 2026-08-29)
+
+The whole session, in engine order (session prep `func_048F34` — the 5×5
+terrain scan that fills the per-good **want** table `[0x9E58+g·2]` and the
+demand copy `[0x9E78]` — stays the port's `villageDemand` reconstruction):
+
+- **Cargo pick**: one laden slot goes straight in; several raise
+  `@TRADEWHICH` (`@0x49782..`); cancel ends the session (`@0x49845`). An
+  empty hold meets `@DEFICIT` (`@0x49F0E`). AI callers pick a random slot
+  (`@0x49749`).
+- **Refusals**: settlement `+0x07` == the good → `@BADHAGGLE1`
+  (`@0x49976`); want == 0 → `@BADCARGO` naming the want trio and the
+  session ENDS (`@0x4996F`). The last-bought check's muskets/horses
+  exception compares the **unit index** (`cmp [bp+6],0xf` `@0x49BFD`) —
+  an authentic engine bug; the good was meant.
+- **The sell offer** (`@0x4999C..@0x49B02`): `mood = random_int(1,5)`;
+  `base = 6` (7 for goods ≥ 9), **Trade Goods −random_int(0,7)**
+  (`@0x499C3`), **Muskets +12 − tribe counter `+0x07`** (`@0x499D9`),
+  **Horses +10 − tribe counter `+0x08`** (`@0x499F0`), **Tools +1**
+  (`@0x49A05`); `att = 2·func_008262(tension)` (bands 25/50/75), zero
+  for muskets/horses, **halved when want ≥ 20** (`@0x49A34`);
+  `offer = max(1, (max(0, 2·(base−diff−att+mood+4)·want) + 5·mood)·qty/100 / 2)`.
+  The `@TRADE<n>` body's `%STRING0` is the `@VALUES` ladder row
+  `clamp3((want−att+4)/10)` (`@0x49A96`); `%NUMBER1` — the player's "a
+  fairer price would be" — is the **ceiling** `(want+1)·4 + offer`
+  (`@0x49AD1`), stretched `offer+10` whenever the offer reaches it
+  (`@0x49DDC`).
+- **The haggle** (`@0x49D76`): budget `= random_int(0,1) + (want−att+4)>>2`
+  (`@0x49AB4`). Each "fairer price" answer folds the village while
+  `random_int(1, 8·budget) > difficulty` — costing one budget point and
+  raising the offer by `max(1, random_int(want/2+1, 2·want+1)·qty/100)` —
+  otherwise it **walks away** (`@0x49DFE`): settlement `+0x07` remembers
+  the good, tension `+att/2+1`, `@BADHAGGLE0`, session over (the buy
+  phase is skipped, `[bp-0xc4]=0`).
+- **Acceptance** (`@0x49B80`): gold `+offer`; the goods land in the
+  **TRIBE's stock words `+0x0E..+0x2D`** (`@0x49BAC` — there is no
+  per-village store); `+0x07` clears to 0xFF; the village alarm word
+  drops by the load, a 100-load zeroing it (`@0x49BE4..@0x49BF8`);
+  tension credit **−2·remaining-budget** (`@0x49BD0`); muskets ≥25/≥50
+  bump `+0x07` once/twice (`@0x49C25`), horses likewise `+0x08` plus
+  `herd += qty/4` (`@0x49C46`); `+0x08` = the good (muskets/horses →
+  0xFF).
+- **The gift row** (round 0 only, `@0x49E4C`): tension credit
+  **−4·(budget+1)** (`@0x49E8D`), alarm −2·load (100-load zeroes,
+  `@0x49EAC`), one arming tick each (`@0x49ED5`; horses `@0x49EFA` jumps
+  into the sale's `+0x08` inc).
+- **The buy phase** (`@0x49C72..@0x4A34C`): needs a free cargo slot
+  (`@UNIT` cargo column, `@0x49C92`); `+0x07 == 0xFE` (the insult latch)
+  → `@BADHAGGLE3`; the sold good outside the top-two wants → `@BRING`.
+  `@BUYWHICH` lists the village goods (AI picks the max of the per-power
+  value table `[0x84BC+p·16+g]`, `@0x49FBF` — unmodeled). Ships carry a
+  **quarter load** (`@0x4A012`). Ask (`@0x4A025..@0x4A0E1`):
+  `200` (goods ≥ 8: `(8 − tribe tech +0x02)·50`), silver-up
+  `+value·(15+2·diff)`, `+random_int(0,ask)`, **−4·demand**, `+4·tension`,
+  `·qty/100`, `+(diff+random_int(0,2))·10`, floor 50. Counter floor
+  `max(10, ask/2)`, step `max(1, ask/4)` (`@0x4A15F`). Pay: short →
+  `@NOTENOUGH` + tension +1 (`@0x4A24E`); else tribe stock out, `+0x09` =
+  the good (rum 9 → 0xFF, `@0x4A1F2`), tension `−random_int(0, ask/25+1)`
+  (`@0x4A21D`). Haggle: folds while `random_int(0, demand/25+8) > diff+1`
+  and ask > 10 (step down, floor 10, a `1/(8−diff)` chance of tension +1
+  `@0x4A2CA`); else tension +2, `+0x07 = 0xFE`, `@BADHAGGLE2`
+  (`@0x4A30E`).
+
+Both engines carry the model (JS `tradeSellPick..tradeBuyRound`, C
+`colopy_village.c`); the scripted harness still remaps the trade rows to
+Cancel, so the path runs only in live play. Settlement `+0x07/+0x08/+0x09`
+and the tribe counters/stock are SAV-persisted and imported. **B.**
 
 ### Convert loss of faith — **BYTE_VERIFIED** (`func_02EF64`, `0x191F:0xA58`, read 2026-08-29)
 Run per unit from the nation's upkeep pass (`func_02F052 @0x2F0BD`).  A

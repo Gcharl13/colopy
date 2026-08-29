@@ -484,6 +484,294 @@ static void attack_village(int vi, int ui) {
  * visitor, which no scripted path can produce yet (wagons load cargo
  * through the colony Load picker — a later slice); if a laden visitor
  * ever reaches this, the parity diff will flag the gap loudly. */
+
+/* ---- the village trade haggle — the BYTE MODEL of func_049600
+ * (0x049600..0x04A37A, tail read 2026-08-29; JS tradeSellPick..
+ * tradeBuyRound mirrored draw-for-draw).  The scripted harness still
+ * remaps the trade rows to Cancel on both sides, so this path runs only
+ * in live play. ------------------------------------------------------- */
+
+/* func_008262 (0x181f:0xa60): tension <25 -> 0, <50 -> 1, <75 -> 2, else 3 */
+static int att_band(int tension) {
+    return tension >= 75 ? 3 : tension >= 50 ? 2 : tension >= 25 ? 1 : 0;
+}
+/* the tribe's goods-stock words, TribeRecord +0x0E..+0x2D (@0x49BAC) */
+static int tstock_get(int tr, int g) {
+    int off = tr * 0x4E + 0x0E + g * 2;
+    return (int16_t)(CS.tribes[off] | (CS.tribes[off + 1] << 8));
+}
+static void tstock_add(int tr, int g, int d) {
+    int v = tstock_get(tr, g) + d;
+    if (v < 0) v = 0;
+    int off = tr * 0x4E + 0x0E + g * 2;
+    CS.tribes[off] = (uint8_t)(v & 0xFF);
+    CS.tribes[off + 1] = (uint8_t)((v >> 8) & 0xFF);
+}
+/* the sell quote — @0x4999C..@0x49B02 (see game.js sellQuote for the
+ * per-line citations); out: offer/want/att */
+static void sell_quote(int vi, int good, int qty,
+                       int *offer, int *want_out, int *att_out) {
+    int tr = vtribe(vi);
+    int want = village_demand(vi)[good];
+    int mood = 1 + R(5);
+    int base = good >= 9 ? 7 : 6;
+    if (good == 13) base -= R(8);                    /* Trade Goods */
+    if (good == 15) base += 12 - CR.tribe_muskets_known[tr];
+    if (good == 8) base += 10 - CR.tribe_horses_known[tr];
+    if (good == 14) base += 1;                       /* Tools */
+    int att = 2 * att_band(CR.tension[tr]);
+    if (good == 15 || good == 8) att = 0;
+    if (want >= 20) att >>= 1;
+    int seed = 2 * (base - (int)cs_difficulty() - att + mood + 4);
+    int sw = seed * want;
+    if (sw < 0) sw = 0;
+    int of = ((sw + 5 * mood) * qty / 100) / 2;
+    if (of < 1) of = 1;
+    *offer = of; *want_out = want; *att_out = att;
+}
+/* the sale bookkeeping (villageSell): gold in, tribe stock in, alarm off
+ * by the load (100 zeroes, @0x49BE4..@0x49BF8), arming counters
+ * (@0x49C1E..@0x49C69), tension credit from the caller */
+static void village_sell_qty(int vi, int good, int qty, int paid, int credit) {
+    int tr = vtribe(vi);
+    CS.powers[cs_nation()].gold += paid;
+    tstock_add(tr, good, qty);
+    NativeSettlement *v = &CS.villages[vi];
+    int a = CR.alarm[vi];
+    CR.alarm[vi] = (uint8_t)(qty >= 100 ? 0 : (a > qty ? a - qty : 0));
+    v->alarm[cs_nation()] = CR.alarm[vi];
+    adjust_tension(tr, credit, 0);
+    if (good == 15)
+        CR.tribe_muskets_known[tr] = (int16_t)(CR.tribe_muskets_known[tr] +
+            (qty >= 50 ? 2 : qty >= 25 ? 1 : 0));
+    if (good == 8) {
+        CR.tribe_horses_known[tr] = (int16_t)(CR.tribe_horses_known[tr] +
+            (qty >= 50 ? 2 : qty >= 25 ? 1 : 0));
+        CR.tribe_herd[tr] = (int16_t)(CR.tribe_herd[tr] + qty / 4);
+    }
+}
+/* a gift (@0x49E4C): double alarm cut, one arming tick, caller's credit */
+static void village_gift_qty(int vi, int good, int qty, int credit) {
+    int tr = vtribe(vi);
+    tstock_add(tr, good, qty);
+    int a = CR.alarm[vi];
+    CR.alarm[vi] = (uint8_t)(qty >= 100 ? 0 : (a > 2 * qty ? a - 2 * qty : 0));
+    CS.villages[vi].alarm[cs_nation()] = CR.alarm[vi];
+    adjust_tension(tr, credit, 0);
+    if (good == 15) CR.tribe_muskets_known[tr]++;
+    if (good == 8) {
+        CR.tribe_herd[tr] = (int16_t)(CR.tribe_herd[tr] + qty / 4);
+        CR.tribe_horses_known[tr]++;             /* @0x49EFA -> @0x49C66 */
+    }
+}
+static void trade_buy_phase(int vi, int ui, int sold_good);
+/* the sell rounds — @0x49B02..@0x49E4C */
+static void trade_sell_round(int vi, int ui, int slot, int good, int qty) {
+    NativeSettlement *v = &CS.villages[vi];
+    int tr = vtribe(vi);
+    int offer, want, att;
+    sell_quote(vi, good, qty, &offer, &want, &att);
+    int budget = R(2) + ((want - att + 4) >> 2);      /* @0x49AB4 */
+    int ceiling = (want + 1) * 4 + offer;             /* @0x49AD1 */
+    int round = 0;
+    for (;;) {
+        int qual = (want - att + 4) / 10;             /* @VALUES row @0x49AA0 */
+        if (qual < 0) qual = 0;
+        if (qual > 3) qual = 3;
+        ev_emit(round == 0 ? "TRADE0" : "TRADE1", offer, ceiling,
+                dat_values[qual], dat_cargo[good].name);
+        int k = ask_choice();
+        int gift_row = round == 0 ? 2 : -1;
+        if (k == 0) {                                 /* accept @0x49B80 */
+            village_sell_qty(vi, good, qty, offer,
+                             -2 * (budget > 0 ? budget : 0));
+            hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui], good, -qty);
+            v->walked_good = 0xFF;
+            v->last_bought = (uint8_t)(good == 15 || good == 8 ? 0xFF : good);
+            trade_buy_phase(vi, ui, good);
+            return;
+        }
+        if (k == 1) {                                 /* haggle @0x49D76 */
+            if (budget > 0 &&
+                1 + R(8 * budget) > (int)cs_difficulty()) {
+                budget--;
+                int lo = (want >> 1) + 1, hi = 2 * want + 1;
+                int bump = (lo + R(hi - lo + 1)) * qty / 100;
+                if (bump < 1) bump = 1;
+                offer += bump;
+                if (offer >= ceiling) ceiling = offer + 10;
+                round = 1;
+                continue;
+            }
+            /* the walk-away (@0x49DFE): the good is remembered, tension
+             * rises att/2+1, the session ends (no buy phase) */
+            v->walked_good = (uint8_t)good;
+            adjust_tension(tr, (att >> 1) + 1, 0);
+            ev_emit("BADHAGGLE0", 0, 0, 0, dat_cargo[good].name);
+            return;
+        }
+        if (k == gift_row) {                          /* gift @0x49E4C */
+            village_gift_qty(vi, good, qty,
+                             -4 * ((budget > 0 ? budget : 0) + 1));
+            hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui], good, -qty);
+            v->walked_good = 0xFF;
+            v->last_bought = (uint8_t)(good == 15 || good == 8 ? 0xFF : good);
+            trade_buy_phase(vi, ui, good);
+            return;
+        }
+        return;               /* never mind: no buy phase (@0x49E42) */
+    }
+    (void)slot;
+}
+static void trade_sell_offer(int vi, int ui, int slot) {
+    NativeSettlement *v = &CS.villages[vi];
+    int good = CR.unit_hold[ui][slot].good;
+    int qty = CR.unit_hold[ui][slot].qty;
+    /* settlement +0x07: offering the walked-away good again (@0x49976) */
+    if (v->walked_good == (uint8_t)good) {
+        ev_emit("BADHAGGLE1", 0, 0, dat_cargo[good].name, 0);
+        trade_buy_phase(vi, ui, -1);
+        return;
+    }
+    const int16_t *dem = village_demand(vi);
+    /* the last-bought refusal (+0x08; the engine's 0xFF-exception check
+     * compares the UNIT index @0x49BFD — an authentic bug; the intended
+     * good semantics kept, natives.md) */
+    if (v->last_bought == (uint8_t)good && good != 15) {
+        int w1 = -1, w2 = -1, w3 = -1;
+        for (int g = 0; g < 16; g++) {
+            if (g == good) continue;
+            if (w1 < 0 || dem[g] > dem[w1]) { w3 = w2; w2 = w1; w1 = g; }
+            else if (w2 < 0 || dem[g] > dem[w2]) { w3 = w2; w2 = g; }
+            else if (w3 < 0 || dem[g] > dem[w3]) w3 = g;
+        }
+        ev_emit("BADCARGO", 0, 0, dat_cargo[good].name,
+                w1 >= 0 ? dat_cargo[w1].name : "");
+        (void)w3;
+        return;                     /* @BADCARGO ends the session (@0x4996F) */
+    }
+    if (dem[good] <= 1) {
+        ev_emit("TRADENOWANT", qty, 0, dat_cargo[good].name, 0);
+        trade_buy_phase(vi, ui, -1);
+        return;
+    }
+    trade_sell_round(vi, ui, slot, good, qty);
+}
+static void trade_sell_pick(int vi, int ui) {
+    int slots[EURO_HOLD_MAX], ns = 0;
+    for (int i = 0; i < CR.unit_n_hold[ui]; i++)
+        if (CR.unit_hold[ui][i].qty > 0) slots[ns++] = i;
+    if (!ns) { trade_buy_phase(vi, ui, -1); return; }
+    if (ns == 1) { trade_sell_offer(vi, ui, slots[0]); return; }
+    ev_emit("TRADEWHICH", 0, 0, 0, 0);
+    int k = ask_choice();
+    /* cancel ends the session (@0x49845 -> @0x4A362) */
+    if (k >= 0 && k < ns) trade_sell_offer(vi, ui, slots[k]);
+}
+/* the buy ask — @0x4A025..@0x4A0E1 (see game.js villageAsk) */
+static int village_ask_price(int vi, int good, int qty) {
+    int tr = vtribe(vi);
+    int ask = good >= 8 ? (8 - tribe_level(tr)) * 50 : 200;
+    if (good >= 7) ask += (market_bid(good) + 1) * (15 + 2 * (int)cs_difficulty());
+    ask += R(ask + 1);
+    ask -= 4 * village_demand(vi)[good];
+    ask += 4 * CR.tension[tr];
+    ask = qty * ask / 100;
+    ask += ((int)cs_difficulty() + R(3)) * 10;
+    return ask < 50 ? 50 : ask;
+}
+/* the buy rounds — @0x4A144..@0x4A34C */
+static void trade_buy_round(int vi, int ui, int good, int qty) {
+    NativeSettlement *v = &CS.villages[vi];
+    int tr = vtribe(vi);
+    int demand = village_demand(vi)[good];
+    int ask = village_ask_price(vi, good, qty);
+    int floor_p = ask >> 1; if (floor_p < 10) floor_p = 10;   /* @0x4A15F */
+    int step = ask >> 2; if (step < 1) step = 1;              /* @0x4A170 */
+    int round = 0;
+    PowerRecord *p = &CS.powers[cs_nation()];
+    for (;;) {
+        ev_emit(round == 0 ? "BUY0" : "BUY1", ask, floor_p,
+                dat_cargo[good].name, dat_units[CS.units[ui].type].name);
+        int k = ask_choice();
+        if (k == 0) {                                 /* pay @0x4A1C8 */
+            if (ask > p->gold) {
+                ev_emit("NOTENOUGH", (int32_t)p->gold, 0, 0, 0);
+                adjust_tension(tr, 1, 0);             /* @0x4A277 */
+                return;
+            }
+            p->gold -= ask;
+            tstock_add(tr, good, -qty);
+            hold_add(CR.unit_hold[ui], &CR.unit_n_hold[ui], good, qty);
+            v->last_sold = (uint8_t)(good == 9 ? 0xFF : good);  /* rum */
+            adjust_tension(tr, -R(ask / 25 + 2), 0);  /* @0x4A21D */
+            return;
+        }
+        if (k == 1) {                                 /* haggle @0x4A27E */
+            int roll = R(demand / 25 + 9);
+            if (ask > 10 && roll > (int)cs_difficulty() + 1) {
+                ask -= step;
+                if (ask < 10) ask = 10;
+                if (1 + R(8 - (int)cs_difficulty()) == 1)
+                    adjust_tension(tr, 1, 0);         /* @0x4A2CA */
+                round = 1;
+                continue;
+            }
+            adjust_tension(tr, 2, 0);
+            v->walked_good = 0xFE;                    /* the insult latch */
+            ev_emit("BADHAGGLE2", 0, 0, 0, 0);
+            return;
+        }
+        return;
+    }
+}
+static void trade_buy_phase(int vi, int ui, int sold_good) {
+    NativeSettlement *v = &CS.villages[vi];
+    /* a free cargo slot (@UNIT cargo column vs the load, @0x49C92) */
+    int t = CS.units[ui].type;
+    int used = CR.unit_n_hold[ui];    /* JS counts hold + passenger slots */
+    if (dat_units[t].cargo - used < 1) return;
+    if (v->walked_good == 0xFE) {                     /* @0x49D5E */
+        ev_emit("BADHAGGLE3", 0, 0, 0, 0);
+        return;
+    }
+    /* @BRING (@0x49CF0): the sold good is not among the top two wants */
+    const int16_t *dem = village_demand(vi);
+    int w1 = 0, w2 = -1, w3 = -1;
+    for (int g = 1; g < 16; g++) {
+        if (dem[g] > dem[w1]) { w3 = w2; w2 = w1; w1 = g; }
+        else if (w2 < 0 || dem[g] > dem[w2]) { w3 = w2; w2 = g; }
+        else if (w3 < 0 || dem[g] > dem[w3]) w3 = g;
+    }
+    if (sold_good >= 0 && w1 != sold_good && w2 != sold_good)
+        ev_emit("BRING", 0, 0, dat_cargo[w1].name,
+                w2 >= 0 ? dat_cargo[w2].name : "");
+    (void)w3;
+    /* villageSurplus: raw goods with qty >= 25, up to three */
+    int offers[3], oq[3], no = 0;
+    for (int g = 0; g <= 7 && no < 3; g++) {
+        int q = dem[g] * 5;
+        if (q > 100) q = 100;
+        if (q >= 25) { offers[no] = g; oq[no] = q; no++; }
+    }
+    if (!no) return;
+    ev_emit("BUYWHICH", 0, 0, dat_cargo[offers[0]].name,
+            no > 1 ? dat_cargo[offers[1]].name : "");
+    int k = ask_choice();
+    if (k < 0 || k >= no) return;
+    /* ships carry a QUARTER load (@0x4A012); clamp to hold room */
+    int qty = oq[k];
+    if (dat_units[t].hull > 0) qty >>= 2;
+    int slot_room = 0;
+    for (int i = 0; i < CR.unit_n_hold[ui]; i++)
+        if (CR.unit_hold[ui][i].good == offers[k])
+            slot_room = 100 - CR.unit_hold[ui][i].qty;
+    int space = (dat_units[t].cargo - used) * 100 + slot_room;
+    if (qty > space) qty = space;
+    if (qty <= 0) return;
+    trade_buy_round(vi, ui, offers[k], qty);
+}
+
 static void open_village_trade(int vi, int ui) {
     int tr = vtribe(vi);
     UnitRecord *u = &CS.units[ui];
@@ -504,9 +792,9 @@ static void open_village_trade(int vi, int ui) {
      * open a village through moveSel, so it stays unreachable) */
     if (CR.tension[tr] >= 40 && wagon)
         ev_emit("GRUDGEWAGONS", 0, 0, dat_tribes[tr].name, 0);
-    if (!laden) { ev_emit("TRADENOCARGO", 0, 0, 0, 0); return; }
-    /* the haggle proper: tradeSellPick .. tradeBuyRound — unreachable
-     * until a load-cargo command exists; deliberately unported. */
+    /* an empty hold meets @DEFICIT and the visit ends (@0x49F0E) */
+    if (!laden) { ev_emit("DEFICIT", 0, 0, 0, 0); return; }
+    trade_sell_pick(vi, ui);
 }
 
 /* runVillageAction (game.js:6494).  Every non-trade row leaves the

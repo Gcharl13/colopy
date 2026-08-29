@@ -200,11 +200,20 @@ void cr_reset_from_load(void) {
         r->n_col++;
     }
     /* tribes: tension toward the player from the 0x4E-stride TribeData
-     * (+0x46 + nation*2, clamp 0..100 -- importer game.js:10301) */
+     * (+0x46 + nation*2, clamp 0..100 -- importer game.js:10301), plus
+     * the trade counters the haggle reads (func_049600, 2026-08-29):
+     * +0x07/+0x08 muskets/horse-herd counters, +0x0A the herd word.
+     * (The tribe's 16 goods-stock words +0x0E..+0x2D stay IN the record
+     * -- the C reads and writes CS.tribes directly.) */
     for (int i = 0; i < 8; i++) {
-        int off = i * 0x4E + 0x46 + cs_nation() * 2;
+        int tb = i * 0x4E;
+        int off = tb + 0x46 + cs_nation() * 2;
         int v = CS.tribes[off] | (CS.tribes[off + 1] << 8);
         CR.tension[i] = (uint8_t)(v > 100 ? 100 : v);
+        CR.tribe_muskets_known[i] = CS.tribes[tb + 7];
+        CR.tribe_horses_known[i] = CS.tribes[tb + 8];
+        CR.tribe_herd[i] =
+            (int16_t)(CS.tribes[tb + 0xA] | (CS.tribes[tb + 0xB] << 8));
     }
     /* villages: alarm toward the player (importer reads the u16's low byte) */
     for (int i = 0; i < CS.n_villages; i++)

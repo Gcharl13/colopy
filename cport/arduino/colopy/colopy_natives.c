@@ -20,11 +20,11 @@
  * countdown.  Ask-events are emitted key-only with no state change — the
  * trace's stubbed askEvent (callback never runs), flagged.
  *
- * NOT mirrored (flagged): the RAIDSTORES village-side banking
- * (v.stock/v.wealth, game.js:5718 — settlement +0x08/+0x0A) has no CR home
- * yet; it feeds only village trade, which is unported.  The INDIANWAGONS
- * claim can never fire in either engine — the importer only ever seeds
- * holds on SHIPS (game.js:10463), so no Wagon Train carries cargo. */
+ * The RAIDSTORES banking is the TRIBE-ARMING byte model (2026-08-29 —
+ * the old "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
+ * pointer; see the case-1 payload).  The INDIANWAGONS claim can never
+ * fire in either engine — the importer only ever seeds holds on SHIPS
+ * (game.js:10463), so no Wagon Train carries cargo. */
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -531,7 +531,22 @@ static void native_raid(int vi, int ci) {
         int g = top_stock(c, 0, &qty);
         if (g < 0 || !qty) { ev_emit("RAIDNOTHING", 0, 0, 0, 0); break; }
         c->stock[g] = 0;
-        /* village banking (+0x08/+0x0A, @0x5C3E1) unmodeled — see header */
+        /* the haul arms the TRIBE (corrected 2026-08-29 — the old
+         * "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
+         * pointer): stolen HORSES bump the herd-counter byte +0x08 and
+         * add 25 to the herd word +0x0A (@0x5C3DD..@0x5C3E4); stolen
+         * MUSKETS bump the muskets counter +0x07, twice at a 50+ load
+         * (@0x5C3EE..@0x5C3FB). Other goods are simply gone. */
+        if (tribe >= 0 && tribe < 8) {
+            if (g == 8) {
+                CR.tribe_horses_known[tribe]++;
+                CR.tribe_herd[tribe] = (int16_t)(CR.tribe_herd[tribe] + 25);
+            }
+            if (g == 15)
+                CR.tribe_muskets_known[tribe] =
+                    (int16_t)(CR.tribe_muskets_known[tribe] +
+                              (qty >= 50 ? 2 : 1));
+        }
         adjust_tension(tribe, -4, 0);        /* push -4 @0x5C416 */
         ev_emit("RAIDSTORES", qty, 0, c->name, dat_cargo[g].name);
         break;

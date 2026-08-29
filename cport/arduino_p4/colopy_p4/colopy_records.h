@@ -105,7 +105,12 @@ typedef struct COLOPY_PACKED {
     uint8_t  population;            /* +0x04 */
     uint8_t  mission;               /* +0x05 */
     uint8_t  growth;                /* +0x06 */
-    uint8_t  _pad_07[3];
+    uint8_t  walked_good;           /* +0x07  haggle memory (func_049600):
+                                     * good id walked away on, 0xFE = the
+                                     * buy-insult latch, 0xFF = none */
+    uint8_t  last_bought;           /* +0x08  last good bought (0xFF none) */
+    uint8_t  last_sold;             /* +0x09  last good sold to the player
+                                     * (0xFF none; rum 9 never latches) */
     uint16_t alarm[4];              /* +0x0A  per power */
 } NativeSettlement;
 
