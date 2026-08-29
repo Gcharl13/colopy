@@ -55,7 +55,9 @@ static void build_regions(void) {
     int next = 1;
     for (int seed = 0; seed < COLOPY_PLANE; seed++) {
         if (CS.region[seed] || tile_water(CS.terrain[seed])) continue;
-        CS.region[seed] = (uint8_t)next;
+        /* hi nibble = the territory OWNER plane, 0xF = unclaimed (the
+         * fresh-map state; func_005DF0) */
+        CS.region[seed] = (uint8_t)(0xF0 | (next & 0x0F));
         int sp = 0;
         stack[sp++] = (int16_t)seed;
         while (sp) {
@@ -69,7 +71,7 @@ static void build_regions(void) {
                     continue;
                 int n = ny * COLOPY_MAP_W + nx;
                 if (CS.region[n] || tile_water(CS.terrain[n])) continue;
-                CS.region[n] = (uint8_t)next;
+                CS.region[n] = (uint8_t)(0xF0 | (next & 0x0F));
                 stack[sp++] = (int16_t)n;
             }
         }

@@ -32,6 +32,9 @@ int rumour_at(int x, int y) {
     if (!CR.map_seed) return 0;
     int t = tile_terrain(map_at(x, y));
     if (t >= 0x18) return 0;
+    /* @0x61BC (func_006188): a claimed plane-3 OWNER nibble (anything
+     * but 0xF -- func_005DF0) suppresses the rumour.  Mirrors game.js. */
+    if ((CS.region[y * COLOPY_MAP_W + x] >> 4) != 0x0F) return 0;
     int h = (((y >> 2) * 0x13 + (x >> 2) * 0x11 + CR.map_seed + 8) & 0x1F);
     if (h - (x & 3) * 4 != (y & 3)) return 0;
     int bit = y * COLOPY_MAP_W + x;      /* rumoursDone consumed-set */

@@ -656,11 +656,16 @@ const at = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) ? 25 : MAP.til
 // It is a separate plane from the terrain byte, which is why plow's 0x40 does
 // not collide with the terrain plane's river bit of the same value.
 const IMPROVE = new Uint8Array(MAP.w * MAP.h);
-// Plane 3's HIGH nibble: the engine's RUNTIME [0x164] high nibble is the
-// prime-resource id (func_005DF0), but the SAVED bytes hold region-id bits
-// there (a whole neighbourhood reads 3), so the runtime plane must be
-// rebuilt at load by a rule still unread. The array carries the saved
-// nibble verbatim for future decoding; nothing gameplay reads it yet.
+// Plane 3's HIGH nibble -- RESOLVED 2026-08-29: it is the tile's
+// TERRITORY OWNER (func_005DF0 = byte >> 4, 0xF -> -1 none; both callers
+// use it as an owner -- @0x2288A compares it to the active player,
+// @0x47242 range-checks < 4), multiplexed with the FEATURE marker
+// (func_005F82: improve bit 2 AND nibble >= 4). The "neighbourhood reads
+// 3" that looked like region bits was the Dutch (power 3) territory
+// claim around their colonies. Consumers: the rumour hash suppresses on
+// ANY claimed nibble (@0x61BC in func_006188) and the detail hash's
+// feature pre-gate (map_detail_id). The claim WRITER (colony founding?)
+// is unread -- fresh games stay 0xF everywhere, flagged.
 const RESOURCE = new Uint8Array(MAP.w * MAP.h).fill(0x0F);
 const resAt = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h)
   ? 0x0F : RESOURCE[y * MAP.w + x];
@@ -10416,17 +10421,22 @@ function teaParty(good) {
 // docs/manual_src/part5.md:285 and docs/UI_AUDIT_TRACKER.md:424 are transposed
 // and are corrected with this change. See RULINGS.md 2026-08-07.
 //
-// NOT REPRODUCED: the func_005DF0 gate. The port carries no owner/feature plane
-// (the .MP loader discards it), and the plane's own identity is unresolved --
-// spec/systems/events.md:187-192 calls it the tile feature nibble,
-// tools/hillsrivers_render.py:195 calls it the continent-plane owner nibble.
-// Consequence: rumours appear on some tiles the DOS game suppresses. TBD.
+// The func_005DF0 gate is REPRODUCED (2026-08-29): the plane-3 high
+// nibble is the TERRITORY OWNER (both identities in the old dispute were
+// half-right -- low nibble region, high nibble owner/feature), imported
+// verbatim into RESOURCE[] and checked below. Fresh games stay unclaimed
+// (the engine's claim writer is unread, flagged).
 function rumourAt(x, y) {
   if (!G.mapSeed) return false;             // [0x190] == 0 disables them @0x6191
   const t = tileTerrain(at(x, y));
   // The engine gates on the classify thunk 0x3E4:0x3A, not on the raw id; the
   // two agree on every id the .MP loader can produce.
   if (t >= 0x18) return false;                     // Arctic, Ocean, Sea Lane
+  // The C1.2 gate, RESOLVED 2026-08-29 (@0x61BC in func_006188 = the
+  // rumour hash itself): a tile whose plane-3 OWNER nibble is claimed
+  // (func_005DF0 >= 0, i.e. anything but 0xF) never carries a rumour --
+  // the DOS suppression the port was missing.
+  if (RESOURCE[y * MAP.w + x] !== 0x0F) return false;
   const h = ((y >> 2) * 0x13 + (x >> 2) * 0x11 + G.mapSeed + 8) & 0x1F;
   // `rumoursDone` is the port's own consumed-rumour bookkeeping -- UNCITED. The
   // engine consumes a rumour by writing the tile's high nibble at 0x5DCC.
