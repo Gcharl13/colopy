@@ -9191,14 +9191,19 @@ function rivalTurn() {
         // is not modelled).
         const inside = G.units.find(p => p.x === target.x && p.y === target.y && !p.ship);
         if (inside) { resolveAttack(u, inside); continue; }
-        // The engine's aftermath (func_05CA7E) CAPTURES the settlement --
-        // transfer + plunder + the @CAPTURED family split @0x5DED1 (declared
-        // -> CAPTURED3; the winner-human @BURNED variant is the player's own
-        // razing, not this). A rival already holding six colonies razes
-        // instead (@BURNED2, the byte-attributed loser-human burn @0x5DB0B)
-        // -- the burn-vs-capture selector itself is unread, flagged.
+        // The burn-vs-capture selector is BYTE-READ (2026-08-29,
+        // func_05CA7E @0x5D574..@0x5D5D0): a EUROPEAN winner ALWAYS takes
+        // the capture path (transfer + plunder + the @CAPTURED family
+        // split @0x5DED1, declared -> CAPTURED3); only a TRIBE winner
+        // burns, and only a size-1 colony (@0x5D59A -> the removal
+        // @0x5D651 with the musket/horse loot @0x5D627/@0x5D63D and the
+        // @BURNED1/2/3 involvement split) -- a bigger colony just loses
+        // one colonist to a tribal win (0x181f:0xa9c @0x5D5A2). So the
+        // rival capture below is unconditional; the razing fallback runs
+        // only at the port's own colony-array capacity, a capacity
+        // artifact, not the engine's rule.
         G.colonies.splice(G.colonies.indexOf(target), 1);
-        if (r.colonies.length < 6) {
+        if (r.colonies.length < 48) {
           const plunder = Math.min(G.gold, 50 * Math.max(1, target.colonists.length));
           G.gold -= plunder;
           r.colonies.push({ x: target.x, y: target.y, nation: r.nation,

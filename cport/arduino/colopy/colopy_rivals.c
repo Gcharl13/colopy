@@ -504,14 +504,16 @@ void rival_turn(void) {
                         if (CR.n_runits[rn] < nb) k--;
                         continue;
                     }
-                    /* the empty colony falls: capture (plunder + transfer)
-                     * under six colonies, razing over (@CAPTURED/@BURNED2;
-                     * the burn-vs-capture selector is unread — flagged in
-                     * JS, mirrored) */
+                    /* burn-vs-capture BYTE-READ 2026-08-29 (func_05CA7E
+                     * @0x5D574..@0x5D5D0): a EUROPEAN winner always
+                     * CAPTURES; only a tribe burns, and only a size-1
+                     * colony (bigger ones lose one colonist).  The razing
+                     * fallback below is the port's own array-capacity
+                     * artifact, not an engine rule (mirrors game.js). */
                     int tx = tc->map_x, ty = tc->map_y;
                     int tpop = tc->population ? tc->population : 1;
                     colony_remove(target);
-                    if (r->n_col < 6) {
+                    if (r->n_col < 48) {
                         PowerRecord *p = &CS.powers[cs_nation()];
                         int32_t plunder = 50 * tpop;
                         if (plunder > p->gold) plunder = p->gold;
