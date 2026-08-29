@@ -54,7 +54,11 @@ static void dump_market_state(const char *step) {
     const PowerRecord *p = colopy_power(cs_nation());
     printf("{\"step\":\"%s\",\"gold\":%d,\"fund\":%d,\"market\":[", step,
            p->gold, p->kings_fund);
-    for (int i = 0; i < N_GOODS; i++) printf("%s%d", i ? "," : "", market_bid(i));
+    /* the LEVEL byte, like the JS snapshot's G.market — the dump printed
+     * market_bid (level−1) after the bid/ask straddle fix and this
+     * oracle sat red unnoticed; repaired 2026-08-29 */
+    for (int i = 0; i < N_GOODS; i++)
+        printf("%s%d", i ? "," : "", p->price_level[i]);
     printf("],\"accum\":[");
     for (int i = 0; i < N_GOODS; i++) printf("%s%d", i ? "," : "", market_accum(i));
     printf("],\"tons\":[");

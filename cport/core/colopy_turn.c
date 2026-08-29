@@ -217,6 +217,17 @@ void cr_reset_from_load(void) {
      * .SAV roundtrip contract holds. */
     for (int i = 0; i < CS.n_units; i++) {
         CR.goal_x[i] = CR.goal_y[i] = -1;
+        /* Go To (orders 3): the goal rides in +0x09/+0x0A — the setter
+         * @0x41B62/@0x41B69 writes them with orders 3 for the human
+         * (@0x41B4B).  Restored when the goal is on the map; a garbage
+         * goal leaves −1 and units_session_seed resets the order (the
+         * guard is the port's own, FLAGGED). */
+        if (CS.units[i].orders == 3 &&
+            CS.units[i].goto_x >= 1 && CS.units[i].goto_x < COLOPY_MAP_W - 1 &&
+            CS.units[i].goto_y >= 1 && CS.units[i].goto_y < COLOPY_MAP_H - 1) {
+            CR.goal_x[i] = CS.units[i].goto_x;
+            CR.goal_y[i] = CS.units[i].goto_y;
+        }
         int own = CS.units[i].owner_flags & 0x0F;
         CR.unit_rival_born[i] = (uint8_t)(own < 4 && own != (int)cs_nation());
         CR.unit_no_moves[i] = CR.unit_rival_born[i];
@@ -337,6 +348,8 @@ void units_session_seed(void) {
     for (int i = 0; i < CS.n_units; i++) {
         CS.units[i].moves_remaining = (uint8_t)unit_full_moves(i);
         uint8_t o = CS.units[i].orders;
+        /* 3 (Go To) restores when the loader accepted its goal */
+        if (o == 3 && CR.goal_x[i] >= 0) continue;
         if (o != 1 && o != 5 && o != 6 && o != 8 && o != 9)
             CS.units[i].orders = 0;
     }
