@@ -1441,9 +1441,11 @@ function edgeBlend(ctx, mx, my, px, py, hidden) {
 // The O514 -> O513 -> O512 chain of §6.3-6.11. Implemented here: ground fold,
 // the adjacency-masked forest / relief / river bands, river mouths, the coastal
 // beach halo (clean edges + quadrant fallback), the O512 biome-edge dither and
-// its fog path (§6.11), and the prime-resource detail band. Not implemented:
-// roads as a terrain band (§6.8 — the loader discards the feature plane anyway;
-// player-built roads come from drawImprovements instead).
+// its fog path (§6.11), and the prime-resource detail band. Roads (§6.8) are
+// drawn by drawImprovements as the hub + eight adjacency connectors from the
+// improvement plane -- the same sprites the compositor band emits. No road can
+// arrive any other way: VICEROY's own loader discards .MP layer 2
+// (live-verified, RULINGS batch 7), so the improve plane is the only source.
 
 // §6.7 — 8-direction land bitmap, bit d in order N, NE, E, SE, S, SW, W, NW.
 const DIR8 = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
