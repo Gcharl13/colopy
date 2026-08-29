@@ -121,6 +121,29 @@ loader (`@0x074EC3`/`@0x074EEE`) parses 23 rows into a per-type table at base
   table" is now **RESOLVED** (terrain `Movement`·3, see the bullet above); the immediate
   constants here are **extra AI evaluation weights** layered on the real terrain cost.
 
+### Damaged-ship repair — **BYTE_VERIFIED** (`func_02F052 @0x2F084..@0x2F1E2`, read 2026-08-29)
+Every unit of the power whose `+0x04` flags carry bit **0x80** (damaged),
+except **type 0x0B Artillery** (`@0x2F08F` — a damaged piece keeps its
+demotion), ticks its **`+0x16` counter +1 per turn** (`@0x2F0E0`) and
+**+1 more when its coordinates pass the map-bounds test**
+(`is_xy_in_map_bounds` via `0x181F:0x302`, `@0x2F0FE`) — so a ship anywhere
+ON the map (port or open sea, no Drydock required) mends at 2 a turn, and a
+ship in Europe (off-map coordinates) at 1.  Repair completes when the
+counter reaches the **`@UNIT` DEFENSE column** (stride-14 record byte
+`+0x5235`, `@0x2F126` — Caravel 2, Merchantman 6, Galleon 10, Privateer 8,
+Frigate 16, Man-O-War 24): the flag clears (`@0x2F135`) and the human gets
+`@REFIT` (id 0xEEF = key `@0x1E88F`) naming the colony under the ship
+(`@0x2F1A4`) or the homeport when off-map (`@0x2F1BA`); at sea the location
+slot is left stale.  Both engines carry this model (the ports also zero the
+counter on completion — hygiene, the engine leaves `+0x16` as-is, FLAGGED).
+
+### The `@UNIT` stride-14 record (DGROUP `0x5230`) — **BYTE_VERIFIED** (parser `@0x74ED5..@0x74F5D`)
+`+0` name ptr · `+2` icon · `+4` **movement ×3** (thirds, `shl+add`
+`@0x74F04`) · `+6` attack · `+5` defense (written out of order `@0x74F1A`) ·
+`+7` cargo holds · `+8` the "99" column · `+9` hammers (÷32) · `+10` tools
+(÷10) · `+11..+12` the last two columns · `+13` the role bits
+(`0x1a1f:0xb2e`).
+
 ## 4. UI
 Active-unit orders box and map cursor. See `docs/UI_RENDER_MAP.md`, `notes/SPRITE_CATALOG.md` (renderer sprite indices per CLAUDE.md hard rule 6).
 

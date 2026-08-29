@@ -56,14 +56,27 @@ the tile's forest state (`[bp-0xc]=0` if terrain id ∈ 8..0x17 forested, `@0x40
 - **Completion:** when `counter ≥ threshold` (`@0x040756`/`@0x040A6C`) the counter is
   reset to 0 and the order byte `+0x314C` is cleared. **B.**
 
-### Lumber from clearing — BYTE_VERIFIED
-Clearing a forested tile near a colony deposits lumber into the current colony
+### Lumber from clearing — BYTE_VERIFIED (grant fully read 2026-08-29)
+Clearing a forested tile near a colony deposits lumber into the found colony
 (`*(0x8542)`): `add [colony +0xA4], ax` (`@0x04084D`) — **`+0xA4 = +0x9A + 5·2` =
-the Lumber slot** of the 20-good colony array (good 5 = Lumber), *not* a separate
-field. The amount derives from the `@TERRAIN` table column at `+0x2F80`, scout-scaled
-and clamped ≥0; emits `@CLEARCUT` (GAME idx 459, "%NUMBER0 lumber added"). Road
-completion also bumps `ColonyRecord +0x98` by `0xA` when the tile is the owner's
-(`@0x040AA9`). **B.**
+the Lumber slot** of the colony stock array (good 5 = Lumber), *not* a separate
+field.  The full grant chain (`@0x40769..@0x4084D`), which also **closes the old
+column CONFLICT** — `+0x2F80 − 0x2F7B = 5`, the **LUMBERJACK yield column** of the
+tile's folded id (the prior "that is y_ore" arithmetic forgot that the yield
+columns base at `+0x2F7B`):
+
+- colony = the unit's own power's, found by `0x181F:0x614` and gated to
+  **distance ≤ 3** (`[0x8db8]` `@0x407A0`; the metric is unread — Manhattan is
+  the port's reading, FLAGGED);
+- `mult` = the lumber column, **+1** when the *colony's own tile* carries river
+  or road (`improve & 0x0A` `@0x407C7`), and **forced to 1 without a Lumber
+  Mill** (`colony_has(0x24)` `@0x407D0`);
+- amount = `min(warehouse room, mult × 20 × (Hardy ? 2 : 1))`
+  (`@0x407E1..@0x407FD`, capacity via `func_008D00`), clamped ≥ 0;
+
+emits `@CLEARCUT` for the human (`@0x40839`).  Road completion also bumps
+`ColonyRecord +0x98` by `0xA` when the tile is the owner's (`@0x040AA9`) —
+the field's semantics there are unread, FLAGGED, not modeled.  **B.**
 
 ### Tool cost (−20) — BYTE_VERIFIED (2026-06-20)
 The completion thunks (`0x04181D`/`0x041822`) resolve to **`func_040608`**, which

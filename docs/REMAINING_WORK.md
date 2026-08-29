@@ -204,7 +204,7 @@ of the scope.
 | C1.15 | `PowerRecord +0x02` (rival independence progress) is real engine state the port does not model — a random walk stands in. | `port/src/game.js:7474` |
 | C1.16 | `PowerRecord +0xFC` per-good trade totals are preserved but **the market does not read them**. | `cport/core/colopy_records.h:133-140` |
 | C1.17 | **AI-AI war grievance drivers unread and omitted**; war START drivers omitted. | `port/src/game.js:8587`, `:7467` |
-| C1.18 | ~~Imported units are never Fortified.~~ **FIXED 2026-08-28 (scoped).** The record's `+0x08` byte indexes the same `@ORDERS` table the status letter reads, and both importers now RESTORE the stable states — 1 Sentry, 5 Fortify, 6 Fortified (the fixture's player units carry exactly 0/1/6) — so a fortified defender keeps its +50%/+4 combat standing across a load. Values with unread companion state (2 Trade Route, 3 Go To + its `+0x09/0x0A` goal, 4 Live In Village, 7..9 build/plow/road + `+0x16` turns_worked, the 11/12 internals) still reset to 0, FLAGGED — restoring 3 and 7..9 with their mapped record fields is the natural next slice. | `cport/core/colopy_turn.c` `units_session_seed`, `port/src/game.js` import loop | closed |
+| C1.18 | ~~Imported units are never Fortified.~~ **FIXED 2026-08-28 (scoped).** The record's `+0x08` byte indexes the same `@ORDERS` table the status letter reads, and both importers now RESTORE the stable states — 1 Sentry, 5 Fortify, 6 Fortified (the fixture's player units carry exactly 0/1/6) — so a fortified defender keeps its +50%/+4 combat standing across a load. 2026-08-29: **8/9 (clear-plow/road) now RESTORE too** — their only companion state is `+0x16` turns_worked, which both importers read (with the `+0x04` bit-0x80 damaged flag for ships/artillery), and the work processors are byte-modeled, so a pioneer resumes mid-job. Values with unread companion state (2 Trade Route, 3 Go To + its `+0x09/0x0A` goal, 4 Live In Village, 7, the 11/12 internals) still reset to 0, FLAGGED. | `cport/core/colopy_turn.c` `units_session_seed`, `port/src/game.js` import loop | closed |
 | C1.19 | `headingScore`: halving predicates `0x902`/`0x8D0`, the `+4` flag pair, the frontier gate `0x984` and the era/resource/colony-site terms are **unread and omitted**. | `port/src/game.js:5918` |
 | C1.20 | The goto executor's own path scoring (`func_04E2D6` step 5) is unported — a straight-line one-tile step stands in. | `port/src/game.js:5927` |
 
@@ -298,7 +298,9 @@ text and price placement (`cport/game/colopy_input.c:761`); `@PURCHASETAX` rate
 (`:5042`); **the tax petition has no engine entry point** — port-authored under
 key K (`:9001`); `@PRICEUP/@PRICEDOWN` bid-vs-ask (`:4434`); market traffic
 accumulator not reconciled into the save (`cport/core/colopy_market.c:17`);
-`@REFIT` repair timer (`:3369`).
+the `@REFIT` repair timer CLOSED 2026-08-29 — byte-read from func_02F052
+(+0x16 counter, +2/turn on the map, +1 in Europe, complete at the @UNIT
+defense column; no Drydock gate exists in the bytes).
 
 Dialogs: KING*/IND* sheet centres unmeasured (`:894`); `@0x073474` ink slots
 (`:907`); empty-entry = full amount (`:980`); speaker anchoring per family

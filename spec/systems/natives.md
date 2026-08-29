@@ -202,6 +202,27 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   clamped to `[10, min(3·tribe_wealth[0x9E96]+10, 100)]` (func_04AC00 @0x4AE95..@0x4AEB8:
   ceiling 100 @0x4AEA2, floor 10 @0x4AEB0). **B.**
 
+### Convert loss of faith — **BYTE_VERIFIED** (`func_02EF64`, `0x191F:0xA58`, read 2026-08-29)
+Run per unit from the nation's upkeep pass (`func_02F052 @0x2F0BD`).  A
+**convert** unit (type 0 Colonists with profession `0x1B`, `@0x2EF99/@0x2EFA3`)
+ticks the record's own **`+0x16` counter** only while all three hold:
+
+1. his coordinates are on the map (`is_xy_in_map_bounds`, `@0x2EF86`);
+2. he is **not on a settlement tile** (village-or-colony lookup
+   `0x181F:0x6BE` → `func_005FD4`: improve **bit 2**, set by both village
+   placement and colony creation `@0x2EBDC`; `@0x2EFB5`);
+3. he is **alone** — his tile stack counts fewer than 2 (the chain walker
+   `func_0073A8` verb 2, `@0x2EFC9`).
+
+Past **8** qualifying turns (`@0x2EFDA` — the `@DEADCONVERTS` text's own
+"eight turns") he is deleted (`0x181F:0x808` `@0x2F00B`) with
+`@DEADCONVERTS` (id 0xEE2 = key `@0x1E882`) and a view-center for the human
+owner (`@0x2F000`).  An escorted or parked convert keeps his faith
+indefinitely, and the timer **survives a save** (it is the SAV's
+`turns_worked` byte).  Both engines carry this model; because settled
+converts never age, the ports add a shared 100-living-converts conversion
+bound (capacity policy, FLAGGED — the DOS pool is finite too, size unread).
+
 ## 4. UI
 Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys (e.g. `@CHIEFHOWDY @CHIEFGIFT @CHIEFKILL @VILLAGEHAPPY @INDIANTREATY`). Action menu from `@ACTIONS`. See `docs/SESSION_UI_CATALOG.md`.
 
