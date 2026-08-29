@@ -295,34 +295,147 @@ static void native_demands(void) {
                     0, 0, dat_tribes[ti].name, dat_regionname[cs_nation()]);
             return;
         }
-        /* @INDIANWAGONS: unreachable — no Wagon Train ever has a hold
-         * (importer seeds holds on ships only, game.js:10463); no draw. */
-        /* @INDIANCITY / @INDIANGOLD: goods from a random colony's stores,
-         * else gold (both ask stubs) */
+        /* The claim CONTENT is the byte model of the native-meeting
+         * demand handler (0x5755C..0x57A15, 2026-08-29); the trigger
+         * cadence stays the flagged per-turn roll (mirrors game.js).
+         * @INDIANGOLD is DEAD GAME.TXT content (zero EXE hits) — gone. */
         {
-            int ci = nth_player_colony(R(player_colony_count()));
-            int qty;
-            int top = ci >= 0 ? top_stock(&CS.colonies[ci], 20, &qty) : -1;
-            if (top >= 0) {
-                int take = 20 + 10 * cs_difficulty();
-                if (take > qty) take = qty;
-                ev_emit("INDIANCITY", take, 0, dat_tribes[ti].name,
-                        dat_cargo[top].name);
-                if (ask_choice() == 1) {             /* game.js:5531 */
-                    CS.colonies[ci].stock[top] =
-                        (uint16_t)(CS.colonies[ci].stock[top] - take);
-                    adjust_tension(ti, -10, 0);
-                } else adjust_tension(ti, 15, 0);
-            } else {
-                /* demandValue(200) (game.js:8214): the byte-cited scaler */
-                int32_t want = 200 * 10 * (cs_difficulty() + 8) / 100 +
-                               500 * (cs_difficulty() + 1);
-                ev_emit("INDIANGOLD", want, 0, dat_tribes[ti].name, 0);
-                PowerRecord *p = &CS.powers[cs_nation()];
-                if (ask_choice() == 1 && p->gold >= want) {
-                    p->gold -= want;
-                    adjust_tension(ti, -10, 0);
-                } else adjust_tension(ti, 15, 0);
+            /* the demanding village of this tribe near a colony/wagon */
+            int dvi = -1;
+            for (int v = 0; v < CS.n_villages && dvi < 0; v++) {
+                if (CS.villages[v].owner_tribe != ti + 4) continue;
+                for (int ci2 = 0; ci2 < CS.n_colonies && dvi < 0; ci2++) {
+                    if ((CS.colonies[ci2].owner_power & 3) != cs_nation())
+                        continue;
+                    int dx = CS.villages[v].map_x - CS.colonies[ci2].map_x;
+                    int dy = CS.villages[v].map_y - CS.colonies[ci2].map_y;
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 3 && dy <= 3) dvi = v;
+                }
+            }
+            /* @INDIANWAGONS (@0x5787E..): pressed slot by slot; a give
+             * empties the slot, credits -bid*qty*4/100 and zeroes the
+             * village alarm; a refusal spikes it +128 (@0x57A0B).
+             * (Unreachable under the harness — no wagon carries a hold —
+             * mirrored for live play.) */
+            int wi = -1;
+            for (int k = 0; k < CR.n_units_order && wi < 0; k++) {
+                int ui = CR.units_order[k];
+                if (strcmp(dat_units[CS.units[ui].type].name,
+                           "Wagon Train") != 0) continue;
+                int laden = 0;
+                for (int hh = 0; hh < CR.unit_n_hold[ui]; hh++)
+                    if (CR.unit_hold[ui][hh].qty > 0) laden = 1;
+                if (!laden) continue;
+                for (int v = 0; v < CS.n_villages && wi < 0; v++) {
+                    if (CS.villages[v].owner_tribe != ti + 4) continue;
+                    int dx = CS.villages[v].map_x - CS.units[ui].map_x;
+                    int dy = CS.villages[v].map_y - CS.units[ui].map_y;
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 3 && dy <= 3) wi = ui;
+                }
+            }
+            if (wi >= 0) {
+                for (;;) {
+                    int slot = -1;
+                    for (int hh = 0; hh < CR.unit_n_hold[wi] && slot < 0;
+                         hh++)
+                        if (CR.unit_hold[wi][hh].qty > 0) slot = hh;
+                    if (slot < 0) break;
+                    int good = CR.unit_hold[wi][slot].good;
+                    int hq = CR.unit_hold[wi][slot].qty;
+                    ev_emit("INDIANWAGONS", hq, 0, dat_tribes[ti].name,
+                            dat_cargo[good].name);
+                    if (ask_choice() == 0) {
+                        adjust_tension(ti,
+                            -((market_bid(good)) * hq * 4 / 100), 0);
+                        if (dvi >= 0) {
+                            CR.alarm[dvi] = 0;
+                            CS.villages[dvi].alarm[cs_nation()] = 0;
+                        }
+                        hold_add(CR.unit_hold[wi], &CR.unit_n_hold[wi],
+                                 good, -hq);
+                    } else {
+                        if (dvi >= 0) {
+                            int a = CR.alarm[dvi] + 128;
+                            CR.alarm[dvi] = (uint8_t)(a > 255 ? 255 : a);
+                            CS.villages[dvi].alarm[cs_nation()] =
+                                CR.alarm[dvi];
+                        }
+                        break;
+                    }
+                }
+                return;
+            }
+            /* @INDIANCITY (@0x5755C..): argmax of value x min(100,stock),
+             * value = bid level (horses -counter+10; muskets
+             * +random_int(1,4)-tech+diff+4); nothing worth demanding ->
+             * @INDIANCOMMENT + alarm clear; amount halves on
+             * random_int(0,diff+1)==0. */
+            int ci = -1;
+            for (int v = 0; v < CS.n_villages && ci < 0; v++) {
+                if (CS.villages[v].owner_tribe != ti + 4) continue;
+                for (int c2 = 0; c2 < CS.n_colonies && ci < 0; c2++) {
+                    if ((CS.colonies[c2].owner_power & 3) != cs_nation())
+                        continue;
+                    int dx = CS.villages[v].map_x - CS.colonies[c2].map_x;
+                    int dy = CS.villages[v].map_y - CS.colonies[c2].map_y;
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 3 && dy <= 3) ci = c2;
+                }
+            }
+            if (ci < 0) ci = nth_player_colony(0);
+            if (ci < 0) return;
+            ColonyRecord *c = &CS.colonies[ci];
+            int best_g = -1, best_score = 0, best_qty = 0;
+            for (int g = 0; g < 16; g++) {
+                int q = c->stock[g] > 100 ? 100 : c->stock[g];
+                if (q < 0) q = 0;
+                int val = market_bid(g);
+                if (g == 8) val = val - CR.tribe_horses_known[ti] + 10;
+                if (g == 15)
+                    val += 1 + R(4) - tribe_level(ti) +
+                           (int)cs_difficulty() + 4;
+                int score = val * q;
+                if (score > best_score) {
+                    best_score = score;
+                    best_g = g;
+                    best_qty = q;
+                }
+            }
+            if (best_g < 0) {
+                if (dvi >= 0) {
+                    CR.alarm[dvi] = 0;
+                    CS.villages[dvi].alarm[cs_nation()] = 0;
+                }
+                ev_emit("INDIANCOMMENT", 0, 0, dat_tribes[ti].name, 0);
+                return;
+            }
+            int take = best_qty;
+            if (R((int)cs_difficulty() + 2) == 0) take >>= 1;
+            ev_emit("INDIANCITY", take, 0, dat_tribes[ti].name,
+                    dat_cargo[best_g].name);
+            if (ask_choice() == 1) {
+                if (dvi >= 0) {
+                    CR.alarm[dvi] = 0;
+                    CS.villages[dvi].alarm[cs_nation()] = 0;
+                }
+                int credit = -(best_score * 4 / 100);
+                while ((int)CR.tension[ti] + credit > 70) credit -= 5;
+                adjust_tension(ti, credit, 0);
+                c->stock[best_g] = (uint16_t)(c->stock[best_g] - take);
+                if (best_g == 15) CR.tribe_muskets_known[ti]++;
+                if (best_g == 8) {
+                    CR.tribe_herd[ti] = (int16_t)(CR.tribe_herd[ti] + 50);
+                    CR.tribe_horses_known[ti]++;
+                }
+            } else if (dvi >= 0) {
+                int a = CR.alarm[dvi] + 128;
+                CR.alarm[dvi] = (uint8_t)(a > 255 ? 255 : a);
+                CS.villages[dvi].alarm[cs_nation()] = CR.alarm[dvi];
             }
             return;
         }

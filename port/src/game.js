@@ -6761,13 +6761,14 @@ function ageConverts() {
 // §19.8. War-footing tribes press claims, and the land/road objections carry a
 // BUY-OFF row: pay the named compensation and the tribe withdraws it. Peter
 // Minuit in Congress zeroes every land payment.
-//   @INDIANGOLD   reparations in gold        (trigger and amount untraced)
 //   @INDIANWAGONS the contents of a wagon train passing through their land
 //   @INDIANCITY   goods from a colony's stores
 //   @INDIANROAD   an objection to a road, with its compensation row
-// The triggers and amounts are NOT traced -- the manual names the claims and
-// their texts, not their numbers -- so the port fires them off the tribe's own
-// tension and prices them off the demand it is making. Flagged.
+// (@INDIANGOLD is DEAD GAME.TXT content -- zero hits in VICEROY.EXE, like
+// @KINGMERCY -- and is gone.) The claim CONTENT is the byte model of the
+// native-meeting handler (0x5755C..0x57A15, 2026-08-29); the TRIGGER
+// cadence (the engine's brave-adjacency meeting) stays the port's flagged
+// per-turn roll.
 function nativeDemands() {
   if (!G.colonies.length) return;
   for (const t of G.tribes) {
@@ -6853,40 +6854,89 @@ function nativeDemands() {
                 { STRING0: t.name, STRING1: DATA.regionname[G.nation] });
       return;
     }
-    // A wagon train in their country is the easiest claim to press.
-    const wagon = G.units.find(u => u.type === 'Wagon Train' && (u.hold || []).length &&
+    // The claim CONTENT is now the byte model of the native-meeting
+    // demand handler (0x5755C..0x57A15, read 2026-08-29); the TRIGGER
+    // cadence stays the port's flagged per-turn roll (the engine's is
+    // the brave-adjacency meeting).
+    const dv = G.villages.find(v => v.tribe === ti &&
+      (G.colonies.some(cc => Math.abs(v.x - cc.x) <= 3 && Math.abs(v.y - cc.y) <= 3) ||
+       G.units.some(u => u.type === 'Wagon Train' &&
+                         Math.abs(v.x - u.x) <= 3 && Math.abs(v.y - u.y) <= 3)));
+    // @INDIANWAGONS (@0x5787E..): the wagon's slots pressed one at a
+    // time -- each surrender empties the slot, credits tension by
+    // -bid*qty*4/100 and ZEROES the village alarm (@0x579B7..@0x579F9,
+    // the loop re-enters for the next slot); a refusal spikes the
+    // village alarm +128 (@0x57A0B) and ends the meeting.
+    const wagon = G.units.find(u => u.type === 'Wagon Train' && (u.hold || []).some(h => h.qty > 0) &&
       G.villages.some(v => v.tribe === ti && Math.abs(v.x - u.x) <= 3 && Math.abs(v.y - u.y) <= 3));
     if (wagon) {
-      const h = wagon.hold[0];
-      askEvent('INDIANWAGONS', { STRING0: DATA.nations[G.nation].adjective,
-                                 STRING1: t.name, STRING2: DATA.cargo[h.good].name,
-                                 NUMBER0: h.qty }, (choice) => {
-        // Row 0 hands them over, row 1 circles the wagons.
-        if (choice === 0) { holdAdd(wagon, h.good, -h.qty); adjustTension(ti, -10); }
-        else adjustTension(ti, 15);
-      });
+      const pressSlot = () => {
+        const h = (wagon.hold || []).find(x => x.qty > 0);
+        if (!h) return;
+        askEvent('INDIANWAGONS', { STRING0: DATA.nations[G.nation].adjective,
+                                   STRING1: t.name, STRING2: DATA.cargo[h.good].name,
+                                   NUMBER0: h.qty }, (choice) => {
+          if (choice === 0) {
+            adjustTension(ti,
+              -Math.floor(Math.max(0, G.market[h.good] - 1) * h.qty * 4 / 100));
+            if (dv) dv.alarm = 0;
+            holdAdd(wagon, h.good, -h.qty);
+            pressSlot();                       // the engine's give-loop
+          } else if (dv) dv.alarm = Math.min(255, (dv.alarm || 0) + 128);
+        });
+      };
+      pressSlot();
       return;
     }
-    // Otherwise: goods from a colony's stores, or gold in reparations.
-    const c = G.colonies[Math.floor(Math.random() * G.colonies.length)];
-    const stocked = c.stock.map((n, i) => [n, i]).filter(r => r[0] >= 20)
-                     .sort((a, b) => b[0] - a[0])[0];
-    if (stocked) {
-      const qty = Math.min(stocked[0], 20 + 10 * G.difficulty);
-      askEvent('INDIANCITY', { STRING0: DATA.nations[G.nation].adjective,
-                               STRING1: t.name, STRING2: DATA.cargo[stocked[1]].name,
-                               STRING3: c.name, NUMBER0: qty }, (choice) => {
-        // Row 0 mans the stockade, row 1 hands them over.
-        if (choice === 1) { c.stock[stocked[1]] -= qty; adjustTension(ti, -10); }
-        else adjustTension(ti, 15);
-      });
+    // @INDIANCITY (@0x5755C..@0x577F7): the demanded good is the ARGMAX
+    // of value x min(100, stock) over the colony's stores, value =
+    // max(0, price level - 1) (the [0x84BC] bid table), horses valued
+    // value - tribe horse counter + 10, muskets + random_int(1,4) -
+    // tech + difficulty + 4. Nothing worth demanding -> @INDIANCOMMENT
+    // and the village alarm clears (@0x5787A). The amount halves on a
+    // random_int(0, difficulty+1) == 0 roll (@0x5762B..@0x57640).
+    const c = G.colonies.find(cc => G.villages.some(v =>
+      v.tribe === ti && Math.abs(v.x - cc.x) <= 3 && Math.abs(v.y - cc.y) <= 3)) ||
+      G.colonies[0];
+    let bestG = -1, bestScore = 0, bestQty = 0;
+    for (let g = 0; g < 16; g++) {
+      const qty = Math.min(100, c.stock[g] || 0);
+      let val = Math.max(0, (G.market[g] || 0) - 1);
+      if (g === 8) val = val - (t.horsesKnown || 0) + 10;
+      if (g === 15)
+        val += 1 + Math.floor(Math.random() * 4) - (t.level || 0) + G.difficulty + 4;
+      const score = val * qty;
+      if (score > bestScore) { bestScore = score; bestG = g; bestQty = qty; }
+    }
+    if (bestG < 0) {
+      if (dv) dv.alarm = 0;
+      showEvent('INDIANCOMMENT', { STRING0: t.name,
+                                   STRING1: DATA.nations[G.nation].adjective });
       return;
     }
-    const gold = demandValue(200);
-    askEvent('INDIANGOLD', { STRING0: t.name, NUMBER0: gold }, (choice) => {
-      // Row 0 refuses, row 1 pays.
-      if (choice === 1 && G.gold >= gold) { G.gold -= gold; adjustTension(ti, -10); }
-      else adjustTension(ti, 15);
+    let qty = bestQty;
+    if (Math.floor(Math.random() * (G.difficulty + 2)) === 0) qty >>= 1;
+    askEvent('INDIANCITY', { STRING0: DATA.nations[G.nation].adjective,
+                             STRING1: t.name, STRING2: DATA.cargo[bestG].name,
+                             STRING3: c.name, NUMBER0: qty }, (choice) => {
+      if (choice === 1) {
+        // the give path (@0x57740..@0x577F7): village alarm zeroed, the
+        // tension credit -score*4/100 grown by -5 steps until the meter
+        // lands at or under 70, the stores debited; muskets/horses ARM
+        // the tribe (the engine upgrades the demanding brave -- no brave
+        // rides the port's trigger, so the counter/herd halves stand in,
+        // flagged).
+        if (dv) dv.alarm = 0;
+        let credit = -Math.floor(bestScore * 4 / 100);
+        while ((t.tension || 0) + credit > 70) credit -= 5;
+        adjustTension(ti, credit);
+        c.stock[bestG] = Math.max(0, (c.stock[bestG] || 0) - qty);
+        if (bestG === 15) t.musketsKnown = (t.musketsKnown || 0) + 1;
+        if (bestG === 8) {
+          t.herd = (t.herd || 0) + 50;
+          t.horsesKnown = (t.horsesKnown || 0) + 1;
+        }
+      } else if (dv) dv.alarm = Math.min(255, (dv.alarm || 0) + 128);
     });
     return;
   }
