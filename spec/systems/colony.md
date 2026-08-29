@@ -481,7 +481,17 @@ the **Custom House auto-sale**:
   pre-independence the tax%% is cut out (`@0x2D733`) into the royal fund
   (`@0x2D785`), **after the declaration the sale is tax-free**
   (`[0x5382]&1` `@0x2D728`).  A colony `+0x1B & 3` state skips the human
-  sale (`@0x2D995`) — bits unread, **TBD**.
+  sale (`@0x2D995`) — **RESOLVED 2026-08-29: `+0x1B` holds the BLOCKADE
+  bits**, rebuilt per colony by the census `func_042138`
+  (`@0x424F3..@0x42557`): the ±5 box around the colony is scanned for
+  another power's SHIP (types 0xD..0x12) whose water-path distance
+  (`0x1A1F:0x27E`) is ≤ 5 — bit 0 for any such ship, bit 1 when it is a
+  FRIGATE (type 0x11); the bits are cleared and recomputed each pass
+  (`@0x4268C`), and `[0xA89A]/[0xA89B]` + `[0x9E52]/[0x9E54]` tally the
+  blockaded colonies and their populations.  So a Custom House will not
+  auto-sell from a blockaded harbour.  The port does not yet model the
+  blockade bits (its `sieged` is the radius-1 land siege) — the sale
+  skip is noted, not wired; FLAGGED.
 
 **Spoilage** (`@0x2E830..@0x2E87F`, goods 1..15): overflow = stock −
 capacity (`func_008D00`).  The part within **today's production**

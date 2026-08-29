@@ -604,22 +604,46 @@ static void news_tick(void) {
         if (rn == me) continue;
         rival_rt *r = &CR.rivals[rn];
         if (!r->met) continue;
-        /* the independence race (PowerRecord +0x02 unmodeled — a flagged
-         * random walk stands in) */
+        /* the independence bulletin — FRAMEWORK BYTE_VERIFIED 2026-08-29
+         * (func_02F736..@0x2F962, per AI power): pct = min(100,
+         * PowerRecord[+0x19] × population_census / 100) (@0x2F8B1) against
+         * a GRANT threshold of (8 − difficulty) × 10
+         * (@0x2F8CA..@0x2F8DE: Discoverer 80 .. Viceroy 40).  Rising past
+         * the stored last-announced value (+0x1A) posts @OTHERMIGHT and
+         * stores; falling 5 below it posts @OTHERLESS and stores
+         * (@0x2F774..@0x2F87D — NUMBER0 = pct, NUMBER1 = the population
+         * census, NUMBER2 = the threshold).  At the threshold
+         * @OTHERGRANTED sets the power's flag +0x00 bit 2 and resets its
+         * diplomacy vs everyone (@0x2F94D..@0x2F95E — the 0xa06/0xa10
+         * write pair's semantics are unread, not modeled).  The +0x19
+         * SENTIMENT DRIVER is still unread — a flagged rare-step random
+         * walk stands in for the pct itself (the old ±1-per-turn walk
+         * flooded the byte model's every-new-maximum announcements). */
         if (cs_year() >= 1650 && !r->independent &&
             !(CR.woi_flags & WOI_DECLARED)) {
-            int v = r->rebel_pct + ((int)rng_next() <= 19660 ? 1 : -1);
+            int v = r->rebel_pct;
+            {
+                int k = (int)rng_next();
+                if (k <= 3276) v += 5;         /* ~10%% up */
+                else if (k <= 5461) v -= 5;    /* ~6.7%% down */
+            }
             if (v < 0) v = 0;
+            if (v > 100) v = 100;
             r->rebel_pct = (uint8_t)v;
-            if (v >= 40 && !r->might_warned) {
-                r->might_warned = 1;
-                ev_emit("OTHERMIGHT", v, 0, dat_nations[rn].country, 0);
-            } else if (r->might_warned && v < 35 && !r->less_noted) {
-                r->less_noted = 1;
-                ev_emit("OTHERLESS", v, 0, dat_nations[rn].country, 0);
-            } else if (v >= 60) {
+            int thr = (8 - (int)cs_difficulty()) * 10;
+            int pop = CR.n_runits[rn];
+            for (int ci = 0; ci < CS.n_colonies; ci++)
+                if ((CS.colonies[ci].owner_power & 3) == rn)
+                    pop += CS.colonies[ci].population;
+            if (v >= thr) {
                 r->independent = 1;
-                ev_emit("OTHERGRANTED", v, 0, dat_nations[rn].country, 0);
+                ev_emit("OTHERGRANTED", v, pop, dat_nations[rn].country, 0);
+            } else if (v > (int)r->last_pct) {
+                r->last_pct = (uint8_t)v;
+                ev_emit("OTHERMIGHT", v, pop, dat_nations[rn].country, 0);
+            } else if ((int)r->last_pct - 5 > v) {
+                r->last_pct = (uint8_t)v;
+                ev_emit("OTHERLESS", v, pop, dat_nations[rn].country, 0);
             }
         }
         /* @VIOLATE: a rival unit loitering beside our colony at peace */

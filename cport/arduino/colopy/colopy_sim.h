@@ -381,7 +381,7 @@ typedef struct {
     int32_t gold;                /* seeded from the power record +0x2A */
     uint8_t attitude;            /* importer seeds 8 (game.js:10333) */
     uint8_t rebel_pct;           /* newsTick independence walk (flagged) */
-    uint8_t might_warned, less_noted, independent;
+    uint8_t last_pct, independent;   /* +0x1A last-announced pct mirror */
 } rival_rt;
 
 typedef struct {

@@ -8562,24 +8562,43 @@ function checkContact() {
 function newsTick() {
   for (const r of G.rivals) {
     if (!r.met) continue;
-    // The independence race: PowerRecord +0x02 is real engine state the
-    // port does not model -- a slow flagged random walk stands in.
+    // The independence bulletin -- FRAMEWORK BYTE_VERIFIED 2026-08-29
+    // (func_02F736..@0x2F962, per AI power): pct = min(100,
+    // PowerRecord[+0x19] x population_census / 100) (@0x2F8B1) against a
+    // GRANT threshold of (8 - difficulty) x 10 (@0x2F8CA..@0x2F8DE:
+    // Discoverer 80 .. Viceroy 40). Rising past the stored last-announced
+    // value (+0x1A) posts @OTHERMIGHT and stores; falling 5 below it
+    // posts @OTHERLESS and stores (@0x2F774..@0x2F87D -- NUMBER0 = pct,
+    // NUMBER1 = the population census, NUMBER2 = the threshold). At the
+    // threshold @OTHERGRANTED sets the power's flag +0x00 bit 2 and
+    // resets its diplomacy vs everyone (@0x2F94D..@0x2F95E -- the write
+    // pair's semantics are unread, not modeled). The +0x19 SENTIMENT
+    // DRIVER is still unread -- a flagged rare-step random walk stands in
+    // for the pct itself (the old +-1-per-turn walk would flood the byte
+    // model's every-new-maximum announcements).
     if (G.year >= 1650 && !r.independent && !(G.flags & WOI_DECLARED)) {
-      r.rebelPct = Math.max(0, (r.rebelPct || 0) +
-                            (Math.random() < 0.6 ? 1 : -1));
+      let v = r.rebelPct || 0;
+      const k = Math.random();
+      if (k < 0.1) v += 5;
+      else if (k < 1 / 6) v -= 5;
+      v = Math.max(0, Math.min(100, v));
+      r.rebelPct = v;
+      const thr = (8 - G.difficulty) * 10;
+      const rpop = r.units.length +
+        (r.colonies || []).reduce((n, c) => n + (c.pop || 0), 0);
       const S2 = { STRING0: DATA.nations[r.nation].country,
                    STRING1: DATA.nations[r.nation].adjective,
                    STRING2: DATA.nations[r.nation].leader,
-                   NUMBER0: r.rebelPct, NUMBER1: 100 };
-      if (r.rebelPct >= 40 && !r.mightWarned) {
-        r.mightWarned = true;
-        showEvent('OTHERMIGHT', S2);
-      } else if (r.mightWarned && r.rebelPct < 35 && !r.lessNoted) {
-        r.lessNoted = true;
-        showEvent('OTHERLESS', S2);
-      } else if (r.rebelPct >= 60) {
+                   NUMBER0: v, NUMBER1: rpop, NUMBER2: thr };
+      if (v >= thr) {
         r.independent = true;
         showEvent('OTHERGRANTED', S2);
+      } else if (v > (r.lastPct || 0)) {
+        r.lastPct = v;
+        showEvent('OTHERMIGHT', S2);
+      } else if ((r.lastPct || 0) - 5 > v) {
+        r.lastPct = v;
+        showEvent('OTHERLESS', S2);
       }
     }
     // @VIOLATE: a rival unit loitering beside one of our colonies at peace.
