@@ -518,6 +518,47 @@ int rm_plaza_unit_hit(int ci, int mx, int my) {
     return -1;
 }
 
+/* the INDOOR crew figure under (mx,my) in the building field, or -1 —
+ * the same anchors the painter uses (figure k of a shop's crew stands at
+ * (px + bw/2 + 5 - 9k, py + 8 + bh - 13)).  Port addition mirroring
+ * buildingWorkerAt (game.js): tap selects the man, a second tap opens
+ * his JOBS menu — the plaza row's select-then-menu rhythm. */
+int rm_building_worker_hit(int ci, int mx, int my) {
+    if (ci < 0 || ci >= CS.n_colonies) return -1;
+    const ColonyRecord *c = &CS.colonies[ci];
+    int8_t present[15];
+    colony_placement(ci, CR.plot_seed, present);
+    rd_entry bld;
+    if (!rd_pak_find(&RD.pak, "BUILDING.SS", &bld)) return -1;
+    int found = -1;
+    for (int i = 0; i < 15; i++) {
+        int id = present[i];
+        if (id < 0) continue;
+        const char *name = dat_buildings[id].name;
+        if (!colony_has_name(ci, name)) continue;
+        int job = job_for_building_name(name);
+        if (job < 0) continue;
+        rd_frame bf;
+        rd_sheet_frame(&bld, building_frame(ci, id), &bf);
+        int px = PLOTS[i][0], py = PLOTS[i][1];
+        int nc = 0;
+        for (int k = 0; k < c->population && k < 32 && nc < 3; k++) {
+            if (c->occupation[k] != job) continue;
+            int on_cell = 0;
+            for (int s = 0; s < 8; s++)
+                if ((uint8_t)c->tiles[s] == (uint8_t)k) on_cell = 1;
+            if (on_cell) continue;
+            int fig = colonist_figure(c->profession[k]);
+            int fx = px + (bf.w >> 1) + 5 - 9 * nc;
+            int fy = py + 8 + bf.h - 13;
+            if (mx >= fx && mx < fx + icon_w(fig) &&
+                my >= fy && my < fy + icon_h(fig)) found = k;
+            nc++;
+        }
+    }
+    return found;
+}
+
 void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                     int ship_sel, int view, int numbers);
 
@@ -704,26 +745,46 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                         }
                     }
                 }
-                /* map units standing on the tile (func_026374) */
-                int stander = -1;
+                /* Map units STANDING on the tile — the flag-0x80 branch
+                 * @0x265C4..@0x2663D: walk the units at the tile (first via
+                 * 0x181F:0x7E0, next 0x2E4) and take the FIRST whose @UNIT
+                 * attack column is > 1 (`cmp byte [bx+0x5236],1; ja`); draw
+                 * it through 0x181F:0x2BC — the unit draw BY INDEX, i.e.
+                 * the func_003710 icon resolver — at (x+4, y+4).  No
+                 * attack>1 unit means NOTHING is drawn: civilians and plain
+                 * braves never appear.  (The old PHYS0 0x5A+type model was
+                 * wrong — a Brave drew frame 0x6D, a black-quadrant tile
+                 * detail.)  anyStander (any unit at all) still sets flag
+                 * 0x80, which suppresses the totem below. */
+                int stander = -1, anyStander = 0;
                 for (int q = 0; q < CR.n_natives && stander < 0; q++) {
                     int ui = CR.natives_order[q];
-                    if (unit_pos_x(ui) == wx && unit_pos_y(ui) == wy)
-                        stander = ui;
+                    if (unit_pos_x(ui) == wx && unit_pos_y(ui) == wy) {
+                        anyStander = 1;
+                        if (dat_units[CS.units[ui].type].attack > 1)
+                            stander = ui;
+                    }
                 }
                 for (int q = 0; q < CR.n_units_order && stander < 0; q++) {
                     int ui = CR.units_order[q];
-                    if (CS.units[ui].map_x == wx && CS.units[ui].map_y == wy)
-                        stander = ui;
+                    if (CS.units[ui].map_x == wx &&
+                        CS.units[ui].map_y == wy) {
+                        anyStander = 1;
+                        if (dat_units[CS.units[ui].type].attack > 1)
+                            stander = ui;
+                    }
                 }
                 for (int q = 0; q < CR.n_refs && stander < 0; q++) {
                     int ui = CR.refs_order[q];
-                    if (CS.units[ui].map_x == wx && CS.units[ui].map_y == wy)
-                        stander = ui;
+                    if (CS.units[ui].map_x == wx &&
+                        CS.units[ui].map_y == wy) {
+                        anyStander = 1;
+                        if (dat_units[CS.units[ui].type].attack > 1)
+                            stander = ui;
+                    }
                 }
                 if (stander >= 0)
-                    rd_blit(&RD.phys0, 0x5A + CS.units[stander].type,
-                            x + 4, y + 4);
+                    rd_blit(&RD.icons, unit_icon_of(stander), x + 4, y + 4);
                 /* THE TOTEM POLE — ICONS png 108 (EXE 0x6D), byte-read
                  * 2026-08-30 after a user correction.  The prep loop
                  * (@0xA9C8..@0xAAC5) fills a per-cell byte drawn at
@@ -734,7 +795,7 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                  * an unmet tribe (relation bit 0x20) or Peter Minuit
                  * (father 2, @0xAAA0).  Chebyshev nearest stands in for
                  * the scan metric, FLAGGED — mirrors the JS. */
-                if (stander < 0 && k < 0 && !blocked &&
+                if (!anyStander && k < 0 && !blocked &&
                     !tile_water(map_at(wx, wy)) &&
                     wx >= 1 && wx <= COLOPY_MAP_W - 2 &&
                     wy >= 1 && wy <= COLOPY_MAP_H - 2 &&

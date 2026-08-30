@@ -878,7 +878,8 @@ static void draw_screen(void) {
     case SCR_COLONY: {
         int ci = ui_colony_cs_index();
         if (ci >= 0)
-            rm_draw_colony(ci, 1653u, UI.colonist_sel, 0, UI.colony_view,
+            rm_draw_colony(ci, CR.plot_seed, UI.colonist_sel,
+                           UI.colony_ship_sel, UI.colony_view,
                            cs_colony_numbers());
         /* the jobs / construction popup over it (drawColonyPopup) */
         if (UI.colony_popup) {

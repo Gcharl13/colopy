@@ -2765,6 +2765,20 @@ static void in_click_inner(int mx, int my, int right) {
             }
             return;
         }
+        /* building field: the crew figures under each shop are clickable
+         * like the plaza row — a tap selects the man, a second tap opens
+         * his JOBS menu (game.js buildingWorkerAt) */
+        if (c && hit(mx, my, 0, 8, 199, 120)) {
+            int bw = rm_building_worker_hit(cci, mx, my);
+            if (bw >= 0) {
+                if (UI.colonist_sel == bw) {
+                    UI.colony_popup = 1;
+                    UI.colony_popup_row = 0;
+                } else
+                    UI.colonist_sel = (int8_t)bw;
+                return;
+            }
+        }
         if (c) {
             int nships = 0, ship_q[8];
             for (int q = 0; q < CR.n_units_order; q++) {

@@ -10743,3 +10743,35 @@ Method note for the record: a running-game observation beat a sprite-
 sheet sweep — the sweep looked at 131 frames at 3px scale and pattern-
 matched a 7x12 pole as a person.  Sheet sweeps need zoom passes before
 "no such sprite" claims.
+
+## 2026-08-30c — the tile panel's STANDING-UNIT draw (the "black square")
+
+The playtest screenshot's black 8x8-quadrant square on a colony scene
+cell was the port drawing a standing Brave as `PHYS0 0x5A + unit_type`
+(frame 0x6D is a tile DETAIL, not a unit).  The old model's evidence —
+"Live Curacao carries PHYS0 99 and 101 at those anchors" — was
+misattributed: those frames were tile details, not units.  The real
+branch is now byte-read:
+
+- **Flag-0x80 branch `@0x265C4..@0x2663D`**: walk the units at the
+  tile (first via `0x181F:0x7E0`, next via `0x2E4`) and take the FIRST
+  whose @UNIT **attack column is > 1** (`cmp byte [bx+0x5236],1; ja`);
+  draw it through **`0x181F:0x2BC` — the unit draw BY INDEX**, i.e.
+  the func_003710 icon resolver — at (x+4, y+4) with (push y+4, push
+  0x10, push 0x64, bx=x+4, ax=unit index, dx=0xE0).  **No attack>1
+  unit at the tile means NOTHING is drawn**: civilians and plain
+  braves never appear in the tile panel.
+- Flag 0x80 itself is set for ANY standing unit, so the totem
+  (2026-08-30b) stays suppressed by any unit even when the branch
+  draws nothing.
+- Both engines now implement this; the colony render baseline stays
+  0 structural (no attack>1 stander in frame).
+
+Same sweep fixed two port-only defects: the JS colony screen drew its
+black separator rules AFTER the message popup (now before, so popups
+sit on top — the C renderer already layered correctly), and the board
+sketches passed a literal plot seed 1653 and ship_sel 0 to
+rm_draw_colony instead of CR.plot_seed / UI.colony_ship_sel.  Indoor
+crew figures in the building field are now clickable in both engines
+(select, then jobs menu — a port addition; the engine's region-2
+action bodies remain unread).

@@ -122,6 +122,7 @@ int  rm_colony_level_ci(int ci);
 /* the plaza row's colonist under a click, -1 = none/garrison */
 int  rm_plaza_hit(int ci, int mx, int my);
 int  rm_plaza_unit_hit(int ci, int mx, int my);
+int  rm_building_worker_hit(int ci, int mx, int my);
 int  rm_is_seen(int x, int y);
 /* the func_0033F2/003104 count-row machinery (colopy_colony_render.c) */
 typedef struct { int frame, count, sub, flags; } rm_crow_cell;
