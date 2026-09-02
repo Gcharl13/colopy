@@ -708,11 +708,13 @@ int main(int argc, char **argv) {
                                        const char *out, int n);
         return render_woodcut_main(argv[2], argv[3], argv[4], atoi(argv[5]));
     }
-    /* --renderreport SAVE PAK OUT.ppm FK */
+    /* --renderreport SAVE PAK OUT.ppm FK [SYNTH] */
     if (argc > 5 && strcmp(argv[1], "--renderreport") == 0) {
         extern int render_report_main(const char *save, const char *pak,
-                                      const char *out, const char *fk);
-        return render_report_main(argv[2], argv[3], argv[4], argv[5]);
+                                      const char *out, const char *fk,
+                                      const char *synth);
+        return render_report_main(argv[2], argv[3], argv[4], argv[5],
+                                  argc > 6 ? argv[6] : 0);
     }
     /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER] */
     if (argc > 7 && strcmp(argv[1], "--renderevent") == 0) {

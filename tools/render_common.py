@@ -64,6 +64,11 @@ PALETTE_CEILING = {
     "colony sav1653 0 -1 0 0 1": 141,
     "europe sav1653 0 0 0 -1": 0,
     "report sav1653 F5": 0,
+    # F9 and its synthetic-mission scene (C4.17, frozen 2026-09-02 at 0):
+    # the only scene that draws the MISSIONS cell, so it is a standing
+    # oracle -- run `render_report_compare.py sav1653 F9 mission`.
+    "report sav1653 F9": 0,
+    "report sav1653 F9 mission": 0,
     "event RAIDSTORES 0 0 - sav1653": 31,
     "woodcut sav1653 1": 21438,
 }

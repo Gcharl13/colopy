@@ -68,6 +68,44 @@ def click(x, y, delay=0.6):
     time.sleep(delay)
 
 
+def park(delay=0.5):
+    """Park the emulated pointer in the game's bottom-right corner.
+
+    With autolock=false DOSBox maps the X pointer's position INSIDE its
+    window onto the 320x200 mode-13h surface and stops updating once the
+    pointer leaves it, so the last in-window position is where the DOS
+    arrow stays. Moving to the window's last pixel puts the arrow's hotspot
+    at (319,199): the 16x16 arrow hangs off the right and bottom edges and
+    at most its tip is visible. Every census baseline before 2026-09-02 was
+    taken with the pointer at its boot position (158..172, 98..116) -- ~82
+    px of arrow on every screen, the ledger's C4.19 floor. Call before
+    shot(); a MOVE is not a click, and the game has no hover effects on
+    the screens the census captures.
+    """
+    g = sh(f"xdotool getwindowgeometry --shell {wid()}").stdout
+    d = dict(l.split("=", 1) for l in g.strip().splitlines() if "=" in l)
+    wx, wy = int(d["X"]), int(d["Y"])
+    ww, wh = int(d["WIDTH"]), int(d["HEIGHT"])
+    sh(f"xdotool mousemove {wx + ww - 1} {wy + wh - 1}")
+    time.sleep(delay)
+
+
+def unpark(delay=0.5):
+    """Return the pointer to the window centre -- the boot position every
+    pre-2026-09-02 capture was taken at. Only the SHOT wants the pointer
+    parked: with it left in the corner the map's Escape -> "Exit to DOS?"
+    -> Escape round-trip that capture() uses to re-enter every screen
+    stopped cancelling the dialog (the 2026-09-02 first pass filed the
+    dialog as F5 and the DOS prompt as COLONY), so the key sequences run
+    with the pointer where they were always driven."""
+    g = sh(f"xdotool getwindowgeometry --shell {wid()}").stdout
+    d = dict(l.split("=", 1) for l in g.strip().splitlines() if "=" in l)
+    wx, wy = int(d["X"]), int(d["Y"])
+    ww, wh = int(d["WIDTH"]), int(d["HEIGHT"])
+    sh(f"xdotool mousemove {wx + ww // 2} {wy + wh // 2}")
+    time.sleep(delay)
+
+
 def _existing():
     return set(CAP.glob("*.png"))
 

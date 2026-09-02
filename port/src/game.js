@@ -244,6 +244,61 @@ function sheetSilhouette(ctx, sheet, idx, x, y, colourIdx) {
   }
   ctx.drawImage(c, Math.round(x), Math.round(y));
 }
+// 0x181F:0x2F8 / 0xC56:4 = func_00E964 @0x00E964, the SCALED blit. One mask
+// table per call (@0x00EA00-@0x00EA36): an accumulator starts at 0x32 and
+// adds pct per index; reaching 0x64 KEEPS that index (acc -= 0x64), else it
+// is dropped. w' / h' count the kept indices below w / h (@0x00EA1A-
+// @0x00EA25). The passed x is the CENTRE (x_left = x - (w' >> 1),
+// @0x00EA38-@0x00EA3D) and the passed y the BOTTOM row (y_top = y - h' + 1,
+// @0x00EA41-@0x00EA48). Rows are kept/dropped by the same mask (@0x00EB1E),
+// columns likewise (@0x00EB73), the destination advancing only on kept
+// pixels (@0x00EB91): 50% keeps even indices, 25% keeps 1, 5, 9, ... The
+// mirror flag (a negative frame) is not modelled -- no caller here uses it.
+const scaleMask = (n, pct) => {
+  const m = new Array(n);
+  let acc = 0x32;
+  for (let i = 0; i < n; i++) {
+    acc += pct;
+    if (acc >= 0x64) { m[i] = true; acc -= 0x64; } else m[i] = false;
+  }
+  return m;
+};
+const _scaledCache = new Map();
+function sheetFrameScaled(ctx, sheet, idx, xc, yb, pct) {
+  const sh = DATA.sheets[sheet];
+  if (!sh) return;
+  const f = sh.frames[idx];
+  if (!f) return;
+  const key = `${sheet}:${idx}:${pct}`;
+  let c = _scaledCache.get(key);
+  if (!c) {
+    const atlas = cycAtlas(sheet, 0);
+    if (!atlas) return;
+    const mask = scaleMask(Math.max(f.w, f.h), pct);
+    const cols = [], rows = [];
+    for (let i = 0; i < f.w; i++) if (mask[i]) cols.push(i);
+    for (let i = 0; i < f.h; i++) if (mask[i]) rows.push(i);
+    c = document.createElement('canvas');
+    c.width = Math.max(1, cols.length); c.height = Math.max(1, rows.length);
+    c.__w = cols.length; c.__h = rows.length;
+    const src = document.createElement('canvas');
+    src.width = f.w; src.height = f.h;
+    const sg = src.getContext('2d');
+    sg.drawImage(atlas, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+    const id = sg.getImageData(0, 0, f.w, f.h);
+    const g = c.getContext('2d');
+    const od = g.createImageData(c.width, c.height);
+    rows.forEach((r, j) => cols.forEach((cx, i) => {
+      const s = (r * f.w + cx) * 4, d = (j * c.width + i) * 4;
+      od.data[d] = id.data[s]; od.data[d + 1] = id.data[s + 1];
+      od.data[d + 2] = id.data[s + 2]; od.data[d + 3] = id.data[s + 3];
+    }));
+    g.putImageData(od, 0, 0);
+    _scaledCache.set(key, c);
+  }
+  if (!c.__w || !c.__h) return;
+  ctx.drawImage(c, xc - (c.__w >> 1), yb - c.__h + 1);
+}
 
 // ------------------------------------------------- count strips (engine verbs)
 // Three shared primitives the colony screen (and the reports) are built out of.
@@ -1821,7 +1876,8 @@ function drawMap(ctx) {
       if (!isSeen(ru.x, ru.y)) continue;
       if (onAnyColony(ru.x, ru.y)) continue;
       unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
-                ru.flags || 0, ru.orders || 0, ownerColour(ru), unitIconOf(ru));
+                unitFlags(ru), ru.orders || 0, ownerColour(ru), unitIconOf(ru),
+                ownerPower(ru));
     }
   }
 
@@ -1833,7 +1889,7 @@ function drawMap(ctx) {
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     if (onAnyColony(ru.x, ru.y)) continue;
     unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
-              ru.flags || 0, ru.orders || 0, KING_COLOUR, unitIconOf(ru));
+              unitFlags(ru), ru.orders || 0, KING_COLOUR, unitIconOf(ru), 0x0F);
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -1921,7 +1977,44 @@ function panelClass(type, flags) {
     default:                                    return 0;
   }
 }
-function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame) {
+// owner = the power index (0..3 nations, 4..11 tribes, 0xF the Crown): the
+// letter ink rule @0x003D96-@0x003DD6 tests it, not the colour.
+const ownerPower = (u) => u.nation === -2 ? 0x0F
+  : u.nation >= 0 ? u.nation : ((u.tribe | 0) + 4);
+// The composite's +0x04 flags input with the LIVE damaged bit (0x80): the
+// port keeps damage in u.damaged (the importer maps the SAV bit there for
+// ships and artillery and the sim maintains it), so the byte handed to the
+// panel is rebuilt from it -- the same helper the C uses off CR.unit_damaged.
+const unitFlags = (u) => ((u.flags || 0) & 0x7F) | (u.damaged ? 0x80 : 0);
+function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame, owner,
+                   mode = 0x64) {
+  if (mode !== 0x64) {
+    // The mode dispatch @0x003B32-@0x003B44: mode - 0x19 == 0 -> the 0x19
+    // path, - 0x19 again == 0 -> the 0x32 path, anything else -> a 2x2
+    // owner box at (x, y) (@0x003B46-@0x003B5B). None of these draws the
+    // silhouette, the plate or the letter.
+    if (mode === 0x32) {
+      // @0x003AF8-@0x003B11: 0xC83:2 = func_00EC32 scales the record --
+      // w' = (w*pct + 50) / 100, h' likewise (@0x00EC4D-@0x00EC72) -- and
+      // [bp-8] = w', so the shared centring @0x003B23 is against w' alone:
+      // x_c = x + ((W - w') >> 1) when W > w'. Then @0x003B6C-@0x003BAB: a
+      // 2x2 box at (x+5, y+5) in the owner colour ([bp-0xF] = the
+      // [0x848+power] byte @0x003A0A) and the half-size sprite through
+      // 0xC56:4 = func_00E964 at CENTRE x_c + (w' >> 1), BOTTOM y + h' - 1
+      // (@0x003B94-@0x003BA2), pct = mode.
+      const [sw, sh] = frameSize('ICONS', frame);
+      const w2 = Math.floor((sw * mode + 50) / 100);
+      const h2 = Math.floor((sh * mode + 50) / 100);
+      const xc = x + (W > w2 ? ((W - w2) >> 1) : 0);
+      sheetFrameScaled(ctx, 'ICONS', frame, xc + (w2 >> 1), y + h2 - 1, mode);
+      ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 5, y + 5, 2, 2);
+    } else if (mode === 0x19) {
+      ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 1, y + 1, 2, 2); // @0x003B5E
+    } else {
+      ctx.fillStyle = ink(colourIdx); ctx.fillRect(x, y, 2, 2);         // @0x003B46
+    }
+    return;
+  }
   const key = (DATA.orders[orders] || DATA.orders[0]).key;
   const pw = FONT.tiny.width(key) + 3, ph = FONT.tiny.height + 3;
   const [sw, sh] = frameSize('ICONS', frame);
@@ -1951,7 +2044,26 @@ function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame) {
   ctx.fillStyle = ink(colourIdx); ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
   if (after) sheetSilhouette(ctx, 'ICONS', frame, sx, y, 0);
   sheetFrame(ctx, 'ICONS', frame, sx + 2, y);
-  FONT.tiny.draw(ctx, key, px + 2, py + 2, [ink(0), ink(0), ink(0)]);
+  // The LETTER INK (the tail @0x003D96-@0x003DD9, C4.27 2026-09-02):
+  // [bp-0x1f] starts as the owner colour byte [0x848+power] (@0x003A04) and
+  // becomes 0 (black) for every order EXCEPT Sentry (1) and Fortified (6)
+  // (@0x003D96-@0x003DA2); for those it is colour - 8 when the power is a
+  // nation (< 4, @0x003DAA-@0x003DB0) and 8 otherwise (@0x003DB6). A
+  // DAMAGED unit ([bp-0x18]: +0x04 bit 0x80 and type != 0x0B, @0x003A17-
+  // @0x003A30) overrides to 0xC for power 2, 0xF for the rest (@0x003DC4-
+  // @0x003DD6). The verb gets 0xC28:0xA(ax=0xFFFF, dx=bx=ink) then
+  // 0xC11:0xC at (px+2, py+2) (@0x003DDF-@0x003E08); FONTTINY's letters
+  // are level-1-only glyphs, so every painted level is the ink. The census
+  // EUROPE frame shows the three sentried riders' 'S' in index 5 = 13 - 8
+  // (the Dutch orange less 8); the port drew every letter black.
+  // NOT modelled ([bp-0x1e], @0x003924-@0x003955): a foreign ship's letter
+  // is its cargo COUNT as a digit, 'X' for a Frigate under [0x53a2] == 0,
+  // ink 0xF -- FLAGGED.
+  let li = 0;
+  if (orders === 1 || orders === 6) li = owner < 4 ? colourIdx - 8 : 8;
+  if ((flags & 0x80) && DATA.units.findIndex(r => r.name === type) !== 0x0B)
+    li = owner === 2 ? 0x0C : 0x0F;
+  FONT.tiny.draw(ctx, key, px + 2, py + 2, [ink(li), ink(li), ink(li)]);
 }
 function nationPlate(ctx, x, y, colourIdx, orders) {
   ctx.fillStyle = ink(0); ctx.fillRect(x, y, 8, 9);
@@ -1998,8 +2110,8 @@ function drawUnit(ctx, u, px, py) {
   // The map tile draws through the SHARED func_00386A composite: the
   // baseline's ships wear the class-1 plate at the sprite's top-RIGHT with
   // the silhouette layer, exactly like the sidebar and the dock.
-  unitPanel(ctx, px, py, 16, u.type, u.flags || 0, u.orders || 0,
-            ownerColour(u), unitIconOf(u));
+  unitPanel(ctx, px, py, 16, u.type, unitFlags(u), u.orders || 0,
+            ownerColour(u), unitIconOf(u), ownerPower(u));
 }
 
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
@@ -2343,8 +2455,8 @@ function drawSidebar(ctx) {
     // Anchor (242, 68) is the census sweep's unique minimum (9,332; every
     // neighbour >= 9,489). The old centred sprite + 8x9 plate was
     // capture-era guesswork.
-    unitPanel(ctx, 242, 68, 0, u.type, u.flags || 0, u.orders || 0,
-              ownerColour(u), unitIconOf(u));
+    unitPanel(ctx, 242, 68, 0, u.type, unitFlags(u), u.orders || 0,
+              ownerColour(u), unitIconOf(u), ownerPower(u));
     // The budget is in thirds; the HUD shows whole moves, with the odd third
     // spelled out so a road march reads correctly.
     const whole = Math.floor(u.movesLeft / MOVE_UNIT), frac = u.movesLeft % MOVE_UNIT;
@@ -5548,8 +5660,8 @@ function drawColonyDock(ctx, c) {
     // 0x0D..0x12 (@0x2801A-@0x2803D); a wagon stays at 147.
     const isShipType = Number((unit(u.type) || {}).hull) > 0;
     const y = COLONY_DOCK.shipY - (isShipType ? 1 + (k > 0 ? 1 : 0) : 0);
-    unitPanel(ctx, x, y, 16, u.type, u.flags || 0, u.orders || 0,
-              DATA.nations[G.nation].color, unitIconOf(u));
+    unitPanel(ctx, x, y, 16, u.type, unitFlags(u), u.orders || 0,
+              DATA.nations[G.nation].color, unitIconOf(u), G.nation);
     if (k === G.colonyShipSel)
       hollowRect(ctx, x - 1, COLONY_DOCK.shipY - 1, 18, 18, 0x0A);
     // The drop highlight while a goods payload is over the dock. The engine's
@@ -6024,11 +6136,27 @@ function drawEurope(ctx) {
 
   // Market bar: icons centred on 19i + 10 at y=181, bid/ask at y=194.
   //
-  // The cell CENTRE is 19i + 10, byte-verified in the price drawer:
-  // `imul ax, [bp+6], 0x13; add ax, 0xa` @0x030ED4-@0x030ED8, with the icon
-  // row's y stored in the same frame as 0xB5 = 181 @0x030ECF. The port centred
-  // on 9 -- one pixel left, on every one of the sixteen icons. Measured: that
-  // band 1,030 -> 59 px.
+  // The ICON blit is now read from the bar's OWN drawer, func_0310B4
+  // (C4.10, 2026-09-02): cell_x starts at 1 (@0x0310CA) and steps 0x13
+  // (@0x03124C); the frame is 0x17 + i in EXE numbering (@0x0310F2 = bundle
+  // 0x16 + i); the width is the runtime sheet record's +8 word for THAT
+  // frame (`mov cx, es:[bx+si+0x152]` @0x0310FC, 0x152 = 0x36 + 8 + 12*0x17),
+  // and x = cell_x - (w >> 1) + 9 (`sar cx,1; sub dx,cx; add dx,9`
+  // @0x031101-@0x031105) = 19i + 10 - (w >> 1), blitted through 0x181F:0x254
+  // = func_00E76A, which adds NO per-frame offset (@0x00E7E7 uses the
+  // passed x verbatim). y = 0xB5 = 181 @0x0310CF. That is the formula below;
+  // the census EUROPE frame fits every one of the sixteen icons at shift 0
+  // (per-cell sweep -2..+2, 2026-09-02), so the "one pixel left" note the
+  // ledger carried from before C4.24 is stale: measured delta 0 -> 0.
+  //
+  // The SELECTION CURSOR is the hollow rect 0x181F:0xCE with x0 = cell_x - 1
+  // = 19i (`dec ax` @0x031241), x1 = cell_x + 0x12 = 19i + 19, y0 = 179
+  // (`dec dx; dec dx` off 181 @0x031245), y1 = 199 (pushed 181 + 0x12): the
+  // line verbs are endpoint-INCLUSIVE -- the DOS frame paints column 19 in
+  // ink 14 on rows 179..199 while the port stopped at 18 -- so the cell is
+  // 20 wide, not 19. Measured: 40 px of cells 0/1 (the two edge columns).
+  // Ink 0xA normally, 0xE under the drag gates @0x0311EF-@0x03121A; the
+  // port keeps its 0xE (the census state matches).
   //
   // Scoped to EUROPE. The colony screen has its own market strip drawn by a
   // different function, and no census capture of that screen exists yet, so it
@@ -6037,61 +6165,110 @@ function drawEurope(ctx) {
     const [fw] = frameSize('ICONS', 0x16 + i);
     sheetFrame(ctx, 'ICONS', 0x16 + i, 10 + 19 * i - (fw >> 1), 181);
     FONT.tiny.center(ctx, `${bidPrice(i)}/${askPrice(i)}`, 9 + 19 * i, 194, lut(0x2F));
-    if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 19, 21, 0x0E);
+    if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 20, 21, 0x0E);
   });
 
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
   // ones outbound, "Loading" the ship at the dock and its hold.
   //
-  // A crossing renders as the SHIP + ITS MANIFEST, CAPTURE-PINNED 2026-08-07
-  // (docs/screens/live_2026-08-07/europe_1653_boundfor.png -- the 1653 Dutch
-  // game's outbound Galleon): the ship sprite at the band's left, then each
-  // PASSENGER standing on a black-outlined plate filled with the NATION
-  // COLOUR (palette 13 = the Dutch colour in that frame), drawn as his
-  // PROFESSION FIGURE (matched 1.0: Expert Farmer 81 / Master Distiller 90 /
-  // Master Gunsmith 96), at pitch ~17-18 (one capture; 17 here). Ship anchor
-  // measured (75,146) = the engine's state-3 band; the per-state bands
-  // y=146/137/132 (func_031298) index by SLOT here, a flagged approximation
-  // of the state layout. No hollow cell, no progress bar (the green cell is
-  // the selection cursor; the bar belongs to the band layout proper).
-  const CROSS_BANDS = [146, 137, 132];
-  const crossingCell = (e, x, k) => {
-    const y = CROSS_BANDS[Math.min(k, 2)];
-    // Every unit here draws through func_00380C's two layers: the black
-    // SILHOUETTE of the frame 2 px left of the sprite (see unitPanel).
-    // Measured on the census fixture: crossing band 486 -> 421 px with the
-    // silhouettes (ship's alone worth 35), while shifting the sprites
-    // instead (silhouette at the pinned x, sprite +2) scores 529 -- the
-    // capture-pinned x's are the SPRITE positions.
-    // The crossing SHIP is the full func_00386A composite -- the DOS
-    // baseline shows the class-1 plate at the hull's top-right. (The old
-    // attempt that measured worse predates the silhouette + x+2 decode.)
-    unitPanel(ctx, x + 1, y, 0, e.type, 0, 0,
-              DATA.nations[G.nation].color, e.icon);
-    (e.passengers || []).slice(0, 3).forEach((p, i) => {
-      const px = x + 20 + i * 17;
-      // Each passenger = his profession figure + the nation sack at his
-      // side (fig2 (110,146) / sack (115,153) in the capture -> +5/+7;
-      // the sack draws first so the figure overlaps it, as observed).
-      drawSack(ctx, px + 5, y + 7);
+  // func_031298 @0x031298 -- the column layout by RUNNING ORDINAL (C4.11,
+  // 2026-09-02). Bins ordinal n into a band and returns the cell:
+  //   n < 4        band 0, k = n      (@0x0312AC `cmp ax,4; jge`)
+  //   n < 12       band 1, k = n - 4  (@0x0312BB-@0x0312C3)
+  //   n - 12 < cap band 2, k = n - 12 (@0x0312CF-@0x0312D9)
+  //   else         band 3, undrawn (func_031366 tests band < 3)
+  // step = 0x10 >> band (@0x0312E5) is both the cell h and the pitch; band 0
+  // adds `arg` to the pitch (@0x0312F0-@0x0312F8), band 2 adds 1 (`inc
+  // [bp-4]` @0x031300: pitch 5, not 4); w = h = step; x = k * pitch + base
+  // (@0x031310-@0x03131C); then per band (@0x03135A): 0 -> y 0x92 (146);
+  // 1 -> x += 2, w -= 2, y 0x89 (137); 2 -> x += 1, w -= 1, y 0x84 (132).
+  const crossLayout = (n, baseX, cap, arg) => {
+    let band = 0, k = 0;
+    if (n < 4) k = n;
+    else if (n - 4 < 8) { band = 1; k = n - 4; }
+    else if (n - 12 < cap) { band = 2; k = n - 12; }
+    else band = 3;
+    const step = 0x10 >> band;
+    const pitch = step + (band === 0 ? arg : band === 2 ? 1 : 0);
+    const c = { band, x: k * pitch + baseX, y: 0, w: step, h: step };
+    if (band === 0) c.y = 0x92;
+    else if (band === 1) { c.x += 2; c.w -= 2; c.y = 0x89; }
+    else if (band === 2) { c.x += 1; c.w -= 1; c.y = 0x84; }
+    return c;
+  };
+  // func_031366 @0x031366 -- draw ONE unit at the ordinal and advance it
+  // (`inc word ptr [bx]` @0x0314A9, unconditional): a ship and its riders
+  // share one sequence, in the sentinel tile's occupancy-chain order.
+  //   band 0/1 (@0x031393): the func_00386A composite (0x181F:0x2BC
+  //     @0x0313C2) with mode 0x64 >> band (@0x0313A1-@0x0313A9: full for
+  //     band 0, 0x32 half-size for band 1), W = 0x10 (@0x03139F),
+  //     x - (band == 1 ? 4 : 0) (@0x0313AA-@0x0313BB), flags 0. Then a SHIP
+  //     (type 0x0D..0x12 @0x0313CB/@0x0313D5) in band 0 with arg < 2
+  //     (@0x0313E8) and a non-empty hold (+0x0C @0x0313EE) wears its hold-0
+  //     good's icon 0x17 + get_nth_cargo(unit, 0) (0x181F:0xBE6 = func_00B2A2,
+  //     the +0x0D low nibble) at (x, y) @0x0313F5-@0x031417. Crossings pass
+  //     arg 1, the harbour 2 -- only a crossing ship shows its cargo.
+  //   band 2 (@0x031420): the scaled blit 0x181F:0x2F8 = func_00E964 of the
+  //     @UNIT icon byte [0x5232 + 14*type] at centre x + (w >> 1) - 1, bottom
+  //     y + h - 1, pct 0x64 >> 2 = 25 (@0x031426-@0x031468).
+  //   cursor: colour >= 0 and band < 3 (@0x03146D-@0x031477) -> hollow rect
+  //     (x-1, y-1)-(x+w, y+h) via 0x181F:0xCE (@0x0314A1), endpoint-inclusive
+  //     (RULINGS 2026-09-02p): w+2 by h+2.
+  const crossUnit = (type, frame, colourIdx, orders, cargoGood, baseX, cap,
+                     arg, ord, cursorColour) => {
+    const c = crossLayout(ord.n++, baseX, cap, arg);
+    const row = DATA.units.findIndex(r => r.name === type);
+    if (c.band < 2) {
+      unitPanel(ctx, c.x - (c.band === 1 ? 4 : 0), c.y, 0x10, type, 0, orders,
+                colourIdx, frame, G.nation, 0x64 >> c.band);
+      if (row >= 0x0D && row <= 0x12 && c.band === 0 && arg < 2 &&
+          cargoGood >= 0)
+        sheetFrame(ctx, 'ICONS', 0x16 + cargoGood, c.x, c.y);
+    } else if (c.band < 3) {
+      sheetFrameScaled(ctx, 'ICONS', (unit(type) || {}).icon,
+                       c.x + (c.w >> 1) - 1, c.y + c.h - 1, 0x64 >> 2);
+    }
+    if (cursorColour >= 0 && c.band < 3)
+      hollowRect(ctx, c.x - 1, c.y - 1, c.w + 2, c.h + 2, cursorColour);
+  };
+  // One crossing panel: func_0318D2 ("Expected Soon", base 2 @0x031915) and
+  // func_0317CC ("Bound For", base 0x49 = 73 @0x031841). Each resets the
+  // ordinal once (@0x03191A / @0x031846) and walks TWO sentinel-tile
+  // occupancy chains through 0x181F:0x7E0 = func_0066CC (the head of the
+  // first record at (p-0x10, p-0x10) then (p-0xC, ..) for Expected Soon
+  // @0x03191F/@0x031954; (p-0x1C) then (p-0x18) for Bound For @0x03184B/
+  // @0x031880), stepping the +0x1A link (0x181F:0x2E4 = func_0066BA), and
+  // calls func_031366 for EVERY unit on them (cap 0xD, arg 1, colour -1).
+  // The port's crossing is {ship, passengers in chain order} (the importer's
+  // __ridx pass), so ship-then-riders IS the chain the fixture carries
+  // (Galleon #56 heads 87 -> 86 -> 85). FLAGGED: two ships on one sentinel
+  // interleave by the tile chain, and neither the cross-ship link nor which
+  // of the pair's bases (0xE4/0xE8, 0xF0/0xF4) a ship sat on is kept -- save
+  // state the ports do not carry (research TBD 4).
+  const drawCrossingPanel = (state, baseX) => {
+    const ord = { n: 0 };
+    const colour = DATA.nations[G.nation].color;
+    G.europe.filter(e => e.state === state).forEach(e => {
+      const hold = e.hold || [];
+      crossUnit(e.type, e.icon, colour, 0, hold.length ? hold[0].good : -1,
+                baseX, 0xD, 1, ord, -1);
       // A professioned entry is {name, type}: name is what the man IS, type
-      // what he is EQUIPPED as. The port only looked the profession up for a
-      // plain STRING entry, so every professioned passenger drew as the
-      // generic Colonists sprite -- three identical grey figures where the
-      // original draws three different ones. The comment eight lines up had
-      // already identified them (Expert Farmer 81 / Master Distiller 90 /
-      // Master Gunsmith 96, matched 1.0) and the code never used it.
-      //
-      // FLAGGED: an entry equipped as something other than a plain colonist
-      // (Soldiers, Dragoons, Pioneers) draws its UNIT sprite here. No frame
-      // available shows an armed crossing passenger, so which of the two the
-      // original picks in that case is untested.
-      // func_003710 settles the old FLAG: an armed passenger resolves
-      // like any unit -- veteran art with the matching profession, the
-      // plain gray variant without (entryIcon routes through it).
-      const fi = entryIcon(p);
-      sheetSilhouette(ctx, 'ICONS', fi, px - 2, y, 0);
-      sheetFrame(ctx, 'ICONS', fi, px, y);
+      // what he is EQUIPPED as; entryIcon routes through func_003710 (the
+      // veteran art with the matching profession, else the plain variant).
+      // The plate LETTER is the rider's OWN order byte ([bx+0x314c]
+      // @0x003907 -> [0x54DE + order]): a unit aboard a ship is SENTRY (1)
+      // -- the fixture's three riders 85/86/87 carry +0x08 = 1 (the Galleon
+      // 0), 9 of the save's 10 ship-borne land units do, and a unit CREATED
+      // in Europe is born sentried (func_030C68: spawn_unit at the 0xEC+p
+      // sentinel, then `mov [bx+0x314c], 1` @0x030CFA). The dock->ship
+      // boarding write itself is unread (FLAGGED); the map's @UNITOPTIONS
+      // row folds "Sentry / Board ship" into order 1. The port's rider entry
+      // carries no order byte and no modelled path un-sentries a rider
+      // aboard, so the letter is 1 here. FLAGGED: a rider un-sentried in a
+      // harbour before sailing reads '-' there.
+      (e.passengers || []).forEach(p =>
+        crossUnit(entryType(p), entryIcon(p), colour, 1, -1, baseX, 0xD, 1,
+                  ord, -1));
     });
   };
   // THE THREE PANEL HEADINGS -- centred, ink 69, and the port had all three
@@ -6121,8 +6298,7 @@ function drawEurope(ctx) {
   // indistinguishable from a fixed x = 12 on every frame available.
   const EU_PANEL_INK = 69;
   FONT.tiny.center(ctx, 'Expected Soon', 36, 120, lut(EU_PANEL_INK));
-  G.europe.filter(e => e.state === 'toEurope').slice(0, 2).forEach((e, k) =>
-    crossingCell(e, 13, k));
+  drawCrossingPanel('toEurope', 2);       // base 2 @0x031915 (the old 13 had no byte)
   // While a ship is being dragged, the Bound For panel lights up as the drop
   // target (engine region 2, rect @0x32094; the highlight itself is port UI).
   if (G.drag && G.drag.kind === 'ship' &&
@@ -6130,8 +6306,7 @@ function drawEurope(ctx) {
     hollowRect(ctx, 72, 118, 70, 51, 0x0F);
   FONT.tiny.center(ctx, 'Bound For', 107, 120, lut(EU_PANEL_INK));
   FONT.tiny.center(ctx, DATA.regionname[G.nation], 107, 127, lut(EU_PANEL_INK));
-  G.europe.filter(e => e.state === 'toNewWorld').slice(0, 2).forEach((e, k) =>
-    crossingCell(e, 72, k));
+  drawCrossingPanel('toNewWorld', 0x49);  // 73 @0x031841
 
   const ship = activeShip();
   FONT.tiny.center(ctx, ship ? 'Loading:' : 'No Ships In Port', 183, 120,
@@ -6177,18 +6352,24 @@ function drawEurope(ctx) {
     if (k === G.euroDockSel)
       hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
   });
-  shipsInPort().forEach((e, k) => {
-    if (k >= 6) return;
-    const x = EURO_SHIP.x + k * EURO_SHIP.pitch;
-    // Nation sack at cell+(1,1), ship sprite at cell+(4,1) -- both from
-    // europe_port_2ships.png (Merchantman (149,146), Caravel (167,146)).
-    drawSack(ctx, x + 1, EURO_SHIP.y + 1);
-    unitPanel(ctx, x + 2, EURO_SHIP.y + 1, 0, e.type, 0, 0,
-              DATA.nations[G.nation].color, e.icon);
-    // Only the SELECTED ship wears the green cell (the two-ship frame boxes
-    // exactly the "Loading:" ship; [0x9E12]-driven).
-    if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);
-  });
+  // Ships in port: the same func_031366 verb from the dock painter
+  // func_0314DC -- base 0x92 = 146 (@0x031631), cap 5, arg 2 (@0x0316AD-
+  // @0x0316B1), ordinal reset once (@0x031638), iterating the ship LIST
+  // 0..[0xFA2] (@0x031642-@0x0316C7, not a tile chain), cursor 0xA for the
+  // selected index [0x9E1C] (@0x03166C; the 0xF drag states @0x031686/
+  // @0x0316A1 are pointer states the harness pins off). So ordinal k sits at
+  // x = 146 + 18k, y = 146, composite W = 16 -- the capture-pinned "sack at
+  // cell+(1,1), sprite at cell+(4,1)" (europe_port_2ships.png: Merchantman
+  // (149,146)) IS this composite's class-3 plate at x_c and its sprite at
+  // x_c + LW - max(0, LW+SW-14) + 2 = 149 for a 13-wide hull; the separate
+  // sack the port drew over the plate is gone. Cursor (x-1, y-1)-(x+16,
+  // y+16) inclusive = the old (145+18k, 145, 18, 18). arg 2: no cargo icon.
+  {
+    const ord = { n: 0 };
+    shipsInPort().forEach((e, k) =>
+      crossUnit(e.type, e.icon, DATA.nations[G.nation].color, 0, -1, 0x92, 5,
+                2, ord, k === G.euroShip ? 0x0A : -1));
+  }
 
   // The active ship's CARGO ROW -- six slots at x = 147 + 12k, y = 165. That
   // geometry was already right (frame 122 template-matches the live row at
@@ -9354,14 +9535,17 @@ function applyDefeat(loser, winner) {
                      STRING4: (wt && wt.name) || '' });
   }
   if (down) {
-    const wasVeteran = loser.profession === 'Veteran Soldiers' ||
-                       loser.profession === 'Veteran Dragoons';
     // A demoted-to-Colonist carrying the Missionary profession becomes a
-    // Missionaries unit instead of a plain colonist.
+    // Missionaries unit instead of a plain colonist (`cmp [bx+0x315B], 0x18`
+    // @0x05B60E).
     if (down === 'Colonists' && loser.profession === 'Jesuit Missionaries')
       becomeType(loser, 'Missionaries');
     else becomeType(loser, down);
-    if (wasVeteran) loser.profession = null;              // veteran status is lost
+    // The DEMOTE branch of func_05B2C2 (@0x05B5AA-@0x05B68F, key @0x05B679) is
+    // a TYPE ladder only: the function's sole write of +0x17 is the
+    // colonist-CAPTURE strip @0x05B577 (0x15 -> 0x1C, above). The port used
+    // to clear a Veteran's profession here as well -- "veteran status is
+    // lost" was never in the bytes (C4.26 unit side, 2026-09-02).
     showEvent('DEMOTE', { STRING0: S.STRING0, STRING1: S.STRING1, STRING2: loser.type });
     return;
   }
@@ -9373,42 +9557,68 @@ function applyDefeat(loser, winner) {
 // and Petty Criminals cost 10, Indentured Servants 5. George Washington skips
 // the roll entirely. The class ladder walks the winner up one rung; at the
 // soldier ceiling the unit TYPE advances instead.
-const RANK_LADDER = { 'Petty Criminals': 'Indentured Servants',
-                      'Indentured Servants': 'Free Colonists',
-                      'Free Colonists': 'Veteran Soldiers',
-                      null: 'Veteran Soldiers' };
+// func_0082B2 (0x181F:0xC9A): the engine's "is an expert" predicate returns 0
+// ONLY for 0x1C (none), 0x13 Free Colonists, 0x19 Indentured Servants, 0x1A
+// Petty Criminals and 0x1B Indian Converts (@0x0082B5-@0x0082D1) -- every
+// other byte, INCLUDING 0 = Expert Farmers, is an expert (@0x0082D3).
+const NON_EXPERT_CLASSES = [null, 'Free Colonists', 'Indentured Servants',
+                            'Petty Criminals', 'Indian Converts'];
+const isExpertClass = (p) => !NON_EXPERT_CLASSES.includes(p);
+// func_05C69C @0x05C69C, the combat promoter, re-read 2026-09-02 (C4.26 unit
+// side). Gates, in order: only TYPES 1 Soldiers / 4 Dragoons (@0x05C6A5-
+// @0x05C6B3); a Veteran (0x15 @0x05C6BA) continues only under declared war
+// ([0x5382] bit 0 @0x05C6C1) AND PowerRecord +0 bit 0x08 (@0x05C6CB-
+// @0x05C6D6 -- semantics unread, NOT modelled, FLAGGED); any other EXPERT
+// (func_0082B2 != 0 @0x05C6E0-@0x05C6F2, so profession 0 too) is skipped
+// before the roll. Then S = total + strength +/- difficulty (human +, AI -,
+// @0x05C6F5-@0x05C729) - 10 for 0x1A / 5 for 0x19 (@0x05C738-@0x05C746),
+// random_int(1, S) unless Washington (attr 0xB, @0x05C74A-@0x05C769), and
+// the rung table func_05C65A (@0x05C65A-@0x05C696): default 0x15; 0x15 at
+// war -> -1 (type step); 0x1A -> 0x19; 0x19 -> 0x1C (plain, NOT Free
+// Colonists); 0x1B -> 0x1B, which `cmp ax, [bp-6]; jne` @0x05C78D turns into
+// a no-op. The type step (@0x05C795-@0x05C7B5) is human-only, 1 -> 9 and
+// 4 -> 7. Keys @0x05C834 VETERAN / @0x05C868 VALOR.
+// Removed from here: the port's "Scout hardens to Seasoned" branch -- the
+// engine's WELLSEASONED site is the village-entry roll @0x04A9DD (`mov
+// [bx+0x315B], 0x16`, key @0x04AA14), not combat; FLAGGED as not modelled on
+// that path.
 function tryPromote(winner, wStrength, total) {
   if (winner.nation !== G.nation) return;                 // only your own men
-  const penalty = winner.profession === 'Petty Criminals' ? 10
-                : winner.profession === 'Indentured Servants' ? 5 : 0;
+  if (winner.type !== 'Soldiers' && winner.type !== 'Dragoons') return;
+  const from = winner.profession || null;
+  if (from === 'Veteran Soldiers') {
+    if (!(G.flags & WOI_DECLARED)) return;
+  } else if (isExpertClass(from)) return;
+  const penalty = from === 'Petty Criminals' ? 10
+                : from === 'Indentured Servants' ? 5 : 0;
   const S = Math.max(1, total + G.difficulty - penalty);
   const auto = G.fathersOwned.includes('George Washington');
   if (!auto && 1 + Math.floor(Math.random() * S) > wStrength) return;
-  // A Scout hardens to Seasoned rather than climbing the soldier ladder.
-  if (winner.type === 'Scouts' && winner.profession !== 'Seasoned Scouts') {
-    winner.profession = 'Seasoned Scouts';
-    showEvent('WELLSEASONED', {});
+  let next = 'Veteran Soldiers';
+  if (from === 'Veteran Soldiers') next = -1;
+  else if (from === 'Petty Criminals') next = 'Indentured Servants';
+  else if (from === 'Indentured Servants') next = null;
+  else if (from === 'Indian Converts') next = 'Indian Converts';
+  if (next === from) return;                              // @0x05C78D
+  if (next === -1) {
+    // At the ceiling the TYPE advances (war only, reached only at war).
+    if (CONTINENTAL_OF[winner.type]) {
+      const to = CONTINENTAL_OF[winner.type];
+      const fromType = winner.type;
+      becomeType(winner, to);
+      // @CONTINENTAL "Our {Veteran %STRING0} have hardened to {Continental
+      // Army} status" -- the type-advance has its own key, not @VALOR.
+      showEvent('CONTINENTAL', { STRING0: fromType });
+    }
     return;
   }
-  const from = winner.profession;
-  const next = RANK_LADDER[from === undefined ? null : from];
-  if (next && from !== 'Veteran Soldiers') {
-    winner.profession = next;
-    if (next === 'Veteran Soldiers') showEvent('VETERAN', { STRING0: winner.type });
-    else showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
-                              STRING1: from || 'Free Colonists', STRING2: next });
-    return;
-  }
-  // At the ceiling the TYPE advances -- but only once the war has begun, which
-  // is what a Continental Army is.
-  if ((G.flags & WOI_DECLARED) && CONTINENTAL_OF[winner.type]) {
-    const to = CONTINENTAL_OF[winner.type];
-    const from = winner.type;
-    becomeType(winner, to);
-    // @CONTINENTAL "Our {Veteran %STRING0} have hardened to {Continental
-    // Army} status" -- the type-advance has its own key, not @VALOR.
-    showEvent('CONTINENTAL', { STRING0: from });
-  }
+  winner.profession = next;
+  if (next === 'Veteran Soldiers') showEvent('VETERAN', { STRING0: winner.type });
+  // func_0091CC normalises 0x1C to the Free Colonists row for display
+  // (@0x0091F0), so the plain rung reads "Free Colonists" in the message.
+  else showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
+                            STRING1: from || 'Free Colonists',
+                            STRING2: next || 'Free Colonists' });
 }
 // The attacker wins iff roll <= ATK.
 function resolveAttack(att, def) {
@@ -11255,14 +11465,19 @@ function rumourAt(x, y) {
   // engine consumes a rumour by writing the tile's high nibble at 0x5DCC.
   return h - (x & 3) * 4 === (y & 3) && !G.rumoursDone.has(y * MAP.w + x);
 }
-// The scout bonus, byte-verified in func_061454: +1 for a Scout, +1 for a
-// Seasoned Scout, +1 if the power holds Hernando de Soto (who also forces a
-// positive-outcome reroll).
+// The scout bonus, byte-read in func_061454 @0x0614A6-@0x0614E3 (C4.26 unit
+// side, 2026-09-02): level = 1 iff the TYPE is Scouts (`cmp [bx+0x3146], 5`);
+// the Seasoned test (`cmp [bx+0x315B], 0x16` @0x0614BB, plain byte equality
+// -- no `>= 1` guard, so profession 0 is simply not 0x16) runs ONLY inside
+// that branch (`or ax,ax; je` @0x0614B7); and Hernando de Soto (attribute 7,
+// @0x0614C6) adds one ONLY when the level is already non-zero (`cmp
+// [bp-0x34], 0; je` @0x0614D8). The port used to add both unconditionally --
+// a Seasoned Scout re-equipped as a Soldier, or any non-scout under de Soto,
+// scored a bonus the engine withholds. Both engines changed together.
 function scoutLevel(u) {
-  let s = 0;
-  if (u.type === 'Scouts') s += 1;
-  if (u.profession === 'Seasoned Scouts') s += 1;
-  if (G.fathersOwned.includes('Hernando de Soto')) s += 1;
+  let s = u.type === 'Scouts' ? 1 : 0;
+  if (s && u.profession === 'Seasoned Scouts') s += 1;
+  if (s && G.fathersOwned.includes('Hernando de Soto')) s += 1;
   return s;
 }
 const d = (n) => 1 + Math.floor(Math.random() * n);
@@ -12570,8 +12785,8 @@ function drawNavalReport(ctx) {
     // CLASS: a Galleon or Frigate (class 1) wears it to the RIGHT of the hull,
     // a Merchantman or Caravel (class 3) to the LEFT. See unitPanel().
     if (cu) unitPanel(ctx, F7_PANEL_X, y, 0, s.u.type,
-                      s.u.flags || 0, s.u.orders || 0,
-                      DATA.nations[G.nation].color, cu.icon);
+                      unitFlags(s.u), s.u.orders || 0,
+                      DATA.nations[G.nation].color, cu.icon, G.nation);
     FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK));
     // Cargo column (func_03954C): one crate per occupied HOLD, engine frame =
     // (qty >= 0x64 ? 0x17 : 0x27) + good (@0x039605 full, @0x0395A8 partial;
@@ -12760,11 +12975,27 @@ function drawIndianReport(ctx) {
     // original's row. The port used to read both from a RUNTIME v.stock map
     // the import leaves empty, so neither cell ever drew.
     //
-    // NOT implemented: the MISSIONS cell at x = 96 (@0x037650 counts this
-    // tribe's settlements whose mission byte's low nibble equals the power,
-    // drawn with the singular/plural pair [0x2DF0]/[0x2DF2]). The counting
-    // rule is byte-cited; the two STRINGS are not resolved and the census
-    // fixture has no Dutch mission to show them. Flagged, not invented.
+    // MISSIONS (C4.17, 2026-09-02): the second cell, x = 40 + 0x38 = 96
+    // (`add [bp-0x68], 0x38` @0x037728). Count (@0x037638-@0x03766B): for
+    // each settlement whose tribe byte +0x02 equals this row's (`cmp
+    // [bx+0x54ee], cl` @0x03763E) the engine selects it (0x181F:0xA4C) and,
+    // when `([0x8D4A]+5 & 0xF) == [bp+6]` -- the mission byte's low nibble
+    // equals the viewing power (@0x037650-@0x03765E; +5 is 0xFF with no
+    // mission, so a bare settlement never matches a power < 4) -- increments
+    // [bp-0x56]. Drawn only when non-zero (@0x03772C): itoa (0x181F:0x182) +
+    // the separator 0x181F:0x178 = func_0028B0 = strcat(buf, DGROUP:0x50) =
+    // " " + [0x2DF0] for a count of 1 (`cmp 1; jne` @0x037752) else [0x2DF2]
+    // (@0x037758/@0x03775E) -- the LABELS MISC loader @0x075226-@0x07523C
+    // stores slot O as @MISC (O - 0x2DBA)/2: 27 "Mission" / 28 "Missions" --
+    // through 0x181F:0x13C at ([bp-0x68], [bp-0x6C]) in colour 0 (@0x03776E-
+    // @0x03777B), the same y + 8 sub-line as the settlements cell. The
+    // census fixture carries no Dutch mission; the synthetic renderreport
+    // "mission" scene stamps some so the C and JS agree on it.
+    const missions = G.villages.filter(v => v.tribe === i && v.mission &&
+                                            v.mission.power === G.nation).length;
+    if (missions)
+      FONT.tiny.draw(ctx, `${missions} ${DATA.text.misc[missions === 1 ? 27 : 28]}`,
+                     F9_COUNT_X + 0x38, y + 8, black);
     const armed = G.natives.filter(u => u.tribe === i &&
       (u.type === (DATA.units[0x14] || {}).name ||
        u.type === (DATA.units[0x16] || {}).name)).length;
@@ -12936,9 +13167,14 @@ const SAVE_KEY = 'colonization.save';
 // per-colonist CURRENT-JOB array (@JOB row), parallel to the +0x40 specialty
 // array. What the importer cannot see it does not invent: europe crossings,
 // trade routes, and the diplomacy matrices load empty/at peace, flagged.
-const SAV_PROFESSION = (v) =>
-  (v >= 1 && v < (DATA.jobexpert || []).length) ? DATA.jobexpert[v] : null;
-// ...and the same byte, read for a EUROPE MANIFEST entry, where row 0 counts.
+// (The former SAV_PROFESSION with its `v >= 1` guard is gone -- C4.26 unit
+// side, 2026-09-02: every unit-side expert test in the EXE is plain byte
+// equality on +0x17 (`cmp [bx+0x315B], imm` at @0x0614BB, @0x05A2F2,
+// @0x04A7D9, @0x05C6BA, @0x04C7B9, @0x048C65, @0x040732 ...) and the
+// engine's own expert predicate func_0082B2 counts byte 0 as an expert, so
+// there is no reading under which 0 means "none". SAV_PROFESSION0 below is
+// the one importer for every record.)
+// The profession byte, read for a EUROPE MANIFEST entry, where row 0 counts.
 //
 // Profession 0 IS a profession -- Expert Farmers, @JOBEXPERT row 0 -- and the
 // census frame proves it: the Galleon's three riders are records 85/86/87 with

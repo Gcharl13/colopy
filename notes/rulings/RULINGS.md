@@ -11638,3 +11638,122 @@ autosave as "slot 9 every turn AND slot 8 on decades".
    boot) per `cport/p4/README.md` ("Tools ▸ PSRAM must be Enabled") — the user's
    to make on each fresh sketch folder; no code change closes it.
 6. Oracles all green (the harness ignores `UI.request`; nothing else moved).
+
+## 2026-09-02p — render track (Europe / F9): C4.10 market cursor is 20 wide; the icon-row "one pixel left" was stale
+
+**Conflict**: ledger C4.10 said the Europe market icons sat one pixel right of the
+original and that the centring rule was unread; both ports drew the market selection
+cursor 19 px wide.
+
+**Bytes**: `func_0310B4` — icon x = `cell_x − (w>>1) + 9` with `cell_x = 1 + 19i`
+(@0x0310CA/@0x03124C/@0x031101–@0x031105) = `19i + 10 − (w>>1)`, the formula both ports
+already carried since C4.24; the per-cell census sweep fits all sixteen icons at shift 0.
+The cursor rect is `x0 = 19i`, `x1 = 19i + 19` (@0x031241, `cell_x + 0x12`), `y0 = 179`,
+`y1 = 199` (@0x031242–@0x031247) through `0x181F:0xCE`.
+
+**Ruling**: (1) the C4.10 "one pixel left" residual is retired — it predates C4.24; the
+icon row is byte-cited and pixel-exact. (2) `0x181F:0xCE`'s line endpoints are
+**inclusive**: the DOS frame paints column 19 in ink 14 on rows 179..199, so every
+hollow rect built from `(x0,y0)–(x1,y1)` pairs is `(x1−x0+1)` wide. Both ports draw the
+market cursor 20×21. Measured: census EUROPE 379 → 339 px.
+
+## 2026-09-02q — render track: Europe columns are laid out by running ordinal (C4.11); three corrections
+
+**Bytes**: `func_031298 @0x031298` / `func_031366 @0x031366` and the callers
+`func_0318D2` / `func_0317CC` / `func_0314DC` (spec/ui/europe_screen.md amendment
+2026-09-02).
+
+**Corrections recorded**:
+1. Band 2's pitch is **5**, not 4 (`inc word ptr [bp-4]` @0x031300 after `step = 0x10 >> 2`);
+   the ledger's "step 4 with x += 1" conflated the 4-px cell with the pitch.
+2. "Expected Soon" starts at **x = 2** (`mov [bp-0x54], 2` @0x031915); both ports used 13,
+   which had no byte behind it.
+3. The harbour ship's "nation sack at cell+(1,1)" was the `func_00386A` composite's own
+   class-3 plate (`x_c`, `y`) — the ports drew a sack AND the plate. The composite is the
+   only draw (`func_0314DC` → `func_031366` band 0, `W = 0x10`, `arg = 2`).
+Also retired: §3's reading of `func_031298` as a "sail-state → band" binning — the
+argument is a running ordinal, and `func_031366` increments it per unit drawn.
+
+**Not decided**: chain interleaving of two ships on one sentinel tile and which of the
+0xE4/0xE8 (0xF0/0xF4) bases a ship occupies — save state the ports' crossing record does
+not carry; FLAGGED in the ledger row.
+
+## 2026-09-02r — render track: `es:[bx+0x3E]` is the per-frame width word; the Europe rider "sack" was the composite plate (C4.27)
+
+**Conflict**: ledger C4.27 and `render_primitives.md` §1b called `es:[bx+0x3E]`/`[bx+0x40]`
+"undecoded sheet-header fields" and kept a capture-pinned 7×9 "nation sack" at sprite
+`+5/+7` for Europe crossing riders because routing them through `func_00386A` had
+measured worse (326 → 361 px).
+
+**Bytes**: `bx = 12·frame + [0x83E]` @0x003AC2–@0x003ACE; `es:[bx+0x3E]` = record `+8`,
+`es:[bx+0x40]` = record `+0xA`; the `+8` word is the column bound of `func_00E76A`
+(@0x00E7D3) and `func_00F184` (@0x00F1ED) and the multiplicand of `func_00EC32`
+(@0x00EC4D). `func_031366` calls the composite with `W = 0x10` (@0x03139F) at the ordinal
+x (@0x0313B8); the earlier attempt passed `W = 0` and the ship's slot x.
+
+**Ruling**: (1) `es:[bx+0x3E]` is the PER-FRAME width = the ports' frame `w` (ANCHOR only
+on the unlocated table builder; two byte-verified consumers plus the pixel-exact market
+row stand behind it). (2) The Europe rider "sack" is the composite's plate; both ports
+draw riders through `rm_unit_panel_mode`/`unitPanel` with order 1 (the fixture's riders'
+`+0x08`), measured crossing band 219 → 0 px. `draw_sack`/`drawSack` remain only for the
+dock units, whose painter is unread. (3) The dock→ship boarding write of `+0x08` is
+unread; `func_030C68` @0x030CFA (a Europe-born unit is created sentried) and the fixture
+bytes are the evidence for riders = Sentry. (4) §1b's "letter in flat black" is corrected:
+the ink is `colour − 8` (nation) / 8 (other powers) for Sentry and Fortified, black
+otherwise, 0xC/0xF when damaged (@0x003D96–@0x003DD6); the composites now take the owner
+power in both engines.
+
+## 2026-09-02s — render track: F9 MISSIONS strings resolved (C4.17)
+
+**Conflict**: ledger C4.17 and both ports said the singular/plural strings `[0x2DF0]`/
+`[0x2DF2]` were unresolved.
+
+**Bytes**: the LABELS `MISC` loader @0x075226–@0x07523C (`mov [bx+0x2dba], ax` for idx
+0..0xDC) makes slot O = `@MISC (O − 0x2DBA)/2` → 27 "Mission", 28 "Missions" (the same map
+gives `[0x2DF4]` = 29, the page title pushed @0x037463). Separator `0x181F:0x178` =
+`func_0028B0` → strcat(DGROUP `0x50` = " ").
+
+**Ruling**: implemented as `"<n> Mission"` / `"<n> Missions"` at (96, sub-line) in colour 0;
+because no fixture carries a mission of the viewing power, the synthetic `mission` scene
+(every settlement with record index `v % 3 == 0`) is a standing C-vs-JS oracle, frozen at
+0 palette acceptances.
+
+## 2026-09-02t — C4.26 unit side: byte equality on +0x17; scout level, promotion ladder and demotion corrected
+
+**Conflict**: the ports guarded the unit-record profession byte with `>= 1` in places
+(`SAV_PROFESSION`), added the Seasoned and de Soto scout bonuses unconditionally, promoted
+a profession-0 soldier as if unskilled, walked Indentured Servants up to Free Colonists,
+hardened Scouts to Seasoned on a combat win, and cleared a Veteran's profession on DEMOTE.
+
+**Bytes**: every unit-side test is `cmp byte ptr [bx+0x315B], imm` (sites in ledger C4.26);
+`func_0082B2` returns 0 only for 0x1C/0x13/0x19/0x1A/0x1B; `func_061454` @0x0614A6–@0x0614E3
+(Seasoned inside the Scouts branch, de Soto only when level ≠ 0); `func_05C69C` @0x05C6A5–
+@0x05C6F2 (types 1/4, Veteran needs war + PowerRecord bit 8, experts skipped before the
+roll); `func_05C65A` @0x05C65A–@0x05C696 (rungs: 0x1A→0x19, 0x19→0x1C, 0x1B→0x1B,
+else 0x15; 0x15 at war → −1); `func_05B2C2`: the only `+0x17` write is @0x05B577 in the
+colonist-capture branch (message COLONISTCAPTURE2 @0x05B57E); WELLSEASONED is written
+@0x04A9DD in the village-entry roll.
+
+**Ruling**: (1) profession byte 0 is Expert Farmers on the unit side too; no guard anywhere.
+(2) Scout level, promotion and demotion follow the bytes above in both engines. (3) NOT
+modelled, flagged: PowerRecord `+0` bit 0x08 (the Veteran → Continental second gate, meaning
+unread) and the village-entry WELLSEASONED path (the ports have no combat-free Seasoned
+promotion now — the fabricated combat one was removed rather than moved unread).
+
+## 2026-09-02u — census re-capture with the DOSBox pointer parked (C4.19); two harness facts
+
+**Decision**: all nine `docs/screens/census/baseline/census_*.png` frames were re-captured
+2026-09-02 with `drive.park()` before every shot (pointer at the window's last pixel →
+emulated arrow hotspot (319,199), arrow off-frame; 0 px in the corner box on every frame)
+and `drive.unpark()` after. Old-frame figures in the ledger/registry keep their ~82-px
+pointer and are labelled as such; each registry entry's first line is the re-measure.
+
+**Facts recorded from the re-capture** (both from frames, not the EXE): (1) the F3
+CONTINENTAL CONGRESS report has a second page — the Congress army scene — reached by the
+first Escape; the map follows the second. (2) Map VIEW mode keeps its cursor for the
+session: re-entering `v` starts where the last walk ended, not on the active unit. The
+capture loop now probes the frame state and gives every view-mode entry a fresh boot.
+
+**Not changed**: the MAP row's total depends on the water-cycle phase at capture time
+(5,186 with 3,120 cycle-accepted vs 2,066 in a phase-matched session); the census reports
+the phase-explained pixels in their own column rather than fixing a phase.

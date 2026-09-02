@@ -72,7 +72,7 @@ FIXTURE = "sav1653"
 # screen reached by a menu carries its accel path instead (see capture()).
 REPORTS = {
     "F2": ("F2", ["--renderreport", FIXTURE, str(PAK), "{out}", "F2"],
-           "CLOSED to the cursor floor (82 px = the DOS mouse pointer, "
+           "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 82 -> 0 px. CLOSED to the cursor floor (82 px = the DOS mouse pointer, "
            "0.1%), from 454. C4.23: the crosses gauge was never drawn "
            "because the runtime accumulator was never seeded -- PowerRecord "
            "+0x2E holds the crosses (30 on this save) and +0x30 the "
@@ -89,11 +89,11 @@ REPORTS = {
            "smear. The badge now diffs to ZERO. The unit-count divergence "
            "itself is flagged (C4.29), not silently absorbed."),
     "F3": ("F3", ["--renderreport", FIXTURE, str(PAK), "{out}", "F3"],
-           "Founding Father portraits: the 25 CC-00..CC-24 sheets are not in "
+           "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 12,182 -> 12,162 px (the 148 in the old pointer box is the report's own art). Founding Father portraits: the 25 CC-00..CC-24 sheets are not in "
            "the pack (Part E), so the port lists names as text where the "
            "original draws faces."),
     "F5": ("F5", ["--renderreport", FIXTURE, str(PAK), "{out}", "F5"],
-           "CLOSED to ~the cursor floor (97 px, of which 82 is the DOS "
+           "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 97 -> 15 px, rows 162..176. CLOSED to ~the cursor floor (97 px, of which 82 is the DOS "
            "mouse pointer), from 398. C4.9 fixed the bid/ask straddle "
            "(398 -> 202); the rest was ONE element -- the VERTICAL rule "
            "between the commodity names and the price columns at x = 67, "
@@ -101,7 +101,7 @@ REPORTS = {
            "measured off the baseline (202 -> 97). ~15 px of glyph-scale "
            "residual remains untriaged."),
     "F7": ("F7", ["--renderreport", FIXTURE, str(PAK), "{out}", "F7"],
-           "CLOSED AT THE CURSOR FLOOR -- 82 px, every one of them the DOS "
+           "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 82 -> 0 px. CLOSED AT THE CURSOR FLOOR -- 82 px, every one of them the DOS "
            "mouse pointer: the F7 grid is PIXEL-PERFECT. The last 81 px "
            "were the merged-hold crate count (the runtime hold merges "
            "same-good slots via hold_add, so rec 0's two full fur holds "
@@ -132,8 +132,19 @@ REPORTS = {
            "-1 -> +91 px, -2 -> +103 px). What is LEFT (~81 px beyond the "
            "pointer) is at glyph/edge scale, untriaged."),
     "EUROPE": ("EUROPE", ["--rendereurope", FIXTURE, str(PAK), "{out}", "0", "0", "-1", "0"],
-           "OPEN (0.6%, 379 px of which 82 is the pointer), down from 20.0%. "
-           "Thirteen fixes -- the latest: the crossing and harbour SHIPS "
+           "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 120 -> 38 px (the 'Exit' label rows 179..186 x 306..317 and three recruit-bevel corners). OPEN (0.2%, 120 px of which 82 is the pointer), down from 20.0%. "
+           "Sixteen fixes -- the latest (C4.11/C4.27, 2026-09-02): the "
+           "crossing column is laid out by running ordinal (func_031298/"
+           "func_031366) and every rider goes through the func_00386A "
+           "composite with its Sentry letter in colour-8 (@0x003DB0): the "
+           "crossing band is now 0 px, 339 -> 120. What remains besides the "
+           "pointer: the 'Exit' label (rows 179-186, x 306-317, 32 px) and "
+           "three recruit-bevel corners. Before that (C4.10): the market "
+           "cursor is 20 wide, x0 = 19i .. x1 = 19i + 19 endpoint-inclusive "
+           "(func_0310B4 @0x031241; column 19 is ink 14 on the DOS frame), "
+           "379 -> 339; the icon row itself fits at shift 0 for all sixteen "
+           "icons (func_0310B4 @0x0310FC-@0x031105 = 19i + 10 - (w >> 1)). "
+           "Before that: the crossing and harbour SHIPS "
            "go through the full func_00386A composite (the baseline shows "
            "the class-1 plate at the hull's top-right; the old worse "
            "measurement predates the silhouette + x+2 decode), 421 -> 379. "
@@ -166,7 +177,7 @@ REPORTS = {
            "spread over the crossing bands and panel text at glyph scale, "
            "untriaged."),
     "F9": ("F9", ["--renderreport", FIXTURE, str(PAK), "{out}", "F9"],
-           "OPEN (0.3%), down from 5.3%. Four fixes, each measured:\n"
+           "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 94 -> 12 px (inside the Apache/Sioux portraits). OPEN (0.3%), down from 5.3%. Four fixes, each measured:\n"
            "         3,365 -> 1,506  C4.12 WHICH TRIBES get a row. The row "
            "loop tests the relation byte (@0x03784C, `test al, 0x20`) and "
            "falls back on TribeRecord +0x03 bit 0x80; the port listed a tribe "
@@ -216,7 +227,7 @@ REPORTS = {
     # the render matches that half rather than declaring the whole unit.
     "MAP": (None, ["--rendermap", FIXTURE, str(PAK), "{out}", "37", "23", "6",
                    "-1", "0", "0"],
-            "OPEN (8.2%), captured 2026-08-28 and taken 9,855 -> 5,263 "
+            "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19): 5,242 -> 5,186 px = 12 palette + 2,054 content + 3,120 water-cycle phase (a same-day session whose phase matched read 2,066: the cycle column is the whole difference). OPEN (8.2%), captured 2026-08-28 and taken 9,855 -> 5,263 "
             "the same day (content 2,132 + cycle 3,119 + pointer 98). The view origin (37, 23) is the sweep's unique "
             "minimum (every neighbour >= 16,428), confirming the centring "
             "model clamp(unit - (7, 6)). The fixes, each measured:\n"
@@ -299,7 +310,7 @@ REPORTS = {
     "COLONY_SHIP": (("KEYS", "v") + ("Left",) * 19 + ("Down",) * 5 +
                     ("Return",),
                ["--rendercolony", FIXTURE, str(PAK), "{out}", "10"],
-               "NEW ENTRY (42.4%), first captured 2026-08-28, and it "
+               "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19), from a fresh boot+load: 15,099 -> 14,937 px. NEW ENTRY (42.4%), first captured 2026-08-28, and it "
                "corrected the dock model immediately (B3.1): the strip's "
                "membership is CARGO CAPACITY > 0, not hull -- the DOS frame "
                "docks the WAGON TRAIN beside the Galleon, and the engine's "
@@ -341,7 +352,7 @@ REPORTS = {
                "sprite-level detail."),
     "COLONY": (("KEYS", "v", "Left", "Return"),
                ["--rendercolony", FIXTURE, str(PAK), "{out}", "1"],
-               "NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "
+               "RE-CAPTURED 2026-09-02 with the pointer parked (C4.19), from a fresh boot+load: 14,351 -> 14,315 px. NEW ENTRY (33.3%), first captured 2026-08-28 -- the failed "
                "mouse entries above are RESOLVED by this keyboard path. "
                "The frame is structurally right (title, scene, docks, "
                "stockade band, warehouse row, people row all line up). "
@@ -394,21 +405,77 @@ def capture(only: str | None = None) -> None:
     bug. Re-enter from the map every time.
     """
     sys.path.insert(0, str(HARNESS))
-    subprocess.run(["./boot.sh", "VICEROY -g"], cwd=HARNESS, check=True,
-                   env={"WAIT": "18", "PATH": "/usr/bin:/bin"},
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     import drive                                            # noqa: E402
 
-    drive.key("Down", times=3, delay=0.5)                   # LOAD Game
-    drive.key("Return", delay=2.0)
-    drive.key("Return", delay=2.5)                          # slot DOS_SLOT
-    drive.key("Return", delay=3.0)
-    print("loaded DOS slot %d" % DOS_SLOT)
+    def boot_and_load() -> None:
+        subprocess.run(["./boot.sh", "VICEROY -g"], cwd=HARNESS, check=True,
+                       env={"WAIT": "18", "PATH": "/usr/bin:/bin"},
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        drive.key("Down", times=3, delay=0.5)               # LOAD Game
+        drive.key("Return", delay=2.0)
+        drive.key("Return", delay=2.5)                      # slot DOS_SLOT
+        drive.key("Return", delay=3.0)
+        print("loaded DOS slot %d" % DOS_SLOT)
+
+    boot_and_load()
+    # The two colony entries walk to their colony in VIEW mode from the
+    # post-load cursor (the active frigate at (44, 29)). View mode keeps its
+    # cursor within a session, so a SECOND view-mode entry starts wherever
+    # the first one left off (the 2026-09-02 pass filed the map parked on
+    # Vlissingen as COLONY). Each such entry therefore gets a fresh boot
+    # and load -- the state the registry documents its path against.
+    FRESH = {"COLONY_SHIP", "COLONY"}
+    booted_fresh = True
+
+    # The frame-state probe (C4.19, 2026-09-02). Re-entering every screen
+    # "from a known map" used to be a blind Escape pair: one Escape opens
+    # the map's "Exit to DOS?" dialog, the next cancels it, so the pair is
+    # a no-op ONLY when it starts on the plain map. F3 has a SECOND page
+    # (the Congress army scene), so after its single trailing Escape the
+    # pair landed on the map with the dialog OPEN, F5 was swallowed, and
+    # COLONY's Return answered "Yes" -- the 2026-09-02 pointer-parking pass
+    # filed the dialog as F5 and the DOS prompt as COLONY. Now the loop
+    # LOOKS: a probe frame is classified by two pixel signatures measured
+    # off real frames (the menu bar's row 2, and the dialog's black rim at
+    # rows 77/122 over x 117..202 with its 134 border inside) and Escape is
+    # pressed until the plain map shows.
+    MENUBAR_ROW2 = [132, 132, 132, 132, 130, 130, 128, 130, 132, 134, 134,
+                    134, 134, 149, 136, 136, 136, 68, 134, 68, 134, 68, 136,
+                    68, 132, 68, 135, 68, 135, 133, 133, 135, 132, 132, 132,
+                    132, 130, 130, 128, 130]
+
+    def frame_state() -> str:
+        p = drive.shot("_census_probe", settle=0.3)
+        if not p:
+            return "unknown"
+        f = np.array(Image.open(p))
+        p.unlink()
+        if f.ndim != 2 or f.shape != (200, 320):
+            return "unknown"
+        if f[2, 0:40].tolist() != MENUBAR_ROW2:
+            return "other"                                   # a report/screen
+        if (f[77, 117:203] == 0).all() and (f[122, 117:203] == 0).all() \
+                and (f[78, 118:202] == 134).all():
+            return "dialog"                                  # Exit to DOS?
+        return "map"
+
+    def ensure_map(tries: int = 8) -> None:
+        for _ in range(tries):
+            st = frame_state()
+            if st == "map":
+                return
+            drive.key("Escape", delay=1.0)                   # closes a page,
+        raise RuntimeError("could not return to the map")   # or cancels
+
+    EXIT_KEYS = {"COLONY_SHIP": ("Escape", "Escape"),
+                 "COLONY": ("Escape", "Escape")}
 
     for sid, (fkey, _args, _div) in REPORTS.items():
         if only and sid != only: continue
-        drive.key("Escape", delay=0.8)                      # back to a known map
-        drive.key("Escape", delay=0.8)
+        if sid in FRESH and not booted_fresh:
+            boot_and_load()
+        booted_fresh = False
+        ensure_map()                                        # a KNOWN map
         if sid == "EUROPE":                    # VIEW > European Status
             drive.key("alt+v", delay=1.5)
             drive.key("E", delay=3.0)
@@ -426,13 +493,32 @@ def capture(only: str | None = None) -> None:
             drive.key(fkey[-1], delay=3.0)
         else:
             drive.key(fkey, delay=2.5)
+        # C4.19 (2026-09-02): park the DOSBox pointer at (319,199) so the
+        # arrow hangs off the frame instead of sitting on the art at
+        # (158..172, 98..116). Every baseline captured before this carried
+        # ~82 px of pointer; figures quoted against those frames say so.
+        drive.park()
         p = drive.shot("census_%s" % sid)
+        # ...and back to the centre before any key is sent: parked, the
+        # Escape -> "Exit to DOS?" -> Escape re-entry below stopped
+        # cancelling the dialog (first 2026-09-02 pass: F5 filed the dialog,
+        # COLONY the DOS prompt).
+        drive.unpark()
         if p:
             SHOTS.mkdir(parents=True, exist_ok=True)
             import shutil
             p = shutil.move(str(p), SHOTS / ("census_%s.png" % sid))
         print("  captured %-4s -> %s" % (sid, p))
-        drive.key("Escape", delay=1.2)
+        # The colony entries walk there in VIEW mode, and a map in view
+        # mode passes the probe's "plain map" test (menu bar, no dialog)
+        # while the NEXT entry's leading "v" would toggle view mode OFF
+        # instead of on (the 2026-09-02 second pass filed the map centred
+        # on Vlissingen as COLONY). So their two known exits are pressed
+        # blind -- Escape closes the colony, Escape leaves view mode --
+        # and ensure_map() then probes the rest (F3's second page, a
+        # stray dialog).
+        for k in EXIT_KEYS.get(sid, ()):
+            drive.key(k, delay=1.0)
 
 
 def diff_one(sid: str) -> dict:
@@ -511,14 +597,18 @@ def diff_one(sid: str) -> dict:
             content_px += 1
         else:
             pal_px += 1
-    # The DOSBox pointer. Every capture in this baseline was taken with the
-    # emulated mouse parked at the same spot, so a ~90 px arrow sits at
-    # (158..172, 98..116) on EVERY screen and counts as divergence the port can
-    # never close. It is REPORTED, not subtracted -- a number this tool quietly
-    # edited would be worth less than one it explains. The real fix is to park
-    # the pointer off-screen before shot() on the next --capture run, which
-    # will move every baseline and every figure quoted against it.
-    cursor = int(mask[98:116, 158:173].sum())
+    # The DOSBox pointer (C4.19, CLOSED 2026-09-02). Every capture before
+    # 2026-09-02 was taken with the emulated mouse at its boot spot, so a
+    # ~82 px arrow sat at (158..172, 98..116) on EVERY screen -- a floor no
+    # port change could close, REPORTED rather than subtracted. capture()
+    # now parks the pointer at (319,199) before each shot (drive.park()),
+    # where the arrow hangs entirely off the frame: measured 0 px in the
+    # 10x10 corner box on all nine 2026-09-02 frames. The column stays, now
+    # over that corner, so a future capture that forgets to park shows up
+    # here instead of silently inflating every row. Figures quoted in the
+    # notes below against the OLD frames carry the pointer; each entry's
+    # first line gives its 2026-09-02 re-measure.
+    cursor = int(mask[190:200, 310:320].sum())
     OUT.mkdir(parents=True, exist_ok=True)
     side = Image.new("RGB", (320 * 3 + 8, 200), (24, 24, 24))
     side.paste(Image.fromarray(dos), (0, 0))
