@@ -104,6 +104,11 @@ immediates; the real-time pacer (CLOSING's analogue of OPENING's `[0x82]`/`[0x6c
 ---
 
 ## 3. AMERICA.MOV (opening demo script)
+> **STALE — superseded 2026-09-02** (`formats/MOV.md`, RULINGS 2026-09-02d): VICEROY.EXE's own
+> writer `func_063E68` / reader `func_063ED2` fix the layout as three map-derived tables
+> (two 15×18 cell-mask grids + sixteen u16 region counts), recomputed by `func_063C58` at every
+> new game; both file functions are unreachable. The paragraph below is kept as history.
+
 `data_extracted/data/AMERICA_MOV.json`: the blob is a **1-bpp coastline/depth bitmap** (the
 silhouette the ship sails toward) followed by a small **ship-path waypoint list** — trailing LE
 words decode as `count` then per-step deltas (e.g. `8` waypoints, increments `3,9,3,3,2,2,2,3,2`),

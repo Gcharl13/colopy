@@ -43,8 +43,11 @@ mock:
 # The asset gate (STATUS.md gate C): every shipped .SS/.PIK/.FF decodes
 # through the in-repo codec into extracted/ (git-ignored); declared
 # failures must keep failing.  Seconds, so it runs every time (G7).
+# Then the round-trip gate (G6): PAL/MP/DAT/COL/MOV decode -> encode
+# bit-exact against raw/COLONIZE/, containers decode, manifest agrees.
 assets:
 	python3 ../../tools/extract_visuals.py --quiet
+	python3 ../../tools/verify_assets.py --quiet
 # The ONLY gate that compares the port to the real game.  Deliberately NOT in
 # `test`: --capture drives DOSBox and takes minutes.  The diff pass is seconds
 # and runs off committed captures.

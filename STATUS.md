@@ -97,6 +97,7 @@ probes (`records`) and the .ino mock gate (`mock`).
 |------|--------|---------------------|
 | A. sigmatch self-test | ✅ **PASS** | 17/17 BYTE_VERIFIED helpers re-found |
 | B. byte-identity round-trip | ⚠️ **NOT MEANINGFUL AS IMPLEMENTED** | see below |
+| B-CODEC. decode→encode round-trip (2026-09-02) | ✅ `tools/verify_assets.py` under `make test`: 11 files re-encoded bit-exactly (PAL, MP, 3 DAT, 5 COL, MOV), 246 containers decode-checked, 45 byte-identity; REMAINING_WORK.md G6 | `python3 tools/verify_assets.py` |
 | B-PAL. PAL extract+encode | ✅ **PASS** (fixed today) | was silently FAILING since 2026-06-27 — see below |
 | B-MP. MP extract+encode | ✅ **PASS** | `AMER2.MP` SHA-exact |
 | C. visual asset extraction | ✅ **PASS** (rewritten 2026-09-02) | `extract_visuals.py`: SS **204/206** (1,425 frames; BDARK skipped per CLAUDE.md rule 5, `WIN-FWRK.SS` a DECLARED failure), PIK **35/35**, FF **5/5** (340 glyphs), 3 s, into `extracted/assets/` — see below |

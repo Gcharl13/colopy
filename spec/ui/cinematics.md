@@ -378,7 +378,18 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
    @`0x30BC`) and restores to the **BIOS 18.2 Hz tick `0040:006c`** on uninstall
    (`mov ax,0x40;[0x342] / mov ax,0x6c;[0x340]` @`0x30FA`) (clock helper @0x2EA2, installer @0x30BC).
    The only residual is the **live value** of `[0x54]` (STATE — player-driven, default 0).
-3. ✅ **AMERICA.MOV demo-script — PARTLY RESOLVED (A/R).** The `.MOV` blob
+3. **AMERICA.MOV — SUPERSEDED 2026-09-02 (B, RULINGS 2026-09-02d, `formats/MOV.md`).** The
+   paragraph below is retained as history; its reading is retired. VICEROY.EXE **does** contain a
+   reader — `func_063ED2` `@0x063ED2` (`"rb"` `@0x63ED8–0x63EDF`, three `fread`s of `0x10E`,
+   `0x10E`, `0x20` bytes `@0x63EEA–0x63F1C`) — and a writer `func_063E68` `@0x063E68`
+   (`@0x63E80–0x63EB2`); **neither has a caller** (no RTLink thunk resolves to either address, no
+   near call names them). The file is not a bitmap or a script: it is three tables that
+   `func_063C58` (`0x1A1F:0x7EA`, `new_game_state_init` `@0x757B5`) recomputes from the map at
+   every new game — two 15×18 cell grids of 8-direction bits (index `col·18+row`) and sixteen
+   per-region u16 counts; the "waypoint stream `f5 01 08 00`" was that u16 array. The one thing
+   the old note got right stands: OPENING/CLOSING never name the file, so the cinematic engine
+   reads `PATH.DAT`, not this blob.
+   ~~✅ **AMERICA.MOV demo-script — PARTLY RESOLVED (A/R).**~~ The `.MOV` blob
    (`data_extracted/data/AMERICA_MOV.json`) is a 1-bpp coastline/depth bitmap + ship-path waypoint
    list (`_load_ship_path`/`_increments`/`_scr_depth`, `CINEMATIC_TIMING_AUDIT.md` §3). Any non-bitmap
    header is the 8-byte leader `0c 00 00 0e 00 00 00 00` (word0=12, word1=0x0E00; verbatim in `AMERICA_MOV.json`), preceding the 1-bpp coastline bitmap; the bitmap is followed by the waypoint stream at file +0x220 marked `f5 01 08 00` = (`0x01f5`=501, `count=8`) then deltas `3,9,3,3,2,2,2,3,2` then `00 00` terminator — all bytes decoded (`binary_decode`). The semantic *grammar* of the 4 header bytes has **no EXE reader to trace**: the "AMERICA.MOV" string appears only in VICEROY.EXE @`0x1f7f0` in **write** context (adjacent `wb\0` mode flag, map-editor record path) — it is **not** referenced by name in OPENING.EXE/CLOSING.EXE, so the cinematic engine reads PATH.DAT, not this blob. The blob is thus a data-only artifact; the byte structure is documented, no further EXE byte exists to decode.

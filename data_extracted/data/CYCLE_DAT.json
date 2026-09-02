@@ -125,5 +125,6 @@
   ],
   "seconds_per_step": 0.5749332457244578,
   "seconds_per_cycle": 4.5994659657956625
- }
+ },
+ "reader": "func_0783E4 (VICEROY file 0x0783E4): fopen('CYCLE.DAT','rb') @0x783EF-0x783F6, fread(0x929E, 0x22, 1) @0x78403-0x7840A, fclose @0x7841B -- 34 bytes straight into DGROUP 0x929E (formats/DAT.md, 2026-09-02)"
 }

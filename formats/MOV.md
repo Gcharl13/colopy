@@ -1,52 +1,86 @@
-# .MOV — MicroProse Cinematic Script
+# .MOV — AMERICA.MOV, three map-derived tables (not a cinematic script)
 
-A small index/script file that drives the opening cinematic's demo sequence.
+**Rewritten 2026-09-02 (REMAINING_WORK.md G6, RULINGS 2026-09-02d).** Two
+earlier readings of this file are retired: the "MicroProse cinematic script
+with per-frame timestamps" sketch (never decoded, pure inference) and the
+2026-08-16 "1-bpp coastline/depth bitmap + ship-path waypoint list"
+(`spec/ui/cinematics.md` §11.3, `docs/CINEMATIC_TIMING_AUDIT.md` §3) — the
+latter was a reading of the bytes without a reader. VICEROY.EXE contains
+both a writer and a reader for this file, and they fix the layout.
 
-**Corrected 2026-08-16:** `.MOV` contains **no audio references** — the
-"audio cues from COLDIG.BIN" claim in the earlier version of this page was
-speculation, falsified when the file was decoded. The decoded record is
-`data_extracted/data/AMERICA_MOV.json` (structure in `spec/ui/cinematics.md`
-§11.3); the inferred per-frame layout below predates that decode and is kept
-only as history — trust the JSON, not this sketch.
+**1 .MOV file in COLONIZE/**: `AMERICA.MOV`, 572 bytes = 270 + 270 + 32.
 
-**1 .MOV file in COLONIZE/**:
-- `AMERICA.MOV` — 572 bytes (suspiciously small for a real video)
+All offsets are file offsets into `VICEROY.EXE`; DGROUP strings are
+relative to file `0x1D9A0`.
 
 ---
+
+## Writer, reader, and why neither runs
+
+- **`func_063E68` writes it**: `push 0x1e5f` (`"AMERICA.MOV"`, file `0x1F7FF`),
+  `lea bx,[0x1e5c]` (`"wb"`) `@0x63E6E–0x63E75`; three `fwrite`
+  (`lcall 0xd1d,0x60c`): `0x85E8 × 0x10E` `@0x63E80–0x63E89`,
+  `0x86F6 × 0x10E` `@0x63E95–0x63E9E`, `0x945E × 0x20` `@0x63EAA–0x63EB2`;
+  `fclose` `@0x63EC5`.
+- **`func_063ED2` reads it**: `push 0x1e71` (`"AMERICA.MOV"`, file `0x1F811`),
+  `lea bx,[0x1e6e]` (`"rb"`) `@0x63ED8–0x63EDF`; the same three sizes as
+  `fread` `@0x63EEA–0x63F1C`; `fclose` `@0x63F2F`.
+- **Neither has a caller.** No RTLink thunk in `data_extracted/thunk_targets.json`
+  resolves to `063E68` or `063ED2` (the neighbouring thunks land on `063C58`
+  and `063F3C`), and no near `call` in the listing names either address. They
+  are dead code in VICEROY — developer tooling that shipped. The launcher
+  `COLONIZE.EXE` also carries the `"wb"`/`"AMERICA.MOV"`/`"rb"` string cluster
+  (`@0x6E6AD`); whether *its* copy is reachable is TBD (not searched — outside
+  this track). OPENING.EXE and CLOSING.EXE do not name the file at all, so the
+  cinematic engine never reads it (that part of the 2026-08-16 note stands).
+
+## What the three tables are — `func_063C58` produces them every new game
+
+`func_063C58` (thunk `0x1A1F:0x7EA`, called from `new_game_state_init`
+`@0x757B5`) recomputes the same three buffers from the loaded map, which is
+why the game does not need the file:
+
+- Two passes (`[bp-0x22]` = 0 → `0x85E8`, 1 → `0x86F6`; `@0x63C64–0x63C6F`)
+  over a grid of **4×4-tile cells**: `x` from 1, step 4, while `< 0x3D`
+  (**15 columns**, `@0x63DB4–0x63DB8`); `y` from 1, step 4, while `< 0x49`
+  (**18 rows**, `@0x63D9B–0x63D9F`). 15 × 18 = 270 = `0x10E`. **Cell index =
+  `column·18 + row`** (`add word [bp-0x16],0x12` per column `@0x63DAD`;
+  `imul bx,si,0x12` `@0x63D81`).
+- Per cell, an **8-bit direction mask**: for `d = 0..3` (`inc [bp-8]; cmp
+  [bp-8],4` `@0x63D8C–0x63D8F`) the path probe `lcall 0x1a1f,0x27e`
+  (`func_062716`) is called from the cell's anchor tile `@0x63D28`; when it
+  returns 1..7 (`jle`/`cmp si,8; jge` `@0x63D31–0x63D36`) bit `d` is OR'd
+  into this cell (`shl al,cl; or [bx+si],al` `@0x63D3B–0x63D48`) and the
+  **reciprocal bit `(d+4) & 7`** into the neighbour cell
+  (`sub cl,0xfc; and cl,7` `@0x63D74–0x63D8A`). The probe's exact meaning
+  (region match via `call 0x63bd8`, path length ≤ 9) and what distinguishes
+  pass 0 from pass 1 are **ANCHOR**-level — the helper was not fully read.
+- `0x945E[16]` (u16 each): per-region counts of tiles whose base terrain
+  (`byte & 7`, with the id `< 0x18`) is **2..5** — Plains, Prairie,
+  Grassland, Savanna (`cmp si,0x18; jge; and si,7; cmp si,2; jl; cmp si,5;
+  jg; inc word [bx-0x6ba2]` `@0x63E2E–0x63E44`; `-0x6BA2` ≡ `0x945E`).
 
 ## Layout
 
-The 572-byte size confirms this is NOT raw video data — it's a script
-that **references** other assets. Inferred structure (TBD Phase CV6):
-
 ```
-[header — small]
-[per-frame entry:
-    timestamp_ms: word
-    ss_filename_id: byte
-    sprite_index: byte
-    audio_cue_id: byte
-    duration_ms: word
-]
-[end-of-script marker]
+0x000  u8[270]   table 0  (0x85E8)  cell masks, index = col*18 + row
+0x10E  u8[270]   table 1  (0x86F6)  cell masks, second pass
+0x21C  u16[16]   counts   (0x945E)  per-region tile counts
+0x23C  end (572)
 ```
 
-The cinematic player in OPENING.EXE walks through these entries on a
-timer, drawing each referenced sprite at its scheduled time.
-
----
+Shipped bytes: table 0 begins `0c 00 00 0e 00 …`, table 1 begins
+`00 10 11 11 11 19 1d 1f …`, counts = `0, 0, 501, 8, 0, 3, 9, 3, 3, 2, 2, 2,
+3, 2, 0, 0`. (The old reading's "`f5 01 08 00` = marker 501, count 8, then
+deltas" is this u16 array; the "1-bpp bitmap" is the direction-mask tables.)
 
 ## Round-trip
 
-Byte-identity.
+Bit-exact: `tools/asset_codecs.py` `mov_decode` / `mov_encode`, run by
+`tools/verify_assets.py`. Nothing in the file is byte-opaque — the layout is
+fully accounted for by the writer; only the *semantics* of the two passes is
+ANCHOR. A port has no reason to load it: VICEROY never does, and the same
+tables are regenerated by `func_063C58` at new-game time (a port that needs
+them ports that function, not this file).
 
----
-
-## Decoding plan (Phase CV6)
-
-1. Annotate the cinematic player function in OPENING.EXE (Phase E).
-2. Decode the .MOV script → `assets/movies/AMERICA/timeline.json`
-   listing (frame_offset_ms, ss_filename, sprite_index, audio_cue,
-   duration_ms).
-3. Optionally render the cinematic as a sequence of PNG frames at
-   `assets/movies/AMERICA/frames/NNNN.png` for visual verification.
+Decoded: `data_extracted/data/AMERICA_MOV.json`.

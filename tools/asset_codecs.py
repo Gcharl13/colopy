@@ -113,3 +113,285 @@ def mp_encode(obj: dict) -> bytes:
         blob += bytes(obj["layers"][name])
     blob += bytes.fromhex(obj.get("extra_hex", ""))
     return bytes(blob)
+
+
+# ---------------------------------------------------------------- .DAT ----
+# CYCLE.DAT reader = func_0783E4: fopen("CYCLE.DAT","rb") (push 0x25f9;
+# lea bx,[0x25f6]; lcall 0x181f,0xe86 @0x783EF-0x783F6), fread(0x929E, 0x22, 1)
+# (push 1; push 0x22; push 0x929e; lcall 0xd1d,0x528 @0x78403-0x7840A), fclose
+# @0x7841B.  34 bytes land in DGROUP 0x929E and are consumed as
+# {u16 count; {u8 len, phase, start, delay}[8]} by cycle_init / cycle_colors
+# @0x0C51A (docs/PALETTE_AND_CYCLING.md).  Only band[0..count-1] are ever
+# read; the on-disk `phase` byte is overwritten with 0 at init (@0x0C4EF).
+
+CYCLE_STRUCT = struct.Struct("<H" + "BBBB" * 8)      # 2 + 32 = 34 = 0x22
+CYCLE_SIZE = CYCLE_STRUCT.size
+
+
+def cycle_dat_decode(data: bytes) -> dict:
+    if len(data) < CYCLE_SIZE:
+        raise ValueError(f"CYCLE.DAT shorter than 0x22 ({len(data)})")
+    v = CYCLE_STRUCT.unpack_from(data, 0)
+    count = v[0]
+    bands = [{"len": v[1 + 4 * i], "phase": v[2 + 4 * i],
+              "start": v[3 + 4 * i], "delay": v[4 + 4 * i]} for i in range(8)]
+    return {
+        "reader": "func_0783E4 @0x0783E4: fread(0x929E, 0x22, 1) @0x78403-0x7840A",
+        "count": count,
+        "bands": bands,
+        "bands_read_by_engine": count,      # bands[count..7] are never read (dead bytes)
+        "phase_byte_dead": "overwritten with 0 by cycle_init @0x0C4EF",
+        "extra_hex": data[CYCLE_SIZE:].hex(),
+    }
+
+
+def cycle_dat_encode(obj: dict) -> bytes:
+    flat = [obj["count"]]
+    for b in obj["bands"]:
+        flat += [b["len"], b["phase"], b["start"], b["delay"]]
+    return CYCLE_STRUCT.pack(*flat) + bytes.fromhex(obj.get("extra_hex", ""))
+
+
+# PATH.DAT: plain ASCII "x, y\r\n" pairs, read by OPENING.EXE (the string
+# "PATH.DAT" is at OPENING.EXE file 0xBFE8; it is absent from VICEROY.EXE).
+# The consumer's parse is not traced here (blocker: OPENING's reader is
+# outside this track), so the decoder keeps every line that does not
+# re-encode EXACTLY as `f"{x}, {y}"` verbatim under {"raw": ...}.
+
+def path_dat_decode(data: bytes) -> dict:
+    parts = data.split(b"\r\n")
+    tail = parts[-1]                      # bytes after the final CRLF ('' when the file ends with one)
+    entries = []
+    for line in parts[:-1]:
+        try:
+            xs, ys = line.split(b", ")
+            x, y = int(xs), int(ys)
+            if f"{x}, {y}".encode() == line:
+                entries.append([x, y])
+                continue
+        except ValueError:
+            pass
+        entries.append({"raw": line.decode("latin-1")})
+    return {
+        "consumer": "OPENING.EXE (string @0xBFE8); not read by VICEROY.EXE",
+        "line_format": "\"x, y\" + CRLF",
+        "points": entries,
+        "point_count": sum(1 for e in entries if isinstance(e, list)),
+        "tail": tail.decode("latin-1"),
+    }
+
+
+def path_dat_encode(obj: dict) -> bytes:
+    out = bytearray()
+    for e in obj["points"]:
+        if isinstance(e, list):
+            out += f"{e[0]}, {e[1]}".encode()
+        else:
+            out += e["raw"].encode("latin-1")
+        out += b"\r\n"
+    out += obj["tail"].encode("latin-1")
+    return bytes(out)
+
+
+# INSTALL.DAT: consumed by INSTALL.EXE only (no "INSTALL.DAT" string in
+# VICEROY.EXE).  Its record grammar is NOT byte-verified -- INSTALL.EXE has
+# not been annotated -- so the whole file is opaque; the ASCII runs are
+# listed for orientation only and are not used by the encoder.
+
+def _ascii_runs(data: bytes, min_len: int = 4) -> list:
+    runs, cur, start = [], bytearray(), 0
+    for i, b in enumerate(data):
+        if 0x20 <= b < 0x7F:
+            if not cur:
+                start = i
+            cur.append(b)
+        else:
+            if len(cur) >= min_len:
+                runs.append({"offset": start, "text": cur.decode("ascii")})
+            cur = bytearray()
+    if len(cur) >= min_len:
+        runs.append({"offset": start, "text": cur.decode("ascii")})
+    return runs
+
+
+def opaque_decode(data: bytes) -> dict:
+    return {"opaque_hex": data.hex(), "size": len(data),
+            "ascii_runs_observed": _ascii_runs(data)[:64]}
+
+
+def opaque_encode(obj: dict) -> bytes:
+    return bytes.fromhex(obj["opaque_hex"])
+
+
+# ---------------------------------------------------------------- .COL ----
+# CONFIG.COL reader = func_070DE8: fopen("CONFIG.COL","rb") (push 0x2056 "rb";
+# push 0x2059 "CONFIG.COL"; lcall 0xd1d,0x4da @0x70DEC-0x70DF2), then seven
+# fread(dest, 2, 1) into [0x260A] [0x260C] [0x260E] [0x2610] [0x2612] [0x2614]
+# [0x2616] @0x70E04-0x70E93 (each checked; a short read stops the chain),
+# fclose @0x70EA4, then [0x2608] = 0x1A1F:0xC50([0x260C]) @0x70EAC-0x70EB4 --
+# word 1 selects the sound driver letter that func_07845A substitutes into
+# "#SOUND.COL" (DGROUP 0x23BA).  Bytes 14..19 of the 20-byte file are never
+# read.  What words 0, 2..6 mean is TBD (blocker: their consumers at
+# [0x260A]/[0x260E..0x2616] are not traced here).
+
+CONFIG_COL_WORDS = ("0x260A", "0x260C", "0x260E", "0x2610", "0x2612", "0x2614", "0x2616")
+
+
+def config_col_decode(data: bytes) -> dict:
+    n = min(7, len(data) // 2)
+    words = list(struct.unpack_from("<%dH" % n, data, 0))
+    return {
+        "reader": "func_070DE8 @0x070DE8: seven fread(.,2,1) @0x70E04-0x70E93",
+        "words": words,
+        "word_destinations": list(CONFIG_COL_WORDS[:n]),
+        "word1_role": "[0x260C] -> 0x1A1F:0xC50 -> [0x2608] = sound driver letter (@0x70EAC-0x70EB4)",
+        "tail_hex": data[2 * n:].hex(),          # bytes 14..19: never read
+    }
+
+
+def config_col_encode(obj: dict) -> bytes:
+    return struct.pack("<%dH" % len(obj["words"]), *obj["words"]) + bytes.fromhex(obj["tail_hex"])
+
+
+# ?SOUND.COL: MZ executables loaded as DOS overlays by func_01287A
+# (mov al,3; mov ah,0x4b; int 0x21 @0x128CD-0x128D1; five far entry points
+# copied from image +0x32 via es:[0x28] @0x12946-0x12951).  The standard
+# 28-byte MZ header and its relocation table are parsed; everything else
+# (header padding, the whole load image = the driver code, its music
+# sequence data and the COLDIG.BIN index) is carried verbatim.
+
+MZ_HEADER = struct.Struct("<2s13H")
+MZ_FIELDS = ("e_cblp", "e_cp", "e_crlc", "e_cparhdr", "e_minalloc", "e_maxalloc",
+             "e_ss", "e_sp", "e_csum", "e_ip", "e_cs", "e_lfarlc", "e_ovno")
+
+
+def mz_decode(data: bytes) -> dict:
+    if len(data) < MZ_HEADER.size or data[:2] != b"MZ":
+        return {"kind": "not-MZ", **opaque_decode(data)}
+    v = MZ_HEADER.unpack_from(data, 0)
+    hdr = dict(zip(MZ_FIELDS, v[1:]))
+    reloc_off = hdr["e_lfarlc"]
+    n_reloc = hdr["e_crlc"]
+    image_off = hdr["e_cparhdr"] * 16
+    reloc_end = reloc_off + 4 * n_reloc
+    if not (MZ_HEADER.size <= reloc_off and reloc_end <= image_off <= len(data)):
+        return {"kind": "MZ-irregular", **opaque_decode(data)}
+    relocs = [list(struct.unpack_from("<HH", data, reloc_off + 4 * i)) for i in range(n_reloc)]
+    id_str = data[0x210:0x224] if len(data) >= 0x224 else b""
+    return {
+        "kind": "MZ",
+        "loader": "func_01287A @0x01287A (int 21h AX=4B03 @0x128CD-0x128D1); entry points from image+0x32 @0x12946-0x12951",
+        "mz": hdr,
+        "between_header_and_relocs_hex": data[MZ_HEADER.size:reloc_off].hex(),
+        "relocations": relocs,
+        "header_pad_hex": data[reloc_end:image_off].hex(),
+        "image_offset": image_off,
+        "id_string": id_str.decode("latin-1"),
+        "image_hex": data[image_off:].hex(),      # opaque: driver code + music data
+    }
+
+
+def mz_encode(obj: dict) -> bytes:
+    if obj.get("kind") != "MZ":
+        return opaque_encode(obj)
+    h = obj["mz"]
+    out = bytearray(MZ_HEADER.pack(b"MZ", *[h[k] for k in MZ_FIELDS]))
+    out += bytes.fromhex(obj["between_header_and_relocs_hex"])
+    for seg_off in obj["relocations"]:
+        out += struct.pack("<HH", *seg_off)
+    out += bytes.fromhex(obj["header_pad_hex"])
+    out += bytes.fromhex(obj["image_hex"])
+    return bytes(out)
+
+
+# ---------------------------------------------------------------- .MOV ----
+# AMERICA.MOV: written by func_063E68 (lea bx,[0x1e5c] "wb"; push 0x1e5f
+# "AMERICA.MOV" @0x63E6E-0x63E75; three fwrite 0xd1d:0x60c -- 0x85E8 x 0x10E,
+# 0x86F6 x 0x10E, 0x945E x 0x20 @0x63E80-0x63EB2) and read by func_063ED2
+# ("rb" 0x1e6e, name 0x1e71 @0x63ED8-0x63EDF; the same three freads
+# @0x63EEA-0x63F1C).  572 = 270 + 270 + 32 bytes.  NEITHER FUNCTION HAS A
+# CALLER in VICEROY.EXE (no thunk in data_extracted/thunk_targets.json
+# resolves to 063E68/063ED2 -- the neighbouring thunks land on 063C58 and
+# 063F3C -- and no near call names them), so the file is never loaded by the
+# game.  The three tables are what func_063C58 (thunk 0x1A1F:0x7EA, called
+# from new_game_state_init @0x757B5 on every new game) recomputes from the
+# map: cells of 4x4 tiles, x from 1 step 4 while < 0x3D (15 columns,
+# @0x63DB4-0x63DB8), y from 1 step 4 while < 0x49 (18 rows, @0x63D9B-0x63D9F),
+# table index = column*18 + row (add [bp-0x16],0x12 per column @0x63DAD;
+# imul bx,si,0x12 @0x63D81); per cell an 8-bit direction mask -- bit d (0..3,
+# loop cmp [bp-8],4 @0x63D8F) set via shl al,cl / or [bx+si],al @0x63D3B-0x63D48
+# when the path probe 0x1A1F:0x27E returns 1..7 @0x63D28-0x63D36, and the
+# reciprocal bit (d+4)&7 in the neighbour cell @0x63D74-0x63D8A; pass 0 fills
+# 0x85E8, pass 1 fills 0x86F6 ([bp-0x22] @0x63C64-0x63C6F).  0x945E[16] =
+# per-region count of tiles whose base id (byte & 7, with id < 0x18) is 2..5
+# (@0x63E2E-0x63E44).  What distinguishes the two passes is TBD (ANCHOR: the
+# first pass's helper call 0x63bd8 was not fully read).
+
+MOV_CELL_COLS, MOV_CELL_ROWS = 15, 18
+MOV_TABLE = MOV_CELL_COLS * MOV_CELL_ROWS        # 0x10E = 270
+MOV_COUNTS = 16                                   # 0x20 bytes of u16
+
+
+def mov_decode(data: bytes) -> dict:
+    if len(data) < 2 * MOV_TABLE + 2 * MOV_COUNTS:
+        raise ValueError(f"MOV shorter than 572 bytes ({len(data)})")
+    t0 = list(data[:MOV_TABLE])
+    t1 = list(data[MOV_TABLE:2 * MOV_TABLE])
+    counts = list(struct.unpack_from("<%dH" % MOV_COUNTS, data, 2 * MOV_TABLE))
+    return {
+        "writer": "func_063E68 @0x063E68 (fwrite 0x85E8 x0x10E, 0x86F6 x0x10E, 0x945E x0x20 @0x63E80-0x63EB2)",
+        "reader": "func_063ED2 @0x063ED2 -- UNREACHABLE (no caller in VICEROY.EXE)",
+        "producer": "func_063C58 @0x063C58 (0x1A1F:0x7EA, new_game_state_init @0x757B5) recomputes all three tables from the map",
+        "cell_grid": {"cols": MOV_CELL_COLS, "rows": MOV_CELL_ROWS, "tiles_per_cell": 4,
+                      "index": "col*18 + row (@0x63DAD, @0x63D81)"},
+        "table0_0x85E8": t0,
+        "table1_0x86F6": t1,
+        "counts_0x945E": counts,
+        "extra_hex": data[2 * MOV_TABLE + 2 * MOV_COUNTS:].hex(),
+    }
+
+
+def mov_encode(obj: dict) -> bytes:
+    return (bytes(obj["table0_0x85E8"]) + bytes(obj["table1_0x86F6"])
+            + struct.pack("<%dH" % len(obj["counts_0x945E"]), *obj["counts_0x945E"])
+            + bytes.fromhex(obj.get("extra_hex", "")))
+
+
+# -------------------------------------------------------------- registry ----
+# name pattern -> (decode, encode, "what is opaque").  Matched by exact upper
+# name first, then by extension.  Formats with no encoder (FAB is not
+# byte-deterministic) are not here; tools/verify_assets.py handles them.
+
+CODECS = {
+    "VICEROY.PAL": (pal_decode, pal_encode, "bytes 0x300..0x3FF (unread by VICEROY)"),
+    "*.MP": (mp_decode, mp_encode, "none (layer 2 is discarded by VICEROY at load)"),
+    "CYCLE.DAT": (cycle_dat_decode, cycle_dat_encode, "bands[count..7] and each band's phase byte (never read)"),
+    "PATH.DAT": (path_dat_decode, path_dat_encode, "none structurally; the consumer (OPENING.EXE) is untraced"),
+    "INSTALL.DAT": (opaque_decode, opaque_encode, "everything (INSTALL.EXE not annotated)"),
+    "CONFIG.COL": (config_col_decode, config_col_encode, "words 0, 2..6 meaning; bytes 14..19 (never read)"),
+    "?SOUND.COL": (mz_decode, mz_encode, "the load image (driver code + music data); header padding"),
+    "AMERICA.MOV": (mov_decode, mov_encode, "which tile pairs pass 0 vs pass 1 connect (ANCHOR); nothing byte-wise"),
+}
+
+
+def codec_for(name: str):
+    """Return (key, decode, encode, opaque_note) or None."""
+    up = name.upper()
+    if up in CODECS:
+        return (up, *CODECS[up])
+    if up.endswith("SOUND.COL") and len(up) == len("?SOUND.COL"):
+        return ("?SOUND.COL", *CODECS["?SOUND.COL"])
+    ext = "*." + up.rsplit(".", 1)[-1] if "." in up else None
+    if ext in CODECS:
+        return (ext, *CODECS[ext])
+    return None
+
+
+def round_trip(name: str, data: bytes):
+    """(key, decoded, ok) -- ok is True when encode(decode(data)) == data."""
+    c = codec_for(name)
+    if c is None:
+        return None
+    key, dec, enc, _ = c
+    obj = dec(data)
+    return key, obj, enc(obj) == data

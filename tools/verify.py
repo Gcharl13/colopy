@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-verify.py — Round-trip verification harness for all 319 COLONIZE/ files.
+verify.py — Byte-identity check of every COLONIZE/ file against the golden
+manifest (verification/golden_manifest.json).
 
-For each file, run the appropriate extract/encode pair (or fall back to
-byte-identity verification) and verify SHA-256 matches the original.
-
-This is the Phase B verification gate. Exit 0 only when all 319 files
-round-trip byte-equal.
+Each file is copied to verification/results/ and its SHA-256 compared with
+the manifest -- this proves the raw tree is what was frozen, nothing more.
+The DECODE -> ENCODE round trips live in tools/verify_assets.py (2026-09-02,
+REMAINING_WORK.md G6).  The manifest was regenerated the same day to cover
+all 302 files in raw/COLONIZE/ (it had held 10 while this docstring
+promised 319).
 
 Usage:
     python verify.py                    # Run all

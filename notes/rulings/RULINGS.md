@@ -10971,3 +10971,56 @@ strings relative to file `0x1D9A0`).
 **Not decided**: meaning of SS header `+0x02..+0x25`/`+0x90/+0x92` (in the
 sheet-record consumers, untraced); PIK header `+4..+7`; the PAL flag bytes'
 consumer; what writes `sheet+0x3E` after `func_076642` zeroes it `@0x76812`.
+
+## 2026-09-02d — formats track (G6): the small data files, read from their readers
+
+**Conflict**: `formats/DAT.md` called `CYCLE.DAT` "a tiny code patch",
+`formats/MOV.md` carried an inferred cinematic-script layout and
+`spec/ui/cinematics.md` §11.3 / `docs/CINEMATIC_TIMING_AUDIT.md` §3 read
+`AMERICA.MOV` as "a 1-bpp coastline bitmap + waypoint list" with "no EXE
+reader to trace"; `tools/verify_assets.py` listed a `PART` format and cited
+tools that do not exist, and verified nothing.
+
+**Rulings** (VICEROY.EXE file offsets; DGROUP strings relative to 0x1D9A0):
+
+1. **AMERICA.MOV is three map-derived tables, and VICEROY has both a writer
+   and a reader for it.** `func_063E68` writes `0x85E8×0x10E`, `0x86F6×0x10E`,
+   `0x945E×0x20` (`@0x63E80–0x63EB2`); `func_063ED2` reads the same
+   (`@0x63EEA–0x63F1C`). **Neither is reachable**: no thunk in
+   `data_extracted/thunk_targets.json` resolves to `063E68`/`063ED2` (the
+   neighbours resolve to `063C58`/`063F3C`) and no near call names them. The
+   tables are what `func_063C58` (`0x1A1F:0x7EA`, `new_game_state_init`
+   `@0x757B5`) recomputes every new game: 15×18 cells of 4×4 tiles
+   (`@0x63DB4–0x63DB8`, `@0x63D9B–0x63D9F`), index `col·18+row` (`@0x63DAD`,
+   `@0x63D81`), 8-direction masks with reciprocal bits (`@0x63D3B–0x63D48`,
+   `@0x63D74–0x63D8A`), and per-region counts of base ids 2..5
+   (`@0x63E2E–0x63E44`). The "1-bpp bitmap" reading is retired; the
+   "waypoint stream `f5 01 08 00 …`" was the u16 count array. What separates
+   pass 0 from pass 1 is ANCHOR (helper `call 0x63bd8` not fully read).
+   `data_extracted/data/AMERICA_MOV.json` regenerated from the codec.
+   OPENING/CLOSING still do not name the file — that half of the old note
+   stands. `COLONIZE.EXE` carries the same string cluster (`@0x6E6AD`);
+   its reachability is TBD.
+2. **CYCLE.DAT reader = `func_0783E4`**: `fopen("CYCLE.DAT","rb")`
+   `@0x783EF–0x783F6`, **`fread(0x929E, 0x22, 1)`** `@0x78403–0x7840A`. A
+   plain struct read; `formats/DAT.md` rewritten. `PATH.DAT` belongs to
+   OPENING.EXE (string `@0xBFE8`), `INSTALL.DAT` to INSTALL.EXE — neither is
+   named in VICEROY.
+3. **CONFIG.COL reader = `func_070DE8`**: seven `fread(.,2,1)` into
+   `[0x260A] [0x260C] [0x260E] [0x2610] [0x2612] [0x2614] [0x2616]`
+   `@0x70E04–0x70E93`; bytes 14..19 never read; `[0x2608] =
+   0x1A1F:0xC50([0x260C])` `@0x70EAC–0x70EB4` is the driver letter for
+   `"#SOUND.COL"` (`func_07845A` `@0x78480–0x78489`). Words 0, 2..6 are TBD.
+4. **Round trips are bit-exact by construction**: every codec in
+   `tools/asset_codecs.py` carries unread bytes verbatim and the doc names
+   them ("opaque"). `?SOUND.COL` parses the MZ header + relocations and
+   carries the image; `INSTALL.DAT` is wholly opaque (INSTALL.EXE
+   unannotated) — a decoder that pretended otherwise would be a guess.
+5. **`PART` is a phantom** — no file; RTLink overlay parts live inside
+   VICEROY.EXE (`formats/RTLINK.md`). Removed from the gate.
+6. **The golden manifest is regenerated to all 302 files** of `raw/COLONIZE/`
+   (it held 10; `verify.py`'s docstring promised 319 — the raw tree has 302
+   entries including the derived `VICEROY_flat.exe`).
+
+**Not decided**: meaning of CONFIG words 0/2..6; the two MOV passes'
+semantics; `COLONIZE.EXE`'s own AMERICA.MOV/CYCLE.DAT/viceroy.pal readers.

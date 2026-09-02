@@ -321,6 +321,36 @@ def probe_loader_citations() -> bool:
     return True
 
 
+def probe_asset_roundtrip() -> bool:
+    """G6: the small data formats have decode/encode pairs that round-trip
+    bit-exactly, the phantom PART row is gone, and the gate names no tool
+    that does not exist.  With raw/COLONIZE present the codecs are actually
+    run on the shipped files; without it only the structure is checked."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import asset_codecs
+    v = (ROOT / "tools/verify_assets.py").read_text()
+    live = v.split("Status before")[0]      # the history paragraph names the phantoms on purpose
+    if "PART" in live or "mpskit" in live or "verify_pal.py" in live:
+        return False
+    for key in ("CYCLE.DAT", "PATH.DAT", "INSTALL.DAT", "CONFIG.COL", "?SOUND.COL",
+                "AMERICA.MOV", "VICEROY.PAL", "*.MP"):
+        if key not in asset_codecs.CODECS:
+            return False
+    col = ROOT / "raw/COLONIZE"
+    if not col.is_dir():
+        return True
+    for name in ("CYCLE.DAT", "PATH.DAT", "INSTALL.DAT", "CONFIG.COL", "ASOUND.COL",
+                 "GSOUND.COL", "PSOUND.COL", "RSOUND.COL", "AMERICA.MOV", "VICEROY.PAL",
+                 "AMER2.MP"):
+        p = col / name
+        if not p.is_file():
+            continue
+        r = asset_codecs.round_trip(name, p.read_bytes())
+        if r is None or not r[2]:
+            return False
+    return True
+
+
 def probe_vendor_pinned() -> bool:
     """G9/G10: the vendored Elecrow tree is pinned -- PROVENANCE names the
     upstream commit, and every vendored file still matches
@@ -378,6 +408,8 @@ CLAIMS = [
      probe_asset_gate),
     ("G5", "tools/extract_*.py",
      "asset extractors cite their byte-verified loaders", probe_loader_citations),
+    ("G6", "tools/asset_codecs.py",
+     "DAT/COL/MOV/PAL/MP decode+encode round-trip bit-exactly", probe_asset_roundtrip),
     ("G9/G10", "cport/p4/PROVENANCE.md",
      "the vendored Elecrow tree is pinned and unchanged", probe_vendor_pinned),
 ]
