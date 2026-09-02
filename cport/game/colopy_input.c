@@ -1281,6 +1281,24 @@ int ui_colony_popup_model(char labels[][40], char notes[][40],
         }
         return n4;
     }
+    if (UI.colony_popup == 6) {
+        /* the OUTSIDE-jobs menu func_028D8C(1): @JOB rows 0x13..0x18
+         * (@0x028DF1..@0x028DF7), titled like the jobs menu (the same
+         * function builds both); what the engine prints beside a row is
+         * unread — bare labels, FLAGGED */
+        int k = UI.colonist_sel;
+        const char *who = k >= 0 && k < c->population &&
+                          c->profession[k] < DAT_JOBEXPERT_COUNT
+                              ? dat_jobexpert[c->profession[k]] : "";
+        snprintf(title, (size_t)tcap, "%s %s", dat_text_ctitle[8], who);
+        int n6 = 0;
+        for (int j = 0x13; j <= 0x18 && n6 < cap; j++) {
+            snprintf(labels[n6], 40, "%s", j < DAT_JOBS_COUNT ? dat_jobs[j] : "");
+            notes[n6][0] = 0;
+            n6++;
+        }
+        return n6;
+    }
     int n = UI.colony_popup == 2 ? build_rows(cci, names)
                                  : jobs_rows(cci, names);
     if (n > cap) n = cap;
@@ -1371,6 +1389,28 @@ static int occupation_bld_rows(int cci) {
     return n;
 }
 static int occupation_row_count(int cci) { return 10 + occupation_bld_rows(cci); }
+
+/* the OUTSIDE-jobs menu's row: func_02883E(slot, 0x13 + row) — the
+ * validator, the refusals / the @ABANDON ask, then the eject op
+ * (colonist_out).  An emptied colony is gone when this returns: the
+ * engine closes the screen ([0x346]=0 @0x028D69) and removes the record
+ * at the exit (func_02EE34 @0x02C94C). */
+static void outside_commit(void) {
+    int cci = player_colony_rec(UI.colony);
+    int row = UI.colony_popup_row, k = UI.colonist_sel;
+    UI.colony_popup = 0;                     /* close BEFORE the ask */
+    if (cci < 0 || row < 0 || row > 5) return;
+    if (k < 0 || k >= CS.colonies[cci].population) return;
+    colonist_out(cci, k, 0x13 + row);
+    if (player_colony_rec(UI.colony) != cci ||
+        CS.colonies[cci].population == 0) {
+        UI.screen = SCR_MAP;
+        return;
+    }
+    if (UI.colonist_sel >= CS.colonies[cci].population)
+        UI.colonist_sel = (int8_t)(CS.colonies[cci].population
+                                       ? CS.colonies[cci].population - 1 : 0);
+}
 
 /* colonyPopupCommit 'occupation' (game.js:4003): a job row re-tasks the
  * worker on his cell (Teacher through the same guard); a BUILDING row
@@ -2340,6 +2380,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                   : UI.colony_popup == 3 ? occupation_row_count(cci)
                   : UI.colony_popup == 4 ? 5       /* @UNITOPTIONS */
                   : UI.colony_popup == 5 ? 6       /* @SHIPOPTIONS */
+                  : UI.colony_popup == 6 ? 6       /* outside jobs 0x13..0x18 */
                                          : jobs_rows(cci, names);
             if (key_is(k, "ArrowUp"))
                 UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
@@ -2350,6 +2391,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 else if (UI.colony_popup == 3) occupation_commit();
                 else if (UI.colony_popup == 4) unit_options_commit();
                 else if (UI.colony_popup == 5) ship_options_commit();
+                else if (UI.colony_popup == 6) outside_commit();
                 else jobs_popup_commit();
             }
             if (key_is(k, "Escape")) UI.colony_popup = 0;
@@ -2713,6 +2755,7 @@ static void in_click_inner(int mx, int my, int right) {
                 else if (UI.colony_popup == 3) occupation_commit();
                 else if (UI.colony_popup == 4) unit_options_commit();
                 else if (UI.colony_popup == 5) ship_options_commit();
+                else if (UI.colony_popup == 6) outside_commit();
                 else jobs_popup_commit();
                 return;
             }
@@ -2789,6 +2832,21 @@ static void in_click_inner(int mx, int my, int right) {
                     UI.colony_popup_row = 0;
                 } else
                     UI.colonist_sel = (int8_t)bw;
+                return;
+            }
+            /* THE FENCE IS A HIT-RECT (C3.2, 2026-09-02): the Stockade
+             * plot 13 of the buildings picture, (123, 98) in DS:0x266
+             * drawn at y+8, category 3 -> w 73 h 18 (DS:0x230/0x236), so
+             * (123,106,73,18); def 0 is written there even without a
+             * Stockade (@0x025E64..@0x025E9F) and defs 0..2 map to job
+             * 0x15 (DS:0x2CA).  A click there with a colonist selected
+             * opens his OUTSIDE-jobs menu (func_029DD4 @0x02A07E..
+             * @0x02A08A -> func_028D8C(1)); the board's tap is the
+             * drop's equivalent (@0x029F7B..@0x029F98). */
+            if (hit(mx, my, 123, 106, 73, 18) && UI.colonist_sel >= 0 &&
+                UI.colonist_sel < c->population) {
+                UI.colony_popup = 6;
+                UI.colony_popup_row = 0;
                 return;
             }
         }

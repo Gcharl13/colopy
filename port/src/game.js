@@ -2487,6 +2487,25 @@ function colonistOut(c, i, job) {
 }
 // "Return to the fence" = out as a plain Colonist (job 0x13).
 function colonistToFence(c, i) { colonistOut(c, i, JOB_OUT_COLONIST); }
+// THE FENCE IS A HIT-RECT (C3.2, byte-read 2026-09-02): the buildings
+// picture's Stockade plot. Region-2 handler func_029DD4 walks the 15 plots
+// (@0x029EAC..@0x029EFD): rect = ([0x266+4p], [0x268+4p]+8, w[0x230+cat],
+// h[0x236+cat]), cat = byte[0x8D62+p], def = byte[0x8E82+p]. Plot 13 is
+// (123, 98) in DS:0x266 (file 0x1DC06+52), category 3 (the only plot of its
+// category: 0x224=[7,4,2,1,1], 0x22A=[0,7,11,13,14], so the shuffle is
+// random_int(0,0)+13), w[3]=73 h[3]=18 (byte tables DS:0x230/0x236) -> the
+// rect (123, 106, 73, 18). The placement pass writes def 0 (Stockade) there
+// EVEN WHEN NO STOCKADE STANDS (@0x025E64..@0x025E9F -- the level-0 fence
+// picture), and job-per-building DS:0x2CA (file 0x1DC6A) gives defs 0..2
+// (Stockade/Fort/Fortress) job 0x15 -- the only defs that do. A DROP
+// (@0x029F61..@0x029F98) of a figure whose job < 0x13 on a job-0x15 plot,
+// or a plain CLICK there with a figure selected (@0x02A07E..@0x02A08A),
+// opens the OUTSIDE-jobs menu func_028D8C(1) (@0x028DF1..@0x028DF7: job
+// range start 0x13, count 6) and the chosen row runs func_02883E(slot, job)
+// -- colonistOut above. Garrison figures are hit-tested in region 0 with
+// the colonists (func_029AC0), not here.
+const FENCE_RECT = { x: 123, y: 106, w: 73, h: 18 };
+const OUTSIDE_JOB_ROWS = [19, 20, 21, 22, 23, 24];
 function buildColony() {
   const u = G.units[G.sel];
   if (!u) return;
@@ -5170,6 +5189,14 @@ function colonyPopupRows() {
   if (G.colonyPopup === 'shipopts')
     return ((DATA.events.SHIPOPTIONS || { body: [] }).body)
       .map(l => ({ label: l, note: '' }));
+  // The OUTSIDE-jobs menu: func_028D8C(1) lists @JOB rows 0x13..0x18
+  // (@0x028DF1..@0x028DF7) -- Colonist, Pioneer, Soldier, Scout, Dragoon,
+  // Missionary; the equipment each takes is banked by the op (colonistOut).
+  // Titled like the jobs menu (the same function builds both). What the
+  // engine prints beside each row, if anything, is unread -- bare labels,
+  // FLAGGED.
+  if (G.colonyPopup === 'outside')
+    return OUTSIDE_JOB_ROWS.map(j => ({ label: DATA.jobs[j], note: '', outJob: j }));
   // Jobs: the colony's buildings are the workplaces, plus a way back to the
   // plaza. Working a FIELD is done by clicking a cell in the scene panel.
   // Only buildings that actually employ a colonist are offered, and each one
@@ -5333,6 +5360,13 @@ function colonyPopupCommit() {
   if (G.colonyPopup === 'unitopts') {
     unitOptionsCommit(G.colonyPopupRow);
     G.colonyPopup = null;
+    return;
+  }
+  if (G.colonyPopup === 'outside') {
+    G.colonyPopup = null;                  // close BEFORE the @ABANDON ask
+    colonistOut(c, G.colonistSel, r.outJob);
+    if (G.colonies[G.colony] === c)
+      G.colonistSel = Math.max(0, Math.min(G.colonistSel, c.colonists.length - 1));
     return;
   }
   if (G.colonyPopup === 'build') {
@@ -14890,6 +14924,13 @@ function colonyDrop(d, target, mx, my) {
       return;
     }
     if (target === 2) {
+      // The fence plot: a member dropped there (his job is < 0x13 by being a
+      // member) gets the OUTSIDE-jobs menu, func_029DD4 @0x029F7B..@0x029F98.
+      if (hit(mx, my, FENCE_RECT)) {
+        G.colonistSel = c.colonists.indexOf(p);
+        G.colonyPopup = 'outside'; G.colonyPopupRow = 0;
+        return;
+      }
       // Dropped on the building field: if it landed on a building that employs
       // anyone, that is the new job. A drop on bare ground is a no-op rather
       // than a silent plaza return.
@@ -15204,6 +15245,12 @@ function onClick(mx, my) {
         if (i >= 0) {
           if (G.colonistSel === i) { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
           else G.colonistSel = i;
+          return;
+        }
+        // The fence plot (FENCE_RECT): a click with a colonist selected opens
+        // his OUTSIDE-jobs menu (func_029DD4 @0x02A07E..@0x02A08A -> func_028D8C(1)).
+        if (hit(mx, my, FENCE_RECT) && c.colonists[G.colonistSel]) {
+          G.colonyPopup = 'outside'; G.colonyPopupRow = 0;
           return;
         }
       }

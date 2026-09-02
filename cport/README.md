@@ -99,10 +99,12 @@ gameplay mechanics still missing and every flagged approximation, is
   runs the byte-read 16×16 pathfinder (func_061F02) and spends the
   unit's full movement allowance per turn — a ship reaches its lane at
   ship speed.
-- **No fence hit-rect.**  `@TUTORIAL4` puts the fence "near the water on
-  the colony picture", but no byte-read rectangle for it exists, so
-  leaving a colony rides the two exits that do: the jobs menu's "Return
-  to the fence" row and the drop-out-of-the-fields drag.  TBD.
+- ~~**No fence hit-rect.**~~ **Fixed 2026-09-02 (C3.2)**: the fence is the
+  Stockade plot of the buildings picture, (123, 106, 73, 18) — a tap
+  there with a colonist selected opens his OUTSIDE-jobs menu (Colonist /
+  Pioneer / Soldier / Scout / Dragoon / Missionary, `func_028D8C(1)`),
+  and the row takes him out with that job's equipment.  "Return to the
+  fence" in the jobs menu is the Colonist row of the same path.
 - ~~**Taking the LAST colonist out of a colony is refused.**~~ **Fixed
   2026-09-02 (C3.1)**: the engine's own validator order is implemented —
   `@KEEPSTOCKADE` (Stockade and size ≤ 3), `@SIEGE` (`func_025900`), then

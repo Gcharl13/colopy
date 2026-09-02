@@ -11092,3 +11092,58 @@ here):
    (the JS sol model is a percentage with no divisor).
 5. Oracles all green; the host test `lastout:` pins codes 3/21, the Pioneer
    tools rule (57 → 40) and the record removal.
+
+## 2026-09-02f — C3.2: the fence is a hit-rect — the Stockade plot (123,106,73,18) of the buildings picture; a drop or click there opens the OUTSIDE-jobs menu
+
+**Conflict**: both ports said "no byte-read rectangle for the fence exists"
+(`docs/REMAINING_WORK.md` C3.2, `cport/README.md`) and reached "out of the
+colony" only through the jobs menu's "Return to the fence" row / a drop out of
+the fields onto the plaza.
+
+**Bytes** (research `core-c3` claims 11–16, re-read; T4 resolved by the
+verifier):
+
+- Region table `func_0299A0` (order 1, 9, 0, 2, 3, 5, 4, 8, 10; default 0x14):
+  region 2 = (0, 8, 199, 120) the buildings picture @0x029A08; region 0 =
+  (0, 130, 120, 48) the plaza row @0x0299E8. Garrison figures are hit-tested
+  in region 0 by `func_029AC0` together with the members (count = size +
+  `[0x8D72]`, 4-px break after the last member) — **not** a fence.
+- Region-2 handler `func_029DD4`: 15 plots @0x029EAC..@0x029EFD, rect =
+  (`[0x266+4p]`, `[0x268+4p]+8`, `byte[0x230+cat]`, `byte[0x236+cat]`), cat =
+  `byte[0x8D62+p]`, def = `byte[0x8E82+p]`. Plot 13 = (123, 98) at file
+  0x1DC06+52; category 3 (`0x224=[7,4,2,1,1]`, `0x22A=[0,7,11,13,14]` — the
+  only plot of its category, so the shuffle is `random_int(0,0)+13`); w[3] =
+  73, h[3] = 18 (byte tables 0x230/0x236) ⇒ **(123, 106, 73, 18)**. The
+  placement pass writes def 0 to that plot **even without a Stockade**
+  (@0x025E64..@0x025E9F — the level-0 fence picture). `@BUILDING` parser
+  `func_074D18` @0x074D2F stores the row's 3rd number as the category and
+  Stockade's row reads `64, 0, 3, …` ⇒ category 3 (T4 closed).
+- Job per building `DS:0x2CA` (file 0x1DC6A, 42 bytes): defs 0..2 → 0x15; no
+  other def yields 0x15.
+- Drop path @0x029F61..@0x029F98: `[0x8D54]==6` (a figure drag), button
+  released, def ≥ 0, job == 0x15, dragged figure's job (`0x181f:0xc0e`) < 0x13
+  → `func_028D8C(1)` = the OUTSIDE-jobs menu (@0x028DF1..@0x028DF7: job range
+  0x13, count 6). Plain click path @0x02A07E..@0x02A08A: def ≥ 0, job == 0x15
+  → the same menu (no job test); any other job → `func_02883E(slot, job)`.
+
+**Decision**:
+
+1. Both ports add the fence rect (123, 106, 73, 18) inside the building
+   field: a click with a colonist selected, or a drop of a dragged member,
+   opens the OUTSIDE-jobs popup (JS `'outside'`, C `UI.colony_popup == 6`) —
+   @JOB rows 0x13..0x18 (Colonist, Pioneer, Soldier, Scout, Dragoon,
+   Missionary), titled like the jobs menu (`func_028D8C` builds both); a row
+   runs `colonistOut` / `colonist_out(slot, job)` (C3.1). Row notes are TBD
+   (what the engine prints beside a row is unread — bare labels).
+2. The popup kind is projected as 6 in both harnesses (`tools/sim_trace.py`
+   `cp`, C `UI.colony_popup`).
+3. Garrison figures stay in region 0 (already the case in both ports:
+   `plazaUnitAt` / `rm_plaza_unit_hit`).
+4. **Follow-up, not done (ledger C3.11):** on the click path the engine opens
+   the outside menu for a selected GARRISON figure too (no job test
+   @0x02A07E), and the op then runs `classify_pair_bounds` mode 1
+   (`func_009318` @0x009576: re-equip the unit in place — type :=
+   `byte[0x2F5+job]`, orders 0, Pioneer tools) — the "arm a unit inside the
+   colony" feature. The ports' garrison selection is the @UNITOPTIONS popup
+   and does not yet reach it.
+5. Oracles all green (no input script clicks the rect).

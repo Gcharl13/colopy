@@ -840,6 +840,23 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
   (`func_0275CE`/`func_027746`/`func_027BB6`): case 0 = SoL/garrison **icon bar** (`0x181F:0x222` loop, no
   string), case 1 = cargo holds + `[0x939A]` caption, case 2 = cargo + caption + hammer strip
   (§3.6, §8 item 3). **B** (switch + all 3 modes).
+- **Amendment 2026-09-02 — the "fence" (`@TUTORIAL4`) is a HIT-RECT: the Stockade plot.**
+  Region table `func_0299A0` (tested in order 1, 9, 0, 2, 3, 5, 4, 8, 10; default 0x14): region 2 =
+  (0, 8, 199, 120) the buildings picture @0x029A08; region 0 = (0, 130, 120, 48) the plaza row
+  @0x0299E8 — garrison figures are hit-tested there with the members by `func_029AC0` (count =
+  size + `[0x8D72]`, 4-px break after the last member), NOT by a fence. Region-2 handler
+  `func_029DD4` walks the 15 plots @0x029EAC..@0x029EFD with rect = (`[0x266+4p]`,
+  `[0x268+4p]+8`, `byte[0x230+cat]`, `byte[0x236+cat]`), cat = `byte[0x8D62+p]`, def =
+  `byte[0x8E82+p]`. Plot 13 = (123, 98) (file 0x1DC06+52), category 3 (the only plot of its
+  category — `0x224=[7,4,2,1,1]`, `0x22A=[0,7,11,13,14]` — so its shuffle is `random_int(0,0)+13`),
+  w[3] = 73, h[3] = 18 ⇒ **(123, 106, 73, 18)**. The placement pass writes def 0 there even
+  without a Stockade (@0x025E64..@0x025E9F, the level-0 fence picture), and the job-per-building
+  table `DS:0x2CA` (file 0x1DC6A) gives defs 0..2 job 0x15 (no other def does). A DROP of a figure
+  whose job < 0x13 on a job-0x15 plot (@0x029F61..@0x029F98), or a plain CLICK there with a figure
+  selected (@0x02A07E..@0x02A08A), opens the **OUTSIDE-jobs menu `func_028D8C(1)`** (@0x028DF1..
+  @0x028DF7: @JOB rows 0x13..0x18 — Colonist, Pioneer, Soldier, Scout, Dragoon, Missionary); the
+  chosen row runs `func_02883E(slot, job)` (`colony.md` §9). Row notes TBD (unread). Both ports
+  implement it (RULINGS 2026-09-02f). **B**
 
 ## 7. Evidence
 - `viceroy_source/docs/drawlist/EUROPE_COLONY.md` PART 2 — composer `func_028592 @0x028592` 12-step
