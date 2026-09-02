@@ -6,9 +6,15 @@
 # a real IDE build on 2026-08-19.
 #
 # Exits NONZERO on any error.
+#
+# Self-locating (2026-09-02): the sketch directory is found relative to
+# this script, never by an absolute path -- the gate that "lived outside
+# the repo" (REMAINING_WORK.md G2e) had kept one foot out there through an
+# include path hard-coded to one particular checkout, so a worktree or a
+# fresh clone was compiling against SOMEONE ELSE'S headers.
 cd "$(dirname "$0")" || exit 1
 python3 gen_mock.py || exit 1
-INC="-I. -I/home/user/colopy/cport/arduino_p4/colopy_p4"
+INC="-I. -I../../cport/arduino_p4/colopy_p4"
 if g++ -fsyntax-only -std=gnu++17 $INC sketch_test.cpp 2> /tmp/mockerr; then
   echo "MOCK-COMPILE-OK (BLE off)"
 else

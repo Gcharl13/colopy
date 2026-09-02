@@ -138,6 +138,8 @@ def compare_turns(save, n, extra=()):
     cc = [json.loads(l) for l in subprocess.run(
         ["./smoke", "--turns", save, str(n)] + extra, cwd=ROOT / "cport/host",
         capture_output=True, text=True, check=True).stdout.splitlines()]
+    # SCOPE-REASON: B4.2 -- the C has no tutorial bindings (tutOnce), so the
+    # TUTORIAL* events exist on the JS side only; dropped from both lists.
     tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
     bad = 0
     for i, (j, c) in enumerate(zip(js, cc)):
@@ -174,6 +176,8 @@ def compare_pak():
     bad = 0 if cen["ok"] else 1
 
     for nm, meta in sorted(man["sheets"].items()):
+        # SCOPE-REASON: structural -- PHYS0C is the JS renderer's derived
+        # re-key of PHYS0; it has no pak entry and the C re-derives it.
         if nm == "PHYS0C":
             continue
         e = ent.get(nm + ".SS")
@@ -236,6 +240,8 @@ def main():
         # full endTurn()s — across all four nations at two difficulties
         n = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 10
         subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+        # SCOPE-REASON: B4.2 -- tutorial bindings unported in the C; the
+        # TUTORIAL* events are JS-only and dropped from both lists.
         tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
         bad = 0
         for nation in range(4):

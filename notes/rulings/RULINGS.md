@@ -10860,3 +10860,54 @@ a Frigate could take a plow order and be "demoted" to a Colonist; and
 the byte-cited Combat Analysis panel (func_05E9B0, Game Options 0x0200)
 existed only in the JS, so the C acted on the key that the JS spent
 dismissing it — the C now builds and draws the panel.
+
+## 2026-09-02b — tooling track: the Part G tooling rows close, and what closing them decided
+
+**Conflict**: `docs/REMAINING_WORK.md` Part G carried nine open tooling
+rows (G2, G2a, G2b, G2d, G2e, G4, G7, G9, G10) whose common shape is a
+check that reads green while covering less than it says; three of them
+were contradicted by the tree when re-measured.
+
+**Decisions** (each is recorded in the row itself with file citations):
+
+1. **Palette-model acceptances are ceilinged, not removed** (G2).
+   `tools/render_common.py` `PALETTE_CEILING` freezes the counts measured
+   today — boot 0 / map 37 / colony 141 / europe 0 / report 0 / event 31 /
+   woodcut 21438 — and a run over its ceiling exits 3. The acceptance is a
+   permanent atlas-vs-DAC model difference (`SCOPE-REASON: structural`),
+   so it stays; only its size is pinned. Raising a ceiling is a ledger
+   event; lowering one is expected housekeeping.
+2. **A scope must cite an OPEN ledger row, or `structural`** (G2d).
+   `tools/stale_check.py` `scopes()`/probe `G2d` enforces it; a row that
+   closes fails the scope that cited it. Applied at once: the askmap
+   INTERSECTION allowance in `tools/input_compare.py` cited B4.6, which is
+   closed — the allowance is removed and askmap is compared whole-value
+   (green in all five scenarios).
+3. **Coverage is declared** (G2a). `input_compare.py` `EXPECT` names the
+   screens/prompts/popups/menus/dialogs each scenario reaches today; a
+   loss AND an undeclared gain both fail, so the table cannot drift.
+4. **The popup census reads code, not comments, and knows computed keys**
+   (G2b): `PISS${cause}` / `char key[8] = "PISS0"` were a fourth
+   reference shape. Open-row census 184/1/11 → 186/2/8; `@MISSION0/3`
+   are now honestly JS-only.
+5. **Gate C output goes to `extracted/assets/`** (G7), per CLAUDE.md's
+   path convention, not the tracked `assets/` tree the old driver
+   targeted. The tracked sidecars there are residue of a run that
+   extracted nothing; they are left for the asset track. `WIN-FWRK.SS`
+   is a DECLARED codec failure (palette section not 6-bit); its cause is
+   TBD and was not guessed.
+6. **The Elecrow vendored tree is pinned to upstream `7b90882`** (G9/G10)
+   — established by blob-id comparison against a sparse clone, not by
+   memory of the fetch — with `cport/p4/VENDORED.sha256` and a stale_check
+   probe. Upstream's later changes to 7 of 13 reference files are
+   RECORDED, not adopted: adopting a changed citation is a read-and-rule
+   step, procedure in `cport/p4/PROVENANCE.md`.
+7. **COMPLETION_PLAN's phases are recorded as done with citations** (G4),
+   with two caveats kept visible: KINGBLESS is an EXE orphan (N/A), and
+   the `port-v1.0` tag STATUS cites exists neither locally nor on origin.
+
+**Not decided here**: the fate of the tracked `assets/` sidecars; the
+1,676-vs-1,425 frame-count discrepancy in BUILD.md; the WIN-FWRK.SS
+palette layout; whether the stale askmap comment in
+`cport/host/render_smoke.c:340` (it still says "INTERSECTION") is the C
+track's to fix — it is a comment, and it is noted here rather than edited.

@@ -88,16 +88,19 @@ may never be the point.**
 ## Verification gates
 
 Re-run: `python3 tools/verify.py`, `python3 tools/sigmatch.py --self-test`,
-`python3 tools/extract_pal.py && python3 tools/encode_pal.py`, ditto `_mp`.
+`python3 tools/extract_pal.py && python3 tools/encode_pal.py`, ditto `_mp`,
+and `make -C cport/host test` — which since 2026-09-02 runs gate C
+(`assets`) on every invocation alongside the stack budget, the staleness
+probes (`records`) and the .ino mock gate (`mock`).
 
-| Gate | Status | Measured 2026-08-05 |
+| Gate | Status | Measured 2026-08-05 (C: 2026-09-02) |
 |------|--------|---------------------|
 | A. sigmatch self-test | ✅ **PASS** | 17/17 BYTE_VERIFIED helpers re-found |
 | B. byte-identity round-trip | ⚠️ **NOT MEANINGFUL AS IMPLEMENTED** | see below |
 | B-PAL. PAL extract+encode | ✅ **PASS** (fixed today) | was silently FAILING since 2026-06-27 — see below |
 | B-MP. MP extract+encode | ✅ **PASS** | `AMER2.MP` SHA-exact |
-| C. visual asset extraction | ⚪ **NOT RUNNABLE HERE** | `extract_visuals.py` → `0/0`; needs the full `COLONIZE/` tree |
-| C-VISUAL. catalog generation | ⚪ **NOT RUNNABLE HERE** | same dependency |
+| C. visual asset extraction | ✅ **PASS** (rewritten 2026-09-02) | `extract_visuals.py`: SS **204/206** (1,425 frames; BDARK skipped per CLAUDE.md rule 5, `WIN-FWRK.SS` a DECLARED failure), PIK **35/35**, FF **5/5** (340 glyphs), 3 s, into `extracted/assets/` — see below |
+| C-VISUAL. catalog generation | ⚪ **NOT RUN** | `tools/build_catalogs.py` was not exercised in the 2026-09-02 pass; the frame counts it would read now come from the in-repo codec, and BUILD.md's "1,676 frames across 205 sheets" is unreconciled against today's 1,425/204 |
 | D. per-line annotation | ⏳ ~5% | deferred by choice — see "Direction" |
 | E. other-EXE annotation | ⏳ partial | sigmatch promotions only |
 | F. doc-to-code linkcheck | ⏳ **TODO** | `tools/linkcheck.py` still not built |
@@ -140,6 +143,22 @@ Both tools and `formats/PAL.md` are corrected; the round-trip is byte-exact
 again. The lesson for this dashboard: **a green gate that nobody re-runs is
 worse than no gate**, because it is load-bearing in exactly the places where
 being wrong costs most.
+
+### Gate C was a gate that could not fail (found 2026-09-02)
+
+"NOT RUNNABLE HERE" was the kind reading. `tools/extract_visuals.py` drove
+an external `mpskit` expected at `<repo>/../tools/mpskit/main.py` — a path
+that exists in no checkout of this project — and never inspected the child
+process's exit status, so every run printed `205/206 extracted` while
+writing **zero PNGs**. The tracked `assets/*/loader.json` sidecars, every
+one reading `frames_or_glyphs_count: 0`, are that run's residue (left in
+place; they are not this pass's to delete). The tool is rewritten on the
+in-repo byte-verified codec (`tools/ssdec.py` + `port/tools/build_assets.py`'s
+PIK/FF readers — the same code the JS bundle and the C pak are built from),
+writes to `extracted/assets/` as CLAUDE.md's path convention says, declares
+its one codec failure (`WIN-FWRK.SS`: palette section not 6-bit, cause TBD)
+and fails if that declaration goes stale in either direction, and runs
+under `make -C cport/host test`. Ledger: `docs/REMAINING_WORK.md` G7.
 
 ---
 

@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 """render_event_compare.py — Phase-7 dialog-framework oracle: the C event
 popup / ask dialog (smoke --renderevent) vs the JS canvas (sim_trace
-renderevent), same fixture/key/subs, pixel-by-pixel over 320x200 with
-the same master-palette acceptance rule as the map compare.
+renderevent), same fixture/key/subs, pixel-by-pixel over 320x200 with the
+shared palette-model acceptance rule and its frozen ceiling (render_common).
 
 Usage: python3 tools/render_event_compare.py KEY [mode] [sel] [speaker] [save]
 """
-import base64
-import io
 import subprocess
 import sys
-from pathlib import Path
 
-from PIL import Image
-
-ROOT = Path(__file__).resolve().parents[1]
-SCRATCH = ROOT / "cport" / "pak"
+from render_common import (ROOT, SCRATCH, c_frame, diff_frames, js_frame,
+                           master_palette, verdict)
 
 
 def main():
@@ -38,8 +33,7 @@ def main():
     if url == "NOKEY":
         print("unknown event key:", key)
         sys.exit(2)
-    js = Image.open(io.BytesIO(base64.b64decode(url.split(",", 1)[1])))
-    js = js.convert("RGB")
+    js = js_frame(url)
 
     subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host",
                    check=True)
@@ -51,35 +45,17 @@ def main():
         c_args.append(speaker)
     subprocess.run(c_args, cwd=ROOT / "cport/host", check=True,
                    capture_output=True)
-    cim = Image.open(out).convert("RGB")
-    raw = (SCRATCH / f"ev_{key}.ppm.idx").read_bytes()
-    idx = raw[:320 * 240]
+    cim, idx = c_frame(out)
 
-    pal6 = (ROOT / "raw/COLONIZE/VICEROY.PAL").read_bytes()[:768]
-    master = bytes(((v << 2) | (v >> 4)) & 0xFF for v in pal6)
-
-    W, H = 320, 200
-    jp, cp = js.load(), cim.load()
-    structural = accepted = 0
-    first = None
-    for y in range(H):
-        for x in range(W):
-            if jp[x, y] == cp[x, y]:
-                continue
-            i = idx[y * 320 + x]
-            if jp[x, y] == tuple(master[i * 3:i * 3 + 3]):
-                accepted += 1
-                continue
-            structural += 1
-            if first is None:
-                first = (x, y, jp[x, y], cp[x, y], i)
+    structural, accepted, first = diff_frames(js, cim, idx, [master_palette()])
     print("event %s mode %d: %d structural, %d palette-model accepted"
           % (key, mode, structural, accepted))
     if first:
         print("first structural diff at (%d,%d): JS %s C %s idx %d" % first)
         js.save(SCRATCH / f"ev_{key}_js.png")
-        cim.crop((0, 0, W, H)).save(SCRATCH / f"ev_{key}_c.png")
-    sys.exit(1 if structural else 0)
+        cim.crop((0, 0, 320, 200)).save(SCRATCH / f"ev_{key}_c.png")
+    scene = "event %s %d %d %s %s" % (key, mode, sel, speaker or "-", save)
+    sys.exit(verdict(scene, structural, accepted))
 
 
 if __name__ == "__main__":
