@@ -1270,10 +1270,16 @@ void score_parts(score_parts_t *s) {
         if ((c->owner_power & 3) != cs_nation()) continue;
         for (int k = 0; k < c->population && k < 32; k++) {
             int prof = c->profession[k];
-            /* SAV_PROFESSION: a byte outside 1..27 is null -> the +2
-             * plain-colonist score (game.js:10207/10096) */
+            /* the engine's gates on the raw profession byte
+             * (func_039EE2 @0x3A0BE..0x3A117, spec/systems/scoring.md):
+             * {0x19,0x1A,0x1B} -> +1; 0x1C -> +2; EVERYTHING ELSE -> +4,
+             * byte 0 (@JOBEXPERT[0], Expert Farmers) included.  The JS
+             * SAV_PROFESSION0 maps 0..27 to the expert names (0 -> +4),
+             * 19 to "Free Colonists" (+2), >= 28 to null (+2).  The
+             * former `prof == 0 -> +2` here was wrong on both counts
+             * (RULINGS 2026-09-02e: sav1653 scored 299 vs the JS 315). */
             if (prof >= 25 && prof <= 27) population += 1;
-            else if (prof == 0 || prof >= 28 || prof == 19) population += 2;
+            else if (prof >= 28 || prof == 19) population += 2;
             else population += 4;
         }
     }
@@ -1326,17 +1332,47 @@ static void hof_write(void) {
     }
 }
 
+/* func_03A9C0's band selector (@0x3AA0A..0x3AA79): base <= 0 -> no plate
+ * (@0x3AA00); scaled = mult*base/100 UN-halved (@0x3AA31..0x3AA3E); for
+ * i = 1..24 the panel is i-1 whenever i*i/3 < scaled (@0x3AA41..0x3AA68);
+ * the printed rating is halved AFTER the loop (@0x3AA6A); clamp <= 23
+ * (@0x3AA71).  The row is deterministic — the former RNG draw is gone. */
+int score_panel(const score_parts_t *s) {
+    if (s->base <= 0) return -1;
+    int scaled = s->mult * s->base / 100;
+    int panel = -1;
+    for (int i = 1; i <= 24; i++)
+        if (i * i / 3 < scaled) panel = i - 1;
+    return panel > 23 ? 23 : panel;
+}
+
+/* the @SCORED ask that follows the plates (the turn loop @0x580A / the
+ * King-event tail @0x2FAC9): "That's all." (row 0) leaves the game —
+ * G.screen = 'title' in the JS, which the sim sees as leaving the map */
+int end_game_scored(void) {
+    ev_emit("SCORED", 0, 0, 0, 0);
+    int c = ask_choice();
+    CR.scored = 1;
+    if (c == 0) CR.screen_map = 0;
+    return c;
+}
+
+/* func_03B2F8 @0x3B2F8: snapshot, silent sum (func_039EE2(0) @0x3B340),
+ * the plate screen func_03A9C0(1, &panel) @0x3B350 — which first draws
+ * the F10 body (func_039EE2(1), key-wait @0x3A9B5) and then the
+ * SCORE<panel+1> page — then the Hall-of-Fame insert @0x3B364.  The
+ * @EXPLOITS lines are drawn ON the plate (no popup), the row is the band.
+ * Both pages are live-front plates (front_pickup); under the harness the
+ * @SCORED ask follows at once, like the JS harness's plate stub. */
 void end_game_sequence(void) {
     CR.retired = 1;
     hof_write();                     /* endGameSequence (game.js:8122) */
-    ev_emit("EXPLOITS", 0, 0, 0, 0);
-    (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
-    CR.screen_map = 0;                   /* G.screen = 'report' */
-    ev_emit("SCORED", 0, 0, 0, 0);
-    ask_choice();                        /* game.js:8141: sets G.scored;
-                                          * the retired latch already
-                                          * gates re-entry here */
-    CR.scored = 1;
+    score_parts_t s;
+    score_parts(&s);
+    CR.f10_show = 1;
+    CR.score_show = (int8_t)score_panel(&s);
+    if (colopy_front_live) { CR.scored_pending = 1; return; }
+    end_game_scored();
 }
 
 /* The retirement clock (endTurn:10800). */

@@ -1390,12 +1390,15 @@ const PLATE_SCREENS = new Set(['congress', 'declaration', 'score', 'endking']);
 function plateScreen(name, params, after) {
   G.plates = G.plates || [];
   G.plates.push({ name, params: params || {}, after: after || null });
-  if (!PLATE_SCREENS.has(G.screen)) plateNext();
+  if (!G.plate) plateNext();
 }
 function plateNext() {
   const p = (G.plates || []).shift();
   if (!p) { G.screen = 'map'; return; }
   G.plate = p;
+  // an advisor report can be queued as a plate too (the end-game F10 page,
+  // func_039EE2(1) with its own key-wait @0x3A9B5)
+  if (p.name === 'report') G.report = p.params.fk;
   G.screen = p.name;
 }
 function plateDismiss() {
@@ -1529,6 +1532,106 @@ function declEvents(name) {
   return out;
 }
 function declName() { return G.leader || DATA.nations[G.nation].leader; }
+
+// ---- the end-game score plate, func_03A9C0(display, &panel) @0x03A9C0 ----
+// Selector (@0x3AA0A..0x3AA79): base = func_039EE2's component sum (<= 0
+// -> no screen @0x3AA00); mult = diff+4, +1 if >= 3, +1 if >= 4; scaled =
+// mult*base/100 (@0x3AA31..0x3AA3E, NOT yet halved); for i = 1..24 the panel
+// is i-1 whenever i*i/3 < scaled (@0x3AA41..0x3AA68); THEN the printed
+// rating = scaled >> 1 (@0x3AA6A); panel clamped <= 23 (@0x3AA71); no
+// screen when panel < 0, display == 0 or the "scored" latch [0x5382]&0x10
+// (@0x3AA88..0x3AAA0).  spec/ui/cinematics.md §4 had the halving before
+// the loop -- RULINGS 2026-09-02e.  The row is DETERMINISTIC (the former
+// random pick is gone from both ports).
+function scorePanel(s) {
+  if (s.base <= 0) return -1;
+  const scaled = Math.trunc(s.mult * s.base / 100);
+  let panel = -1;
+  for (let i = 1; i <= 24; i++) if (Math.trunc(i * i / 3) < scaled) panel = i - 1;
+  return Math.min(panel, 23);
+}
+// Page (@0x3AAA5..0x3AD9F): "SCORE" + ("0" if panel < 9) + (panel+1)
+// (@0x3AAAA..0x3AADA); WOODPAN2.PIK straight into the screen surface
+// (@0x3AAFF), then the SCORE sheet loads with the palette-receive pointer
+// [0x23F2:0x23F4] aimed at the PIK's palette buffer (@0x3AB46..0x3AB68), so
+// the DAC upload @0x3AB84 is the PLATE's palette -- WOODPAN2 shows through
+// it (24 distinct tables; the JS re-tables the index plane).  Text, all
+// FONTTINY ([0x89E]) through the centred verb 0x181F:0x100(str, x, w, y,
+// colour): the three @EXPLOITS lines (%STRING0 = the name at 0x5426 +
+// player*0x34, %NUMBER0 = the halved rating, @0x3AB9D..0x3ABB9) at x=0
+// w=320, y = 5, 5+(H+1), 5+2(H+1) (H = FONTTINY height 6), colour 0xFC
+// (@0x3ABC7..0x3AC0B); then @SCORE rows i = 0..panel (@0x3AC1A..0x3ACA8) at
+// y = 0xC3 - (H+1)(i+1) = 188, 181, ..., each line split at its comma
+// (0x191F:0xFC4 = file 0x6FA3E, the second field LEFT-TRIMMED by
+// 0x1A1F:0xB44 = file 0xD972), the first field centred in x=0xA0 w=0xA0
+// (@0x3AC89/0x3AC8C), colour 0xFE, or 0xFC on the achieved row i == panel
+// (@0x3AC3E..0x3AC4E); the caption = the LAST row's second field with
+// %STRING0 = strrchr(name, ' ') (0xD1D:0xD1A = file 0x102EA -- the pointer
+// AT the last space, so the surname keeps its leading space) or the whole
+// name (@0x3ACB2..0x3ACE2), centred in x=0x22 w=0x8C at y=0x8E, colour 0xFC
+// (@0x3ACF6..0x3AD0B); present; the plate's frame 1 anchored at its own
+// descriptor (SCORE01 (104,136) 140x97 -> (34,40); 02..24 (104,138)
+// 142x99 -> (33,40)) at 100% (@0x3AD2F..0x3AD4C); tune 0x24 if panel >= 23,
+// 0x25 if > 6, else 0x21 via 0x181F:0x4C0 (@0x3AD51..0x3AD6D -- no audio in
+// this build); staged present; key/click wait @0x3AD86.
+const _pikThrough = new Map();
+// A PIK drawn from its index plane through the CURRENT palette (the C
+// port's single-DAC behaviour) -- for backgrounds a screen shows through
+// another asset's table.  Falls back to the baked image when no plane was
+// shipped (build_assets.INDEX_PLANE_PIK).
+function drawPikThrough(ctx, name, palKey) {
+  const b64 = DATA.pikidx && DATA.pikidx[name];
+  if (!b64) { if (IMG[name]) ctx.drawImage(IMG[name], 0, 0); return; }
+  const key = name + '|' + palKey;
+  let c = _pikThrough.get(key);
+  if (!c) {
+    const idx = b64bytes(b64);
+    c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const im = g.createImageData(W, H);
+    for (let i = 0; i < idx.length && i < W * H; i++) {
+      const col = PAL[idx[i]];
+      im.data[i * 4] = col[0]; im.data[i * 4 + 1] = col[1];
+      im.data[i * 4 + 2] = col[2]; im.data[i * 4 + 3] = 255;
+    }
+    g.putImageData(im, 0, 0);
+    _pikThrough.set(key, c);
+  }
+  ctx.drawImage(c, 0, 0);
+}
+function scoreSurname(name) {
+  const k = name.lastIndexOf(' ');
+  return k >= 0 ? name.slice(k) : name;
+}
+function drawScoreScreen(ctx, panel) {
+  if (panel === undefined) panel = G.plate ? G.plate.params.panel : 0;
+  const plate = 'SCORE' + String(panel + 1).padStart(2, '0');
+  usePalette(plate);
+  drawPikThrough(ctx, 'WOODPAN2', plate);
+  const H = FONT.tiny.height;
+  const s = scoreParts();
+  const rating = s.base > 0 ? Math.trunc(s.mult * s.base / 100) >> 1 : 0;
+  const ex = (DATA.events.EXPLOITS && DATA.events.EXPLOITS.body) || [];
+  let y = 5;
+  for (let i = 0; i < 3 && i < ex.length; i++, y += H + 1)
+    FONT.tiny.center(ctx, fillTemplate(ex[i], { STRING0: DATA.nations[G.nation].country,
+                                                NUMBER0: rating }),
+                     160, y, lut(0xFC));
+  const rows = DATA.scorenames || [];
+  let caption = '';
+  for (let i = 0; i <= panel && i < rows.length; i++) {
+    const k = rows[i].indexOf(',');
+    const f1 = k >= 0 ? rows[i].slice(0, k) : rows[i];
+    caption = k >= 0 ? rows[i].slice(k + 1).replace(/^[ \t]+/, '') : '';
+    FONT.tiny.center(ctx, f1, 0xA0 + 0xA0 / 2, 0xC3 - (H + 1) * (i + 1),
+                     lut(i === panel ? 0xFC : 0xFE));
+  }
+  const name = G.leader || DATA.nations[G.nation].leader;
+  FONT.tiny.center(ctx, fillTemplate(caption, { STRING0: scoreSurname(name) }),
+                   0x22 + 0x8C / 2, 0x8E, lut(0xFC));
+  sheetAnchored(ctx, plate, 0);
+}
 // step = how many stroke events are on screen; undefined = the live plate's
 // own clock (one event per 60.8766 Hz tick from when the page opened, or all
 // of them once a key/click set the skip flag).
@@ -8369,11 +8472,14 @@ function fillTemplate(line, subs) {
   // %COUNTRY is the engine's own-nation substitution (@UNREST uses it).
   // A '$' after the placeholder is KEPT: it is the gold-coin glyph the
   // fonts carry ("1352$." renders with the coin, census3_buy_prompt).
+  // "%%" is one literal '%': the engine's format verb (0x191F:0x910 = file
+  // 0x6EEEC) appends the "%" string at DG 0x1FC5 and skips the second sign
+  // (@0x6F0CE..0x6F0E6) -- @EXPLOITS "RATING: %NUMBER0%%" reads "61%".
   return line.replace(/%COUNTRY/g, DATA.nations[G.nation].country)
              .replace(/%(STRING|NUMBER)(\d)/g, (m, kind, n) => {
     const v = subs[`${kind}${n}`];
     return v === undefined ? '' : String(v);
-  });
+  }).replace(/%%/g, '%');
 }
 // ---- popup speaker channels (spec/ui/popups.md §2.7) ----------------------
 // The engine dispatches the portrait through three DGROUP words: [0x1F5C] = 8
@@ -10452,19 +10558,20 @@ function endGameSequence() {
              score: s.base, rating: s.total,
              declared: !!(G.flags & WOI_DECLARED),
              independent: !!(G.flags & WOI_WON) });
-  const name = G.leader || DATA.nations[G.nation].leader;
-  showEvent('EXPLOITS', { NUMBER0: s.total,
-                          STRING0: DATA.nations[G.nation].country });
-  const rows = DATA.scorenames || [];
-  if (rows.length)
-    notice(rows[Math.floor(Math.random() * rows.length)]
-             .replace(/%STRING0/g, name));
-  G.report = 'F10';
-  G.screen = 'report';
-  askEvent('SCORED', {}, (choice) => {
+  // func_03B2F8 @0x3B2F8: silent sum (func_039EE2(0) @0x3B340), then the
+  // plate screen func_03A9C0(1, &panel) @0x3B350 -- which first draws the
+  // F10 body (func_039EE2(1)) with its own key-wait @0x3A9B5, then the
+  // SCORE<panel+1> page (none when base <= 0 or no band) -- then the
+  // Hall-of-Fame insert @0x3B364; the caller shows @SCORED after that
+  // (@0x580A / @0x2FAC9).  @EXPLOITS is drawn ON the plate, not popped up,
+  // and the @SCORE row is the band -- the old random pick is gone.
+  const panel = scorePanel(s);
+  const scored = () => askEvent('SCORED', {}, (choice) => {
     G.scored = true;
     if (choice === 0) { G.screen = 'title'; G.menuRow = 0; }
   });
+  plateScreen('report', { fk: 'F10' }, panel >= 0 ? null : scored);
+  if (panel >= 0) plateScreen('score', { panel }, scored);
 }
 // The War-of-Independence screen lockouts: Europe and the Foreign Affairs
 // report close for the duration (@EUROPENOTAVAIL is byte-cited to push
@@ -15074,6 +15181,7 @@ function onClick(mx, my) {
       break;
     }
     case 'report':
+      if (G.plate && G.plate.name === 'report') { plateDismiss(); break; }
       G.screen = 'map';
       // func_037A20 @0x38060..0x38073: dismissing F3 shows the CCBKGD
       // portrait gallery (func_03BB4A(power, -1)) as a second page, unless
@@ -15476,6 +15584,7 @@ function onKey(e) {
       break;
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) {
+        if (G.plate && G.plate.name === 'report') { plateDismiss(); break; }
         G.screen = 'map';
         if (G.report === 'F3') plateScreen('congress', { newFF: -1 });   // @0x38073
       }
@@ -15762,7 +15871,8 @@ function frameBody() {
      report: drawReport, village: drawVillage,
      trade: drawTrade, options: drawOptions,
      congress: drawCongressPortraits,
-     declaration: drawDeclaration }[G.screen] || drawMap)(ctx);
+     declaration: drawDeclaration,
+     score: drawScoreScreen }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

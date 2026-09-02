@@ -702,6 +702,21 @@ void rm_score_probe(void) {
     fprintf(stderr, "pop=%d fathers=%d sent=%d razed=%d gold=%d lib=%d rev=%d base=%d mult=%d total=%d\n",
             s.population, s.fathers, s.sentiment, s.razed, s.gold,
             s.liberty, s.revolution, s.base, s.mult, s.total);
+    /* the population component per colony (score_parts' own classes) */
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        if ((c->owner_power & 3) != cs_nation()) continue;
+        int sum = 0;
+        fprintf(stderr, "%s ; %d ; ", c->name, c->population);
+        for (int k = 0; k < c->population && k < 32; k++) {
+            int prof = c->profession[k];
+            int v = (prof >= 25 && prof <= 27) ? 1
+                  : (prof == 0 || prof >= 28 || prof == 19) ? 2 : 4;
+            sum += v;
+            fprintf(stderr, "%d%s", prof, k + 1 < c->population ? "|" : "");
+        }
+        fprintf(stderr, " ; sum %d\n", sum);
+    }
 }
 
 /* ---- the woodcut plates (drawWoodcut, game.js:1180; §26.14) ----
@@ -865,4 +880,85 @@ int rm_declaration_total(const char *name) {
 }
 const char *rm_declaration_name(void) {
     return CR.leader[0] ? CR.leader : dat_nations[cs_nation()].leader;
+}
+
+/* ---- Part E: the end-game score plate, func_03A9C0 @0x03A9C0 ----
+ * The selector (score_panel, colopy_rivals.c) picks the band from the
+ * UN-halved mult*base/100 (@0x3AA41..0x3AA68), halving after (@0x3AA6A).
+ * Page (@0x3AAA5..0x3AD9F): "SCORE" + ("0" if panel < 9) + (panel+1)
+ * (@0x3AAAA..0x3AADA); WOODPAN2.PIK into the screen surface (@0x3AAFF),
+ * then the sheet loads with the palette-receive pointer [0x23F2:0x23F4]
+ * aimed at the PIK's palette buffer (@0x3AB46..0x3AB68), so the DAC
+ * upload @0x3AB84 is the PLATE's table and WOODPAN2 shows through it.
+ * Text, all FONTTINY ([0x89E]) through the centred verb 0x181F:0x100
+ * (str, x, w, y, colour): the three @EXPLOITS lines (%STRING0 = the name
+ * at 0x5426 + player*0x34, read here as the country; %NUMBER0 = the
+ * halved rating, @0x3AB9D..0x3ABB9) at x=0 w=320, y = 5, 5+(H+1),
+ * 5+2(H+1), colour 0xFC (@0x3ABC7..0x3AC0B); @SCORE rows i = 0..panel
+ * (@0x3AC1A..0x3ACA8) at y = 0xC3 - (H+1)(i+1), each split at its comma
+ * (0x191F:0xFC4 = file 0x6FA3E, the second field left-trimmed by
+ * 0x1A1F:0xB44 = file 0xD972), the first field centred in x=0xA0 w=0xA0
+ * (@0x3AC89/0x3AC8C), colour 0xFE, or 0xFC on row i == panel
+ * (@0x3AC3E..0x3AC4E); the caption = the last row's second field with
+ * %STRING0 = strrchr(name, ' ') (0xD1D:0xD1A = file 0x102EA: the pointer
+ * AT the last space, so the surname keeps its leading space) or the
+ * whole name (@0x3ACB2..0x3ACE2), centred in x=0x22 w=0x8C at y=0x8E,
+ * colour 0xFC (@0x3ACF6..0x3AD0B); the plate's frame 1 anchored at its
+ * own descriptor at 100% (@0x3AD2F..0x3AD4C); tune RM_SCORE_TUNE
+ * (@0x3AD51..0x3AD6D, the shell's au_cmd); key/click wait @0x3AD86.
+ * JS twin: drawScoreScreen (game.js). */
+void rm_draw_score(int panel) {
+    rresolve();
+    if (panel < 0) panel = 0;
+    if (panel > 23) panel = 23;
+    char plate[16];
+    snprintf(plate, sizeof(plate), "SCORE%02d.SS", panel + 1);
+    rd_use_palette(plate);
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    rd_pik("WOODPAN2.PIK");
+    int H = R_TINY.cell_h;
+    score_parts_t s;
+    score_parts(&s);
+    int rating = s.base > 0 ? (s.mult * s.base / 100) >> 1 : 0;
+    rm_subs subs;
+    memset(&subs, 0, sizeof(subs));
+    subs.str[0] = dat_nations[cs_nation()].country;
+    subs.num[0] = rating;
+    subs.num_set[0] = 1;
+    int nb = 0;
+    const char *const *ex = rm_event_body("EXPLOITS", &nb);
+    char buf[256];
+    int y = 5;
+    for (int i = 0; i < 3 && i < nb; i++, y += H + 1) {
+        rm_fill_template(ex[i], &subs, buf, sizeof(buf));
+        r_center(buf, 160, y, rlut(0xFC));
+    }
+    char caption[128] = "";
+    for (int i = 0; i <= panel && i < DAT_SCORENAMES_COUNT; i++) {
+        const char *row = dat_scorenames[i];
+        const char *k = strchr(row, ',');
+        char f1[128];
+        if (k) {
+            size_t n = (size_t)(k - row);
+            if (n >= sizeof(f1)) n = sizeof(f1) - 1;
+            memcpy(f1, row, n);
+            f1[n] = 0;
+            const char *f2 = k + 1;
+            while (*f2 == ' ' || *f2 == '\t') f2++;       /* the ltrim */
+            snprintf(caption, sizeof(caption), "%s", f2);
+        } else {
+            snprintf(f1, sizeof(f1), "%s", row);
+            caption[0] = 0;
+        }
+        r_center(f1, 0xA0 + 0xA0 / 2, 0xC3 - (H + 1) * (i + 1),
+                 rlut(i == panel ? 0xFC : 0xFE));
+    }
+    const char *name = rm_declaration_name();
+    const char *sp = strrchr(name, ' ');
+    rm_subs cs;
+    memset(&cs, 0, sizeof(cs));
+    cs.str[0] = sp ? sp : name;
+    rm_fill_template(caption, &cs, buf, sizeof(buf));
+    r_center(buf, 0x22 + 0x8C / 2, 0x8E, rlut(0xFC));
+    blit_anchored(plate, 0);
 }

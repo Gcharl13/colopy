@@ -306,6 +306,9 @@ void offer_mercenaries(void);         /* offerMercenaries (game.js:9235) */
 void check_intervention(void);        /* checkIntervention (game.js:9327) */
 void refs_push(int ui);               /* G.refUnits.push */
 void end_game_sequence(void);         /* endGameSequence (game.js:8119) */
+int  score_panel(const score_parts_t *s);   /* func_03A9C0's band, -1 none */
+int  end_game_scored(void);           /* the @SCORED ask after the plates;
+                                       * returns the row (0 = leave) */
 int  rel_have_treaty(int a, int b);
 int  rel_parley_eligible(int rn);
 void rel_declare_war(int a, int b);
@@ -578,6 +581,13 @@ typedef struct {
                                       * signing page (func_03DA2A) is
                                       * due — set after @INDEPENDENCE
                                       * (its engine dispatch is TBD) */
+    uint8_t f10_show;                /* LIVE FRONT: the end-game F10 page
+                                      * (func_039EE2(1) @0x3B350) */
+    int8_t  score_show;              /* LIVE FRONT: the SCORE<panel+1>
+                                      * plate (func_03A9C0), -1 none */
+    uint8_t scored_pending;          /* LIVE FRONT: ask @SCORED once the
+                                      * plates are dismissed
+                                      * (end_game_scored) */
     uint8_t land_ho;                 /* woodcut-1 latch (G.landHo;
                                       * loads import it true, 10240) */
     char leader[24];                 /* G.leader — the front sets it at

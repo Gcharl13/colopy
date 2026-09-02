@@ -377,7 +377,7 @@ pack (67 sheet files packed + `PHYS0C` derived at runtime; 28 backgrounds).
 |---|---|---|
 | Founding Father portraits `CC-00..CC-24` | 25 | ~~F3 draws names as text only~~ **SHIPPED 2026-09-02** (screens track, note E1 below) |
 | Declaration lettering `DEC-LOW/UPP A-Z`, `DEC-SQIG` | 53 | ~~Declaration screen does not exist~~ **SHIPPED 2026-09-02** (note E2 below) |
-| Score plates `SCORE01..24` | 24 | End-game score screen unimplemented |
+| Score plates `SCORE01..24` | 24 | ~~End-game score screen unimplemented~~ **SHIPPED 2026-09-02** (note E3 below) |
 | Opening cinematic sheets | 14 | `OPENING.EXE` — separate program (Part H) |
 | Closing cinematic sheets | 7 | `CLOSING.EXE` — separate program (Part H) |
 | King / win / lose plates | 5 | Endgame screens unimplemented |
@@ -458,6 +458,42 @@ renderers draw nothing for a missing entry — see `cport/MEMORY_BUDGET.md`.
   caller — no `lcall`/`ljmp`/far pointer to `0x191F:0x109A` exists (the
   tracker's "dispatch slot 4 @0x3EA0B" is `ljmp 0x191F:0x364` = `func_03C638`);
   a live capture must pin where the page sits relative to `@INDEPENDENCE`.
+- **E3 — Score plates `SCORE01..24` (SHIPPED).** Trigger `func_03B2F8` @0x3B2F8
+  (thunk `0x181F:0x574`): snapshot → `func_039EE2(0)` @0x3B340 → **`func_03A9C0(1,
+  &panel)`** @0x3B350 → HoF insert `func_03ADA6` @0x3B364; the callers show
+  `@SCORED` after (@0x580A, @0x2FAC9). `func_03A9C0` @0x03A9C0: `func_039EE2(1)`
+  first draws the **F10 body with its own key-wait** (@0x3A998..0x3A9B5); base
+  ≤ 0 → no plate (@0x3AA00); `scaled = mult·base/100` UN-halved (@0x3AA31..
+  0x3AA3E); band loop i=1..24: panel = i−1 while `i·i/3 < scaled` (@0x3AA41..
+  0x3AA68); rating = scaled>>1 AFTER (@0x3AA6A; cinematics.md §4 had the
+  order reversed — RULINGS 2026-09-02e); clamp ≤23, no screen for panel<0 /
+  display=0 / `[0x5382]&0x10` (@0x3AA71..0x3AAA0). Page: WOODPAN2 into the
+  screen surface (@0x3AAFF) then the SCORE sheet loaded with `[0x23F2:0x23F4]`
+  aimed at the PIK's palette buffer (@0x3AB46..0x3AB68) → the DAC (@0x3AB84) is
+  the **plate's** palette (24 distinct tables; the JS re-tables WOODPAN2's
+  index plane, shipped via `build_assets.INDEX_PLANE_PIK`); FONTTINY centred
+  verb `0x181F:0x100`: `@EXPLOITS` ×3 at x=0 w=320 y=5/12/19 colour 0xFC
+  (`%STRING0` = name @0x5426+player·0x34, `%NUMBER0` = rating; @0x3AB9D..
+  0x3AC0B; `%%` → `%` per the format verb @0x6F0CE), `@SCORE` rows 0..panel at
+  y=0xC3−7(i+1) centred x=0xA0 w=0xA0, 0xFE / 0xFC on row panel (@0x3AC1A..
+  0x3ACA8; comma split `0x191F:0xFC4`=file 0x6FA3E, ltrim `0x1A1F:0xB44`=file
+  0xD972), caption = the last row's field 2 with `%STRING0` = `strrchr(name,' ')`
+  (`0xD1D:0xD1A` = file 0x102EA, the pointer AT the space) centred x=0x22 w=0x8C
+  y=0x8E 0xFC (@0x3ACB2..0x3AD0B); plate frame 1 anchored (@0x3AD4C: SCORE01 →
+  (34,40), 02..24 → (33,40)); tune 0x24/0x25/0x21 (@0x3AD51..0x3AD6D); key wait
+  @0x3AD86. Ports: JS `scorePanel`/`drawScoreScreen`/`drawPikThrough`, the
+  end game as plates `report(F10)` → `score` → `@SCORED`; C `score_panel`,
+  `rm_draw_score`, `CR.f10_show`/`score_show`/`scored_pending` with
+  `end_game_scored` deferred past the plates on the live front (immediate
+  under the harness, like the JS stub); boards play `RM_SCORE_TUNE` via
+  `au_cmd`. The `@EXPLOITS` popup and the **random `@SCORE` pick are gone from
+  both engines** (the C's `R(DAT_SCORENAMES_COUNT)` draw with them — no RNG
+  on the path, C3.4). Oracle `tools/render_score_compare.py` (bands 0 and 23,
+  0/0) — which exposed the C's `prof == 0 → +2` population bug (fixed, same
+  ruling). Pak delta **+356,354 B** (3,633,478 → 3,989,832). **TBD**: the
+  `0x5426` string is read as the country (port model); F10's icon flow
+  `func_039E98` (one ICONS icon per colonist, x+=8 from 16, wrap ≥292 to y+=8,
+  stop y≥144) is not the ports' `min(value,12)` row — unchanged here.
 
 ---
 

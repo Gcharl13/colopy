@@ -275,6 +275,7 @@ void cr_reset_from_load(void) {
     CR.wc_show = -1;
     CR.ui_select = -1;
     CR.ff_show = -1;
+    CR.score_show = -1;
     CR.land_ho = 1;                  /* the importer latches these true
                                       * (game.js:10240) */
     CR.built_colony = 1;

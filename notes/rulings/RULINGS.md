@@ -10987,3 +10987,48 @@ ticks have passed; `0xC0C:6` (file 0xE4C6) reads through `[0x267A]`, which
 4. The caller stays **TBD**: the tracker's "slot 4 @0x3EA0B" is struck; the
    ports show the page after `@INDEPENDENCE` and say so.
 5. DECLARAT.PIK is never packed (orphan, B-negative, unchanged).
+
+## 2026-09-02e — screens track: the score plate (E3) and what it corrected
+
+**Conflicts**: `spec/ui/cinematics.md` §4 gives the band loop as running on
+`scaled … >> 1`; `spec/systems/scoring.md` §2 calls `[0x372]` "the score
+accumulator, zeroed at the top of func_03A9C0"; both ports popped
+`@EXPLOITS` up and picked the `@SCORE` row at random (the C burning an RNG
+draw for it); both template fillers left `%%` as two signs; the C
+`score_parts` gave a profession byte of 0 the +2 plain-colonist score.
+
+**Bytes**: `func_03A9C0` @0x03A9C0 — `[bp-2] = mult·base/100` @0x3AA31..
+0x3AA3E, the band loop @0x3AA41..0x3AA68 compares `i·i/3` against THAT
+value (`cmp ax,[bp-2]; jge` @0x3AA55/0x3AA58), and only then `sar [bp-2],1`
+@0x3AA6A halves it for `%NUMBER0`. `[0x372]` is saved @0x3A9E5, zeroed
+@0x3A9EC and restored @0x3AD9F exactly as every PIK page does with the
+palette-cycling enable (func_03BB4A @0x3BB56/@0x3BC37, func_03DA2A
+@0x3DA5E/@0x3DE3A, func_075352 @0x75368/@0x7558D) — it is not a score
+accumulator. The page draws the three `@EXPLOITS` lines itself
+(@0x3ABC7..0x3AC0B) and the `@SCORE` ladder rows 0..panel with the achieved
+row highlighted (@0x3AC1A..0x3ACA8) — no popup, no random pick; no
+`0x181F:0x4D4` exists in 0x039E98..0x03B36E. The format verb `0x191F:0x910`
+(file 0x6EEEC) turns `%%` into the literal "%" at DG 0x1FC5 @0x6F0CE..
+0x6F0E6. `0xD1D:0xD1A` (file 0x102EA) is `strrchr`, returning the pointer
+AT the last space. The population gate (`func_039EE2` @0x3A0BE..0x3A117)
+gives `{0x19,0x1A,0x1B}` +1, `0x1C` +2 and everything else — byte 0 =
+`@JOBEXPERT[0]` included — +4; the JS `SAV_PROFESSION0` already read it
+so, and the two ports disagreed by 16 on sav1653 (299 vs 315).
+
+**Decisions**:
+1. The band is chosen on the un-halved value; the halving is display-only.
+   cinematics.md §4 is amended, not rewritten.
+2. `[0x372]` is the palette-cycling enable everywhere; scoring.md's
+   "accumulator" sentence is struck.
+3. The end game is F10 (its own key-wait @0x3A9B5) → the plate → `@SCORED`
+   in both engines; the `@EXPLOITS` popup, the random `@SCORE` notice and
+   the C's `R(DAT_SCORENAMES_COUNT)` draw are removed together (lockstep:
+   no draw exists on the engine's path).
+4. `%%` → `%` in both fillers (byte-cited).
+5. The caption's `%STRING0` is `strrchr(name, ' ')` with its leading space
+   (or the whole name); the second comma field is left-trimmed
+   (`0x1A1F:0xB44` = file 0xD972) before the fill.
+6. The C population classifier drops `prof == 0 → +2`; the two ports agree
+   again (and with the engine's gate).
+7. The name at `0x5426 + player·0x34` is read as the country (the port's
+   existing `@EXPLOITS` model) — its identity is recorded as unread.

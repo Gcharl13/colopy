@@ -63,6 +63,11 @@ PALETTE_CEILING = {
     # sheets blit over DECOIND's DAC (baked through its merged table)
     "declaration sav1653 Willem van Oranje 3 9999": 0,
     "declaration sav1653 Willem van Oranje 3 37": 0,
+    # the score plate: band 0 (SCORE01, the one 140x97 plate) and band 23
+    # (SCORE24, every @SCORE row on the ladder); WOODPAN2 is re-tabled
+    # through the plate's palette on both sides
+    "score sav1653 0 Willem van Oranje": 0,
+    "score sav1653 23 Willem van Oranje": 0,
 }
 
 

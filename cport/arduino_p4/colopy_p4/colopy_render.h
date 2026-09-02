@@ -162,6 +162,11 @@ void rm_draw_declaration(const char *name, int step);
 int  rm_declaration_total(const char *name);
 const char *rm_declaration_name(void);
 #define RM_DECL_TICK_HZ 60.8766   /* one stroke frame per [0x92E8] tick */
+/* the end-game score plate, func_03A9C0 @0x03A9C0: SCORE<panel+1> over
+ * WOODPAN2 through the plate's palette + the @EXPLOITS/@SCORE text */
+void rm_draw_score(int panel);
+/* the tune the plate plays (0x181F:0x4C0 @0x3AD51..0x3AD6D) */
+#define RM_SCORE_TUNE(panel) ((panel) >= 23 ? 0x24 : (panel) > 6 ? 0x25 : 0x21)
 /* the options dialogs (drawOptions 7969): which 0 game / 1 colony
  * report / 2 sound; toggle = optionsCommit's XOR */
 void rm_draw_options(int which, int row);
@@ -193,6 +198,10 @@ typedef struct {
     uint8_t num_set[4];
 } rm_subs;
 int  rm_event_exists(const char *key);
+/* the fillTemplate rule (game.js) over a line; the body lines of a key */
+void rm_fill_template(const char *line, const rm_subs *subs, char *out,
+                      size_t cap);
+const char *const *rm_event_body(const char *key, int *n);
 int  rm_event_rows(const char *key);   /* option rows = the tail lines */
 const char *rm_event_default(const char *key);  /* @default prefill, "" */
 void rm_draw_combat(void);          /* the Combat Analysis panel (CR.combat) */

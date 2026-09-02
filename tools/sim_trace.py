@@ -185,7 +185,11 @@ INPUT = """([save, events]) => {
   openDialog = () => {};
   const _wc = woodcutOnce;
   woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
-  plateScreen = () => {};          // the plate pages: front-only, like woodcuts
+  // the plate pages are front-only (like woodcuts) but a plate's `after`
+  // still runs at once -- the end-game @SCORED ask lives there; the
+  // one-shot pedia page is inert
+  plateScreen = (n, p, after) => { if (after) after(); };
+  pediaOnce = () => {};
   G.eventQueue = []; G.dialog = null; G.combat = null;
   const out = [];
   const proj = () => {
@@ -343,6 +347,22 @@ RENDERDECLARATION = """([save, name, step]) => {
   const cv = document.querySelector('canvas');
   const ctx = cv.getContext('2d');
   drawDeclaration(ctx, step);
+  return cv.toDataURL('image/png');
+}"""
+
+
+RENDERSCORE = """([save, panel, name]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1657;
+  G.leader = name;                    // the caption's surname
+  G.screen = 'score';
+  G.plate = null;
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawScoreScreen(ctx, panel);
   return cv.toDataURL('image/png');
 }"""
 
@@ -505,7 +525,8 @@ NEWGAME = """([nation, diff, n]) => {
   };
   const _wc = woodcutOnce;
   woodcutOnce = (n2, after) => { const r = _wc(n2, after); G.screen = 'map'; return r; };
-  plateScreen = () => {};
+  plateScreen = (n2, p2, after) => { if (after) after(); };
+  pediaOnce = () => {};
   openDialog = () => {};
   advance = () => {};
   beginGame();
@@ -588,7 +609,11 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
   // in real play the player dismisses it at once.  Model the dismissal.
   const _wc = woodcutOnce;
   woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
-  plateScreen = () => {};          // the plate pages: front-only, like woodcuts
+  // the plate pages are front-only (like woodcuts) but a plate's `after`
+  // still runs at once -- the end-game @SCORED ask lives there; the
+  // one-shot pedia page is inert
+  plateScreen = (n, p, after) => { if (after) after(); };
+  pediaOnce = () => {};
   // PHASE 5 slice 2: scripted player commands, run before each endTurn.
   // A deterministic, RNG-free policy both engines compute identically
   // (mirrored verbatim in cport/host/main.c script_commands); every move
@@ -776,7 +801,7 @@ def main():
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
                     "renderboot", "rendercongress", "renderdeclaration",
-                    "input"):
+                    "renderscore", "input"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -836,6 +861,12 @@ def main():
         elif mode == "renderdeclaration":
             out = page.evaluate(RENDERDECLARATION,
                                 [sys.argv[2], sys.argv[3], int(sys.argv[4])])
+            browser.close()
+            print(out)
+            return
+        elif mode == "renderscore":
+            out = page.evaluate(RENDERSCORE,
+                                [sys.argv[2], int(sys.argv[3]), sys.argv[4]])
             browser.close()
             print(out)
             return

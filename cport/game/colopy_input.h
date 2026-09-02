@@ -84,6 +84,7 @@ typedef struct {
     int8_t  pedia_once;          /* the one-shot Founding Father page
                                   * (func_06AE08 @0x3BD26): its dismissal
                                   * returns to the game, not the index */
+    int8_t  score_panel;         /* SCR_SCORE: the SCORE<panel+1> plate */
     int16_t decl_step;           /* SCR_DECLARATION: stroke events on
                                   * screen (func_03DA2A's per-frame
                                   * present); the shell advances it one

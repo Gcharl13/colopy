@@ -197,7 +197,11 @@ def data_uri(img, fmt="PNG"):
 #                        func_03DA2A @0x03DA2A (DECLARAT.PIK is an orphan)
 DEC_SS = [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
     [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"]
-PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS
+#   SCORE01..24          the end-game score plate, func_03A9C0 @0x03A9C0
+#                        (over WOODPAN2.PIK, already packed, drawn through
+#                        the PLATE's palette -- @0x3AB46..0x3AB84)
+SCORE_SS = [f"SCORE{i:02d}" for i in range(1, 25)]
+PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS + SCORE_SS
 PART_E_PIK = ["CCBKGD", "DECOIND"]
 # Sheets whose pixels the running game resolves through a PIK's palette,
 # not their own embedded copy (the same VGA-is-global rule as
@@ -237,8 +241,14 @@ def merged_palette(pal, master, ui):
     return out
 # Backgrounds a screen draws through a palette that is NOT the PIK's own
 # (the way the C port always does: indices through the current DAC).  The
-# JS gets the raw index plane for these so it can re-table at runtime.
-INDEX_PLANE_PIK = []
+# JS gets the raw index plane for these so it can re-table at runtime:
+# WOODPAN2 shows through whichever SCORE plate's palette the score screen
+# uploads (24 distinct tables, func_03A9C0 @0x3AB46..0x3AB84).
+INDEX_PLANE_PIK = ["WOODPAN2"]
+# Sheets whose embedded palette the JS renderer must be able to ADOPT
+# (usePalette on a sheet name): the woodcut frame, the map chrome, and the
+# 24 score plates (each is the DAC for its own screen).
+EXPORT_SHEET_PAL = {"WOODFRAM", "WOODTILE"} | set(SCORE_SS)
 
 
 def main():
@@ -332,7 +342,7 @@ def main():
             # palette indices 0x5C/0x5D/0x5E -- needs the table exported. (Both
             # of these keep their embedded palette; see MASTER_PALETTE_SHEETS
             # for the one sheet that does not.)
-            if nm in ("WOODFRAM", "WOODTILE"):
+            if nm in EXPORT_SHEET_PAL:
                 sp = ssdec.load_sheet(str(p))["pal"]
                 bundle["sheets"][nm]["pal"] = [[sp[i * 3], sp[i * 3 + 1], sp[i * 3 + 2]]
                                                for i in range(256)]

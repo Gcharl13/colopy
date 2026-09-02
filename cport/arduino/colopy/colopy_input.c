@@ -44,6 +44,7 @@ void ui_init(void) {
                                       * (a zeroed CR would read plate 0) */
     CR.ui_select = -1;
     CR.ff_show = -1;
+    CR.score_show = -1;
     UI.ff_new = -1;
 }
 
@@ -1511,6 +1512,33 @@ static void front_pickup(void) {
         UI.screen = SCR_DECLARATION;
         return;
     }
+    /* the end game (func_03B2F8): the F10 page (func_039EE2(1), its own
+     * key-wait @0x3A9B5), then the SCORE plate (func_03A9C0), then the
+     * @SCORED ask (end_game_scored) once nothing is left to show */
+    if (CR.f10_show && UI.screen != SCR_REPORT) {
+        CR.f10_show = 0;
+        snprintf(UI.report, sizeof(UI.report), "F10");
+        UI.screen = SCR_REPORT;
+        return;
+    }
+    if (CR.score_show >= 0 && UI.screen != SCR_SCORE) {
+        UI.score_panel = CR.score_show;
+        CR.score_show = -1;
+        UI.screen = SCR_SCORE;
+        return;
+    }
+    if (CR.scored_pending) {
+        CR.scored_pending = 0;
+        if (end_game_scored() == 0) {    /* "That's all." -> the title */
+            UI.screen = SCR_TITLE;
+            UI.menu_row = 0;
+        }
+    }
+}
+/* the score plate's key/click (wait_keyOrClick @0x3AD86) */
+static void score_dismiss(void) {
+    UI.screen = SCR_MAP;
+    front_pickup();
 }
 
 /* the signing page's key/click: mid-signature it is the skip flag
@@ -2060,6 +2088,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
         break;
     case SCR_DECLARATION:
         declaration_key();
+        break;
+    case SCR_SCORE:
+        score_dismiss();
         break;
     case SCR_MAP: {
         /* an open pulldown owns the keyboard (game.js:12545) */
@@ -2727,6 +2758,9 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     case SCR_DECLARATION:
         declaration_key();
+        break;
+    case SCR_SCORE:
+        score_dismiss();
         break;
     case SCR_OPTIONS: {
         int r = rm_options_row_hit(UI.options_which, mx, my);

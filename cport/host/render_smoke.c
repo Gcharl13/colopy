@@ -339,6 +339,23 @@ int render_declaration_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* --renderscore SAVE PAK OUT.ppm PANEL NAME: the end-game score plate
+ * with the band and the signer's name pinned (the rating is the
+ * fixture's own score_parts). */
+int render_score_main(const char *save, const char *pak_path,
+                      const char *out_path, int panel, const char *name) {
+    load_fixture(save);
+    snprintf(CR.leader, sizeof(CR.leader), "%s", name);
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_score(panel);
+    if (!write_frame(out_path)) return 1;
+    printf("render score %s %d '%s' -> %s\n", save, panel, name, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
 int render_boot_main(const char *kind, const char *pak_path,
                      const char *out_path, int arg) {

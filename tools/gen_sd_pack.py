@@ -179,9 +179,13 @@ def build_sheet(path: Path, want_pal: bool):
 #                            func_03BB4A @0x03BB4A / func_03BAA6 @0x03BAA6
 #   DEC-UPP?/DEC-LOW?/DEC-SQIG + DECOIND.PIK   the Declaration signing,
 #                            func_03DA2A @0x03DA2A (DECLARAT.PIK: orphan)
+#   SCORE01..24              the end-game score plate, func_03A9C0 @0x03A9C0
+#                            (WOODPAN2.PIK, already packed, through the
+#                            plate's own palette @0x3AB46..0x3AB84)
 PART_E_SHEETS = [f"CC-{i:02d}" for i in range(25)] + \
     [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
-    [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"]
+    [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"] + \
+    [f"SCORE{i:02d}" for i in range(1, 25)]
 PART_E_PIKS = ["CCBKGD", "DECOIND"]
 # ====================== Part E (screens track) -- END =======================
 

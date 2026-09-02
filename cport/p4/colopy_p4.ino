@@ -562,6 +562,11 @@ static void audio_screen_edges(void) {
     } else {
         last_wc = -1;
     }
+    /* the score plate's tune (func_03A9C0 @0x3AD51..0x3AD6D via the
+     * 0x181F:0x4C0 gate = au_cmd): 0x24 top band, 0x25 above band 6,
+     * else 0x21 */
+    if (UI.screen == SCR_SCORE && last_screen != SCR_SCORE)
+        au_cmd((uint16_t)RM_SCORE_TUNE(UI.score_panel));
     last_screen = UI.screen;
 }
 
@@ -935,6 +940,9 @@ static void draw_screen(void) {
         break;
     case SCR_DECLARATION:
         rm_draw_declaration(rm_declaration_name(), UI.decl_step);
+        break;
+    case SCR_SCORE:
+        rm_draw_score(UI.score_panel);
         break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);

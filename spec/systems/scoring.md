@@ -10,7 +10,7 @@ At game end the player's empire is scored as a sum of component points, with a r
 ## 2. State & data
 Inputs (all sourced from other systems): colonist counts by class (`@CLASS`/`UnitRecord +0x17`, abs `0x315B`), founding fathers joined, treasury gold (`PowerRecord +0x2A`), rebel sentiment (`PowerRecord +0x02`), native settlements destroyed, difficulty (`DGROUP:0x53A6`).
 
-Score accumulator global **`DGROUP:0x372`** — zeroed at the top of `func_03A9C0` and written during scoring. **BYTE_VERIFIED** (`@0x3A9E5`/`@0x3A9EC`).
+~~Score accumulator global **`DGROUP:0x372`** — zeroed at the top of `func_03A9C0` and written during scoring. **BYTE_VERIFIED** (`@0x3A9E5`/`@0x3A9EC`).~~ **Corrected 2026-09-02 (RULINGS 2026-09-02e):** `[0x372]` is the **palette-cycling enable**, saved @0x3A9E5, cleared @0x3A9EC and restored @0x3AD9F exactly as every full-screen PIK page does (`func_03BB4A` @0x3BB56/@0x3BC37, `func_03DA2A` @0x3DA5E/@0x3DE3A, `func_075352` @0x75368/@0x7558D); no score is ever written to it. The score lives in `func_03A9C0`'s locals (`[bp-2]` scaled, `[bp-0xC0]` panel).
 
 ## 3. Formulas & rules
 
@@ -100,8 +100,15 @@ score  = score >> 1                   # @0x3AA6A (halved)
   savegame bytes (deserialized in sequence `@0x751A7`/`@0x751AF`) passed as a
   render-style argument to the per-line draw thunk `lcall 0x181f,0x13c`. **B.**
 - A Hall-of-Fame **rank 0..23** is derived from the score (largest `n` with
-  `n²/3 < score`, capped at 23). **B** (`@0x3AA41..0x3AA79`).
-- Score accumulator global `[0x372]` (zeroed at entry, written during scoring). **B**
+  `n²/3 < score`, capped at 23). **B** (`@0x3AA41..0x3AA79`). **Amended 2026-09-02:** the
+  compared `score` here is the **un-halved** `mult·base/100` (`[bp-2]` before `sar` @0x3AA6A);
+  the `>> 1` above is applied after the loop, for the printed rating only. This `rank` is the
+  `SCORE<rank+1>.SS` plate band (spec/ui/cinematics.md §4a), not a Hall-of-Fame position.
+- ~~Score accumulator global `[0x372]` (zeroed at entry, written during scoring). **B**~~ struck
+  2026-09-02 — `[0x372]` is the palette-cycling enable (see §2).
+- **Population gate, port note (2026-09-02):** the raw profession byte **0** (`@JOBEXPERT[0]`,
+  Expert Farmer) falls in the +4 branch like every byte outside `{0x19,0x1A,0x1B,0x1C}`; the C
+  port's `score_parts` had scored it +2 and now matches (RULINGS 2026-09-02e).
 
 ### Component schedule — manual (RECONSTRUCTED; byte-verify each behind `0x191F:0x3AA`)
 - **Population:** +1 per petty criminal / indentured servant; +2 per free colonist; +4 per skilled colonist. **— now BYTE_VERIFIED** (profession-byte gates `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4`; see §3 population component).

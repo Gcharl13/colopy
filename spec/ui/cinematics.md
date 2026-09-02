@@ -162,6 +162,45 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 - **Tier:** painter + plate selector + component sum + fonts + text **B**; plate-art *identification*
   **A**.
 
+### 4a. Amendment 2026-09-02 — the page byte-complete, the selector corrected, ported (screens track)
+
+Re-read of `func_03A9C0` @0x03A9C0..0x3ADA2 (RULINGS 2026-09-02e). **Supersedes the selector
+sentence above:** the band loop runs on the **un-halved** `mult·base/100` (`[bp-2]` @0x3AA3E;
+`cmp ax,[bp-2]; jge` @0x3AA55/0x3AA58 — panel = i−1 for every i whose `i·i/3` is **below** it),
+and `sar [bp-2],1` @0x3AA6A halves it **after** the loop for the printed `%NUMBER0`. No screen
+when base ≤ 0 (@0x3AA00), panel < 0, display = 0, or the scored latch `[0x5382]&0x10`
+(@0x3AA88..0x3AAA0). `[0x372]` @0x3A9E5/@0x3A9EC/@0x3AD9F is the palette-cycling enable
+(saved/cleared/restored as on every PIK page), not a score accumulator.
+
+**Composition** (all **B**): WOODPAN2.PIK is loaded straight into the screen surface (@0x3AAFF;
+layer-fill 0 on failure @0x3AB20); the SCORE sheet then loads with the palette-receive pointer
+`[0x23F2:0x23F4]` aimed at the PIK's palette buffer (@0x3AB46..0x3AB68), so the DAC upload
+@0x3AB84 is the **plate's** table — WOODPAN2 shows through it (all 24 tables differ). Text is
+FONTTINY (`[0x89E]` @0x3ABF4, H = 6) through the centred verb `0x181F:0x100(str, x, w, y,
+colour)`: the three `@EXPLOITS` lines (`%STRING0` = the string at `0x5426 + [0x5398]·0x34`,
+`%NUMBER0` = the halved rating; @0x3AB9D..0x3ABB9) at x=0 w=0x140, y = 5, 5+(H+1), 5+2(H+1),
+colour 0xFC (@0x3ABC7..0x3AC0B); the `@SCORE` rows i = 0..panel (@0x3AC1A..0x3ACA8) at
+y = 0xC3 − (H+1)(i+1), each line split at its comma (`0x191F:0xFC4` = file 0x6FA3E; the second
+field left-trimmed by `0x1A1F:0xB44` = file 0xD972), field 1 centred in x=0xA0 w=0xA0
+(@0x3AC89/0x3AC8C), colour 0xFE, or 0xFC on the achieved row i == panel (@0x3AC3E..0x3AC4E);
+the caption = the last row's field 2 with `%STRING0` = `strrchr(name, ' ')` (`0xD1D:0xD1A` = file
+0x102EA, the pointer AT the last space — the surname keeps its leading space) or the whole name
+(@0x3ACB2..0x3ACE2), centred in x=0x22 w=0x8C at y=0x8E, colour 0xFC (@0x3ACF6..0x3AD0B);
+present; the plate's frame 1 anchored at its own descriptor at 100 % (@0x3AD2F..0x3AD4C; SCORE01
+(104,136) 140×97 → (34,40), SCORE02..24 (104,138) 142×99 → (33,40)); tune 0x24 (panel ≥ 23) /
+0x25 (panel > 6) / 0x21 via `0x181F:0x4C0` (@0x3AD51..0x3AD6D); staged present; key/click wait
+@0x3AD86; DAC restore @0x3AD96. The `@SCORE` row is therefore **deterministic** (the band), not
+random. `%%` in `@EXPLOITS` is one "%" (format verb `0x191F:0x910`, @0x6F0CE).
+
+**Trigger** (`func_03B2F8` @0x3B2F8, thunk `0x181F:0x574`): snapshot → `func_039EE2(0)` @0x3B340
+→ `func_03A9C0(1, &panel)` @0x3B350 — which first draws the **F10 body with its own key-wait**
+(`func_039EE2(1)`, present + `0x181F:0x3C0` @0x3A998..0x3A9B5) — → `func_03ADA6(name)` @0x3B364
+(HoF insert). `@SCORED` follows in the callers (@0x580A, @0x2FAC9).
+
+**Ports.** JS `scorePanel`/`drawScoreScreen` (`port/src/game.js`), C `score_panel`/`rm_draw_score`
+(`cport/core/colopy_rivals.c`, `cport/render/colopy_report_render.c`); oracle
+`tools/render_score_compare.py` (bands 0 and 23).
+
 ## 5. Declaration of Independence (cross-reference) — VICEROY.EXE
 
 - **Purpose:** the signing cinematic. Painter `func_03DA2A` (DECOIND.PIK signing scene +
