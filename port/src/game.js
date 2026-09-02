@@ -1259,7 +1259,7 @@ function drawCards(ctx) {
   // (`lcall 0x181f,0x3fe` @0x004CE5 on GAME.TXT @BUILDn, own directives
   // @width=310 @y=30) with the popup INK SLOTS [0x1F4A]=0x0E / [0x1F50]=0x36
   // (@0x004CD6/@0x004CDC -- palette indices under the LEVN palette, not a
-  // pen; the old "pen (14,54)" reading is corrected, RULINGS 2026-09-02c).
+  // pen; the old "pen (14,54)" reading is corrected, RULINGS 2026-09-02f).
   // The y=54 / pitch 9 here is the port's MEASURED stand-in for the popup
   // layout, kept until a DOS capture of a card exists to diff against (TBD).
   // No caption: the engine draws none (the cards advance on a timer).
@@ -10251,7 +10251,7 @@ function exitToDos() {
 // side set (no emitter found for them in the EXE). The seed's 0x0E marks
 // the SOUND switches (the shared-word reading), not tutorial steps.
 //
-// RE-READ 2026-09-02 (RULINGS 2026-09-02d): the GATE is the Tutorial-Hints
+// RE-READ 2026-09-02 (RULINGS 2026-09-02g): the GATE is the Tutorial-Hints
 // OPTION bit [0x5382]&0x80, tested at every emit site (@0x020F3A T2,
 // @0x021E63/@0x024AC6 the dispatcher's callers, @0x0286DA T16, @0x028CFD T7,
 // @0x02C67E T4, @0x02C74F T12, @0x02E9D5 T6, @0x035BDC T17, @0x036504 T5).

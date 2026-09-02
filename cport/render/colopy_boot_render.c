@@ -358,7 +358,7 @@ void rm_draw_cards(int card, int nation, int difficulty,
              * [0x1F4A]=0x0E / [0x1F50]=0x36 (@0x004CD6/@0x004CDC —
              * palette indices under the LEVN palette, NOT a pen; the
              * old "pen (14,54)" reading is corrected, RULINGS
-             * 2026-09-02c).  y=54 / pitch 9 / the shadow flag are the
+             * 2026-09-02f).  y=54 / pitch 9 / the shadow flag are the
              * port's MEASURED stand-ins for that layout, kept until a
              * DOS capture of a card exists to diff against (TBD). */
             center_shadow(&B_TINY, out, 160, y, blut(0x0E), 1);

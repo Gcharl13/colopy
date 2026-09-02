@@ -11067,7 +11067,7 @@ Lane", and its "Open work" listed "a single Prairie ring tile".
 pass (G12 — a sim-track lockstep change; the one RNG draw inside
 `func_064A10` `@0x64A16` must be accounted for).
 
-## 2026-09-02c — boot track: the New-Game cinematics re-read whole (B3.10)
+## 2026-09-02f — boot track: the New-Game cinematics re-read whole (B3.10)
 
 `func_004B72` @0x004B72 (card renderer), `func_004D1E` @0x004D1E (card
 sequencer), `func_075352` @0x075352 + `func_075594` @0x075594 (the King's
@@ -11123,7 +11123,7 @@ claims, each with the byte that overturns it:
 LEVN card); the `[0x1F64]` / `[0x1F56]&0x18` flag names (sites @0x06E55C,
 @0x004CA9, @0x07536B, @0x0734B5, `func_06F646`).
 
-## 2026-09-02d — boot track: the tutorial gate is the Tutorial-Hints option (B4.2)
+## 2026-09-02g — boot track: the tutorial gate is the Tutorial-Hints option (B4.2)
 
 Re-read for the C port of `tutOnce`: every `@TUTORIALn` emit site and its
 guards (`grep` of the nineteen DGROUP key pushes; `func_020EE0/020EFE`

@@ -75,7 +75,7 @@
 5. Runtime pointer tables `[0x838C]` (@HOMEPORT) / `[0x8394]`
    (@DIFFICULTY) loader — pins card-2/3 bindings A→B.
 
-## Amendment 2026-09-02 — §2 re-read whole (B3.10 close; RULINGS 2026-09-02c)
+## Amendment 2026-09-02 — §2 re-read whole (B3.10 close; RULINGS 2026-09-02f)
 
 `func_004B72` (0x004B72..0x004D1C) and `func_004D1E` (0x004D1E..0x004DF6) were
 read end to end, with the new-game driver `func_0755CC` @0x0755CC and the

@@ -2,7 +2,7 @@
  * game.js tutOnce): nineteen @TUTORIALn lessons, each fired once at its
  * own event site.
  *
- * BYTE MODEL (re-read 2026-09-02, RULINGS 2026-09-02d):
+ * BYTE MODEL (re-read 2026-09-02, RULINGS 2026-09-02g):
  *   - The gate is the Tutorial-Hints OPTION bit [0x5382]&0x80 — tested at
  *     every emit site (@0x020F3A T2, @0x021E63/@0x024AC6 the focus
  *     dispatcher's callers, @0x0286DA T16, @0x028CFD T7, @0x02C67E T4,

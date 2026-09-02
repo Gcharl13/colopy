@@ -140,7 +140,7 @@ input, computed by `func_06C850`/`func_06D316`), not a static rectangle. **B**
 3. ~~Sequential or event-gated?~~ **Resolved 2026-06-20 — event-driven & idempotent**
    (fire once per event when the step's bit is clear), not a sequential script (§3). **B.**
 
-## Amendment 2026-09-02 — the gate is the Tutorial-Hints option; the once-flag table completed (B4.2; RULINGS 2026-09-02d)
+## Amendment 2026-09-02 — the gate is the Tutorial-Hints option; the once-flag table completed (B4.2; RULINGS 2026-09-02g)
 
 - **Gate (B).** Every emit site tests the **game-options bit `[0x5382]&0x80`** (Tutorial
   Hints, `spec/ui/options_dialogs.md` §6): `@0x020F3A` (T2), `@0x021E63` and `@0x024AC6`
