@@ -189,7 +189,9 @@ PART_E_SHEETS = [f"CC-{i:02d}" for i in range(25)] + \
     [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
     [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"] + \
     [f"SCORE{i:02d}" for i in range(1, 25)] + \
-    ["KINGLOSE", "KINGWIN", "ENGLND2", "FRANCE2", "SPAIN2", "DUTCH2"]
+    ["KINGLOSE", "KINGWIN", "ENGLND2", "FRANCE2", "SPAIN2", "DUTCH2"] + \
+    ["CURSOR", "PARCH"] + \
+    ["MPSLOGO", "MPSNAME"]  # the MicroProse boot logo (OPENING.EXE @0x1700)
 PART_E_PIKS = ["CCBKGD", "DECOIND"]
 # ====================== Part E (screens track) -- END =======================
 

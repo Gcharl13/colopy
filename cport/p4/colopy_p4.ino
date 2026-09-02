@@ -668,6 +668,9 @@ static int have_pending = 0;
  * (game.js:12690), i.e. on ~333 ms / off ~200 ms */
 static int map_blink = 1;
 static int blink_now(void) { return (int)((millis() % 533u) < 333u); }
+/* the boot logo phase (SCR_MPSLOGO): its start and the last drawn tick */
+static unsigned long logo_t0 = 0;
+static int logo_tick = -1;
 
 static int ui_colony_cs_index(void) {
     int ord = -1;
@@ -946,6 +949,9 @@ static void draw_screen(void) {
         break;
     case SCR_ENDKING:
         rm_draw_king_plate(UI.king_plate == 1);
+        break;
+    case SCR_MPSLOGO:
+        rm_draw_mpslogo(logo_tick);
         break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
@@ -1637,17 +1643,33 @@ static int bt_ui_tap(int gx, int gy) {
 
 /* the software cursor: save the patch under it so a move costs a small
  * restore + redraw rather than a whole frame */
-static uint8_t ms_save[10 * 10];
-static int ms_shown = 0, ms_sx = 0, ms_sy = 0;
+/* the pointer image: CURSOR.SS (a mandatory boot asset, exit code 0x17
+ * on failure @0x076153), installed by func_00D9E0 @0x00D9E0 -- frame 1
+ * (disk 0) the arrow, frame 2 (disk 1) the click-and-hold scroll cursor
+ * the map-view pointer handler swaps in (func_024342: button held and
+ * now - press > 0x14 ticks of the 60.8766 Hz clock @0x243A3..0x243C3,
+ * restored @0x24338).  func_00D9E0 blits the 17x17 frame into a scratch
+ * filled with 0xFF, reads the hotspot off the frame's MARKER pixels --
+ * the last opaque row of column 16 and the last opaque column of row 16
+ * (@0xDA36..0xDA67; both frames carry one marker at (16,0) and (0,16),
+ * so the hotspot is (0,0)) -- and hands the 16x16 top-left to the mouse
+ * module (@0xDACE..0xDAF2).  The 0xFD-transparent pixels are the 0xFF
+ * ones the module keys out.  Drawn here over the frame buffer with a
+ * 16x16 save-under; a pak without CURSOR (--board teensy) falls back to
+ * the old 8-px cross. */
+#define CUR_W 16
+static uint8_t ms_save[CUR_W * CUR_W];
+static int ms_sx, ms_sy, ms_shown = 0;
+static unsigned long ms_press_ms = 0;
 static void cursor_hide(void) {
     if (!ms_shown) return;
-    for (int y = 0; y < 10; y++) {
+    for (int y = 0; y < CUR_W; y++) {
         int fy = ms_sy + y;
         if (fy < 0 || fy >= RD_GAME_H) continue;
-        for (int x = 0; x < 10; x++) {
+        for (int x = 0; x < CUR_W; x++) {
             int fx = ms_sx + x;
             if (fx < 0 || fx >= RD_W) continue;
-            RD.fb[fy * RD_W + fx] = ms_save[y * 10 + x];
+            RD.fb[fy * RD_W + fx] = ms_save[y * CUR_W + x];
         }
     }
     ms_shown = 0;
@@ -1655,18 +1677,38 @@ static void cursor_hide(void) {
 static void cursor_show(void) {
     ms_sx = ms_x;
     ms_sy = ms_y;
-    for (int y = 0; y < 10; y++) {
+    for (int y = 0; y < CUR_W; y++) {
         int fy = ms_sy + y;
-        for (int x = 0; x < 10; x++) {
+        for (int x = 0; x < CUR_W; x++) {
             int fx = ms_sx + x;
-            ms_save[y * 10 + x] = (fx >= 0 && fx < RD_W && fy >= 0 &&
-                                   fy < RD_GAME_H)
-                                      ? RD.fb[fy * RD_W + fx] : 0;
+            ms_save[y * CUR_W + x] = (fx >= 0 && fx < RD_W && fy >= 0 &&
+                                      fy < RD_GAME_H)
+                                         ? RD.fb[fy * RD_W + fx] : 0;
         }
     }
-    for (int i = 0; i < 8; i++) {          /* a simple arrow in 0x0F/0 */
-        if (ms_y + i < RD_GAME_H) RD.fb[(ms_y + i) * RD_W + ms_x] = 0x0F;
-        if (ms_x + i < RD_W) RD.fb[ms_y * RD_W + ms_x + i] = 0x0F;
+    /* frame 2 while the left button has been held > 20 ticks on the map */
+    int held = (ms_btn & 1) && UI.screen == SCR_MAP &&
+               (millis() - ms_press_ms) > (unsigned long)(20 * 1000 / 60.8766);
+    rd_entry cur;
+    rd_frame f;
+    int have = rd_pak_find(&RD.pak, "CURSOR.SS", &cur);
+    if (have) have = rd_sheet_frame(&cur, held ? 1 : 0, &f);
+    if (have) {
+        for (int y = 0; y < CUR_W && y < f.h; y++) {
+            int fy = ms_y + y;
+            if (fy < 0 || fy >= RD_GAME_H) continue;
+            for (int x = 0; x < CUR_W && x < f.w; x++) {
+                int fx = ms_x + x;
+                if (fx < 0 || fx >= RD_W) continue;
+                uint8_t v = f.pix[y * f.w + x];
+                if (v != RD_TRANSPARENT) RD.fb[fy * RD_W + fx] = v;
+            }
+        }
+    } else {
+        for (int i = 0; i < 8; i++) {      /* no CURSOR in this pak */
+            if (ms_y + i < RD_GAME_H) RD.fb[(ms_y + i) * RD_W + ms_x] = 0x0F;
+            if (ms_x + i < RD_W) RD.fb[ms_y * RD_W + ms_x + i] = 0x0F;
+        }
     }
     ms_shown = 1;
 }
@@ -1684,6 +1726,7 @@ static void bt_pump(void) {
     if (ms_btn != last_btn) {
         int pressed = ms_btn & ~last_btn;
         last_btn = ms_btn;
+        if (pressed & 0x01) ms_press_ms = millis();   /* the press latch */
         if (pressed & 0x01) {            /* left button = a tap */
             cursor_hide();
             if (bt_mode) bt_ui_tap(ms_x, ms_y);
@@ -1959,6 +2002,16 @@ static void boot_title(void) {
                                         * BIOS clock; the P4 has a TRNG */
     ui_init();                   /* SCR_TITLE */
     hof_load_sd();               /* the Hall of Fame table (HOF.DAT) */
+    /* the MicroProse logo phase (OPENING.EXE's first) before the title,
+     * when the pak carries it (not on a --board teensy pak) */
+    {
+        rd_entry e;
+        if (rd_pak_find(&RD.pak, "MPSLOGO.SS", &e)) {
+            UI.screen = SCR_MPSLOGO;
+            logo_t0 = millis();
+            logo_tick = -1;
+        }
+    }
     draw_screen();
     Serial.println("title up (touch; or l <sav> + g for a direct load)");
 }
@@ -2068,6 +2121,19 @@ void loop() {
         /* animation: redraw the map when the unit blink flips; re-flush
          * (LUT only, no redraw) when the water cycle steps a phase */
         int bl = blink_now();
+        /* the boot logo pacer: one step per 6 ticks of the 60.8766 Hz
+         * clock (OPENING.EXE @0x1916), the phase ending past tick 228 */
+        if (UI.screen == SCR_MPSLOGO) {
+            long want = (long)((millis() - logo_t0) *
+                               (60.8766 / (1000.0 * RM_LOGO_STEP_TICKS)));
+            if (want > RM_LOGO_END_TICK) {
+                UI.screen = SCR_TITLE;
+                draw_screen();
+            } else if ((int)want != logo_tick) {
+                logo_tick = (int)want;
+                draw_screen();
+            }
+        }
         /* the Declaration signature: one stroke frame per 60.8766 Hz
          * tick from the moment the page opened (func_03DA2A's per-frame
          * wait on the [0x92E8] counter, @0x3DD51..0x3DDC3); a tap jumps

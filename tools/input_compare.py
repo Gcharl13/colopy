@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCR_NAMES = ["title", "difficulty", "nation", "name", "briefing", "hof", "map",
              "report", "colony", "europe", "woodcut", "village", "king",
              "cards", "pedia", "options", "trade", "congress", "declaration",
-             "score", "endking"]
+             "score", "endking", "mpslogo"]
 # the projection's kind fields: colony popup `cp`, Europe menu `em`,
 # numeric dialog `dg` -- the same vocabularies both engines project
 CP_NAMES = {1: "popup", 2: "build", 3: "occupation", 4: "unitopts", 5: "shipopts"}

@@ -135,7 +135,7 @@ INPUT = """([save, events]) => {
                 hof: 5, map: 6, report: 7, colony: 8, europe: 9, woodcut: 10,
                 village: 11, king: 12, cards: 13, pedia: 14, options: 15,
                 trade: 16, congress: 17, declaration: 18, score: 19,
-                endking: 20 };
+                endking: 20, mpslogo: 21 };
   if (save) {
     importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
                               savnewcolony: 'savNewColony' }[save]]));
@@ -378,6 +378,16 @@ RENDERENDKING = """([save, win]) => {
   const cv = document.querySelector('canvas');
   const ctx = cv.getContext('2d');
   drawEndKing(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
+RENDERLOGO = """([tick]) => {
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.screen = 'mpslogo';
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawMpsLogo(ctx, tick);
   return cv.toDataURL('image/png');
 }"""
 
@@ -816,7 +826,7 @@ def main():
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
                     "renderboot", "rendercongress", "renderdeclaration",
-                    "renderscore", "renderendking", "input"):
+                    "renderscore", "renderendking", "renderlogo", "input"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -887,6 +897,11 @@ def main():
             return
         elif mode == "renderendking":
             out = page.evaluate(RENDERENDKING, [sys.argv[2], int(sys.argv[3])])
+            browser.close()
+            print(out)
+            return
+        elif mode == "renderlogo":
+            out = page.evaluate(RENDERLOGO, [int(sys.argv[2])])
             browser.close()
             print(out)
             return

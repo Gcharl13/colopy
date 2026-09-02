@@ -594,8 +594,15 @@ The verb behind every "N icons with a number on them" row on this screen. **Byte
     confirmed, the render-time index push is not.
 
 ### 3.7 Buildings loop — `func_02701C @0x02701C`
-- Scene backdrop: `0x181F:0xCE` glyph-row `(0xC7,7,…) @0x02703F`; `0x181F:0x4FC` strip blit
-  `(7,0x78,0xC7,8,0) @0x02705F`. **B**
+- Scene backdrop: `0x181F:0xCE` glyph-row `(0xC7,7,…) @0x02703F`; `0x181F:0x4FC` ~~strip blit~~
+  **tiled PARCH fill** `(7,0x78,0xC7,8,0) @0x02705F`. **B** — *amended 2026-09-02 (RULINGS
+  2026-09-02g)*: the pushes read right-to-left are `(surface, x=0, y=8, w=0xC7, h=0x78, colour 7)`;
+  `0x181F:0x4FC` = `func_0051D2`, the tiled-rect fill of the 32×24 PARCH tile surface `[0x82E]`
+  (boot @0x07621F..0x07624D; the solid colour 7 is only the no-tile fallback @0x522C) through
+  `0xBF5:0` = file 0xE350, which phases x by `x mod 32` and y by `y mod 24` against the screen
+  origin (@0xE371..0xE3A2; surface record `(h, w, ptr)`) and clips to the rect (@0xE3F7..0xE417).
+  So the whole **building field (0,8,199,120)** is parchment, tiles anchored at (0,0) — the first
+  visible tile row is PARCH rows 8..23. Both ports draw it so (`tileFill` / `tile_fill`).
 - **15-slot loop** `@0x027067..0x0270B1` (`cmp 0xF @0x02707B`): per slot, **position** from
   `bx = slot·4` → **x = `[bx+0x266]`**, **y = `[bx+0x268] + 8`** `@0x027087/0x02708B`; then
   `bx = slot` (stride 1) → **category = `[bx−0x729E]`** (= `[bx+0x8D62]`), **present-gate =

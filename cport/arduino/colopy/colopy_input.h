@@ -15,7 +15,8 @@ enum {
     SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA, SCR_OPTIONS, SCR_TRADE,
     /* the Part E plate pages (numbered after trade in BOTH harnesses'
      * screen maps: sim_trace.py SCR / input_compare.py SCR_NAMES) */
-    SCR_CONGRESS, SCR_DECLARATION, SCR_SCORE, SCR_ENDKING
+    SCR_CONGRESS, SCR_DECLARATION, SCR_SCORE, SCR_ENDKING,
+    SCR_MPSLOGO                  /* the boot logo (OPENING.EXE's phase) */
 };
 
 typedef struct {

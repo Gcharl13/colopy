@@ -73,6 +73,12 @@ PALETTE_CEILING = {
     # baked through KINGLSS1's merged table, which is the DAC
     "endking sav1653 1": 0,
     "endking sav1653 0": 0,
+    # the MicroProse boot logo (OPENING.EXE's phase): the first step, a
+    # mid-name step, and the clamped name; the sheets' own palette is the
+    # DAC on both sides (its 252..255 are black, not placeholders)
+    "logo 1": 0,
+    "logo 100": 0,
+    "logo 130": 0,
 }
 
 

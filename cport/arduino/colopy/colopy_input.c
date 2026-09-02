@@ -2101,6 +2101,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
     case SCR_ENDKING:
         score_dismiss();                 /* any key: the runner's wait */
         break;
+    case SCR_MPSLOGO:
+        UI.screen = SCR_TITLE;           /* any key ends the logo phase */
+        break;
     case SCR_MAP: {
         /* an open pulldown owns the keyboard (game.js:12545) */
         if (UI.open_menu >= 0) {
@@ -2771,6 +2774,9 @@ static void in_click_inner(int mx, int my, int right) {
     case SCR_SCORE:
     case SCR_ENDKING:
         score_dismiss();
+        break;
+    case SCR_MPSLOGO:
+        UI.screen = SCR_TITLE;
         break;
     case SCR_OPTIONS: {
         int r = rm_options_row_hit(UI.options_which, mx, my);

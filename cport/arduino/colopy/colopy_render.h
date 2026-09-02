@@ -141,6 +141,12 @@ void rm_draw_briefing(int nation, int page);
 void rm_draw_king(int nation);
 /* the war's end: func_075352(1,2,"KINGLOSE") (win) / (2,1,"KINGWIN") */
 void rm_draw_king_plate(int win);
+/* the MicroProse boot logo at pacer tick `tick` (OPENING.EXE _do_logo
+ * @0x1700): the phase steps once per RM_LOGO_STEP_TICKS ticks of the
+ * 60.8766 Hz clock and ends past RM_LOGO_END_TICK */
+void rm_draw_mpslogo(int tick);
+#define RM_LOGO_STEP_TICKS 6      /* OPENING DGROUP [0x50] */
+#define RM_LOGO_END_TICK 228      /* @0x196E: cmp [0xD2],0xE4 */
 void rm_draw_cards(int card, int nation, int difficulty,
                    const char *leader);
 void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */

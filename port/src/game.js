@@ -1696,6 +1696,54 @@ function drawDeclaration(ctx, step) {
   for (let i = 0; i < n; i++) sheetFrame(ctx, ev[i].sheet, ev[i].frame, ev[i].x, ev[i].y);
 }
 
+// ---- the MicroProse boot logo, OPENING.EXE `_do_logo` @0x1700 / pacer @0x1916 ----
+// VICEROY.EXE never references MPSLOGO/MPSNAME; OPENING.EXE loads both right
+// after #SOUND.COL (@0x1BEC/@0x1C06) and plays them as its first phase.  The
+// pacer (@0x1916..0x198A) steps once every [0x50] = 6 ticks of the 60.8766 Hz
+// clock [0x5CB6] (the INT 8 ISR's /2 /5 of 608.766 Hz @0x3E0D/@0x3E5D..0x3EA9;
+// timer_install @0x3FC5..0x3FD9): tick [0xD2]++ then `_do_logo`.  `_do_logo`
+// (@0x170D..0x1742, @0x1796..0x17AE) places a frame at top-left
+// (xa - (w>>1), ya - h + 0x17) from the record's own descriptor -- the logo
+// (all 16 frames (163,118) 155x119) at (86,22) -- draws the NAME frame [0xD6]
+// first (@0x1836) and the logo frame [0xD4] over it (@0x1850), presents, then
+// [0xD4]++ wrapping to 1 past nframes (@0x18F2..0x1903) and, in the name
+// phase, [0xD6]++ (@0x190F).  The name phase starts at tick 0x5C = 92
+// (@0x175C); its frame clamps at nframes = 29 (@0x176F..0x177C) and stays.
+// Both counters start at 1 (DGROUP 0xD4/0xD6 = 1), so the draw at tick t
+// shows logo disk frame (t-1) mod 16 and, for t >= 92, name disk frame
+// min(t-92, 28).  The phase ends past tick 0xE4 = 228 (@0x196E..0x1976);
+// a DAC reload from [0x4AE8] happens at tick 0xC4 = 196 (@0x194B..0x196B --
+// its source is TBD, the sheets' own palette is kept here); the backdrop
+// under the frames is TBD (black here); any key/click ends the phase
+// (func_001522, spec/ui/cinematics.md §9).  Step = 6/60.8766 s = 98.6 ms.
+const LOGO_STEP_MS = 6000 / 60.8766, LOGO_END_TICK = 228, LOGO_NAME_TICK = 92;
+function logoTop(sheet, idx) {
+  const f = DATA.sheets[sheet] && DATA.sheets[sheet].frames[idx];
+  return f ? [f.hx - (f.w >> 1), f.hy - f.h + 0x17] : null;
+}
+function drawMpsLogo(ctx, tick) {
+  if (tick === undefined) {
+    if (G.logoT0 === undefined) G.logoT0 = G.wallClock;
+    tick = Math.floor((G.wallClock - G.logoT0) / LOGO_STEP_MS);
+    if (tick > LOGO_END_TICK) { G.logoT0 = undefined; G.screen = 'title'; return; }
+  }
+  usePalette('MPSLOGO');
+  ctx.fillStyle = ink(0); ctx.fillRect(0, 0, W, H);
+  if (tick < 1) return;                       // nothing drawn before the first step
+  const nName = (DATA.sheets.MPSNAME || { frames: [] }).frames.length;
+  if (tick >= LOGO_NAME_TICK && nName) {
+    const k = Math.min(tick - LOGO_NAME_TICK, nName - 1);
+    const p = logoTop('MPSNAME', k);
+    if (p) sheetFrame(ctx, 'MPSNAME', k, p[0], p[1]);
+  }
+  const nLogo = (DATA.sheets.MPSLOGO || { frames: [] }).frames.length;
+  if (nLogo) {
+    const k = (tick - 1) % nLogo;
+    const p = logoTop('MPSLOGO', k);
+    if (p) sheetFrame(ctx, 'MPSLOGO', k, p[0], p[1]);
+  }
+}
+
 function wrapText(font, s, width) {
   const out = [];
   let line = '';
@@ -4827,13 +4875,17 @@ function drawColony(ctx) {
   for (let y = 0; y < H; y += th)
     for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
 
-  // Building field (0,8,199,120). The ground is not a flat fill: the capture
-  // shows a per-pixel speckle over the contiguous palette ramp 0x62/0x63/0x64,
-  // in roughly 30/52/17 proportion (0x63 base, 0x62 highlight, 0x64 shadow).
-  // The engine's noise source is unidentified, so this is a deterministic
-  // positional hash matched to those measured proportions -- an approximation
-  // of the texture, not a reproduction of the generator. Tracked as TBD.
-  groundSpeckle(ctx, 0, 8, 199, 120);
+  // Building field (0,8,199,120): the PARCH.SS parchment tile, 32x24, the
+  // ground the colony painter lays with the tiled-rect fill 0x181F:0x4FC =
+  // func_0051D2 @0x02705F (args x=0, y=8, w=0xC7, h=0x78, fallback colour 7;
+  // the tile surface [0x82E] = the 32x24 PARCH tile the boot loader builds
+  // @0x07621F..0x07624D, hard-loaded at boot).  The fill primitive
+  // 0xBF5:0 = file 0xE350 phases each axis by (origin mod tile) against the
+  // SCREEN origin -- x mod 32, y mod 24 (@0xE371..0xE3A2) -- and clips the
+  // tiles to the rect (@0xE3F7..0xE417), so the first tile row here starts
+  // at PARCH row 8.  The capture-measured speckle ramp 0x62/0x63/0x64 the
+  // port used to hash was this tile's own colours (98/99/100 + 106/107).
+  tileFill(ctx, 'PARCH', 0, 8, 199, 120);
   // Both painters blit at (plotX, plotY+8). An occupied plot draws EXE frame
   // def_id+1, an empty one its category's scenery frame, skipped when that
   // table byte is 0 (`func_026FF2 @0x26FF2`). Both are EXE-sheet indices and
@@ -5316,8 +5368,26 @@ function drawColonyPlaza(ctx, c) {
   sheetFrame(ctx, 'ICONS', SOL_CROWN, crownX, 132);
 }
 
+// The engine's tiled-rect fill (func_0051D2 / func_005234 -> 0xBF5:0 = file
+// 0xE350): frame 0 of a tile sheet over (x,y,w,h), each axis phased by the
+// rect origin modulo the tile size (@0xE371..0xE3A2) -- i.e. the tiling is
+// anchored at the screen origin -- and every tile clipped to the rect.
+function tileFill(ctx, sheet, x, y, w, h) {
+  const [tw, th] = frameSize(sheet, 0);
+  if (!tw || !th) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  for (let ty = y - (y % th); ty < y + h; ty += th)
+    for (let tx = x - (x % tw); tx < x + w; tx += tw)
+      sheetFrame(ctx, sheet, 0, tx, ty);
+  ctx.restore();
+}
 // Positional-hash speckle over a 3-entry palette ramp. Deterministic so the
-// screen does not shimmer between frames.
+// screen does not shimmer between frames.  (No longer the building-field
+// ground -- that is the PARCH tile, tileFill above -- kept for any other
+// caller.)
 function groundSpeckle(ctx, x, y, w, h, base) {
   const ramp = base || [0x63, 0x62, 0x64];
   ctx.fillStyle = ink(ramp[0]);
@@ -15251,6 +15321,9 @@ function onClick(mx, my) {
     case 'endking':
       plateDismiss();
       break;
+    case 'mpslogo':                 // any key/click ends the logo phase
+      G.logoT0 = undefined; G.screen = 'title';
+      break;
     case 'village': {
       const b = villageBox(), seed = b.y + 6 + b.textH + 3;
       for (let r = 0; r < b.rows.length; r++)
@@ -15641,6 +15714,7 @@ function onKey(e) {
     case 'declaration':
     case 'score':
     case 'endking':
+    case 'mpslogo':
       onClick(-1, -1);
       break;
     case 'options': {
@@ -15919,7 +15993,8 @@ function frameBody() {
      trade: drawTrade, options: drawOptions,
      congress: drawCongressPortraits,
      declaration: drawDeclaration,
-     score: drawScoreScreen, endking: drawEndKing }[G.screen] || drawMap)(ctx);
+     score: drawScoreScreen, endking: drawEndKing,
+     mpslogo: drawMpsLogo }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);
@@ -15948,6 +16023,8 @@ async function main() {
   screenCanvas.width = W; screenCanvas.height = H;
   ctx = screenCanvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
+  // The MicroProse logo phase (OPENING.EXE's first) before the title.
+  if (DATA.sheets.MPSLOGO && G.screen === 'title') G.screen = 'mpslogo';
   resize();
   window.addEventListener('resize', resize);
   window.addEventListener('keydown', guarded(onKey));

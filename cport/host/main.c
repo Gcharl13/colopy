@@ -715,6 +715,12 @@ int main(int argc, char **argv) {
                                        const char *out, int win);
         return render_endking_main(argv[2], argv[3], argv[4], atoi(argv[5]));
     }
+    /* --renderlogo PAK OUT.ppm TICK */
+    if (argc > 4 && strcmp(argv[1], "--renderlogo") == 0) {
+        extern int render_logo_main(const char *pak, const char *out,
+                                    int tick);
+        return render_logo_main(argv[2], argv[3], atoi(argv[4]));
+    }
     /* --renderwoodcut SAVE PAK OUT.ppm N */
     if (argc > 5 && strcmp(argv[1], "--renderwoodcut") == 0) {
         extern int render_woodcut_main(const char *save, const char *pak,

@@ -371,6 +371,19 @@ int render_endking_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* --renderlogo PAK OUT.ppm TICK: the MicroProse boot logo at a pacer
+ * tick (no sav). */
+int render_logo_main(const char *pak_path, const char *out_path, int tick) {
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_mpslogo(tick);
+    if (!write_frame(out_path)) return 1;
+    printf("render logo %d -> %s\n", tick, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
 int render_boot_main(const char *kind, const char *pak_path,
                      const char *out_path, int arg) {

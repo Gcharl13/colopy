@@ -510,6 +510,44 @@ void rm_draw_king_plate(int win) {
     else king_text(src, nation, 202, 90, 125);
 }
 
+/* ---- the MicroProse boot logo, OPENING.EXE _do_logo @0x1700 / pacer
+ * @0x1916 (VICEROY.EXE never references the sheets).  The pacer steps
+ * once per [0x50] = 6 ticks of the 60.8766 Hz clock [0x5CB6] (ISR /2 /5
+ * of 608.766 Hz @0x3E0D/@0x3E5D..0x3EA9; timer_install @0x3FC5..0x3FD9):
+ * tick [0xD2]++ then _do_logo, which places a frame at top-left
+ * (xa - (w>>1), ya - h + 0x17) from its own descriptor (@0x170D..0x1742
+ * / @0x1796..0x17AE) -- the logo, all 16 frames (163,118) 155x119, at
+ * (86,22) -- draws the NAME frame [0xD6] first (@0x1836) and the logo
+ * frame [0xD4] over it (@0x1850), then [0xD4]++ wrapping to 1 past
+ * nframes (@0x18F2..0x1903) and, in the name phase (tick >= 0x5C = 92
+ * @0x175C), [0xD6]++ (@0x190F) clamped at nframes = 29 (@0x176F..
+ * 0x177C).  Both counters start at 1 (DGROUP 0xD4/0xD6), so tick t shows
+ * logo disk frame (t-1) mod 16 and, for t >= 92, name disk frame
+ * min(t-92, 28).  The phase ends past tick 0xE4 = 228 (@0x196E..0x1976).
+ * TBD: the DAC reload from [0x4AE8] at tick 0xC4 = 196 (@0x194B..0x196B)
+ * -- the sheets' own palette is kept; the backdrop under the frames --
+ * black here.  Any key ends the phase (func_001522, cinematics.md §9). */
+static void logo_frame_at(const char *sheet, int idx) {
+    rd_entry e;
+    rd_frame f;
+    if (!rd_pak_find(&RD.pak, sheet, &e) || !rd_sheet_frame(&e, idx, &f))
+        return;
+    rd_blit(&e, idx, f.x - (f.w >> 1), f.y - f.h + 0x17);
+}
+void rm_draw_mpslogo(int tick) {
+    rd_use_palette("MPSLOGO.SS");
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    if (tick < 1) return;
+    rd_entry e;
+    if (tick >= 92 && rd_pak_find(&RD.pak, "MPSNAME.SS", &e) && e.frames) {
+        int k = tick - 92;
+        if (k > e.frames - 1) k = e.frames - 1;
+        logo_frame_at("MPSNAME.SS", k);
+    }
+    if (rd_pak_find(&RD.pak, "MPSLOGO.SS", &e) && e.frames)
+        logo_frame_at("MPSLOGO.SS", (tick - 1) % e.frames);
+}
+
 /* the Hall of Fame table (drawHof game.js:12358) — REBUILT from the
  * Phase-4 live capture (hof_01_table.png): three text lines per
  * record, title glyph-top y=3, record k at y=20+36k (+0/+11/+22),

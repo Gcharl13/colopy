@@ -317,6 +317,40 @@ random. `%%` in `@EXPLOITS` is one "%" (format verb `0x191F:0x910`, @0x6F0CE).
   `-(rec[+0x40]−rec[+0x3c])+1` @`0x10EB` (a `.SS` asset value, **A**, not in the table). Ship X/Y
   likewise reads PATH.DAT waypoints `_ship[]` @`0x4f0c` (func_001522 not involved; `_load_anims` @0xDD2). Residual: per-frame Y (sprite-bbox, **A**) + PATH.DAT waypoint stream (external).
 
+### 6a. Amendment 2026-09-02 — the MicroProse logo phase, byte-complete and ported (screens track)
+
+Re-read with capstone over `raw/COLONIZE/OPENING.EXE` (RULINGS 2026-09-02g), all **B**:
+
+- **Assets.** `MPSLOGO.SS` (16 frames, all (163,118) 155×119) and `MPSNAME.SS` (29 frames,
+  (161,93) 24×25 growing to (161,148) 302×25) are loaded right after `#SOUND.COL` (`lea bx,
+  [0x126]` @0x1BEC / `[0x12E]` @0x1C06, `lcall 0x3B1,0xA`; DGROUP base 0xBF10) into the handles
+  `[0xCA:0xCC]` / `[0xCE:0xD0]`. VICEROY.EXE never references either name. The two sheets share
+  one palette (its low-16 row authored, 252..255 black).
+- **Painter `_do_logo` @0x1700.** Record N at `handle + 12N` (+0x3A xa, +0x3C ya, +0x3E w,
+  +0x40 h): X = `−((w>>1) − xa)` (@0x1722..0x1734), Y = `−(h − ya) + 0x17` (@0x1737..0x1742) —
+  the logo at **(86,22)**; the name frame's rect by the same math (@0x1796..0x17AE). It restores
+  the saved backgrounds (X−8, 0x16, w+0x10, h+0x10 @0x17E7/@0x1816), blits the name frame
+  `[0xD6]` (@0x1836, only in the name phase) then the logo frame `[0xD4]` (@0x1850) onto the
+  surface `[0x3910]`, presents (@0x1872/@0x18ED), then `[0xD4]++` wrapping to 1 past nframes
+  (@0x18F2..0x1903) and, in the name phase, `[0xD6]++` (@0x190F). The name phase starts at tick
+  `[0xD2] ≥ 0x5C` = 92 (@0x175C); `[0xD6]` clamps at nframes = 29 (@0x176F..0x177C).
+- **Pacer @0x1916.** Steps when `clock − latch ≥ [0x50]` (= 6, DGROUP 0xBF60): `[0xD2]++`, call
+  `_do_logo`; `[0xD2] == [0x86]` (32) → `[0x84] = 0`; `[0xD2] == 0xC4` (196) → `[0x84] = 0` and a
+  DAC reload of 0x300 bytes from `[0x4AE8]` (`0x452:0xC46` @0x1966); `[0xD2] > 0xE4` (228) →
+  `[0x8A] = 0` (phase over); latch = clock. The clock `[0x4ADE:0x4AE0]` is read through
+  `[0x596:0x598]` = `0xB31:0x5CB6` (installer @0x3FD0..0x3FD9, PIT 0x7A8 @0x3FC5 = 608.766 Hz);
+  the ISR gates odd ticks (@0x3E0D) and a reload-5 counter (@0x3E5D/@0x3E73) before
+  `add [0x5CB6],1` @0x3EA9 → **60.8766 Hz**. Step = 98.6 ms; the name starts at ≈1.51 s and is
+  complete by tick 121 (≈1.99 s); the phase ends at ≈3.75 s. Both frame counters start at 1
+  (DGROUP 0xD4/0xD6 = 1), so tick t shows logo disk frame `(t−1) mod 16` and, for t ≥ 92, name
+  disk frame `min(t−92, 28)`.
+- **TBD.** The palette loaded at tick 196 (`[0x4AE8]`, filled @0x198C from `0x452:0xA94` —
+  source unread); the backdrop under the frames (the ports use black); the `[0x84]/[0x86]`
+  sound-related latches; the input verb that ends the phase early (§9 `func_001522`).
+- **Ports.** JS `drawMpsLogo` + the `mpslogo` screen before the title; C `rm_draw_mpslogo(tick)`
+  + `SCR_MPSLOGO` (the P4 boots into it when the pak carries the sheets); oracle
+  `tools/render_logo_compare.py` (ticks 1/100/130).
+
 ## 7. Closing cinematic (CLOS-BKG.PIK / CLOS-*.SS) — CLOSING.EXE — **B** (deep decode 2026-06-26)
 
 - **Purpose:** end credits / retirement celebration (Liberty Bell, fireworks). The "credits" are a

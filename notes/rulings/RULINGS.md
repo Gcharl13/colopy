@@ -11059,3 +11059,46 @@ separate one-frame sheets named by `strcat_itoa(N)` @0x753F3.
    out (rule-5 analogue).
 4. TBD, not guessed: the runner's text RGB (engine-resident); the identity
    of the `[bx-0x72BE]` string `@KINGWIN` prints (read as the country).
+
+## 2026-09-02g — screens track: the pointer, the parchment, the boot logo (E6/E7)
+
+**Conflicts**: `spec/ui/colony_screen.md` §3.7 called `0x181F:0x4FC
+@0x02705F` a "strip blit"; both ports painted the colony building field
+with a positional-hash speckle fitted to a capture; the P4 pointer was a
+hand-drawn cross; the cursor hotspot was TBD-7; the boot logo lived only in
+a research lead.
+
+**Bytes**: `func_0051D2` (`0x181F:0x4FC`) is the tiled fill of the PARCH
+tile surface `[0x82E]` (built at boot @0x07621F..0x07624D); its call
+@0x02705F passes x=0, y=8, w=0xC7, h=0x78, fallback colour 7 — the whole
+building field. The primitive `0xBF5:0` (file 0xE350) phases x by `x mod
+tile.w` and y by `y mod tile.h` against the screen origin (@0xE371..
+0xE3A2) and clips tiles to the rect (@0xE3F7..0xE417); the surface record
+is `(h, w, ptr)` — the allocator at file 0x787A2 stores `dx` at +0 and `ax`
+at +2, the boot call passing `ax=0x20, dx=0x18`. PARCH's five colours
+(98/99/100/106/107) equal WOODTILE's and are the 0x62/0x63/0x64 ramp the
+speckle imitated. `func_00D9E0` @0x00D9E0 reads the cursor hotspot off
+marker pixels in the frame's last column and row (@0xDA36..0xDA67); both
+CURSOR frames carry one marker at (16,0) and (0,16) → hotspot (0,0);
+frame 2 is selected by `func_024342` after a > 0x14-tick hold on the map
+(@0x243A3..0x243C3). OPENING.EXE's `_do_logo` @0x1700 and pacer @0x1916
+were re-read with capstone and agree with the lead; the clock is the ISR
+÷2 ÷5 counter `[0x5CB6]` (@0x3E0D/@0x3E5D/@0x3EA9, install @0x3FD0..0x3FD9).
+
+**Decisions**:
+1. The building field is the PARCH tile, phased to the screen origin, in
+   both engines; the hash speckle is retired from that role (its function
+   is kept for any other caller). The §3.7 "strip" wording is amended.
+2. The P4 pointer is CURSOR.SS frame 1 (arrow) / frame 2 (after a 20-tick
+   hold on the map), hotspot (0,0), 16×16 with the marker row/column
+   excluded; a pak without the sheet keeps the old cross. TBD-7 is closed.
+3. The boot logo is ported as a screen before the title (`mpslogo` /
+   `SCR_MPSLOGO`) at OPENING.EXE's cadence (6 ticks of 60.8766 Hz per step,
+   end past tick 228, name from tick 92). TBD, not guessed: the `[0x4AE8]`
+   DAC reload at tick 196, the backdrop under the frames, the sound
+   latches `[0x84]/[0x86]`, the exact input verb.
+4. `CUSTOMIZ.PIK` stays unshipped: its captions/font/sub-popups are unread
+   and its selections feed an unmodelled generator (REMAINING_WORK E8).
+5. The tracker row 8 "OPENBORD decor @0x075B8E/B0/D2" is struck: those
+   sites are `0x1A1F:0xDF8` rect fills and "OPENBORD" does not occur in
+   VICEROY.EXE; the PIK is OPENING.EXE's (@0x1D10).

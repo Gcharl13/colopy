@@ -398,6 +398,12 @@ static void draw_screen(void) {
     case SCR_ENDKING:
         rm_draw_king_plate(UI.king_plate == 1);
         break;
+    case SCR_MPSLOGO:                /* the Teensy boots straight into a
+                                      * loaded save ('g'); the phase is
+                                      * drawn at its first tick only if
+                                      * a shell ever enters it */
+        rm_draw_mpslogo(1);
+        break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);

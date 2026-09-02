@@ -206,7 +206,15 @@ SCORE_SS = [f"SCORE{i:02d}" for i in range(1, 25)]
 #                        KINGLSS1 with the *1 banner; N=2 defeat over
 #                        KINGLSS2 with the *2 banner)
 KING_SS = ["KINGLOSE", "KINGWIN", "ENGLND2", "FRANCE2", "SPAIN2", "DUTCH2"]
-PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS + SCORE_SS + KING_SS
+#   CURSOR (2 frames 17x17)   the mouse pointer, func_00D9E0 @0x00D9E0
+#   PARCH  (1 frame 32x24)    the colony building-field ground tile,
+#                             func_0051D2 @0x02705F
+#   MPSLOGO (16 frames) / MPSNAME (29 frames)   the MicroProse boot logo --
+#                             OPENING.EXE's _do_logo @0x1700 / pacer @0x1916
+#                             (VICEROY.EXE never references them); shown by
+#                             the ports before the title screen
+PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS + SCORE_SS + KING_SS + \
+    ["CURSOR", "PARCH", "MPSLOGO", "MPSNAME"]
 PART_E_PIK = ["CCBKGD", "DECOIND"]
 # Sheets whose pixels the running game resolves through a PIK's palette,
 # not their own embedded copy (the same VGA-is-global rule as

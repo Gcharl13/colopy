@@ -382,9 +382,9 @@ pack (67 sheet files packed + `PHYS0C` derived at runtime; 28 backgrounds).
 | Closing cinematic sheets | 7 | `CLOSING.EXE` — separate program (Part H) |
 | King / win / lose plates | 5 | ~~Endgame screens unimplemented~~ **KINGWIN + KINGLOSE SHIPPED 2026-09-02** (note E4); `KING2`, `WIN`, `WIN-FWRK` are **orphans** (no loader in any EXE) — never packed |
 | Second banner frames `*2` | 4 | ~~Only `*1` banners packed~~ **SHIPPED 2026-09-02** (note E5) |
-| MicroProse boot logo | 2 | Boot animation not implemented |
-| `CURSOR.SS`, `PARCH.SS` | 2 | **Why the BLE pointer is a hand-drawn arrow** |
-| Backgrounds | 7 | `CCBKGD CLOS-BKG CUSTOMIZ DECLARAT DECOIND OPENBORD OPENING` |
+| MicroProse boot logo | 2 | ~~Boot animation not implemented~~ **SHIPPED 2026-09-02** (note E6; OPENING.EXE's phase, played by the ports before the title) |
+| `CURSOR.SS`, `PARCH.SS` | 2 | ~~**Why the BLE pointer is a hand-drawn arrow**~~ **SHIPPED 2026-09-02** (note E7: the P4 pointer is CURSOR.SS; the colony building field is the PARCH tile in both engines) |
+| Backgrounds | 7 | `CCBKGD` **shipped (E1)**, `DECOIND` **shipped (E2)**; `DECLARAT` **orphan** (no loader in any EXE, never packed); `CUSTOMIZ` **TBD** (note E8); `OPENBORD`, `OPENING`, `CLOS-BKG` belong to OPENING.EXE / CLOSING.EXE (Part H) |
 
 **Correctly excluded, and staying excluded:** `BDARK.SS` (CLAUDE.md hard rule 5,
 enforced by an assert in `gen_sd_pack.py:187`) and `WDCUT06` / `WDCUT12` — both
@@ -526,6 +526,70 @@ renderers draw nothing for a missing entry — see `cport/MEMORY_BUDGET.md`.
   (139,132) 174×133 → (52,0), FRANCE2 (137,130) 176×131 → (49,0), SPAIN2
   (144,127) 170×128 → (59,0), DUTCH2 (140,130) 170×131 → (55,0). Packed and
   drawn by E4's page. E4+E5 pak delta **+164,131 B** (3,989,832 → 4,153,963).
+- **E6 — MicroProse boot logo `MPSLOGO.SS` (16) / `MPSNAME.SS` (29) (SHIPPED).**
+  VICEROY.EXE never references them (byte search); OPENING.EXE loads both after
+  `#SOUND.COL` (@0x1BEC/@0x1C06, DGROUP base 0xBF10) and plays them as its first
+  phase — re-read with capstone: `_do_logo` @0x1700 places a frame at
+  `(xa − (w>>1), ya − h + 0x17)` from the record's own descriptor (@0x170D..
+  0x1742 logo, @0x1796..0x17AE name) — the logo's 16 frames all (163,118) 155×119
+  → **(86,22)**; draws the name frame `[0xD6]` first (@0x1836) and the logo frame
+  `[0xD4]` over it (@0x1850); `[0xD4]++` wraps to 1 past nframes (@0x18F2..
+  0x1903); the name phase starts at tick `[0xD2] ≥ 0x5C` = 92 (@0x175C) and its
+  frame clamps at 29 (@0x176F..0x177C). The pacer @0x1916 steps once per
+  `[0x50]` = 6 ticks (DGROUP 0xBF60) of the 60.8766 Hz clock `[0x5CB6]` (ISR ÷2
+  @0x3E0D, ÷5 @0x3E5D/@0x3E73, `add [0x5CB6],1` @0x3EA9; `timer_install`
+  @0x3FC5..0x3FD9, PIT 0x7A8) and ends past tick 0xE4 = 228 (@0x196E). Both
+  counters start at 1 (DGROUP 0xD4/0xD6), so tick t shows logo disk frame
+  `(t−1) mod 16` and, for t ≥ 92, name disk frame `min(t−92, 28)`; step = 98.6
+  ms, phase 3.75 s. Ports: JS `drawMpsLogo` + the `mpslogo` screen before the
+  title (`main()`), any key/click → title; C `rm_draw_mpslogo(tick)` +
+  `SCR_MPSLOGO`, the P4 `boot_title` enters it when the pak carries the sheets
+  and its loop paces it (the Teensy boots straight into a save). Oracle
+  `tools/render_logo_compare.py` (ticks 1/100/130, 0/0). Pak delta **+415,378 B**
+  (4,156,941 → 4,572,319). **TBD**: the DAC reload from `[0x4AE8]` at tick 196
+  (@0x194B..0x196B — source unread; the sheets' own palette is kept); the
+  backdrop under the frames (black here); the `[0x84]/[0x86]` sound latches
+  (@0x193C..0x1959); the exact input verb (`func_001522`, cinematics.md §9).
+- **E7 — `CURSOR.SS` (2 frames 17×17) and `PARCH.SS` (32×24) (SHIPPED).**
+  Both are mandatory boot assets of VICEROY.EXE (exit codes 0x17 / 0x1D,
+  loader @0x076153 / @0x07621F). **Cursor**: `func_00D9E0` @0x00D9E0 blits the
+  frame into a 17×17 scratch filled with 0xFF (@0xD9E7..0xDA2C), reads the
+  hotspot off the frame's **marker pixels** — the last opaque row of column 16
+  and the last opaque column of row 16 (@0xDA36..0xDA67); both frames carry one
+  marker (value 9) at (16,0) and (0,16), so the **hotspot is (0,0)** — stores it
+  (`[0x262C]/[0x262E]` @0xDAB2..0xDAB7, `0xA58:0x1D9` @0xDAC6) and hands the
+  16×16 top-left to the mouse module (@0xDACE..0xDAF2). Frame 1 = the arrow;
+  frame 2 = the click-and-hold scroll cursor the map-view pointer handler
+  `func_024342` swaps in when the button is held and `now − press > 0x14` ticks
+  of the 60.8766 Hz clock (@0x243A3..0x243C3; press latch @0x2436E; restore
+  `push 1` @0x24338). Port: the P4 BLE pointer (`cursor_show`) draws the 16×16
+  frame with the 0xFD key and a 16×16 save-under, frame 2 after a 20-tick hold
+  on the map; a pak without CURSOR falls back to the old cross. **PARCH**: its
+  only consumer is the tiled-rect fill `func_0051D2` (`0x181F:0x4FC`) from the
+  colony painter @0x02705F with args **x=0, y=8, w=0xC7, h=0x78** (fallback
+  colour 7) — the whole **building field**, not a strip; the fill primitive
+  `0xBF5:0` = file 0xE350 phases each axis by the rect origin modulo the tile
+  (@0xE371..0xE3A2; the surface record is `(h, w, ptr)` — allocator file
+  0x787A2 stores `dx`=24 at +0, `ax`=32 at +2) against the screen origin and
+  clips to the rect (@0xE3F7..0xE417). Both ports replace the capture-fitted
+  hash speckle with the tile (`tileFill` / `tile_fill`); PARCH's five colours
+  are WOODTILE's, and were the 0x62/0x63/0x64 ramp the speckle imitated. The
+  colony oracle stays 0 structural / 141 accepted. Pak delta **+2,978 B**
+  (4,153,963 → 4,156,941).
+- **E8 — `CUSTOMIZ.PIK` (TBD, not shipped).** Consumer byte-cited:
+  `func_070060` @0x070060 (`0x1A1F:0xBE4`, `push 0x2022; lcall 0x181f,0x44e`
+  @0x70085/0x70088), entered from the boot-menu runner @0x075CCB on
+  `@BEGINMENU` row 3 "CUSTOMIZE New World"; grid helper `func_06FDF0` (x =
+  col·0x4C+0xA @0x6FDF3/0x6FDF7, y = row·0x3C+0x10 −1 when row>1 @0x6FDFF..
+  0x6FE12; cells 48×72). **Blocker**: the cell captions (LABELS index →
+  literal), the font, and the Diff/Power sub-popups `func_070302`/`func_070494`
+  are unread (tracker row 12), and its four `[0x1E7E]` selections feed a map
+  generator neither port models — a page with unread text is not built.
+- **Orphans, never packed**: `DECLARAT.PIK`, `KING2.SS`, `WIN.SS`, `WIN-FWRK.SS`
+  (no loader in any EXE), `BDARK.SS` (rule 5). **Part H**: `OPENBORD.PIK`
+  (OPENING.EXE `push 0x13e; lcall 0x1b4,8` @0x1D10 — the tracker's "OPENBORD
+  decor @0x075B8E/B0/D2" in VICEROY was a misread: those are `0x1A1F:0xDF8`
+  rect fills), `OPENING.PIK`, `CLOS-BKG.PIK` and the OPEN*/CLOS-* sheets.
 
 ---
 

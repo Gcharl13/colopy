@@ -45,7 +45,7 @@ by `tools/gen_arduino_p4_sketch.py`.
 | Internal SRAM | every static above (~219 KB BSS + 3 KB data), the loop task's stack, and the IDF/Arduino runtime's own allocations |
 | PSRAM (heap, `heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`) | `fbuf` 1,228,800 B (1024x600 RGB565), `pakbuf` 8,000,000 B cap, `savbuf` 80,000 B, `sidebuf` 8,192 B — plus the MIPI DPI driver's own frame buffer, allocated *before* the sketch runs |
 | Program flash | core code, `colopy_data`, `colopy_text` |
-| microSD | `COLOPY.PAK` (4,153,963 B with the Part E screens E1–E5, 2026-09-02; 3,149,165 B before them — the per-group deltas are in `docs/REMAINING_WORK.md` Part E), `COLAUDIO.PAK` when present, `.SAV` files + their `.CPX` sidecars — the only writable store |
+| microSD | `COLOPY.PAK` (4,572,319 B with the Part E screens E1–E7, 2026-09-02; 3,149,165 B before them — the per-group deltas are in `docs/REMAINING_WORK.md` Part E), `COLAUDIO.PAK` when present, `.SAV` files + their `.CPX` sidecars — the only writable store |
 
 **Tools ▸ PSRAM must be Enabled.** Without it the DPI driver cannot allocate
 its ~1.2 MB frame buffer and fails before any of the above is attempted:
