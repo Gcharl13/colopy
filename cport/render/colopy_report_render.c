@@ -377,9 +377,9 @@ static void draw_f7(void) {
         const UnitRecord *u = &CS.units[ui];
         if (dat_units[u->type].hull <= 0) continue;
         int y = F7_ROW0 + row * F7_PITCH;
-        rm_unit_panel(F7_PANEL_X, y, 0, u->type, u->flags,
+        rm_unit_panel(F7_PANEL_X, y, 0, u->type, rm_unit_flags_ui(ui),
                    u->orders, (int)dat_nations[cs_nation()].color,
-                   (int)dat_units[u->type].icon - 1);
+                   (int)dat_units[u->type].icon - 1, (int)cs_nation());
         rd_text(&R_TINY, dat_units[u->type].name, 26, y + 6,
                 rlut(REPORT_VALUE_INK));
         /* func_03954C cargo column: one crate per occupied HOLD, engine
@@ -432,7 +432,7 @@ static void draw_f7(void) {
         int y = F7_ROW0 + row * F7_PITCH;
         rm_unit_panel(F7_PANEL_X, y, 0, e->type, 0, 0,
                    (int)dat_nations[cs_nation()].color,
-                   (int)dat_units[e->type].icon - 1);
+                   (int)dat_units[e->type].icon - 1, (int)cs_nation());
         rd_text(&R_TINY, dat_units[e->type].name, 26, y + 6,
                 rlut(REPORT_VALUE_INK));
         r_center(dat_nations[cs_nation()].homeport, F7_CENTRE[2], y + 6,

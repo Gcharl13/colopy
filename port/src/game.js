@@ -1840,7 +1840,8 @@ function drawMap(ctx) {
       if (!isSeen(ru.x, ru.y)) continue;
       if (onAnyColony(ru.x, ru.y)) continue;
       unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
-                ru.flags || 0, ru.orders || 0, ownerColour(ru), unitIconOf(ru));
+                unitFlags(ru), ru.orders || 0, ownerColour(ru), unitIconOf(ru),
+                ownerPower(ru));
     }
   }
 
@@ -1852,7 +1853,7 @@ function drawMap(ctx) {
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     if (onAnyColony(ru.x, ru.y)) continue;
     unitPanel(tgt, ox + tx * TILE, oy + ty * TILE, 16, ru.type,
-              ru.flags || 0, ru.orders || 0, KING_COLOUR, unitIconOf(ru));
+              unitFlags(ru), ru.orders || 0, KING_COLOUR, unitIconOf(ru), 0x0F);
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -1940,7 +1941,17 @@ function panelClass(type, flags) {
     default:                                    return 0;
   }
 }
-function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame, mode = 0x64) {
+// owner = the power index (0..3 nations, 4..11 tribes, 0xF the Crown): the
+// letter ink rule @0x003D96-@0x003DD6 tests it, not the colour.
+const ownerPower = (u) => u.nation === -2 ? 0x0F
+  : u.nation >= 0 ? u.nation : ((u.tribe | 0) + 4);
+// The composite's +0x04 flags input with the LIVE damaged bit (0x80): the
+// port keeps damage in u.damaged (the importer maps the SAV bit there for
+// ships and artillery and the sim maintains it), so the byte handed to the
+// panel is rebuilt from it -- the same helper the C uses off CR.unit_damaged.
+const unitFlags = (u) => ((u.flags || 0) & 0x7F) | (u.damaged ? 0x80 : 0);
+function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame, owner,
+                   mode = 0x64) {
   if (mode !== 0x64) {
     // The mode dispatch @0x003B32-@0x003B44: mode - 0x19 == 0 -> the 0x19
     // path, - 0x19 again == 0 -> the 0x32 path, anything else -> a 2x2
@@ -1997,7 +2008,26 @@ function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame, mode = 0
   ctx.fillStyle = ink(colourIdx); ctx.fillRect(px + 1, py + 1, pw - 2, ph - 2);
   if (after) sheetSilhouette(ctx, 'ICONS', frame, sx, y, 0);
   sheetFrame(ctx, 'ICONS', frame, sx + 2, y);
-  FONT.tiny.draw(ctx, key, px + 2, py + 2, [ink(0), ink(0), ink(0)]);
+  // The LETTER INK (the tail @0x003D96-@0x003DD9, C4.27 2026-09-02):
+  // [bp-0x1f] starts as the owner colour byte [0x848+power] (@0x003A04) and
+  // becomes 0 (black) for every order EXCEPT Sentry (1) and Fortified (6)
+  // (@0x003D96-@0x003DA2); for those it is colour - 8 when the power is a
+  // nation (< 4, @0x003DAA-@0x003DB0) and 8 otherwise (@0x003DB6). A
+  // DAMAGED unit ([bp-0x18]: +0x04 bit 0x80 and type != 0x0B, @0x003A17-
+  // @0x003A30) overrides to 0xC for power 2, 0xF for the rest (@0x003DC4-
+  // @0x003DD6). The verb gets 0xC28:0xA(ax=0xFFFF, dx=bx=ink) then
+  // 0xC11:0xC at (px+2, py+2) (@0x003DDF-@0x003E08); FONTTINY's letters
+  // are level-1-only glyphs, so every painted level is the ink. The census
+  // EUROPE frame shows the three sentried riders' 'S' in index 5 = 13 - 8
+  // (the Dutch orange less 8); the port drew every letter black.
+  // NOT modelled ([bp-0x1e], @0x003924-@0x003955): a foreign ship's letter
+  // is its cargo COUNT as a digit, 'X' for a Frigate under [0x53a2] == 0,
+  // ink 0xF -- FLAGGED.
+  let li = 0;
+  if (orders === 1 || orders === 6) li = owner < 4 ? colourIdx - 8 : 8;
+  if ((flags & 0x80) && DATA.units.findIndex(r => r.name === type) !== 0x0B)
+    li = owner === 2 ? 0x0C : 0x0F;
+  FONT.tiny.draw(ctx, key, px + 2, py + 2, [ink(li), ink(li), ink(li)]);
 }
 function nationPlate(ctx, x, y, colourIdx, orders) {
   ctx.fillStyle = ink(0); ctx.fillRect(x, y, 8, 9);
@@ -2044,8 +2074,8 @@ function drawUnit(ctx, u, px, py) {
   // The map tile draws through the SHARED func_00386A composite: the
   // baseline's ships wear the class-1 plate at the sprite's top-RIGHT with
   // the silhouette layer, exactly like the sidebar and the dock.
-  unitPanel(ctx, px, py, 16, u.type, u.flags || 0, u.orders || 0,
-            ownerColour(u), unitIconOf(u));
+  unitPanel(ctx, px, py, 16, u.type, unitFlags(u), u.orders || 0,
+            ownerColour(u), unitIconOf(u), ownerPower(u));
 }
 
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
@@ -2389,8 +2419,8 @@ function drawSidebar(ctx) {
     // Anchor (242, 68) is the census sweep's unique minimum (9,332; every
     // neighbour >= 9,489). The old centred sprite + 8x9 plate was
     // capture-era guesswork.
-    unitPanel(ctx, 242, 68, 0, u.type, u.flags || 0, u.orders || 0,
-              ownerColour(u), unitIconOf(u));
+    unitPanel(ctx, 242, 68, 0, u.type, unitFlags(u), u.orders || 0,
+              ownerColour(u), unitIconOf(u), ownerPower(u));
     // The budget is in thirds; the HUD shows whole moves, with the odd third
     // spelled out so a road march reads correctly.
     const whole = Math.floor(u.movesLeft / MOVE_UNIT), frac = u.movesLeft % MOVE_UNIT;
@@ -5472,8 +5502,8 @@ function drawColonyDock(ctx, c) {
     // 0x0D..0x12 (@0x2801A-@0x2803D); a wagon stays at 147.
     const isShipType = Number((unit(u.type) || {}).hull) > 0;
     const y = COLONY_DOCK.shipY - (isShipType ? 1 + (k > 0 ? 1 : 0) : 0);
-    unitPanel(ctx, x, y, 16, u.type, u.flags || 0, u.orders || 0,
-              DATA.nations[G.nation].color, unitIconOf(u));
+    unitPanel(ctx, x, y, 16, u.type, unitFlags(u), u.orders || 0,
+              DATA.nations[G.nation].color, unitIconOf(u), G.nation);
     if (k === G.colonyShipSel)
       hollowRect(ctx, x - 1, COLONY_DOCK.shipY - 1, 18, 18, 0x0A);
     // The drop highlight while a goods payload is over the dock. The engine's
@@ -6028,13 +6058,13 @@ function drawEurope(ctx) {
   //   cursor: colour >= 0 and band < 3 (@0x03146D-@0x031477) -> hollow rect
   //     (x-1, y-1)-(x+w, y+h) via 0x181F:0xCE (@0x0314A1), endpoint-inclusive
   //     (RULINGS 2026-09-02c): w+2 by h+2.
-  const crossUnit = (type, frame, colourIdx, cargoGood, baseX, cap, arg,
-                     ord, cursorColour) => {
+  const crossUnit = (type, frame, colourIdx, orders, cargoGood, baseX, cap,
+                     arg, ord, cursorColour) => {
     const c = crossLayout(ord.n++, baseX, cap, arg);
     const row = DATA.units.findIndex(r => r.name === type);
     if (c.band < 2) {
-      unitPanel(ctx, c.x - (c.band === 1 ? 4 : 0), c.y, 0x10, type, 0, 0,
-                colourIdx, frame, 0x64 >> c.band);
+      unitPanel(ctx, c.x - (c.band === 1 ? 4 : 0), c.y, 0x10, type, 0, orders,
+                colourIdx, frame, G.nation, 0x64 >> c.band);
       if (row >= 0x0D && row <= 0x12 && c.band === 0 && arg < 2 &&
           cargoGood >= 0)
         sheetFrame(ctx, 'ICONS', 0x16 + cargoGood, c.x, c.y);
@@ -6064,13 +6094,24 @@ function drawEurope(ctx) {
     const colour = DATA.nations[G.nation].color;
     G.europe.filter(e => e.state === state).forEach(e => {
       const hold = e.hold || [];
-      crossUnit(e.type, e.icon, colour, hold.length ? hold[0].good : -1,
+      crossUnit(e.type, e.icon, colour, 0, hold.length ? hold[0].good : -1,
                 baseX, 0xD, 1, ord, -1);
       // A professioned entry is {name, type}: name is what the man IS, type
       // what he is EQUIPPED as; entryIcon routes through func_003710 (the
       // veteran art with the matching profession, else the plain variant).
+      // The plate LETTER is the rider's OWN order byte ([bx+0x314c]
+      // @0x003907 -> [0x54DE + order]): a unit aboard a ship is SENTRY (1)
+      // -- the fixture's three riders 85/86/87 carry +0x08 = 1 (the Galleon
+      // 0), 9 of the save's 10 ship-borne land units do, and a unit CREATED
+      // in Europe is born sentried (func_030C68: spawn_unit at the 0xEC+p
+      // sentinel, then `mov [bx+0x314c], 1` @0x030CFA). The dock->ship
+      // boarding write itself is unread (FLAGGED); the map's @UNITOPTIONS
+      // row folds "Sentry / Board ship" into order 1. The port's rider entry
+      // carries no order byte and no modelled path un-sentries a rider
+      // aboard, so the letter is 1 here. FLAGGED: a rider un-sentried in a
+      // harbour before sailing reads '-' there.
       (e.passengers || []).forEach(p =>
-        crossUnit(entryType(p), entryIcon(p), colour, -1, baseX, 0xD, 1,
+        crossUnit(entryType(p), entryIcon(p), colour, 1, -1, baseX, 0xD, 1,
                   ord, -1));
     });
   };
@@ -6170,8 +6211,8 @@ function drawEurope(ctx) {
   {
     const ord = { n: 0 };
     shipsInPort().forEach((e, k) =>
-      crossUnit(e.type, e.icon, DATA.nations[G.nation].color, -1, 0x92, 5, 2,
-                ord, k === G.euroShip ? 0x0A : -1));
+      crossUnit(e.type, e.icon, DATA.nations[G.nation].color, 0, -1, 0x92, 5,
+                2, ord, k === G.euroShip ? 0x0A : -1));
   }
 
   // The active ship's CARGO ROW -- six slots at x = 147 + 12k, y = 165. That
@@ -12364,8 +12405,8 @@ function drawNavalReport(ctx) {
     // CLASS: a Galleon or Frigate (class 1) wears it to the RIGHT of the hull,
     // a Merchantman or Caravel (class 3) to the LEFT. See unitPanel().
     if (cu) unitPanel(ctx, F7_PANEL_X, y, 0, s.u.type,
-                      s.u.flags || 0, s.u.orders || 0,
-                      DATA.nations[G.nation].color, cu.icon);
+                      unitFlags(s.u), s.u.orders || 0,
+                      DATA.nations[G.nation].color, cu.icon, G.nation);
     FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK));
     // Cargo column (func_03954C): one crate per occupied HOLD, engine frame =
     // (qty >= 0x64 ? 0x17 : 0x27) + good (@0x039605 full, @0x0395A8 partial;

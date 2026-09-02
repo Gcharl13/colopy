@@ -132,8 +132,14 @@ REPORTS = {
            "-1 -> +91 px, -2 -> +103 px). What is LEFT (~81 px beyond the "
            "pointer) is at glyph/edge scale, untriaged."),
     "EUROPE": ("EUROPE", ["--rendereurope", FIXTURE, str(PAK), "{out}", "0", "0", "-1", "0"],
-           "OPEN (0.5%, 339 px of which 82 is the pointer), down from 20.0%. "
-           "Fourteen fixes -- the latest (C4.10, 2026-09-02): the market "
+           "OPEN (0.2%, 120 px of which 82 is the pointer), down from 20.0%. "
+           "Sixteen fixes -- the latest (C4.11/C4.27, 2026-09-02): the "
+           "crossing column is laid out by running ordinal (func_031298/"
+           "func_031366) and every rider goes through the func_00386A "
+           "composite with its Sentry letter in colour-8 (@0x003DB0): the "
+           "crossing band is now 0 px, 339 -> 120. What remains besides the "
+           "pointer: the 'Exit' label (rows 179-186, x 306-317, 32 px) and "
+           "three recruit-bevel corners. Before that (C4.10): the market "
            "cursor is 20 wide, x0 = 19i .. x1 = 19i + 19 endpoint-inclusive "
            "(func_0310B4 @0x031241; column 19 is ink 14 on the DOS frame), "
            "379 -> 339; the icon row itself fits at shift 0 for all sixteen "

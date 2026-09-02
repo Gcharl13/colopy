@@ -10950,3 +10950,28 @@ argument is a running ordinal, and `func_031366` increments it per unit drawn.
 **Not decided**: chain interleaving of two ships on one sentinel tile and which of the
 0xE4/0xE8 (0xF0/0xF4) bases a ship occupies — save state the ports' crossing record does
 not carry; FLAGGED in the ledger row.
+
+## 2026-09-02e — render track: `es:[bx+0x3E]` is the per-frame width word; the Europe rider "sack" was the composite plate (C4.27)
+
+**Conflict**: ledger C4.27 and `render_primitives.md` §1b called `es:[bx+0x3E]`/`[bx+0x40]`
+"undecoded sheet-header fields" and kept a capture-pinned 7×9 "nation sack" at sprite
+`+5/+7` for Europe crossing riders because routing them through `func_00386A` had
+measured worse (326 → 361 px).
+
+**Bytes**: `bx = 12·frame + [0x83E]` @0x003AC2–@0x003ACE; `es:[bx+0x3E]` = record `+8`,
+`es:[bx+0x40]` = record `+0xA`; the `+8` word is the column bound of `func_00E76A`
+(@0x00E7D3) and `func_00F184` (@0x00F1ED) and the multiplicand of `func_00EC32`
+(@0x00EC4D). `func_031366` calls the composite with `W = 0x10` (@0x03139F) at the ordinal
+x (@0x0313B8); the earlier attempt passed `W = 0` and the ship's slot x.
+
+**Ruling**: (1) `es:[bx+0x3E]` is the PER-FRAME width = the ports' frame `w` (ANCHOR only
+on the unlocated table builder; two byte-verified consumers plus the pixel-exact market
+row stand behind it). (2) The Europe rider "sack" is the composite's plate; both ports
+draw riders through `rm_unit_panel_mode`/`unitPanel` with order 1 (the fixture's riders'
+`+0x08`), measured crossing band 219 → 0 px. `draw_sack`/`drawSack` remain only for the
+dock units, whose painter is unread. (3) The dock→ship boarding write of `+0x08` is
+unread; `func_030C68` @0x030CFA (a Europe-born unit is created sentried) and the fixture
+bytes are the evidence for riders = Sentry. (4) §1b's "letter in flat black" is corrected:
+the ink is `colour − 8` (nation) / 8 (other powers) for Sentry and Fortified, black
+otherwise, 0xC/0xF when damaged (@0x003D96–@0x003DD6); the composites now take the owner
+power in both engines.

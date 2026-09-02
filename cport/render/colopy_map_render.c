@@ -393,13 +393,20 @@ static int panel_class(int type, int flags148) {
     }
 }
 void rm_unit_panel(int x, int y, int W, int type, int flags148,
-                   int orders, int colour, int frame);
-void rm_unit_panel(int x, int y, int W, int type, int flags148,
-                   int orders, int colour, int frame) {
-    rm_unit_panel_mode(x, y, W, type, flags148, orders, colour, frame, 0x64);
+                   int orders, int colour, int frame, int owner) {
+    rm_unit_panel_mode(x, y, W, type, flags148, orders, colour, frame, owner,
+                       0x64);
+}
+int rm_owner_power_ui(int ui) {
+    if (CR.unit_is_ref[ui]) return 0x0F;
+    return CS.units[ui].owner_flags & 0x0F;
+}
+int rm_unit_flags_ui(int ui) {
+    return (CS.units[ui].flags & 0x7F) | (CR.unit_damaged[ui] ? 0x80 : 0);
 }
 void rm_unit_panel_mode(int x, int y, int W, int type, int flags148,
-                        int orders, int colour, int frame, int mode) {
+                        int orders, int colour, int frame, int owner,
+                        int mode) {
     if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
     if (mode != 0x64) {
         /* The mode dispatch @0x003B32-@0x003B44: `mode - 0x19 == 0` ->
@@ -466,8 +473,28 @@ void rm_unit_panel_mode(int x, int y, int W, int type, int flags148,
     rd_fill(px + 1, py + 1, pw - 2, ph - 2, (uint8_t)colour);
     if (after) rd_blit_silhouette(&RD.icons, frame, sx, y, 0);
     rd_blit(&RD.icons, frame, sx + 2, y);
-    const uint8_t black[4] = { 0xFF, 0, 0, 0 };
-    rd_text(&TINY, key, px + 2, py + 2, black);
+    /* The LETTER INK (the tail @0x003D96-@0x003DD9, C4.27 2026-09-02):
+     * [bp-0x1f] starts as the owner colour byte [0x848+power] (@0x003A04)
+     * and becomes 0 (black) for every order EXCEPT Sentry (1) and
+     * Fortified (6) (@0x003D96-@0x003DA2); for those it is colour - 8
+     * when the power is a nation (< 4, @0x003DAA-@0x003DB0) and 8
+     * otherwise (@0x003DB6).  A DAMAGED unit ([bp-0x18]: +0x04 bit 0x80
+     * and type != 0x0B, @0x003A17-@0x003A30) overrides to 0xC for power
+     * 2, 0xF for the rest (@0x003DC4-@0x003DD6).  The verb gets
+     * 0xC28:0xA(ax=0xFFFF, dx=bx=ink) then 0xC11:0xC at (px+2, py+2)
+     * (@0x003DDF-@0x003E08); FONTTINY's letters are level-1-only glyphs,
+     * so every painted level is the ink.  The census EUROPE frame shows
+     * the three sentried riders' 'S' in index 5 = 13 - 8 (the Dutch
+     * orange less 8); the ports drew every letter black.
+     * NOT modelled ([bp-0x1e], @0x003924-@0x003955): a foreign ship's
+     * letter is its cargo COUNT as a digit, 'X' for a Frigate under
+     * [0x53a2] == 0, ink 0xF -- FLAGGED. */
+    int ink = 0;
+    if (orders == 1 || orders == 6) ink = owner < 4 ? colour - 8 : 8;
+    if ((flags148 & 0x80) && type != 0x0B) ink = owner == 2 ? 0x0C : 0x0F;
+    const uint8_t letter[4] = { 0xFF, (uint8_t)ink, (uint8_t)ink,
+                                (uint8_t)ink };
+    rd_text(&TINY, key, px + 2, py + 2, letter);
 }
 
 /* nationPlate (game.js:1721): 8x9 black box, 6x7 colour fill, the
@@ -517,8 +544,9 @@ static void draw_unit_rm(const rm_view *vw, int ui, int px, int py) {
     /* the map tile draws through the SHARED func_00386A composite: the
      * baseline's ships wear the class-1 plate at the sprite's top-RIGHT
      * with the silhouette layer, exactly like the sidebar and the dock */
-    rm_unit_panel(px, py, 16, CS.units[ui].type, CS.units[ui].flags,
-               CS.units[ui].orders, rm_owner_colour_ui(ui), unit_icon(ui));
+    rm_unit_panel(px, py, 16, CS.units[ui].type, rm_unit_flags_ui(ui),
+               CS.units[ui].orders, rm_owner_colour_ui(ui), unit_icon(ui),
+               rm_owner_power_ui(ui));
 }
 
 /* ---- text helpers (FONT.tiny) ---- */
@@ -761,8 +789,9 @@ static void draw_sidebar(const rm_view *vw) {
          * (252..256, 69..75), which the panel model reproduces from an
          * anchor of (242, 68)).  The old centred-sprite + 8x9 plate at
          * (244,72) was capture-era guesswork. */
-        rm_unit_panel(242, 68, 0, u->type, u->flags, u->orders,
-                   rm_owner_colour_ui(ui), unit_icon(ui));
+        rm_unit_panel(242, 68, 0, u->type, rm_unit_flags_ui(ui), u->orders,
+                   rm_owner_colour_ui(ui), unit_icon(ui),
+                   rm_owner_power_ui(ui));
         int whole = u->moves_remaining / 3, frac = u->moves_remaining % 3;
         if (frac)
             snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);
@@ -944,9 +973,9 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
         if (!is_seen_rm(&vw, ux, uy)) continue;
         if (on_any_colony(ux, uy)) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        rm_unit_panel(px, py, 16, CS.units[ui].type, CS.units[ui].flags,
+        rm_unit_panel(px, py, 16, CS.units[ui].type, rm_unit_flags_ui(ui),
                    CS.units[ui].orders, rm_owner_colour_ui(ui),
-                   unit_icon(ui));
+                   unit_icon(ui), rm_owner_power_ui(ui));
     }
     /* rivals: colonies then units, per power */
     for (int rn = 0; rn < 4; rn++) {
@@ -986,8 +1015,8 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
             if (on_any_colony(ux, uy)) continue;
             int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
             rm_unit_panel(px, py, 16, CS.units[ui].type,
-                       CS.units[ui].flags, CS.units[ui].orders,
-                       (int)dat_nations[rn].color, unit_icon(ui));
+                       rm_unit_flags_ui(ui), CS.units[ui].orders,
+                       (int)dat_nations[rn].color, unit_icon(ui), rn);
         }
     }
     /* the King's REF */
@@ -998,8 +1027,8 @@ static void draw_map_native(int view_x, int view_y, int sel, int blink) {
         if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
         if (on_any_colony(ux, uy)) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        rm_unit_panel(px, py, 16, CS.units[ui].type, CS.units[ui].flags,
-                   CS.units[ui].orders, KING_COLOUR, unit_icon(ui));
+        rm_unit_panel(px, py, 16, CS.units[ui].type, rm_unit_flags_ui(ui),
+                   CS.units[ui].orders, KING_COLOUR, unit_icon(ui), 0x0F);
     }
     /* player units, selected last (stack top) */
     for (int pass = 0; pass < 2; pass++)

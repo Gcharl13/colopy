@@ -140,14 +140,15 @@ static cross_cell cross_layout(int n, int base_x, int cap, int arg) {
  *   cursor: when colour >= 0 and band < 3 (@0x03146D-@0x031477) a hollow
  *     rect (x-1, y-1)-(x+w, y+h) through 0x181F:0xCE (@0x0314A1),
  *     endpoint-inclusive (RULINGS 2026-09-02c): w+2 by h+2. */
-static void cross_unit(int type, int frame, int colour, int cargo_good,
-                       int base_x, int cap, int arg, int *ordinal,
-                       int cursor_colour) {
+static void cross_unit(int type, int frame, int colour, int orders,
+                       int cargo_good, int base_x, int cap, int arg,
+                       int *ordinal, int cursor_colour) {
     cross_cell c = cross_layout(*ordinal, base_x, cap, arg);
     (*ordinal)++;
     if (c.band < 2) {
         rm_unit_panel_mode(c.x - (c.band == 1 ? 4 : 0), c.y, 0x10, type, 0,
-                           0, colour, frame, 0x64 >> c.band);
+                           orders, colour, frame, (int)cs_nation(),
+                           0x64 >> c.band);
         if (type >= 0x0D && type <= 0x12 && c.band == 0 && arg < 2 &&
             cargo_good >= 0)
             rd_blit(&RD.icons, 0x16 + cargo_good, c.x, c.y);
@@ -184,12 +185,24 @@ static void draw_crossing_panel(int state, int base_x) {
     for (int q = 0; q < CR.n_europe; q++) {
         const euro_crossing *e = &CR.europe[q];
         if (e->state != state) continue;
-        cross_unit(e->type, (int)dat_units[e->type].icon - 1, colour,
+        cross_unit(e->type, (int)dat_units[e->type].icon - 1, colour, 0,
                    e->n_hold > 0 ? (int)e->hold[0].good : -1,
                    base_x, 0xD, 1, &ordinal, -1);
+        /* The plate LETTER is the rider's OWN order byte ([bx+0x314c]
+         * @0x003907 -> [0x54DE + order]): a unit aboard a ship is SENTRY
+         * (1) -- the fixture's three riders 85/86/87 carry +0x08 = 1
+         * (the Galleon 0), 9 of the save's 10 ship-borne land units do,
+         * and a unit CREATED in Europe is born sentried (func_030C68:
+         * spawn_unit at the 0xEC+p sentinel then `mov [bx+0x314c], 1`
+         * @0x030CFA).  The dock->ship boarding write itself is unread
+         * (FLAGGED); the map's @UNITOPTIONS row folds "Sentry / Board
+         * ship" into order 1.  The ports' rider mirror (immigrant)
+         * carries no order byte and no modelled path un-sentries a rider
+         * aboard, so the letter is 1 here.  FLAGGED: a rider un-sentried
+         * in a harbour before sailing would read '-' in the engine. */
         for (int i = 0; i < e->n_pass; i++)
             cross_unit(entry_unit_type(&e->pass[i]), entry_icon(&e->pass[i]),
-                       colour, -1, base_x, 0xD, 1, &ordinal, -1);
+                       colour, 1, -1, base_x, 0xD, 1, &ordinal, -1);
     }
 }
 
@@ -359,7 +372,7 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
         for (int s = 0; s < nport; s++)
             cross_unit(CR.europe[port[s]].type,
                        (int)dat_units[CR.europe[port[s]].type].icon - 1,
-                       colour, -1, 0x92, 5, 2, &ordinal,
+                       colour, 0, -1, 0x92, 5, 2, &ordinal,
                        s == euro_ship ? 0x0A : -1);
     }
 

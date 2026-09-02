@@ -185,3 +185,37 @@ pixels, the destination advancing only on kept ones (@0x00EB91); 0xFD is transpa
 (@0x00EB8A). So 50 % keeps even indices, 25 % keeps 1, 5, 9, …; nearest-neighbour
 decimation from a fixed phase. Ports: `rd_blit_scaled` / `sheetFrameScaled` (mirror flag not
 modelled — no caller passes one).
+
+
+## Amendment 2026-09-02 — `es:[bx+0x3E]` is the per-frame width; the Europe rider plate (C4.27)
+
+§1b's "two undecoded sheet-header fields": `bx = 12·frame + [0x83E]` (@0x003AC2–@0x003ACE),
+`SW = es:[bx+0x3E]` (@0x003ADC) and `SH = es:[bx+0x40]` (@0x003AF1) are the runtime sheet
+table's per-frame record fields `+8`/`+0xA` (record = `0x36 + 12·frame`: `{+0/+2 pixel far
+ptr, +4, +6, +8 w, +0xA h}`), the same `+8` word that bounds the column loop of every blit
+(`func_00E76A` @0x00E7D3, `func_00F184` @0x00F1ED) and is the multiplicand of the scaled
+geometry (`func_00EC32` @0x00EC4D). It is therefore the frame's encoded width — the ports'
+trimmed `f.w` — and the census market row (all sixteen icons at shift 0 with
+`x = 19i + 10 − (w>>1)`) confirms the equality frame by frame. ANCHOR remaining: the
+runtime-table builder (disk 16-byte descriptor → 12-byte record) is unlocated.
+
+Applied to a Europe crossing rider (class 0, `W = 0x10`, mode 0x64, letter = the unit's
+order byte via `[0x54DE + order]` @0x00391D, riders = 1 → 'S'): plate `LW = width('S') + 3`,
+`LH = 9`, at `(x_c + SW − max(0, LW+SW−16), y + SH − 9)`; silhouette at `x_c`; sprite at
+`x_c + 2`; letter at `(px + 2, py + 2)`.
+
+**Letter ink** (the tail @0x003D8F–@0x003E08, previously read as "flat black"): `[bp−0x1f]`
+starts as the owner colour byte `[0x848 + power]` (@0x003A04). Orders other than Sentry (1)
+and Fortified (6) → 0 (@0x003D96–@0x003DA2); Sentry/Fortified → `colour − 8` for a nation
+(`cmp [bp−0x28], 4; jge` / `sub [bp−0x1f], 8` @0x003DAA–@0x003DB0), 8 otherwise (@0x003DB6);
+`[bp−0x1e]` (foreign Frigate case) → 0xF (@0x003DBA–@0x003DC0); DAMAGED (`[bp−0x18]`: `+0x04`
+bit 0x80 and type ≠ 0xB, @0x003A17–@0x003A30) → 0xC for power 2, 0xF otherwise (@0x003DC4–
+@0x003DD6). Then `0xC28:0xA(ax = 0xFFFF, dx = bx = ink)` and `0xC11:0xC(str, x = px+2,
+y = py+2)` (@0x003DDF–@0x003E08). FONTTINY's order letters are level-1-only glyphs (ssdec:
+'S' = `0110/1000/0100/0010/1100`, '-' = row 2 `1110`), so the level→register mapping is
+unobservable here; the census EUROPE riders' 'S' is index 5 = 13 − 8. Foreign ships
+(@0x003924–@0x003955): the letter is the cargo count as a digit (`+0x0C + '0'`), 'X' for a
+Frigate under `[0x53a2] == 0` — not modelled by the ports, FLAGGED.
+
+Measured on the census EUROPE frame: crossing band 219 → 27 → 21 → 0 px (sack → plate →
+letter → ink).

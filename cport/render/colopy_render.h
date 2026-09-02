@@ -167,13 +167,20 @@ void rm_plaque(int x, int y, int w, int h);
 void rm_hollow_rect(int x, int y, int w, int h, uint8_t c);
 void rd_blit_silhouette(const rd_entry *sheet, int idx, int x, int y,
                         uint8_t colour);
+/* owner = the power index (0..3 nations, 4..11 tribes, 0xF the Crown):
+ * the letter ink rule @0x003D96-@0x003DD6 tests it, not the colour */
 void rm_unit_panel(int x, int y, int W, int type, int flags148,
-                   int orders, int colour, int frame);
+                   int orders, int colour, int frame, int owner);
+int  rm_owner_power_ui(int ui);
+/* the composite's +0x04 flags input with the LIVE damaged bit (0x80) from
+ * CR.unit_damaged, not the raw SAV byte (JS unitFlags) */
+int  rm_unit_flags_ui(int ui);
 /* the same composite with func_00386A's MODE argument: 0x64 = the full
  * panel above, 0x32 = half-size sprite + 2x2 owner box at (x+5, y+5),
  * 0x19 = the 2x2 box alone at (x+1, y+1) (@0x003B3A-@0x003B6C) */
 void rm_unit_panel_mode(int x, int y, int W, int type, int flags148,
-                        int orders, int colour, int frame, int mode);
+                        int orders, int colour, int frame, int owner,
+                        int mode);
 /* func_00E964 (0x181F:0x2F8): scaled blit, x = CENTRE, y = BOTTOM row */
 void rd_blit_scaled(const rd_entry *sheet, int idx, int x, int y, int pct);
 /* the dialog framework (drawEvent game.js:6403 / drawDialog 909):
