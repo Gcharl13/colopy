@@ -888,7 +888,8 @@ int main(int argc, char **argv) {
         CR.routes[1].stops[0] = 1;
         int carrier = -1;
         for (int i = 0; i < CS.n_units && carrier < 0; i++)
-            if (dat_units[CS.units[i].type].cargo > 0) carrier = i;
+            if (dat_units[CS.units[i].type].cargo > 0 &&
+                (CS.units[i].owner_flags & 0x0F) == cs_nation()) carrier = i;
         CHECK(carrier >= 0, "savtail: fixture has a carrier");
         CR.unit_route[carrier] = 1;
         CR.unit_stop_index[carrier] = 0;
@@ -920,6 +921,59 @@ int main(int argc, char **argv) {
               "savtail: route 1 restored");
         CHECK(CR.unit_route[carrier] == 1 && CS.units[carrier].orders == 2,
               "savtail: unit binding restored from +0x17 / orders 2");
+
+        /* C3.5: route deletion per func_0612E6 — the carrier on the
+         * deleted route is unbound (orders 2 -> 0), a carrier on a HIGHER
+         * route is renumbered; stop deletion per func_06046E and the
+         * colony removal fixup func_02EE34 (stop == idx deleted, > idx
+         * renumbered, tile bit 0x02 cleared).  On the 1653 game, which
+         * has several Dutch ships. */
+        colopy_load_sav(sav1653, sizeof(sav1653));
+        CR.n_routes = 3;
+        memcpy(CR.routes[0].name, "First", 6);
+        CR.routes[0].sea = 1; CR.routes[0].n_stops = 2;
+        CR.routes[0].stops[0] = 0; CR.routes[0].stops[1] = 999;
+        memcpy(CR.routes[1].name, "Second", 7);
+        CR.routes[1].sea = 1; CR.routes[1].n_stops = 2;
+        CR.routes[1].stops[0] = 3; CR.routes[1].stops[1] = 999;
+        memcpy(CR.routes[2].name, "Third", 6);
+        CR.routes[2].sea = 1; CR.routes[2].n_stops = 3;
+        CR.routes[2].stops[0] = 999; CR.routes[2].stops[1] = 2; CR.routes[2].stops[2] = 1;
+        int c1 = -1, c2 = -1;
+        for (int i = 0; i < CS.n_units; i++) {
+            if (!(dat_units[CS.units[i].type].cargo > 0) ||
+                (CS.units[i].owner_flags & 0x0F) != cs_nation()) continue;
+            if (c1 < 0) c1 = i; else if (c2 < 0) c2 = i;
+        }
+        CHECK(c1 >= 0 && c2 >= 0, "routes: the 1653 game has two Dutch carriers");
+        CR.unit_route[c1] = 1; CR.unit_stop_index[c1] = 1; CS.units[c1].orders = 2;
+        CR.unit_route[c2] = 2; CR.unit_stop_index[c2] = 2; CS.units[c2].orders = 2;
+        route_delete(1);
+        CHECK(CR.n_routes == 2 && strcmp(CR.routes[1].name, "Third") == 0,
+              "routes: delete spliced the table");
+        CHECK(CR.unit_route[c1] == -1 && CS.units[c1].orders == 0 &&
+              CR.unit_stop_index[c1] == 0,
+              "routes: the carrier on the deleted route is unbound");
+        CHECK(CR.unit_route[c2] == 1 && CS.units[c2].orders == 2,
+              "routes: a carrier on a higher route is renumbered");
+        /* remove player colony ordinal 1: route 1's stop [2] == 1 is
+         * deleted, stop [1] == 2 becomes 1; the carrier's stop index 2
+         * steps back to 1 */
+        int rec1 = -1, seen = -1;
+        for (int i = 0; i < CS.n_colonies && rec1 < 0; i++)
+            if ((CS.colonies[i].owner_power & 3) == cs_nation() && ++seen == 1) rec1 = i;
+        CHECK(rec1 >= 0, "routes: fixture has two player colonies");
+        {
+            int ti = CS.colonies[rec1].map_y * COLOPY_MAP_W + CS.colonies[rec1].map_x;
+            CS.improve[ti] |= 0x02;
+            colony_remove(rec1);
+            CHECK(!(CS.improve[ti] & 0x02), "routes: colony tile bit 0x02 cleared");
+        }
+        CHECK(CR.routes[1].n_stops == 2 && CR.routes[1].stops[0] == 999 &&
+              CR.routes[1].stops[1] == 1,
+              "routes: stop == idx deleted, stop > idx renumbered");
+        CHECK(CR.unit_stop_index[c2] == 1,
+              "routes: the carrier's stop nibble stepped back");
     }
 
     /* Phase 2 slice 1: colony production. The full oracle is

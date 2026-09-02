@@ -1425,6 +1425,7 @@ void rival_colony_pass(int power) {
 void colony_vanish_filter(void) {
     for (int ci = CS.n_colonies - 1; ci >= 0; ci--) {
         if (!CR.col[ci].vanished) continue;
+        colony_removed_fixup(ci);        /* func_02EE34: tile bit + routes */
         memmove(&CS.colonies[ci], &CS.colonies[ci + 1],
                 (size_t)(CS.n_colonies - ci - 1) * sizeof(ColonyRecord));
         memmove(&CR.col[ci], &CR.col[ci + 1],

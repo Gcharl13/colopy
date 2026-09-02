@@ -2584,7 +2584,7 @@ function abandonColony() {
       u.profession = p.profession || null;
       G.units.push(u);
     }
-    G.colonies.splice(G.colonies.indexOf(c), 1);
+    removePlayerColony(c);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
     G.screen = 'map';
     notice(`${c.name} is abandoned.`);
@@ -9551,6 +9551,7 @@ function newsTick() {
           showEvent('CAPTURED2', { STRING0: DATA.nations[winner.nation].country,
                                    STRING2: vc.name });
         } else {
+          colonyRemovedFixup(-1, vc.x, vc.y);   // func_02EE34: the tile bit
           showEvent('BURNED3', { STRING0: DATA.nations[winner.nation].country,
                                  STRING1: DATA.nations[victim.nation].adjective,
                                  STRING3: vc.name });
@@ -9642,7 +9643,7 @@ function rivalTurn() {
         // rival capture below is unconditional; the razing fallback runs
         // only at the port's own colony-array capacity, a capacity
         // artifact, not the engine's rule.
-        G.colonies.splice(G.colonies.indexOf(target), 1);
+        removePlayerColony(target);
         if (r.colonies.length < 48) {
           const plunder = Math.min(G.gold, 50 * Math.max(1, target.colonists.length));
           G.gold -= plunder;
@@ -9806,6 +9807,71 @@ function createRoute(stops, sea, name) {
               loads: stops.map(() => []), unloads: stops.map(() => []) };
   G.routes.push(r);
   return r;
+}
+// Route deletion -- the @TRADEDELETE handler func_0612E6 @0x0612E6..
+// @0x0613E7 (byte-read 2026-09-02, C3.5). For EVERY unit (no nation filter)
+// whose @UNIT cargo column is non-zero (@0x06136E): on the deleted route ->
+// route nibble 0, stop nibble 0 and, if the orders byte is 2, orders 0
+// (@0x061388..@0x0613AD); on a HIGHER route -> route - 1 (@0x06133C..
+// @0x061345). Then the records above shift down (rep movsw 0x25 words
+// @0x0613BC..@0x0613DA) and [0x53A0] decrements (@0x0613E7). The port's
+// "no route" is undefined (the engine's route nibble 0 + orders != 2).
+function deleteRoute(idx) {
+  for (const u of G.units) {
+    if (!(Number((unit(u.type) || {}).cargo) > 0)) continue;
+    if (u.route === undefined) continue;
+    if (u.route === idx) {
+      u.route = undefined; u.stopIndex = 0;
+      if (u.orders === ORDER_TRADE) u.orders = 0;
+    } else if (u.route > idx) u.route -= 1;
+  }
+  G.routes.splice(idx, 1);
+}
+// Stop deletion -- func_06046E @0x06046E..@0x06051A: the current nation's
+// carriers on the route with stop >= j step back one, floor 0
+// (@0x0604BF..@0x0604CD); the stops above j shift down 10 bytes each
+// (@0x0604EA..@0x060504); the count byte +0x21 decrements (@0x06051A).
+function deleteRouteStop(r, j) {
+  const rt = G.routes[r];
+  if (!rt || j < 0 || j >= rt.stops.length) return;
+  for (const u of G.units) {
+    if (!(Number((unit(u.type) || {}).cargo) > 0)) continue;
+    if (u.route !== r) continue;
+    if ((u.stopIndex || 0) >= j) u.stopIndex = Math.max(0, (u.stopIndex || 0) - 1);
+  }
+  rt.stops.splice(j, 1); rt.loads.splice(j, 1); rt.unloads.splice(j, 1);
+}
+// Colony removal -- func_02EE34 @0x02EE34..@0x02EF45 (byte-read 2026-09-02).
+// The engine: per-power colony count -1 (@0x02EE47, a census the port does
+// not keep -- it counts live), clears bit 0x02 of the IMPROVEMENT plane at
+// the tile (func_005D4E(x, y, 2, 0) @0x02EE4B..@0x02EE59; the plane is
+// [0x160] per func_005D1A @0x005D24), splices the record and decrements
+// [0x539E] (@0x02EE6A..@0x02EE8C -- the caller's splice here), then for
+// every route and every stop from the last down (@0x02EE90..@0x02EEF7):
+// Europe skipped, == idx -> the stop is deleted (func_06046E), > idx ->
+// renumbered. Finally every unit with owner < 4 has its +0x06 HOME-COLONY
+// index fixed (== idx -> 0xFF, > idx -> -1, @0x02EEFA..@0x02EF40) -- NOT
+// mirrored: the port keeps movesLeft in that byte (ledger C3.9). The port's
+// stops are G.colonies ordinals, so `ord` plays the record index; a rival
+// colony (ord -1) only clears its tile bit.
+function colonyRemovedFixup(ord, x, y) {
+  IMPROVE[y * MAP.w + x] &= ~0x02;
+  if (ord < 0) return;
+  for (let r = 0; r < G.routes.length; r++) {
+    const rt = G.routes[r];
+    for (let j = rt.stops.length - 1; j >= 0; j--) {
+      if (rt.stops[j] === STOP_EUROPE) continue;
+      if (rt.stops[j] === ord) deleteRouteStop(r, j);
+      else if (rt.stops[j] > ord) rt.stops[j] -= 1;
+    }
+  }
+}
+// One player colony leaves the list: the fixup, then the splice.
+function removePlayerColony(c) {
+  const ord = G.colonies.indexOf(c);
+  if (ord < 0) return;
+  colonyRemovedFixup(ord, c.x, c.y);
+  G.colonies.splice(ord, 1);
 }
 // One turn of automation for a unit running a route: sail or drive toward the
 // current stop, and on arrival unload, load, and advance the cursor.
@@ -9999,8 +10065,7 @@ function tradeCommit() {
       if (k !== 0) return;
       const idx = G.routes.indexOf(victim);
       if (idx < 0) return;
-      G.routes.splice(idx, 1);
-      for (const u of G.units) if (u.route === idx) { u.route = undefined; u.orders = 0; }
+      deleteRoute(idx);        // func_0612E6: unbind, renumber, splice
       G.msg = `Trade route "${victim.name}" deleted.`;
     });
     return;
@@ -11453,7 +11518,7 @@ function runWar() {
       // nothing does.
       const def = G.units.find(d => d.x === c.x && d.y === c.y && !d.ship);
       if (def) { resolveAttack(u, def); continue; }
-      G.colonies.splice(G.colonies.indexOf(c), 1);
+      removePlayerColony(c);
       G.razed += 1;
       // A burning colony plays WDCUT11 (byte-confirmed 2026-07-30: WDCUT11 is
       // fired @0x05DADC/@0x05DFCB in func_05CA7E; WDCUT12 has NO caller in the
@@ -13507,7 +13572,7 @@ function endTurn() {
   for (const c of G.colonies) colonyTurn(c);
   // @VANISH removals, deferred out of the loop above.
   if (G.colonies.some(c => c.vanished)) {
-    G.colonies = G.colonies.filter(c => !c.vanished);
+    for (const c of G.colonies.filter(c => c.vanished)) removePlayerColony(c);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
   }
   // Damaged-ship repair, map half -- BYTE_VERIFIED func_02F052
@@ -13548,7 +13613,7 @@ function endTurn() {
   nativeMoveAI();
   // Raid-razed colonies (@INDIANBURNCOLONY) leave here, like the starved.
   if (G.colonies.some(c => c.vanished)) {
-    G.colonies = G.colonies.filter(c => !c.vanished);
+    for (const c of G.colonies.filter(c => c.vanished)) removePlayerColony(c);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
   }
   rivalTurn();

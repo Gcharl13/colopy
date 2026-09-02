@@ -119,7 +119,19 @@ preset names. **B.**
 The editor subsystem lives at file `0x05FE60..0x0614xx` (overlay seg `0x191f/0x1a1f`),
 with a CS-near dispatch thunk table at `0x613F0..0x61453`:
 - **Create route** `func_0610B0` (`@TRADEMANY` guard → `@TRADETYPE` → `@TRADENAME(S)`).
-- **Delete route** `func_0612E6` (`@TRADEDELETE`).
+- **Delete route** `func_0612E6` (`@TRADEDELETE`). **Amendment 2026-09-02 (C3.5, byte-read
+  @0x0612E6..@0x0613E7):** after `@SUREDELETE` (`0x181f:0x3fe` @0x061322, row 1 = yes
+  @0x061327) the handler walks EVERY unit 0..`[0x539C]−1` (no nation filter) whose @UNIT
+  cargo column is non-zero (`byte [0x5237+type·14]` @0x06136E): route nibble == r → route
+  nibble 0 (`0x181f:0x862` @0x06138D), stop nibble 0 (`0x181f:0x8b2` @0x06139A), and orders
+  `+0x08 == 2` → 0 (@0x0613A6..@0x0613AD); route nibble > r → route − 1 (@0x06133C..
+  @0x061345). Then records r..count−2 ← +1 (`rep movsw cx=0x25`, seg 0x1B22 @0x0613BC..
+  @0x0613DA) and `dec [0x53A0]` (@0x0613E7). (`func_060522` is the dead twin; the earlier
+  "dec on delete @0x605ED / shift @0x605DB" cites are that twin's.) **Stop delete**
+  `func_06046E(j)` @0x06046E..@0x06051A: carriers of `[0x5394]` on route `[0xA15C]` with
+  stop ≥ j → max(0, stop−1) (@0x0604BF..@0x0604CD); stops j+1.. shift down 10 B
+  (@0x0604EA..@0x060504); `dec +0x21` (@0x06051A). Reached from the **colony-removal
+  fixup `func_02EE34`** (`colony.md` §7). Both ports implement all three.
 - **Destination picker** `func_060FBC` (`@TRADESELECT`) / add-edit stop `func_060C34`.
 - **Cargo load/unload selector** `func_060D8C` (`@CARGOLOAD`/`@CARGOUNLOAD`).
 - **Route-list renderer** `func_060026`.

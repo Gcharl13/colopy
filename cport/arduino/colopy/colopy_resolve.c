@@ -477,6 +477,7 @@ int naval_attack(int att_ui, int def_ui) {
 /* Immediate colony splice (rival capture, game.js:7578) — the vanish
  * filter's memmove pair, without the flag round trip. */
 void colony_remove(int ci) {
+    colony_removed_fixup(ci);            /* func_02EE34: tile bit + routes */
     memmove(&CS.colonies[ci], &CS.colonies[ci + 1],
             (size_t)(CS.n_colonies - ci - 1) * sizeof(ColonyRecord));
     memmove(&CR.col[ci], &CR.col[ci + 1],

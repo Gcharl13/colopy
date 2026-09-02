@@ -10983,3 +10983,51 @@ so that pin is now byte-backed. `DGROUP 0x190` in COLONY00.SAV is **19129**
 full word from the tail is a follow-up (new ledger row C3.8) because it may
 move the map-detail placement the render census baselines were frozen on;
 not changed here.
+
+## 2026-09-02d — C3.5: route deletion renumbers and unbinds per `func_0612E6`; colony removal is `func_02EE34`; `UnitRecord+0x06` is a home-settlement index, not moves
+
+**Conflict**: both ports deleted a trade route by clearing only the units whose
+route index equalled the deleted one and leaving every higher index unshifted
+(`cport/game/colopy_input.c` "mirrored verbatim, FLAGGED quirk"; JS
+`t.mode === 'delete'`). Neither port ran any fixup when a colony left the map.
+
+**Bytes** (research `core-c3` claims 9, 20, 21; re-read here):
+
+- `func_0612E6` @0x0612E6..@0x0613E7: `@SUREDELETE` row 1 = yes (@0x061327); for every
+  unit 0..`[0x539C]−1` whose @UNIT cargo column is non-zero (`byte [0x5237+type·14]`
+  @0x06136E): route nibble == r → route 0 / stop 0 / orders 2→0
+  (@0x061388..@0x0613AD); > r → route − 1 (@0x06133C..@0x061345); splice
+  (@0x0613BC..@0x0613DA); `dec [0x53A0]` (@0x0613E7).
+- `func_06046E(j)` @0x06046E..@0x06051A: the current nation's carriers on the
+  active route with stop ≥ j → max(0, stop−1); stops shift; `dec +0x21`.
+- `func_02EE34(idx)` @0x02EE34..@0x02EF45: per-power count −1; improvement-plane
+  bit 0x02 cleared at the tile (`func_005D4E(x,y,2,0)`, plane `[0x160]` per
+  `func_005D1A` @0x005D24); record splice; every route's stops from last to
+  first: Europe skipped, == idx → `func_06046E`, > idx → dec; every unit with
+  owner < 4: `+0x06` == idx → 0xFF, > idx → −1.
+
+**Decision**:
+
+1. Both engines implement the three routines (`deleteRoute` / `deleteRouteStop` /
+   `colonyRemovedFixup` + `removePlayerColony`; `route_delete` / `route_stop_delete`
+   / `colony_removed_fixup`, wired into `colony_remove` and `colony_vanish_filter`).
+   The ports' stops are player-colony ordinals, so the fixup runs in that space; a
+   rival record's removal only clears its tile bit. The ports' "no route" stays
+   `undefined`/−1 (the engine has no sentinel: route nibble 0 + orders ≠ 2).
+2. The per-power colony census `[0x9298]` is not kept by either port (founding does
+   not maintain it either) — unchanged, noted in `colony.md` §7.
+3. **Not mirrored, recorded as a finding (ledger C3.9):** `UnitRecord+0x06` (0x314A)
+   is the engine's **home-settlement index** — spawn inits 0xFF @0x006DBA then stores
+   the `0x5eb:0xa76(x,y)` lookup @0x006DDA; natives index a `NativeSettlement`
+   (`imul 0x12`, `or [bx+0x54EF],1` @0x006ED2..@0x006EDA); Europeans get the
+   colony-at lookups (`0x181f:0x7be` @0x04226C→@0x042274; `0x181f:0x614`
+   @0x023A4F→@0x023A5B). The port's `moves_remaining` "in thirds" occupies that
+   byte (`colopy_records.h +0x06`) and the C writes it into the `.SAV`; the engine's
+   move credits SPENT are `+0x05` (`unit.md` 0x3149). Re-homing the port's moves
+   store is a lockstep unit-model change and is left to its own row.
+4. **Also found (ledger C3.10):** founding sets improvement bit **0x10**
+   (`func_005D4E(x,y,0x10,1)` @0x0222E6..@0x0222F0, @0x0224E9..@0x0224F3), removal
+   clears **0x02**. Neither port sets 0x10 on founding (the JS importer's `& 0x4E`
+   drops it). Not changed here.
+5. Oracles: all green (the fixtures carry no routes; the host test `routes:` pins
+   delete/renumber/stop-step/tile-bit on the 1653 game).

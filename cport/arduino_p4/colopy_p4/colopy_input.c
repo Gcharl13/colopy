@@ -1713,16 +1713,9 @@ static void trade_commit(void) {
         UI.trade_mode = 0;
         ev_emit("SUREDELETE", 0, 0, CR.routes[row].name, 0);
         if (ask_choice() != 0) return;
-        for (int i = row; i + 1 < CR.n_routes; i++)
-            CR.routes[i] = CR.routes[i + 1];
-        CR.n_routes--;
-        /* the JS clears only route === idx — later indices stay
-         * UNSHIFTED (mirrored verbatim, FLAGGED quirk) */
-        for (int i = 0; i < CS.n_units; i++)
-            if (CR.unit_route[i] == row) {
-                CR.unit_route[i] = -1;
-                if (unit_on_map_player(i)) CS.units[i].orders = 0;
-            }
+        /* func_0612E6: unbind the carriers on it, renumber the ones
+         * above, splice (C3.5, 2026-09-02) */
+        route_delete(row);
         return;
     }
     /* assign (7878) */

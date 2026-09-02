@@ -774,3 +774,32 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   status builder `func_02883E` (code 0x14 from the occupation getter
   `func_009102`); `func_02D658` carries no siege gate.  The port's
   construction-halting siege is a port model, FLAGGED.
+
+
+## 7. Amendment 2026-09-02 — colony removal (`func_02EE34`) and what the ports mirror
+
+**BYTE_VERIFIED** `func_02EE34(idx)` @0x02EE34..@0x02EF45 (thunk `0x191F:0x254`; called
+from the colony-screen exit @0x02C94C when the "emptied" flag `[0x348]` is set, and from
+@0x022A00 / @0x05D655 / @0x05E6A1):
+
+1. `dec byte [0x9298 + owner]` — the per-power colony count (@0x02EE47). *(Ports: not
+   kept as a census; both count records live.)*
+2. `func_005D4E(x, y, 2, 0)` (@0x02EE4B..@0x02EE59) — clears bit **0x02** of the
+   **improvement plane** byte at the colony tile (`func_005D1A` resolves `[0x160]`
+   @0x005D24; clear path `not al; and es:[bx],al` @0x005D79..@0x005D7E). *(Ports: mirrored,
+   `colonyRemovedFixup` / `colony_removed_fixup`.)* Note founding sets bit **0x10**, not
+   0x02 (@0x0222F0 / @0x0224F3 push `1, 0x10`) — ledger C3.10.
+3. Records idx+1.. shift down (`rep movsw cx=0x65` @0x02EE6A..@0x02EE8C), `dec [0x539E]`.
+4. Trade-route fixup (@0x02EE90..@0x02EEF7): for every route (`select_route`
+   `0x191f:0x2ce`), for every stop from `+0x21 − 1` down to 0 (`set_stop_ptr`
+   `0x191f:0xa4a`): dest `0x3E7` (Europe) skipped; dest == idx → stop deleted
+   (`func_06046E` via `0x191f:0xa3c`); dest > idx → `dec`. *(Ports: mirrored in their
+   player-colony-ordinal stop space.)*
+5. Unit fixup (@0x02EEFA..@0x02EF40): every unit with owner nibble < 4 has `+0x06`
+   (0x314A) == idx → 0xFF, > idx → −1 (signed `jle` skips 0xFF). `+0x06` is the unit's
+   **home-settlement index** (spawn @0x006DBA/@0x006DDA; natives index a
+   `NativeSettlement` @0x006ED2..@0x006EDA). *(Ports: NOT mirrored — they store
+   moves-left in that byte; ledger C3.9.)*
+
+Nothing is done to units standing on the tile, to buildings or stock: the record is
+simply gone.

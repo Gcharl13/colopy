@@ -195,6 +195,9 @@ int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
  * runTradeRoute/advanceTradeRoutes (game.js:7715-7815) */
 void route_stop_name(int16_t stop, char *out, int cap);
 void route_auto_name(const int16_t *stops, int n, char *out, int cap);
+void route_delete(int r);              /* func_0612E6: unbind + renumber + splice */
+void route_stop_delete(int r, int j);  /* func_06046E */
+void colony_removed_fixup(int ci);     /* func_02EE34 minus the splice; call first */
 int  route_create(const int16_t *stops, int n, int sea, const char *name);
 void advance_trade_routes(void);
 void pick_music(void);           /* GAME "Pick Music" (func_023344) */
