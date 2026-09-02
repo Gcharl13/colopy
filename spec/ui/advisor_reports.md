@@ -429,3 +429,20 @@ RTLink-resolved (`REPORTS.md` §1):
 5. **Live per-row values** (counts, gold, prices, score figures, per-tribe relations)
    are game-state computed in each body's tally loop — structural, **R**, never a layout
    constant to fabricate.
+
+
+## Amendment 2026-09-02 — F9 MISSIONS cell (C4.17, byte-read; `func_03744A`)
+
+Sub-line cells at `x = 40 + 0x38·k` (`[bp-0x68] = [bp-0x5A] + 0x1E` @0x037613, `add
+[bp-0x68], 0x38` @0x037728/@0x037783/@0x0377D2), `y = [bp-0x6C]` = name row `+ (FONTTINY
+height + 2)` (@0x03761C–@0x037627). Cell 1 (x = 96) = MISSIONS: count loop @0x037638–@0x03766B
+over settlements `s < [0x539A]` with tribe byte `[0x54EE + 0x12·s] == [bp-2]`; each is
+selected (`0x181F:0xA4C` → `[0x8D4A]`), counted into `[bp-0x5E]` (settlements), and
+`([0x8D4A]+5 & 0xF) == [bp+6]` (viewing power) counts into `[bp-0x56]` (@0x037650–@0x03765E;
+`+5 = 0xFF` = no mission, initialiser @0x046E77, destroyed @0x045D2D, founded @0x048C5E with
+the Brebeuf bit `0x10` @0x048C81). Drawn iff `[bp-0x56] ≠ 0` (@0x03772C): `itoa`
+(`0x181F:0x182`), `0x181F:0x178` = `func_0028B0` = strcat of DGROUP `0x50` = `" "` (file
+`0x1D9F0`: `20 00`), then `[0x2DF0]` (@MISC 27 "Mission") when the count is 1 else `[0x2DF2]`
+(@MISC 28 "Missions") (@0x037752–@0x03776B), `0x181F:0x13C` with colour 0 (@0x03776E–
+@0x03777B). Ports: `draw_f9` / `drawIndianReport`; synthetic parity scene
+`render_report_compare.py sav1653 F9 mission`.

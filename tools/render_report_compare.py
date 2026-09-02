@@ -4,7 +4,12 @@ report (smoke --renderreport) vs the JS canvas (sim_trace renderreport),
 same fixture/pinned state, pixel-by-pixel over 320x200 with the shared
 palette-model acceptance rule and its frozen ceiling (render_common).
 
-Usage: python3 tools/render_report_compare.py [save] [FK]
+Usage: python3 tools/render_report_compare.py [save] [FK] [SYNTH]
+
+SYNTH is an optional synthetic-state tag both harnesses apply identically
+before drawing ("mission": a mission of the viewing power on every third
+settlement, so F9's MISSIONS cell -- which no fixture exercises -- is
+compared C vs JS; ledger C4.17).
 """
 import subprocess
 import sys
@@ -16,30 +21,34 @@ from render_common import (ROOT, SCRATCH, c_frame, diff_frames, js_frame,
 def main():
     save = sys.argv[1] if len(sys.argv) > 1 else "sav1653"
     fk = sys.argv[2] if len(sys.argv) > 2 else "F5"
+    synth = sys.argv[3] if len(sys.argv) > 3 else ""
+    tag = f"{fk}_{synth}" if synth else fk
 
     js_args = [sys.executable, ROOT / "tools/sim_trace.py", "renderreport",
-               save, fk]
+               save, fk] + ([synth] if synth else [])
     url = subprocess.run(js_args, capture_output=True, text=True,
                          check=True).stdout.strip()
     js = js_frame(url)
 
     subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host",
                    check=True)
-    out = SCRATCH / f"rep_{save}_{fk}.ppm"
+    out = SCRATCH / f"rep_{save}_{tag}.ppm"
     c_args = ["./smoke", "--renderreport", save,
-              str(ROOT / "cport/pak/COLOPY.PAK"), str(out), fk]
+              str(ROOT / "cport/pak/COLOPY.PAK"), str(out), fk] + \
+             ([synth] if synth else [])
     subprocess.run(c_args, cwd=ROOT / "cport/host", check=True,
                    capture_output=True)
     cim, idx = c_frame(out)
 
     structural, accepted, first = diff_frames(js, cim, idx, [master_palette()])
-    print("report %s %s: %d structural, %d palette-model accepted"
-          % (save, fk, structural, accepted))
+    scene = "report %s %s" % (save, fk) + (" " + synth if synth else "")
+    print("%s: %d structural, %d palette-model accepted"
+          % (scene, structural, accepted))
     if first:
         print("first structural diff at (%d,%d): JS %s C %s idx %d" % first)
-        js.save(SCRATCH / f"rep_{save}_{fk}_js.png")
-        cim.crop((0, 0, 320, 200)).save(SCRATCH / f"rep_{save}_{fk}_c.png")
-    sys.exit(verdict("report %s %s" % (save, fk), structural, accepted))
+        js.save(SCRATCH / f"rep_{save}_{tag}_js.png")
+        cim.crop((0, 0, 320, 200)).save(SCRATCH / f"rep_{save}_{tag}_c.png")
+    sys.exit(verdict(scene, structural, accepted))
 
 
 if __name__ == "__main__":

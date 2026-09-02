@@ -311,13 +311,21 @@ RENDERWOODCUT = """([save, n]) => {
 }"""
 
 
-RENDERREPORT = """([save, fk]) => {
+RENDERREPORT = """([save, fk, synth]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
   G.mapSeed = 1657;
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
+  // SYNTH 'mission': a mission of the viewing power on every third
+  // settlement (record index v % 3 == 0) -- the fixtures carry none and the
+  // F9 MISSIONS cell (C4.17) needs a scene the C and JS can be compared on;
+  // the C smoke --renderreport applies the same rule.
+  if (synth === 'mission')
+    G.villages.forEach((v, k) => {
+      if (k % 3 === 0) v.mission = { power: G.nation, expert: false };
+    });
   G.cyclePhase = 0; G.blink = true; G.drag = null;
   PTR.x = -100; PTR.y = -100;
   G.report = fk;
@@ -790,7 +798,8 @@ def main():
             print(out)
             return
         elif mode == "renderreport":
-            out = page.evaluate(RENDERREPORT, [sys.argv[2], sys.argv[3]])
+            out = page.evaluate(RENDERREPORT, [sys.argv[2], sys.argv[3],
+                                               sys.argv[4] if len(sys.argv) > 4 else ""])
             browser.close()
             print(out)
             return

@@ -10975,3 +10975,18 @@ bytes are the evidence for riders = Sentry. (4) §1b's "letter in flat black" is
 the ink is `colour − 8` (nation) / 8 (other powers) for Sentry and Fortified, black
 otherwise, 0xC/0xF when damaged (@0x003D96–@0x003DD6); the composites now take the owner
 power in both engines.
+
+## 2026-09-02f — render track: F9 MISSIONS strings resolved (C4.17)
+
+**Conflict**: ledger C4.17 and both ports said the singular/plural strings `[0x2DF0]`/
+`[0x2DF2]` were unresolved.
+
+**Bytes**: the LABELS `MISC` loader @0x075226–@0x07523C (`mov [bx+0x2dba], ax` for idx
+0..0xDC) makes slot O = `@MISC (O − 0x2DBA)/2` → 27 "Mission", 28 "Missions" (the same map
+gives `[0x2DF4]` = 29, the page title pushed @0x037463). Separator `0x181F:0x178` =
+`func_0028B0` → strcat(DGROUP `0x50` = " ").
+
+**Ruling**: implemented as `"<n> Mission"` / `"<n> Missions"` at (96, sub-line) in colour 0;
+because no fixture carries a mission of the viewing power, the synthetic `mission` scene
+(every settlement with record index `v % 3 == 0`) is a standing C-vs-JS oracle, frozen at
+0 palette acceptances.

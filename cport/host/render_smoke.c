@@ -207,9 +207,14 @@ int render_europe_main(const char *save, const char *pak_path,
     return 0;
 }
 
-/* --renderreport SAVE PAK OUT.ppm FK: an F2..F10 advisor report. */
+/* --renderreport SAVE PAK OUT.ppm FK [SYNTH]: an F2..F10 advisor report.
+ * SYNTH "mission" stamps a mission of the viewing power on every third
+ * settlement (record index v % 3 == 0) -- the fixtures carry none, and
+ * the F9 MISSIONS cell (C4.17) needs a scene on which C and JS can be
+ * compared; the JS RENDERREPORT harness applies the same rule. */
 int render_report_main(const char *save, const char *pak_path,
-                       const char *out_path, const char *fk) {
+                       const char *out_path, const char *fk,
+                       const char *synth) {
     if (strcmp(save, "sav1653") == 0)
         colopy_load_sav(sav1653, sizeof(sav1653));
     else if (strcmp(save, "savraleigh") == 0)
@@ -218,6 +223,9 @@ int render_report_main(const char *save, const char *pak_path,
         colopy_load_sav(savnewcolony, sizeof(savnewcolony));
     colopy_init(1653);
     units_session_seed();
+    if (synth && strcmp(synth, "mission") == 0)
+        for (int v = 0; v < CS.n_villages; v += 3)
+            CS.villages[v].mission = (uint8_t)cs_nation();
     long len;
     uint8_t *pak = slurp(pak_path, &len);
     if (!pak || !rd_init(pak, (uint32_t)len)) return 1;

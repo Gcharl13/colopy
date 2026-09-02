@@ -12595,11 +12595,27 @@ function drawIndianReport(ctx) {
     // original's row. The port used to read both from a RUNTIME v.stock map
     // the import leaves empty, so neither cell ever drew.
     //
-    // NOT implemented: the MISSIONS cell at x = 96 (@0x037650 counts this
-    // tribe's settlements whose mission byte's low nibble equals the power,
-    // drawn with the singular/plural pair [0x2DF0]/[0x2DF2]). The counting
-    // rule is byte-cited; the two STRINGS are not resolved and the census
-    // fixture has no Dutch mission to show them. Flagged, not invented.
+    // MISSIONS (C4.17, 2026-09-02): the second cell, x = 40 + 0x38 = 96
+    // (`add [bp-0x68], 0x38` @0x037728). Count (@0x037638-@0x03766B): for
+    // each settlement whose tribe byte +0x02 equals this row's (`cmp
+    // [bx+0x54ee], cl` @0x03763E) the engine selects it (0x181F:0xA4C) and,
+    // when `([0x8D4A]+5 & 0xF) == [bp+6]` -- the mission byte's low nibble
+    // equals the viewing power (@0x037650-@0x03765E; +5 is 0xFF with no
+    // mission, so a bare settlement never matches a power < 4) -- increments
+    // [bp-0x56]. Drawn only when non-zero (@0x03772C): itoa (0x181F:0x182) +
+    // the separator 0x181F:0x178 = func_0028B0 = strcat(buf, DGROUP:0x50) =
+    // " " + [0x2DF0] for a count of 1 (`cmp 1; jne` @0x037752) else [0x2DF2]
+    // (@0x037758/@0x03775E) -- the LABELS MISC loader @0x075226-@0x07523C
+    // stores slot O as @MISC (O - 0x2DBA)/2: 27 "Mission" / 28 "Missions" --
+    // through 0x181F:0x13C at ([bp-0x68], [bp-0x6C]) in colour 0 (@0x03776E-
+    // @0x03777B), the same y + 8 sub-line as the settlements cell. The
+    // census fixture carries no Dutch mission; the synthetic renderreport
+    // "mission" scene stamps some so the C and JS agree on it.
+    const missions = G.villages.filter(v => v.tribe === i && v.mission &&
+                                            v.mission.power === G.nation).length;
+    if (missions)
+      FONT.tiny.draw(ctx, `${missions} ${DATA.text.misc[missions === 1 ? 27 : 28]}`,
+                     F9_COUNT_X + 0x38, y + 8, black);
     const armed = G.natives.filter(u => u.tribe === i &&
       (u.type === (DATA.units[0x14] || {}).name ||
        u.type === (DATA.units[0x16] || {}).name)).length;
