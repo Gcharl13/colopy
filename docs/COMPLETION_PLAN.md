@@ -1,13 +1,55 @@
 # PLAN — Finish the Colonization port
 
-> **STATUS NOTE (2026-08-17).** This document records no phase as complete, and
-> that is now misleading: Phases 0-3 and the Phase-4 capture batch landed during
-> the 2026-08-07 n-z14 series. `docs/MESSAGE_STATUS.md` reports 0 missing / 0
-> unwired, and the popup audit carries RESOLVED->ruling pointers. What the plan
-> did NOT cover, and what remains, is in **`docs/REMAINING_WORK.md`** — chiefly
-> that wiring a message key is not the same as implementing the mechanic behind
-> it (14 HIGH and 74 MEDIUM popup rows are still mechanic-absent). Treat the
-> phase lists below as historical.
+> **STATUS (2026-09-02; replaces the 2026-08-17 note, which said only that
+> "this document records no phase as complete" — REMAINING_WORK.md G4).**
+> Every phase below is DONE, in the plan's own terms, and this note says
+> where in the tree each deliverable demonstrably is. It is a census of
+> presence, not a re-verification of trigger fidelity — that debt is Part C
+> of `docs/REMAINING_WORK.md`, which is also where everything the plan did
+> not cover lives. Treat the phase lists below as historical.
+>
+> - **Phase 0 — DONE.** `port/tools/render_diff.py` exists (item 1).
+>   `port/tools/message_status.py` reports the DONE-VIA-DATA and N/A
+>   categories item 2 asked for — `docs/MESSAGE_STATUS.md`: 411 DONE, 29
+>   DONE-VIA-DATA, 34 N/A, 1 BLOCKED, 0 MISSING, 0 UNWIRED (499 keys).
+>   `docs/POPUP_AUDIT_2026-08-08.md` carries 27 RESOLVED→ruling pointers
+>   (item 3).
+> - **Phase 1 — DONE.** MESSAGE_STATUS: 0 MISSING / 0 UNWIRED. Spot-checked
+>   as referenced in `port/src/game.js`: PRICEUP/PRICEDOWN, SCHOOL1, NOPLOW,
+>   SPOIL1, EFFICIENT, TIMECHANGE, LANDFALL2, CONTINENTAL, EVASIVE,
+>   LOSTCITY4, TRADENAME.
+> - **Phase 2 — DONE.** The bounded numeric dialog (HOWMUCH1–5, 14 sites in
+>   game.js; the C mirrors it as `UI.dlg`), BUYME0/1, KISSUP,
+>   NOMOREWAGONS/NOMOREWAREHOUSE, VANISH, REFIT, CUSTOM, INDIANBEGFOOD, the
+>   PISS0–5 bands (emitted as `` `PISS${cause}` ``), SOONRETIRING0/1, and the
+>   BUILD1–10 cards (MESSAGE_STATUS: DONE-VIA-DATA through `DATA.cards`,
+>   `drawCards`/`cardText`; game.js:1234).
+> - **Phase 3 — DONE.** Hall of Fame (game.js ~10263, HALLFAME.DAT record
+>   semantics; capture at `tools/dosbox_harness/shots/hof_01_table.png`);
+>   tutorial (`G.tutMask`, `tutOnce`, 21 sites; TUTORIAL1–19 DONE); King
+>   audience and war cycle (KINGRAISE, KINGWAR, MERCANTILISM, PURCHASETAX,
+>   SEIZURE/CONFISCATE); War of Independence completion (REBELUP, LOSING1,
+>   WARN1, INVASION, INTERVENE, WINNING, EUROPENOTAVAIL); meeting sub-branches
+>   (PIRACY, SNEAK, GIVECASH, APOSTATES, HEATHEN); the news bus (EUROPEWIN,
+>   BURNED2, CAPTURED2, LOOTFOREIGN, VIOLATE); depletion (DEPLETION,
+>   DEFOREST); native land claim (INDIANLAND/BOW/TREATY/BRIBE). One honest
+>   caveat: **KINGBLESS is an EXE orphan** — no emit site exists in VICEROY
+>   (MESSAGE_STATUS.md:483) — so it is N/A, not wired.
+> - **Phase 4 — DONE per `STATUS.md`** (2026-08-07 n–z14: the DOSBox capture
+>   batch — Hall of Fame, K-threshold = 10000, F4/F5/F6/F9, ICONS figures,
+>   Europe pitches — and the disassembly windows func_0734F8, func_020F50,
+>   func_073474, func_057F4E, func_049600's tail, func_05BE84, func_056C3E).
+>   The `[0x540A]` woodcut mask and the REF-strength import are in game.js.
+> - **Phase 5 — DONE per `STATUS.md` (2026-08-08)**: the ledger re-verified,
+>   `shots.py` + `render_diff.py` 15/15, and the scripted end-to-end playtest
+>   at `port/tools/test_flow.py:1652`. One caveat the tree cannot confirm: the
+>   `port-v1.0` tag STATUS cites exists neither in this clone nor on `origin`
+>   (`git ls-remote --tags` returns nothing), so the release step's artifact
+>   is unverified.
+>
+> Still true from the 2026-08-17 note: wiring a message key is not the same
+> as implementing the mechanic behind it; the popup audit's per-row trigger
+> and substitution verdicts remain unverified and are Part C work.
 
 
 ## Context

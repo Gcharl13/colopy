@@ -31,10 +31,12 @@ WHAT THIS CANNOT DO, stated so the tool is not itself over-read:
 Usage:
   python3 tools/stale_check.py          # verify every claim
   python3 tools/stale_check.py --list   # what is and is not covered
+  python3 tools/stale_check.py --scopes # every scoped comparison and its reason
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -170,6 +172,153 @@ def probe_unit_builds() -> bool:
     return "BUILD_UNIT_NAMES" in t and "0xC0" in t
 
 
+# ---- G2d: a scoped comparison must say WHY, and the why must still hold ----
+#
+# Every oracle scopes something -- a key family it drops, a field it skips, a
+# pixel class it accepts -- and each scope was justified by a bug on the day
+# it was written.  Nothing reminded anyone when the bug was fixed (`emrows`
+# stayed on the two harbour menus long after D12 closed).  So: a scope in an
+# oracle tool carries `SCOPE-REASON: <ledger row>` or `SCOPE-REASON:
+# structural` within the 12 lines above it, and the row it names must still
+# be OPEN in docs/REMAINING_WORK.md.  The day the row closes, this probe fires
+# and the scope comes out -- or gets a new reason.
+#
+# Detection is by SHAPE, and that is the honest limit: a novel scope shape
+# the list below does not know is invisible until someone writes "scoped" or
+# "intersection" in the comment beside it (the prose marker), which is the
+# habit G2d asks for anyway.
+ORACLE_TOOLS = ["tools/sim_compare.py", "tools/input_compare.py",
+                "tools/sim_trace.py", "tools/render_common.py",
+                "tools/screen_census.py"]
+SCOPE_SHAPES = [
+    ("family filter",    r'\bnot \w+\.startswith\("[A-Z]'),
+    ("acceptance class", r'\baccepted \+= 1'),
+    ("field skip",       r'^\s*if f in \('),
+    ("entry skip",       r'^\s*if nm == "'),
+    ("prose marker",     r'(?:#|//|/\*).*(?i:\b(?:scoped|intersection)\b)'),
+]
+REASON = re.compile(r"SCOPE-REASON:\s*([A-Z]\d+(?:\.\d+)?[a-z]?|structural)\b")
+
+
+def scopes() -> list[tuple[str, int, str, str | None]]:
+    """Every scoped comparison in the oracle tools: (file, line, shape,
+    reason) -- reason None when no SCOPE-REASON sits within 12 lines above."""
+    files = ORACLE_TOOLS + sorted(
+        str(p.relative_to(ROOT)) for p in (ROOT / "tools").glob("render_*_compare.py"))
+    out = []
+    for rel in files:
+        lines = (ROOT / rel).read_text().split("\n")
+        for i, line in enumerate(lines):
+            if "SCOPE-REASON:" in line:
+                continue
+            for shape, pat in SCOPE_SHAPES:
+                if re.search(pat, line):
+                    window = "\n".join(lines[max(0, i - 12):i + 1])
+                    m = REASON.findall(window)
+                    out.append((rel, i + 1, shape, m[-1] if m else None))
+                    break
+    return out
+
+
+def ledger_row(row_id: str) -> str | None:
+    """'open' | 'closed' | None (no such row) from docs/REMAINING_WORK.md: a
+    row is closed when its status cell says so or its item is struck."""
+    for line in (ROOT / "docs/REMAINING_WORK.md").read_text().splitlines():
+        if re.match(r"\|\s*%s\s*\|" % re.escape(row_id), line):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            item = cells[1] if len(cells) > 1 else ""
+            if cells[-1].lower().startswith("closed") or item.startswith("~~"):
+                return "closed"
+            return "open"
+    return None
+
+
+def probe_scope_reasons() -> bool:
+    """G2d: every scoped comparison in the oracle tools names an OPEN ledger
+    row (or `structural`, a permanent model difference) as its reason."""
+    ok = True
+    for rel, ln, shape, reason in scopes():
+        if reason is None:
+            print("  scope without a reason: %s:%d (%s) -- add "
+                  "`SCOPE-REASON: <ledger row>` or `SCOPE-REASON: structural`"
+                  % (rel, ln, shape), file=sys.stderr)
+            ok = False
+        elif reason != "structural" and ledger_row(reason) != "open":
+            print("  scope outlived its reason: %s:%d cites %s, which is %s -- "
+                  "remove the scope or re-justify it"
+                  % (rel, ln, reason, ledger_row(reason) or "not a ledger row"),
+                  file=sys.stderr)
+            ok = False
+    return ok
+
+
+# ---- 2026-09-02: the tooling rows (Part G), pinned the same way ------------
+
+def probe_render_ceilings() -> bool:
+    """G2: every render oracle bounds its palette-model acceptances through
+    render_common.verdict(), and the ceiling table covers all seven."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import render_common
+    tools = sorted((ROOT / "tools").glob("render_*_compare.py"))
+    return (len(tools) == 7 and len(render_common.PALETTE_CEILING) >= 7
+            and all("verdict(" in t.read_text() for t in tools))
+
+
+def probe_input_census() -> bool:
+    """G2a: input_compare declares a coverage expectation for every scenario
+    it runs, and checks it after the diff."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import input_compare
+    return (set(input_compare.EXPECT) >= {"boot", "bootclick", "sav1653",
+                                          "savraleigh", "savnewcolony"}
+            and "check_census(" in (ROOT / "tools/input_compare.py").read_text())
+
+
+def probe_census_selftest() -> bool:
+    """G2b: popup_census sees every reference shape it claims to -- its
+    planted-key self-test passes."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import popup_census
+    return popup_census.self_test(verbose=False) == 0
+
+
+def probe_ino_gate() -> bool:
+    """G2e: the .ino mock gate keeps both fixes -- prototypes hoisted ABOVE
+    the first definition, indented definitions matched -- and locates the
+    sketch relative to itself, never by an absolute path."""
+    g = (ROOT / "tools/ino_mock/gen_mock.py").read_text()
+    s = (ROOT / "tools/ino_mock/check.sh").read_text()
+    return (r'r"^[ \t]*(' in g and "lines[:first_line] + protos" in g
+            and "/home/" not in s)
+
+
+def probe_asset_gate() -> bool:
+    """G7: the asset gate decodes with the in-repo codec and cannot pass by
+    not looking -- no external tool, and a declared-failure table it checks
+    in both directions."""
+    t = (ROOT / "tools/extract_visuals.py").read_text()
+    return ("import ssdec" in t and "KNOWN_FAILURES" in t
+            and "import subprocess" not in t)
+
+
+def probe_vendor_pinned() -> bool:
+    """G9/G10: the vendored Elecrow tree is pinned -- PROVENANCE names the
+    upstream commit, and every vendored file still matches
+    cport/p4/VENDORED.sha256 (drift fails here, not on the next refresh)."""
+    prov = (ROOT / "cport/p4/PROVENANCE.md").read_text()
+    if not re.search(r"\b[0-9a-f]{40}\b", prov):
+        return False
+    base = ROOT / "cport/p4"
+    n = 0
+    for line in (base / "VENDORED.sha256").read_text().splitlines():
+        digest, name = line.split(None, 1)
+        p = base / name.lstrip("*")
+        if not p.is_file() or hashlib.sha256(p.read_bytes()).hexdigest() != digest:
+            return False
+        n += 1
+    return n > 400
+
+
 CLAIMS = [
     ("B4.2", "docs/REMAINING_WORK.md", "tutorial bindings not ported", probe_b42),
     ("B4.3", "docs/REMAINING_WORK.md", "village trade haggle ported (closed)", probe_b43),
@@ -193,12 +342,30 @@ CLAIMS = [
      "diplomacy executes past the first ask", probe_diplomacy_live),
     ("FIXED-2026-08-19b", "cport/core/colopy_turn.c",
      "colony unit builds complete", probe_unit_builds),
+    ("G2", "tools/render_common.py",
+     "render oracles ceiling their palette acceptances", probe_render_ceilings),
+    ("G2a", "tools/input_compare.py",
+     "every input scenario declares and checks its coverage", probe_input_census),
+    ("G2b", "tools/popup_census.py",
+     "the census sees every reference shape (self-test)", probe_census_selftest),
+    ("G2d", "tools/*_compare.py",
+     "every scoped comparison cites an OPEN row or `structural`",
+     probe_scope_reasons),
+    ("G2e", "tools/ino_mock/",
+     "the .ino gate hoists like the IDE and is self-locating", probe_ino_gate),
+    ("G7", "tools/extract_visuals.py",
+     "the asset gate decodes in-repo and cannot pass by not looking",
+     probe_asset_gate),
+    ("G9/G10", "cport/p4/PROVENANCE.md",
+     "the vendored Elecrow tree is pinned and unchanged", probe_vendor_pinned),
 ]
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--scopes", action="store_true",
+                    help="list every scoped comparison in the oracle tools")
     args = ap.parse_args()
 
     if args.list:
@@ -206,6 +373,18 @@ def main() -> int:
         for cid, where, what, fn in CLAIMS:
             print("  %-18s %-28s %s" % (cid, where, what))
         print("\nEverything else in the ledger is UNCHECKED prose.")
+        return 0
+
+    if args.scopes:
+        found = scopes()
+        print("scoped comparisons in the oracle tools (%d):" % len(found))
+        for rel, ln, shape, reason in found:
+            why = ("structural" if reason == "structural"
+                   else "%s (%s)" % (reason, ledger_row(reason) or "no such row")
+                   if reason else "NO REASON")
+            print("  %-32s %4d  %-17s %s" % (rel, ln, shape, why))
+        print("\nShapes not in SCOPE_SHAPES are unseen until someone writes "
+              "'scoped' beside them.")
         return 0
 
     bad = []

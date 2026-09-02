@@ -28,7 +28,7 @@ smoke: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 %.o: %.c $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@
-test: smoke budget records
+test: smoke budget records mock assets
 	./smoke
 # The depth gate.  Self-locating, so the cwd here does not matter.
 budget:
@@ -36,6 +36,15 @@ budget:
 # The staleness gate: the ledger's load-bearing claims, as probes that run.
 records:
 	python3 ../../tools/stale_check.py
+# The .ino gate: the IDE's prototype hoist emulated, then a syntax check
+# of the generated P4 sketch, BLE off and on (REMAINING_WORK.md G2e).
+mock:
+	sh ../../tools/ino_mock/check.sh
+# The asset gate (STATUS.md gate C): every shipped .SS/.PIK/.FF decodes
+# through the in-repo codec into extracted/ (git-ignored); declared
+# failures must keep failing.  Seconds, so it runs every time (G7).
+assets:
+	python3 ../../tools/extract_visuals.py --quiet
 # The ONLY gate that compares the port to the real game.  Deliberately NOT in
 # `test`: --capture drives DOSBox and takes minutes.  The diff pass is seconds
 # and runs off committed captures.
@@ -45,4 +54,4 @@ census-capture:
 	python3 ../../tools/screen_census.py --capture
 clean:
 	rm -f smoke $(OBJ)
-.PHONY: test budget records census census-capture clean
+.PHONY: test budget records mock assets census census-capture clean

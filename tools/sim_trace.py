@@ -210,28 +210,23 @@ INPUT = """([save, events]) => {
       // green. Both now read @ARMOPTIONS / @EUROPESHIPOPTIONS, and this
       // field is what keeps them there.
       //
-      // Scoped to em 4/5 (ship, dockunit). The three SHOP menus carry their
-      // price as a separate right-aligned column here (census_euro_train
-      // shows it right-aligned) while the C bakes "(Cost: N)" into the row
-      // string, because the board's row painter has no second column. Same
-      // information, different layout — a real board divergence this field
-      // surfaced on the day it was added, logged in docs/REMAINING_WORK.md
-      // rather than papered over by widening the comparison to swallow it.
-      // Every euro menu now, not just the two harbour ones. The scoping was
-      // D12's fault: the shop menus carried their price as a separate
-      // right-aligned column here and the C baked it into the row string,
-      // so the strings could never match. With the price split out into
-      // `emnotes` on both sides the labels agree and all five are compared.
+      // Every euro menu is compared, not just the two harbour ones. On the
+      // day this field was written it covered only em 4/5 (ship, dockunit)
+      // because of D12: the three SHOP menus carried their price as a
+      // separate right-aligned column here (census_euro_train shows it) while
+      // the C baked "(Cost: N)" into the row string, so those strings could
+      // never match. D12 is fixed -- the price is split out into `emnotes`
+      // on both sides -- and the narrowing went with its cause (G2d).
       emrows: G.euroMenu ? euroMenuRows().map(r => r.label) : [],
       emnotes: G.euroMenu ? euroMenuRows().map(r =>
         r.cost === undefined || r.hideCost ? ''
           : `${(DATA.text.misc || [])[13] || '(Cost:'} ${r.cost}${(DATA.text.misc || [])[14] || ')'}`) : [],
       // How many times each prompt has been asked. input_compare compares
-      // this on the INTERSECTION only: a key just one engine asks is B4.6
-      // (this one reaches the European meeting flow and the C does not) and
-      // is reported, not failed. A key BOTH ask a different number of times
-      // means the two are answering the same question differently, which is
-      // the drift that made the BUY button look like two bugs (G2c).
+      // this whole-value, key by key: a key only one engine asks is a
+      // lockstep gap (the one-engine allowance that stood on B4.6 went
+      // with B4.6, 2026-09-02), and a key BOTH ask a different number of
+      // times means the two are answering the same question differently,
+      // which is the drift that made the BUY button look like two bugs (G2c).
       // the Combat Analysis latch: a modal the next key dismisses (a latch
       // only one engine holds swallows a key the other acts on)
       cb: G.combat ? 1 : 0,
