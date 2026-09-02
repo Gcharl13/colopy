@@ -50,7 +50,7 @@ landfall + the woodcut plates + the staying village screen + the
 row bound (ORDERS delegating to the key handlers, the @SAILPORT/
 @TRAVELPLACE Go To picker, DECLARE INDEPENDENCE, Retire, Exit to DOS,
 Save/Load through the shell SD pickers); the Hall of Fame written at
-retirement and persisted as HOF.DAT.
+retirement and persisted as HALLFAME.DAT — the DOS game's own file and layout (5 × 42-byte records, `func_03ADA6`), so a board and a DOS install share one table (C3.6, 2026-09-02).
 
 The Phase-9 follow-up list is now CLOSED except where noted.  Since
 shipped: the Colonizopedia browser and entry pages, the options

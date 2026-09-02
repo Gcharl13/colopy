@@ -191,6 +191,23 @@ asserts the 1653 game's figures field by field.
   `SAVE_FORMAT_CROSSREF` "reordered vs runtime" claim is **refuted**: within a PowerRecord,
   disk byte order = runtime byte order. (Symmetry is total: the serializer issues **43×**
   `fwrite` `0xD1D:0x60C`, the loader **43×** `fread` `0xD1D:0x528`, one per DGROUP block.) **B.**
+- **Slots and the option-driven autosave — Amendment 2026-09-02 (C3.6, BYTE_VERIFIED).**
+  Filename builder `func_072C78(buf, n)`: `strcpy("COLONY")` (0x20E2) @0x072C7B,
+  `0x181f:0xe9a(buf, n, width 2)` = `func_00C362` zero-padded @0x072C92, `strcat(".SAV")`
+  (0x20E9) @0x072C97 ⇒ `COLONY%02d.SAV`. Slot picker `func_072CC2(key, count)` (thunk
+  `0x1A1F:0xCE8`): rows 0..count−1 (@0x072ED5..@0x072EDC), a missing file shows `(EMPTY)`
+  (0x20EE @0x072F0C) with valid byte `[0xA60C+n]=0` @0x072F20. **SAVE dialog `func_072F7A`
+  calls it with `(SAVEGAME, 8)` @0x072F7E — eight manual slots 00..07; LOAD dialog
+  `func_073158` with `(LOADGAME, 0xA)` @0x073161 — ten rows 00..09**, an invalid row refused
+  @0x073190. The Game-Options **Autosave** bit `[0x5383]&4` (@0x0058D7 and @0x005A29, gate
+  `[0x829]==0` unread) calls `func_005642` @0x005642..@0x005667, which pushes **8** when
+  `year%10==0 && [0x538C]==0 && turn>2` (the decade boundary) **else 9** and saves through
+  `0x181f:0x5b6` (`func_072CA4`) — **one save per turn, slot 8 or 9, never both**. The slot
+  **10** save @0x005AF3 is gated on `[0x104]!=0` (set @0x02F55F beside `or [0x5382],8` and
+  @0x070D96, cleared @0x005826) — an event save, not the per-turn one — and slot **5**
+  @0x005BDB is the game-end save. So the old "slot 10 = the rolling autosave" gloss below
+  is corrected: the rolling autosave is slot 9 (8 on decades). What a present picker row
+  displays (`0x1a1f:0xd04` header reader) is TBD.
 - **HALLFAME.DAT format — BYTE_VERIFIED** (`func_03ADA6`, file `0x3ADA6`): the
   file is **5 records × 42 bytes (`0x2A`) = 210 bytes (`0xD2`)** — confirmed by the
   `fread` length `@0x3ADCF` (C runtime `fopen`/`fread`/`fclose` =

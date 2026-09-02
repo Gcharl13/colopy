@@ -502,7 +502,12 @@ static void game_key(const char *name, int alt, int shift) {
         return;
     }
     in_key(name, alt, shift);
-    if (UI.request) {                        /* Save/Load menu rows: on
+    if (UI.request == '8' || UI.request == '9') {
+        /* the per-turn autosave (func_005642, C3.6): slot 9, or 8 on a
+         * decade boundary — COLONY%02d.SAV like the DOS game */
+        cmd_save(UI.request == '8' ? "COLONY08.SAV" : "COLONY09.SAV");
+        UI.request = 0;
+    } else if (UI.request) {                 /* Save/Load menu rows: on
                                               * this shell the serial
                                               * commands own the disk */
         Serial.println(UI.request == 'S' ? "save: use `s <file>` over serial"

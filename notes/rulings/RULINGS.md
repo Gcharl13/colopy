@@ -11200,3 +11200,57 @@ the turn the moment no unit had moves.
 5. Oracles all green (the option is off in every fixture and script). A
    headless check of the JS: option off → auto-end; option on → held, then
    Space / Enter / click each end it.
+
+## 2026-09-02h — C3.6: DOS slots and HALLFAME.DAT are real (8 save rows, 10 load rows, autosave 9 / decade 8); the Part-C3 "deliberate non-fidelity" rows and A1/B4.7 as documented decisions
+
+**Conflict**: `docs/REMAINING_WORK.md` C3.6 called the board's ten fixed save
+slots and its `HOF.DAT` "port inventions (shell chrome)"; `spec/systems/save.md`
+glossed slot 10 as "the rolling autosave"; research claim 23 read the option
+autosave as "slot 9 every turn AND slot 8 on decades".
+
+**Bytes** (research claims 22–24 + the verifier's correction; re-read here):
+
+- `func_072C78(buf, n)`: `"COLONY"` (0x20E2) @0x072C7B, `0x181f:0xe9a(buf, n, 2)` =
+  `func_00C362` zero-padded width 2 @0x072C92, `".SAV"` (0x20E9) @0x072C97 ⇒
+  `COLONY%02d.SAV`.
+- Slot picker `func_072CC2(key, count)` (thunk `0x1A1F:0xCE8`): rows 0..count−1
+  (@0x072ED5..@0x072EDC), missing → `(EMPTY)` (0x20EE @0x072F0C), valid byte
+  `[0xA60C+n]` (@0x072D22 / @0x072F20). **SAVE `func_072F7A`: `(SAVEGAME, 8)`
+  @0x072F7E → 8 rows; LOAD `func_073158`: `(LOADGAME, 0xA)` @0x073161 → 10
+  rows**, an empty row refused @0x073190.
+- Autosave option `[0x5383]&4` (@0x0058D7, @0x005A29; `[0x829]==0` gate unread)
+  → `func_005642` @0x005642..@0x005667: `year % 10` (@0x005645..@0x00564D
+  `jne → push 9`), `[0x538C]==0` (@0x00564F `jne → push 9`), `turn > 2`
+  (@0x005655 `jle → push 9`), else `push 8`; one `0x181f:0x5b6` call. **One save
+  per turn: slot 8 on a decade boundary, otherwise slot 9 — either/or.** (Corrects
+  the report's "9 every turn and 8 on decades".) Slot 10 @0x005AF3 is `[0x104]`-
+  gated (an event save); slot 5 @0x005BDB is the game-end save.
+- `HALLFAME.DAT`: `fopen("rb")` @0x03ADB1..@0x03ADB7, `fread(…, 0xD2)` @0x03ADCC
+  in `func_03ADA6`; `fopen("wb")` @0x03B2B8. 5 × 42-byte records
+  (`save.md` §6.5 field roles, capture-pinned).
+
+**Decisions**:
+
+1. **C3.6 closed.** The P4 shell's SAVE picker shows 8 rows (COLONY00..07) and its
+   LOAD picker 10 rows (COLONY00..09) with `(EMPTY)` and refusal of empty rows;
+   both shells service the core's per-turn autosave request (`UI.request`
+   `'8'`/`'9'`, set in `end_turn_now` from the option bit 0x0400 per
+   `func_005642`); the P4 reads/writes **`HALLFAME.DAT`** in the DOS layout
+   (`HOF.DAT` is gone). The JS keeps its browser save (no slots) — shell chrome,
+   unchanged. TBD: the header reader `0x1a1f:0xd04` (what a present row prints),
+   the `[0x829]` gate.
+2. **C3.3 — documented decision**: the board's long-press and ORDERS → "Wait for
+   next unit" stay, as shell chrome on the engine's Space semantics (RULINGS
+   2026-09-02g).
+3. **C3.4 and B4.7 — documented decision**: drag-and-drop stays absent from the
+   board and the C input port. The engine's drag is `[0x8D54]` mode 6/7
+   (`func_029B84` @0x029BA8 / @0x029BE9); every drop target has a tap route (the
+   C3.2 fence rect included) and the harness projects the tap paths. A touch-shell
+   choice, not a sim-fidelity gap.
+4. **C3.7 — documented decision**: the `.CPX` sidecar is deleted, not kept as an
+   option (RULINGS 2026-09-02c).
+5. **A1 — documented decision**: the black screen on boot is the Arduino IDE
+   setting Tools ▸ PSRAM: Enabled (+ 16 MB flash, Huge-APP partition, USB CDC on
+   boot) per `cport/p4/README.md` ("Tools ▸ PSRAM must be Enabled") — the user's
+   to make on each fresh sketch folder; no code change closes it.
+6. Oracles all green (the harness ignores `UI.request`; nothing else moved).

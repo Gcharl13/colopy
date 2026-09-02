@@ -1390,47 +1390,52 @@ static void service_request(void) {
     if (!UI.request) return;
     char r = (char)UI.request;
     UI.request = 0;
-    if (sd_ready && r == 'S') {
-        /* ten numbered slots, as the DOS game had.  SHELL CHROME: each
-         * row says whether the slot is already taken so a save cannot
-         * silently land on top of another game. */
+    if (sd_ready && (r == 'S' || r == 'L')) {
+        /* THE DOS PICKERS (C3.6, byte-read 2026-09-02): the slot picker
+         * func_072CC2(key, count) lists COLONY%02d.SAV rows 0..count-1
+         * (filename builder func_072C78: "COLONY" + %02d + ".SAV"), a
+         * missing file reading "(EMPTY)" (0x20EE @0x072F0C, valid byte
+         * [0xA60C+n]=0 @0x072F20).  The SAVE dialog func_072F7A calls it
+         * with (SAVEGAME, 8) @0x072F7E — EIGHT manual slots 00..07 — and
+         * the LOAD dialog func_073158 with (LOADGAME, 0xA) @0x073161 —
+         * TEN rows 00..09, so the two autosave slots 08 (decade) and 09
+         * (every turn) are loadable but never offered to save over; an
+         * empty row is refused @0x073190.  What a present row displays
+         * (the 0x1a1f:0xd04 header reader) is unread — the filename is
+         * shown, FLAGGED. */
+        int count = r == 'S' ? 8 : 10;
         static char names[10][16], rows[10][32];
-        for (int i = 0; i < 10; i++) {
-            snprintf(names[i], sizeof(names[i]), "COLONY0%d.SAV", i);
+        int present[10];
+        for (int i = 0; i < count; i++) {
+            snprintf(names[i], sizeof(names[i]), "COLONY%02d.SAV", i);
             char path[64];
             snprintf(path, sizeof(path), "/sdcard/%s", names[i]);
             FILE *pf = fopen(path, "rb");
-            int used = pf != NULL;
+            present[i] = pf != NULL;
             if (pf) fclose(pf);
-            snprintf(rows[i], sizeof(rows[i]), "%s  %s", names[i],
-                     used ? "(in use)" : "(empty)");
+            snprintf(rows[i], sizeof(rows[i]), "%s%s", names[i],
+                     present[i] ? "" : "  (EMPTY)");
             pick_rows[i] = rows[i];
         }
-        int k = shell_pick("SAVE GAME - pick a slot", 10);
-        if (k >= 0) cmd_save(names[k]);
-    } else if (sd_ready && r == 'L') {
-        static char names[10][32];
-        int n = 0;
-        DIR *d = opendir("/sdcard");
-        if (d) {
-            struct dirent *e;
-            while ((e = readdir(d)) != NULL && n < 10) {
-                const char *nm = e->d_name;
-                size_t L = strlen(nm);
-                if (L > 4 && strcasecmp(nm + L - 4, ".SAV") == 0) {
-                    snprintf(names[n], sizeof(names[n]), "%s", nm);
-                    pick_rows[n] = names[n];
-                    n++;
-                }
+        if (r == 'S') {
+            int k = shell_pick("SAVE GAME", 8);
+            if (k >= 0) cmd_save(names[k]);
+        } else {
+            int k;
+            do {
+                k = shell_pick("LOAD GAME", 10);
+            } while (k >= 0 && !present[k]);      /* @0x073190: refused */
+            if (k >= 0) {
+                cmd_load(names[k]);
+                UI.screen = SCR_MAP;
+                land_view();
             }
-            closedir(d);
         }
-        int k = shell_pick("LOAD GAME - pick a save", n);
-        if (k >= 0) {
-            cmd_load(pick_rows[k]);
-            UI.screen = SCR_MAP;
-            land_view();
-        }
+    } else if (sd_ready && (r == '8' || r == '9')) {
+        /* the per-turn autosave (func_005642): slot 9, or 8 on a decade
+         * boundary — silent, no picker */
+        cmd_save(r == '8' ? "COLONY08.SAV" : "COLONY09.SAV");
+        return;
     }
     draw_screen();
 }
@@ -1911,21 +1916,65 @@ static void land_view(void) {
 /* enter the game UI at the TITLE screen — the real boot: New Game runs
  * the full flow (difficulty/nation/name/briefing -> colopy_new_game),
  * LOAD GAME opens the shell's SD picker.  Needs only the pak. */
+/* HALLFAME.DAT — the DOS game's own Hall of Fame file (C3.6, 2026-09-02;
+ * the port's HOF.DAT is gone): 5 records x 42 bytes = 0xD2, read with
+ * fopen("HALLFAME.DAT","rb") + fread(0xD2) @0x03ADB1..@0x03ADD2 in
+ * func_03ADA6 and written "wb" @0x03B2B8.  Record (spec/systems/save.md
+ * par.6.5, capture-pinned): name[24] +0x00; nation word +0x18 (0xFFFF =
+ * empty slot); declared-independence +0x1A; independence-won +0x1C;
+ * year +0x1E; +0x20 undisplayed; difficulty +0x22; score points +0x24;
+ * rating % +0x26 (the int16 ranking key); +0x28 undisplayed. */
+#define HALLFAME_RECS 5
+#define HALLFAME_STRIDE 42
+static uint16_t hf_rd16(const uint8_t *p) { return (uint16_t)(p[0] | (p[1] << 8)); }
+static void hf_wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); }
+
 static void hof_load_sd(void) {
     if (!sd_ready) return;
-    FILE *f = fopen("/sdcard/HOF.DAT", "rb");
+    FILE *f = fopen("/sdcard/HALLFAME.DAT", "rb");
     if (!f) return;
-    size_t n = fread(CR.hof, sizeof(colopy_hof_rec), 6, f);
+    uint8_t raw[HALLFAME_RECS * HALLFAME_STRIDE];
+    size_t n = fread(raw, 1, sizeof(raw), f);
     fclose(f);
-    CR.n_hof = (uint8_t)n;
+    CR.n_hof = 0;
+    for (int i = 0; i < HALLFAME_RECS && (size_t)((i + 1) * HALLFAME_STRIDE) <= n; i++) {
+        const uint8_t *r = raw + i * HALLFAME_STRIDE;
+        if ((int16_t)hf_rd16(r + 0x18) < 0) continue;      /* empty slot */
+        colopy_hof_rec *h = &CR.hof[CR.n_hof++];
+        memset(h, 0, sizeof(*h));
+        memcpy(h->name, r, 24);
+        h->name[23] = 0;
+        h->nation = (uint8_t)hf_rd16(r + 0x18);
+        h->declared = (uint8_t)(hf_rd16(r + 0x1A) != 0);
+        h->independent = (uint8_t)(hf_rd16(r + 0x1C) != 0);
+        h->year = hf_rd16(r + 0x1E);
+        h->difficulty = (uint8_t)hf_rd16(r + 0x22);
+        h->score = (int16_t)hf_rd16(r + 0x24);
+        h->rating = (int16_t)hf_rd16(r + 0x26);
+    }
 }
 
 static void hof_save_sd(void) {
     if (!sd_ready || !CR.hof_dirty) return;
     CR.hof_dirty = 0;
-    FILE *f = fopen("/sdcard/HOF.DAT", "wb");
+    FILE *f = fopen("/sdcard/HALLFAME.DAT", "wb");
     if (!f) return;
-    fwrite(CR.hof, sizeof(colopy_hof_rec), CR.n_hof, f);
+    uint8_t raw[HALLFAME_RECS * HALLFAME_STRIDE];
+    memset(raw, 0, sizeof(raw));
+    for (int i = 0; i < HALLFAME_RECS; i++) {
+        uint8_t *r = raw + i * HALLFAME_STRIDE;
+        if (i >= CR.n_hof) { hf_wr16(r + 0x18, 0xFFFF); continue; }   /* empty */
+        const colopy_hof_rec *h = &CR.hof[i];
+        memcpy(r, h->name, 24);
+        hf_wr16(r + 0x18, h->nation);
+        hf_wr16(r + 0x1A, h->declared ? 1 : 0);
+        hf_wr16(r + 0x1C, h->independent ? 1 : 0);
+        hf_wr16(r + 0x1E, h->year);
+        hf_wr16(r + 0x22, h->difficulty);
+        hf_wr16(r + 0x24, (uint16_t)h->score);
+        hf_wr16(r + 0x26, (uint16_t)h->rating);
+    }
+    fwrite(raw, 1, sizeof(raw), f);
     fclose(f);
 }
 
@@ -1939,7 +1988,7 @@ static void boot_title(void) {
     colopy_front_seed = esp_random();  /* the DOS engine seeds from the
                                         * BIOS clock; the P4 has a TRNG */
     ui_init();                   /* SCR_TITLE */
-    hof_load_sd();               /* the Hall of Fame table (HOF.DAT) */
+    hof_load_sd();               /* the Hall of Fame table (HALLFAME.DAT) */
     draw_screen();
     Serial.println("title up (touch; or l <sav> + g for a direct load)");
 }

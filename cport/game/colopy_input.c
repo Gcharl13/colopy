@@ -133,6 +133,17 @@ static void end_turn(void) {
 static void end_turn_now(void) {
     UI.turn_wait = 0;
     end_turn();
+    /* AUTOSAVE (C3.6, byte-read 2026-09-02): Game Options row 5
+     * ([0x5383]&4 = word 0x0400).  The turn loop @0x0058D0..@0x0058DF
+     * (also @0x005A29; the [0x829]==0 gate there is unread — FLAGGED)
+     * calls func_005642 @0x005642..@0x005667, which saves ONE slot per
+     * turn through 0x181f:0x5b6 (func_072CA4 -> COLONY%02d.SAV): slot 8
+     * when year%10==0 AND season==0 AND turn>2 (the decade boundary),
+     * else slot 9.  The core never does I/O: the shell services '8'/'9'
+     * like the menu's 'S'/'L'. */
+    if ((CR.game_options & 0x0400) && !UI.request)
+        UI.request = (cs_year() % 10 == 0 && cs_season() == 0 && cs_turn() > 2)
+                         ? '8' : '9';
     next_unit();
     /* an askZoom answered 1 during the turn opened a colony
      * (game.js:6378) — the input layer applies it */
