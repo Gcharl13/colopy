@@ -11012,3 +11012,21 @@ colonist-capture branch (message COLONISTCAPTURE2 @0x05B57E); WELLSEASONED is wr
 modelled, flagged: PowerRecord `+0` bit 0x08 (the Veteran → Continental second gate, meaning
 unread) and the village-entry WELLSEASONED path (the ports have no combat-free Seasoned
 promotion now — the fabricated combat one was removed rather than moved unread).
+
+## 2026-09-02h — census re-capture with the DOSBox pointer parked (C4.19); two harness facts
+
+**Decision**: all nine `docs/screens/census/baseline/census_*.png` frames were re-captured
+2026-09-02 with `drive.park()` before every shot (pointer at the window's last pixel →
+emulated arrow hotspot (319,199), arrow off-frame; 0 px in the corner box on every frame)
+and `drive.unpark()` after. Old-frame figures in the ledger/registry keep their ~82-px
+pointer and are labelled as such; each registry entry's first line is the re-measure.
+
+**Facts recorded from the re-capture** (both from frames, not the EXE): (1) the F3
+CONTINENTAL CONGRESS report has a second page — the Congress army scene — reached by the
+first Escape; the map follows the second. (2) Map VIEW mode keeps its cursor for the
+session: re-entering `v` starts where the last walk ended, not on the active unit. The
+capture loop now probes the frame state and gives every view-mode entry a fresh boot.
+
+**Not changed**: the MAP row's total depends on the water-cycle phase at capture time
+(5,186 with 3,120 cycle-accepted vs 2,066 in a phase-matched session); the census reports
+the phase-explained pixels in their own column rather than fixing a phase.
