@@ -119,19 +119,55 @@ static void end_turn(void) {
     if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
 }
 
+/* END OF TURN (C3.3, byte-read 2026-09-02).  When no unit needs orders
+ * func_021D32 @0x021DCE..@0x021E5C sets [0x53C6] = 1 and, once the
+ * orders pump has idled ([0x97B0] @0x021E48), ENDS THE TURN ([0x53C4] = 0
+ * @0x021E56) UNLESS Game Options row 4 "End of Turn" is on (`test byte
+ * [0x5383],8` @0x021E4F; new-game default 0xC600 @0x0755E5 = off).  With
+ * the option ON the turn ends on Enter with no colony under the cursor
+ * (func_024224 @0x02429A -> @0x024241), on Space (@0x02423A; on the LAST
+ * unit regardless @0x024255..@0x02425C) or on a map click (func_024632
+ * @0x02465C..@0x024663).  No GAME.TXT key; the sidebar's wait state is
+ * TBD (T5).  The board's long-press and "Wait for next unit" are shell
+ * chrome mapped onto this Space semantics (RULINGS 2026-09-02g). */
+static void end_turn_now(void) {
+    UI.turn_wait = 0;
+    end_turn();
+    next_unit();
+    /* an askZoom answered 1 during the turn opened a colony
+     * (game.js:6378) — the input layer applies it */
+    if (CR.zoom_colony >= 0) {
+        UI.colony = (int8_t)CR.zoom_colony;
+        UI.screen = SCR_COLONY;
+        CR.zoom_colony = -1;
+    }
+}
 /* advance (game.js:10866) */
 static void advance(void) {
-    if (!next_unit()) {
-        end_turn();
-        next_unit();
-        /* an askZoom answered 1 during the turn opened a colony
-         * (game.js:6378) — the input layer applies it */
-        if (CR.zoom_colony >= 0) {
-            UI.colony = (int8_t)CR.zoom_colony;
-            UI.screen = SCR_COLONY;
-            CR.zoom_colony = -1;
+    if (next_unit()) { UI.turn_wait = 0; return; }
+    if ((CR.game_options & 0x0800) && !UI.turn_wait) { UI.turn_wait = 1; return; }
+    end_turn_now();
+}
+/* Enter on the map — func_024224 @0x02425E..@0x0242A4: a colony under
+ * the cursor opens, else while [0x53C6] is set the turn ends.  The
+ * port's cursor is the active unit's square (the engine's [0x853E]/
+ * [0x8540] cursor words are not modelled — FLAGGED). */
+static void map_enter_key(void) {
+    int ui = sel_unit();
+    if (ui >= 0) {
+        int ord = -1;
+        for (int k = 0; k < CS.n_colonies; k++) {
+            if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+            ord++;
+            if (CS.colonies[k].map_x == CS.units[ui].map_x &&
+                CS.colonies[k].map_y == CS.units[ui].map_y) {
+                UI.colony = (int8_t)ord;
+                UI.screen = SCR_COLONY;
+                return;
+            }
         }
     }
+    if (UI.turn_wait) end_turn_now();
 }
 
 /* openMenu (game.js:1874): first non-separator row selected */
@@ -2163,9 +2199,14 @@ static void in_key_inner(const char *k, int alt, int shift) {
             return;
         }
         int ui = sel_unit();
+        if (key_is(k, "Enter")) { map_enter_key(); return; }
         if (key_is(k, " ")) {
             if (ui >= 0) { cmd_skip(ui); advance(); }
-            else if (colopy_front_live) {
+            else if (UI.turn_wait) {
+                /* Space with nothing active while the End-of-Turn option
+                 * holds the turn: @0x02423A -> @0x024241, the turn ends */
+                end_turn_now();
+            } else if (colopy_front_live) {
                 /* NOTHING is active — every unit is spent, or the
                  * player has no map unit at all (all colonists inside
                  * colonies, the ship at sea).  skipUnit returns early
@@ -3008,6 +3049,10 @@ static void in_click_inner(int mx, int my, int right) {
                 if (gu >= 0) cmd_goto(gu, tx, ty);
                 return;
             }
+            /* a map click while "nothing awaits orders" ends the held
+             * turn (func_024632 @0x02465C..@0x024663; preconditions
+             * [0x933E]==[0x9328] / [0x7F4] unread — FLAGGED); consumed */
+            if (UI.turn_wait) { end_turn_now(); return; }
             int ci = -1, ord = -1;
             for (int k = 0; k < CS.n_colonies; k++) {
                 if ((CS.colonies[k].owner_power & 3) != cs_nation())

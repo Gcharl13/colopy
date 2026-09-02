@@ -648,6 +648,9 @@ const G = {
   // water cycling enabled (its bit is inverted, so clear = on).
   gameOptions: 0x0200, colonyOptions: 0, soundOptions: 0x07,
   options: null,
+  // [0x53C6] "nothing awaits orders" while Game Options row 4 "End of Turn"
+  // (word bit 0x0800 = byte [0x5383] & 0x08) holds the turn open; see advance().
+  turnWait: false,
   // [0x96], the current tune id. The rotation that would set it lives in the
   // external sound driver, which does not port; Pick Music still writes it.
   tune: 0,
@@ -12877,6 +12880,14 @@ function importSav(bytes) {
   // (steps 13/14/15/19 + other once-flags), g+2 = [0x5382] (step 2 at 0x80).
   G.onceFlags = d[g];
   G.phaseFlags = u16(g + 0x02);
+  // The same word's option bits (spec/ui/options_dialogs.md par.6: the
+  // Game Options checkboxes live in [0x5382]/[0x5383], 0x8000..0x0080; 0x2000
+  // is the preserved cheat master). Restored so a save's "End of Turn" /
+  // Combat Analysis settings are live (C3.3, 2026-09-02). Every shipped
+  // fixture carries 0x0200 (Combat Analysis on), the port's old default.
+  G.gameOptions = u16(g + 0x02) & 0xFF80;
+  G.combatAnalysis = !!(G.gameOptions & 0x0200);
+  G.turnWait = false;
   // Only 16/17/18 remain side-set (no emitter in the EXE); keep them marked
   // shown on import so none re-fire mid-game.
   G.tutSide = Object.fromEntries(Array.from({ length: 19 }, (_, i) => [i + 1, true]));
@@ -13821,15 +13832,48 @@ function step(u, nx, ny) {
 // Once a unit has spent its moves the turn passes to the next one that still
 // has some; when none do, the turn is over and the new one starts on the first
 // unit again.
+// END OF TURN (C3.3, byte-read 2026-09-02). The orders pump func_024A48
+// polls func_024B50(0) for the next unit; when none needs orders
+// func_021D32 @0x021DCE..@0x021E5C sets [0x53C6] = 1 ("nothing awaits
+// orders"), enables the end-turn menu ids (func_0217E2), and then -- once
+// the pump has idled ([0x97B0], @0x021E48) -- ENDS THE TURN ([0x53C4] = 0
+// @0x021E56) UNLESS Game Options row 4 "End of Turn" is on (`test byte
+// [0x5383],8` @0x021E4F). New-game init writes [0x5382] = 0xC600
+// (@0x0755E5), bit 0x08 of the high byte clear, so auto-end is the default.
+// With the option ON the turn ends on Enter with no colony under the cursor
+// (func_024224 @0x02429A -> @0x024241), on Space (@0x02423A; and Space on
+// the LAST unit ends it regardless, @0x024255..@0x02425C) or on a map click
+// (func_024632 @0x02465C..@0x024663). No GAME.TXT key is emitted; what the
+// sidebar shows while waiting is TBD (T5).
+function endTurnNow() {
+  G.turnWait = false;
+  endTurn();
+  nextUnit();
+}
 function advance() {
-  if (!nextUnit()) { endTurn(); nextUnit(); }
+  if (nextUnit()) { G.turnWait = false; return; }
+  if ((G.gameOptions & 0x0800) && !G.turnWait) { G.turnWait = true; G.msg = ''; return; }
+  endTurnNow();
+}
+// Enter on the map -- func_024224 @0x02425E..@0x0242A4: a colony under the
+// cursor opens (owner == [0x5396], or [0x53A2] set); otherwise, while
+// [0x53C6] is set, the turn ends. The port's "cursor" is the active unit's
+// square (the engine's [0x853E]/[0x8540] cursor words are not modelled --
+// FLAGGED).
+function mapEnterKey() {
+  const u = G.units[G.sel];
+  const ci = u ? G.colonies.findIndex(c => c.x === u.x && c.y === u.y) : -1;
+  if (ci >= 0) { G.colony = ci; G.screen = 'colony'; return; }
+  if (G.turnWait) endTurnNow();
 }
 
 // Space passes on the active unit: it keeps its position, gives up the rest of
 // its moves for this turn, and play moves on.
 function skipUnit() {
   const u = G.units[G.sel];
-  if (!u) return;
+  // Space with nothing active while the End-of-Turn option holds the turn:
+  // func_024224 @0x02423A -> @0x024241, the turn ends.
+  if (!u) { if (G.turnWait) endTurnNow(); return; }
   u.movesLeft = 0;
   G.msg = '';
   advance();
@@ -15386,6 +15430,11 @@ function onClick(mx, my) {
         const ty = G.view.y + Math.floor((my - VP.y) / TILE_PX());
         // A pending "Go to Place" takes the next map click as its destination.
         if (G.goTo) { setGoTo(G.goTo, tx, ty); return; }
+        // A map click while "nothing awaits orders" ends the held turn
+        // (func_024632 @0x02465C..@0x024663; its two preconditions
+        // [0x933E]==[0x9328] and [0x7F4] are unread -- FLAGGED). The click
+        // is consumed.
+        if (G.turnWait) { endTurnNow(); return; }
         // Clicking your own colony opens its screen -- the COLONY WINS over
         // any unit stack standing on the square.  GAME_MANUAL.md p40 puts no
         // "unoccupied" condition on it, and a colony square nearly always
@@ -15665,6 +15714,7 @@ function onKey(e) {
       if (DIR[k]) { const [dx, dy] = DIR[k]; if (G.viewMode) centerOn(G.view.x + 7 + dx * 3, G.view.y + 6 + dy * 3); else moveSel(dx, dy); }
       switch (k) {
         case ' ': skipUnit(); break;
+        case 'Enter': mapEnterKey(); break;
         case 'Tab': nextUnit(); break;
         case 'a': case 'A': activateUnit(); break;
         case 'w': case 'W': nextUnit(); break;

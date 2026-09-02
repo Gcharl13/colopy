@@ -11147,3 +11147,56 @@ verifier):
    colony" feature. The ports' garrison selection is the @UNITOPTIONS popup
    and does not yet reach it.
 5. Oracles all green (no input script clicks the rect).
+
+## 2026-09-02g — C3.3: ending a turn with nothing active — auto-end is the default; Game Options row 4 "End of Turn" holds it for Enter / Space / a map click; the board's two exits are shell chrome on Space semantics
+
+**Conflict**: `docs/REMAINING_WORK.md` C3.3 / `cport/README.md` said the DOS
+`@ORDERS` menu has no end-of-turn row and the board invented two exits (a
+long-press on the map, ORDERS → "Wait for next unit"); the ports always ended
+the turn the moment no unit had moves.
+
+**Bytes** (research `core-c3` claims 17–19, re-read):
+
+- Orders pump `func_024A48` @0x024A4F..@0x024B0F: `[0x53C4]=1` (turn active),
+  `[0x5392]=−1`, `[0x97B0]=0`, `func_024B50(0)` (next unit), idle loop
+  0x1E ticks, keyboard `func_024B82` / mouse `func_024BDC`, loop while
+  `[0x53C2] && [0x53C4] && ![0x826]`.
+- `func_021D32` @0x021DCE..@0x021E5C: no unit needs orders → `[0x53C6]=1`,
+  `func_0217E2` (enables menu ids 0x301/0x330/0x302/0x304, no string), then if
+  the pump has idled (`[0x97B0]`, set @0x0246F2) and **`test byte [0x5383],8`
+  is clear → `[0x53C4]=0`: the turn ends by itself.** New-game init
+  `mov word [0x5382],0xC600` @0x0755E5 ⇒ bit 0x08 clear ⇒ auto-end is the
+  default. The bit is Game Options row 4 "End of Turn" (word 0x0800,
+  `spec/ui/options_dialogs.md` §6).
+- With the option ON the turn ends on: Enter with no colony under the cursor
+  (`func_024224` @0x02425E..@0x0242A4: colony-under-cursor `0x181f:0x7be`
+  opens if owner == `[0x5396]` or `[0x53A2]`, else `[0x53C6]` → `[0x53C4]=0`
+  @0x024241); Space (@0x02423A `[0x53C6]` → end; else `func_024B50(0)` and if
+  `[0x5390]==1` afterwards → end regardless, @0x024255..@0x02425C); a map
+  click (`func_024632` @0x02465C..@0x024663; preconditions
+  `[0x933E]==[0x9328]` and `[0x7F4]` unread). No GAME.TXT key is emitted; the
+  sidebar's content while waiting is TBD (T5).
+
+**Decision**:
+
+1. Both engines add the wait state (`G.turnWait` / `UI.turn_wait` = `[0x53C6]`
+   held): `advance()` with no unit needing orders ends the turn unless the
+   option bit 0x0800 is set, in which case it holds; Enter (no player colony
+   under the active unit — the port's "cursor" is the active unit's square,
+   FLAGGED), Space, or a map click then ends it (`endTurnNow` /
+   `end_turn_now`). The click is consumed.
+2. The option word is **restored from the save** in both importers
+   (`u16(g+2) & 0xFF80` → `G.gameOptions` / `CR.game_options`; Combat
+   Analysis synced from bit 0x0200). Every shipped fixture carries 0x0200, so
+   nothing the oracles pin changed. A new game keeps the ports' 0x0200 default
+   (the engine's 0xC600 is recorded, not adopted — separate row).
+3. **The board's long-press and ORDERS → "Wait for next unit" are shell chrome
+   mapped onto the Space semantics** (`cport/game/colopy_input.c`: the row
+   advances only when no unit is left, exactly what Space does at
+   @0x024255..@0x02425C; the P4 long-press sends Space). They are kept,
+   labelled as such; the DOS `@ORDERS` menu still has no end-turn row.
+4. FLAGGED: the sidebar/HUD wait indication (T5), the engine's map-cursor
+   words, and the two mouse preconditions.
+5. Oracles all green (the option is off in every fixture and script). A
+   headless check of the JS: option off → auto-end; option on → held, then
+   Space / Enter / click each end it.

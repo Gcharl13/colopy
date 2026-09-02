@@ -279,7 +279,13 @@ void cr_reset_from_load(void) {
     CR.land_ho = 1;                  /* the importer latches these true
                                       * (game.js:10240) */
     CR.built_colony = 1;
-    CR.game_options = 0x0200;        /* G defaults (game.js:580) */
+    /* the Game Options word [0x5382]/[0x5383] rides in the globals block
+     * (g+0x02; spec/ui/options_dialogs.md par.6: bits 0x8000..0x0080,
+     * 0x2000 the preserved cheat master) — restored so a save's "End of
+     * Turn" / Combat Analysis settings are live (C3.3, 2026-09-02;
+     * importSav does the same).  The newgame path overrides this with
+     * the ports' 0x0200 default. */
+    CR.game_options = (uint16_t)((CS.globals[2] | (CS.globals[3] << 8)) & 0xFF80);
     CR.colony_options = 0;
     CR.sound_options = 0x07;
     CR.rumour_floor = 1;             /* G defaults (game.js:588) */

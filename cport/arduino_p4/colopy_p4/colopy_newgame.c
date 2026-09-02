@@ -316,6 +316,9 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
      * overrides (the importer marks everyone met; beginGame does not:
      * t.met=false 5148 / seedRivals met:false 7307) --- */
     cr_reset_from_load();
+    CR.game_options = 0x0200;        /* G defaults (game.js:649); the
+                                      * engine's new-game word 0xC600
+                                      * (@0x0755E5) is not adopted yet */
     memset(CR.tribe_met, 0, sizeof(CR.tribe_met));
     for (int n = 0; n < 4; n++) CR.rivals[n].met = 0;
     CR.land_ho = 0;                  /* beginGame 695: landfall + first

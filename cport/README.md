@@ -76,11 +76,15 @@ gameplay mechanics still missing and every flagged approximation, is
   decoded from those drivers (`formats/BIN.md`), and the board plays
   the cues whose call sites are byte-verified — the rest stay silent
   rather than guessed.
-- **Ending a turn with nothing active.**  Fortify or sentry every unit
-  and the cycle offers nobody.  Two ways out on the board: a long-press
-  anywhere on the map, or ORDERS -> "Wait for next unit", the one row
-  left live in that state.  The DOS `@ORDERS` menu has no End-of-Turn
-  row and none was invented.
+- **Ending a turn with nothing active** (byte-read 2026-09-02, C3.3).
+  The engine ends the turn BY ITSELF once no unit needs orders
+  (`func_021D32` @0x021E56) unless Game Options row 4 "End of Turn" is
+  on, in which case Enter, Space or a map click ends it — the port does
+  the same, and a loaded save's option word is honoured.  The board's
+  two extra exits — a long-press anywhere on the map, and ORDERS ->
+  "Wait for next unit" — are SHELL CHROME mapped onto that Space
+  semantics (RULINGS 2026-09-02g); the DOS `@ORDERS` menu has no
+  End-of-Turn row and none was invented.
 - **The Bluetooth pairing row is compiled out by default.**  It sits on
   the TITLE screen just below the menu plaque (y=155) and appears only
   when `COLOPY_BLE_MOUSE` is set to 1 at the top of `colopy_p4.ino`.

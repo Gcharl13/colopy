@@ -76,7 +76,9 @@
  *   long-press      Space — skip the active unit (>= 600 ms); with
  *                   NOTHING active (everything fortified/sentried) it
  *                   ENDS THE TURN, as does ORDERS -> "Wait for next
- *                   unit", the one row left live in that state; on the
+ *                   unit", the one row left live in that state (both
+ *                   are shell chrome on the engine's Space semantics,
+ *                   func_024224 @0x024255 — RULINGS 2026-09-02g); on the
  *                   Europe market bar it BUYS 100 of that good (a tap
  *                   there sells, as the DOS pointer layer does)
  *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
