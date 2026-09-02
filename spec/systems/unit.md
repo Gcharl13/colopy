@@ -166,3 +166,19 @@ Active-unit orders box and map cursor. See `docs/UI_RENDER_MAP.md`, `notes/SPRIT
    — unit sprites are in **ICONS.SS**, byte-cited from `@UNIT` column 1 "Icon" (Colonists
    101, Soldiers 103, Caravel 6, …, Cont. Cav. 130; PORT png = VICEROY index − 1), per
    `spec/data/index_tables.md` §4 / SPRITE-A. (CC-NN are FF portraits, not units.) **B.**
+
+
+## Amendment 2026-09-02 — `+0x17` profession byte: unit-side consumers are plain equality (C4.26)
+
+Every unit-side expert test is `cmp byte ptr [bx+0x315B], imm` with no lower-bound guard
+(rumour @0x0614BB, infiltrate @0x05A2F2, village entry @0x04A7D9, promoter @0x05C6BA,
+Convert @0x04C7B9, Jesuit @0x048C65/@0x04B05B/@0x05B60E/@0x033F4A/@0x040625, Hardy Pioneer
+@0x040732/@0x040A59, the 0x1C/0x19 pairs @0x04B520/@0x04EAB0/@0x021370). `func_0082B2`
+(`0x181F:0xC9A`) = "is an expert": 0 for {0x1C, 0x13, 0x19, 0x1A, 0x1B}, 1 for everything
+else including 0 (@0x0082B5–@0x0082D3). Creation (@0x006DF3–@0x006E30) writes 0x1C for a
+colonist type, 0 for non-colonists, 0x15 for types 7/9. Writers: 0x16 @0x04A9DD
+(WELLSEASONED, village entry), 0x1C @0x05B577 (captured Veteran Soldier, the ONLY `+0x17`
+write in `func_05B2C2` — DEMOTE @0x05B5AA–@0x05B68F changes type only), the promotion rungs
+of `func_05C65A` applied @0x05C7D6.. (0x1A→0x19→0x1C→0x15; 0x1B unchanged). Scout level
+(`func_061454` @0x0614A6–@0x0614E3): `type == 5` → 1, `+0x17 == 0x16` inside that branch
+→ 2, de Soto (attribute 7) +1 only when already ≥ 1.

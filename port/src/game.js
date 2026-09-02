@@ -9359,14 +9359,17 @@ function applyDefeat(loser, winner) {
                      STRING4: (wt && wt.name) || '' });
   }
   if (down) {
-    const wasVeteran = loser.profession === 'Veteran Soldiers' ||
-                       loser.profession === 'Veteran Dragoons';
     // A demoted-to-Colonist carrying the Missionary profession becomes a
-    // Missionaries unit instead of a plain colonist.
+    // Missionaries unit instead of a plain colonist (`cmp [bx+0x315B], 0x18`
+    // @0x05B60E).
     if (down === 'Colonists' && loser.profession === 'Jesuit Missionaries')
       becomeType(loser, 'Missionaries');
     else becomeType(loser, down);
-    if (wasVeteran) loser.profession = null;              // veteran status is lost
+    // The DEMOTE branch of func_05B2C2 (@0x05B5AA-@0x05B68F, key @0x05B679) is
+    // a TYPE ladder only: the function's sole write of +0x17 is the
+    // colonist-CAPTURE strip @0x05B577 (0x15 -> 0x1C, above). The port used
+    // to clear a Veteran's profession here as well -- "veteran status is
+    // lost" was never in the bytes (C4.26 unit side, 2026-09-02).
     showEvent('DEMOTE', { STRING0: S.STRING0, STRING1: S.STRING1, STRING2: loser.type });
     return;
   }
@@ -9378,42 +9381,68 @@ function applyDefeat(loser, winner) {
 // and Petty Criminals cost 10, Indentured Servants 5. George Washington skips
 // the roll entirely. The class ladder walks the winner up one rung; at the
 // soldier ceiling the unit TYPE advances instead.
-const RANK_LADDER = { 'Petty Criminals': 'Indentured Servants',
-                      'Indentured Servants': 'Free Colonists',
-                      'Free Colonists': 'Veteran Soldiers',
-                      null: 'Veteran Soldiers' };
+// func_0082B2 (0x181F:0xC9A): the engine's "is an expert" predicate returns 0
+// ONLY for 0x1C (none), 0x13 Free Colonists, 0x19 Indentured Servants, 0x1A
+// Petty Criminals and 0x1B Indian Converts (@0x0082B5-@0x0082D1) -- every
+// other byte, INCLUDING 0 = Expert Farmers, is an expert (@0x0082D3).
+const NON_EXPERT_CLASSES = [null, 'Free Colonists', 'Indentured Servants',
+                            'Petty Criminals', 'Indian Converts'];
+const isExpertClass = (p) => !NON_EXPERT_CLASSES.includes(p);
+// func_05C69C @0x05C69C, the combat promoter, re-read 2026-09-02 (C4.26 unit
+// side). Gates, in order: only TYPES 1 Soldiers / 4 Dragoons (@0x05C6A5-
+// @0x05C6B3); a Veteran (0x15 @0x05C6BA) continues only under declared war
+// ([0x5382] bit 0 @0x05C6C1) AND PowerRecord +0 bit 0x08 (@0x05C6CB-
+// @0x05C6D6 -- semantics unread, NOT modelled, FLAGGED); any other EXPERT
+// (func_0082B2 != 0 @0x05C6E0-@0x05C6F2, so profession 0 too) is skipped
+// before the roll. Then S = total + strength +/- difficulty (human +, AI -,
+// @0x05C6F5-@0x05C729) - 10 for 0x1A / 5 for 0x19 (@0x05C738-@0x05C746),
+// random_int(1, S) unless Washington (attr 0xB, @0x05C74A-@0x05C769), and
+// the rung table func_05C65A (@0x05C65A-@0x05C696): default 0x15; 0x15 at
+// war -> -1 (type step); 0x1A -> 0x19; 0x19 -> 0x1C (plain, NOT Free
+// Colonists); 0x1B -> 0x1B, which `cmp ax, [bp-6]; jne` @0x05C78D turns into
+// a no-op. The type step (@0x05C795-@0x05C7B5) is human-only, 1 -> 9 and
+// 4 -> 7. Keys @0x05C834 VETERAN / @0x05C868 VALOR.
+// Removed from here: the port's "Scout hardens to Seasoned" branch -- the
+// engine's WELLSEASONED site is the village-entry roll @0x04A9DD (`mov
+// [bx+0x315B], 0x16`, key @0x04AA14), not combat; FLAGGED as not modelled on
+// that path.
 function tryPromote(winner, wStrength, total) {
   if (winner.nation !== G.nation) return;                 // only your own men
-  const penalty = winner.profession === 'Petty Criminals' ? 10
-                : winner.profession === 'Indentured Servants' ? 5 : 0;
+  if (winner.type !== 'Soldiers' && winner.type !== 'Dragoons') return;
+  const from = winner.profession || null;
+  if (from === 'Veteran Soldiers') {
+    if (!(G.flags & WOI_DECLARED)) return;
+  } else if (isExpertClass(from)) return;
+  const penalty = from === 'Petty Criminals' ? 10
+                : from === 'Indentured Servants' ? 5 : 0;
   const S = Math.max(1, total + G.difficulty - penalty);
   const auto = G.fathersOwned.includes('George Washington');
   if (!auto && 1 + Math.floor(Math.random() * S) > wStrength) return;
-  // A Scout hardens to Seasoned rather than climbing the soldier ladder.
-  if (winner.type === 'Scouts' && winner.profession !== 'Seasoned Scouts') {
-    winner.profession = 'Seasoned Scouts';
-    showEvent('WELLSEASONED', {});
+  let next = 'Veteran Soldiers';
+  if (from === 'Veteran Soldiers') next = -1;
+  else if (from === 'Petty Criminals') next = 'Indentured Servants';
+  else if (from === 'Indentured Servants') next = null;
+  else if (from === 'Indian Converts') next = 'Indian Converts';
+  if (next === from) return;                              // @0x05C78D
+  if (next === -1) {
+    // At the ceiling the TYPE advances (war only, reached only at war).
+    if (CONTINENTAL_OF[winner.type]) {
+      const to = CONTINENTAL_OF[winner.type];
+      const fromType = winner.type;
+      becomeType(winner, to);
+      // @CONTINENTAL "Our {Veteran %STRING0} have hardened to {Continental
+      // Army} status" -- the type-advance has its own key, not @VALOR.
+      showEvent('CONTINENTAL', { STRING0: fromType });
+    }
     return;
   }
-  const from = winner.profession;
-  const next = RANK_LADDER[from === undefined ? null : from];
-  if (next && from !== 'Veteran Soldiers') {
-    winner.profession = next;
-    if (next === 'Veteran Soldiers') showEvent('VETERAN', { STRING0: winner.type });
-    else showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
-                              STRING1: from || 'Free Colonists', STRING2: next });
-    return;
-  }
-  // At the ceiling the TYPE advances -- but only once the war has begun, which
-  // is what a Continental Army is.
-  if ((G.flags & WOI_DECLARED) && CONTINENTAL_OF[winner.type]) {
-    const to = CONTINENTAL_OF[winner.type];
-    const from = winner.type;
-    becomeType(winner, to);
-    // @CONTINENTAL "Our {Veteran %STRING0} have hardened to {Continental
-    // Army} status" -- the type-advance has its own key, not @VALOR.
-    showEvent('CONTINENTAL', { STRING0: from });
-  }
+  winner.profession = next;
+  if (next === 'Veteran Soldiers') showEvent('VETERAN', { STRING0: winner.type });
+  // func_0091CC normalises 0x1C to the Free Colonists row for display
+  // (@0x0091F0), so the plain rung reads "Free Colonists" in the message.
+  else showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
+                            STRING1: from || 'Free Colonists',
+                            STRING2: next || 'Free Colonists' });
 }
 // The attacker wins iff roll <= ATK.
 function resolveAttack(att, def) {
@@ -11090,14 +11119,19 @@ function rumourAt(x, y) {
   // engine consumes a rumour by writing the tile's high nibble at 0x5DCC.
   return h - (x & 3) * 4 === (y & 3) && !G.rumoursDone.has(y * MAP.w + x);
 }
-// The scout bonus, byte-verified in func_061454: +1 for a Scout, +1 for a
-// Seasoned Scout, +1 if the power holds Hernando de Soto (who also forces a
-// positive-outcome reroll).
+// The scout bonus, byte-read in func_061454 @0x0614A6-@0x0614E3 (C4.26 unit
+// side, 2026-09-02): level = 1 iff the TYPE is Scouts (`cmp [bx+0x3146], 5`);
+// the Seasoned test (`cmp [bx+0x315B], 0x16` @0x0614BB, plain byte equality
+// -- no `>= 1` guard, so profession 0 is simply not 0x16) runs ONLY inside
+// that branch (`or ax,ax; je` @0x0614B7); and Hernando de Soto (attribute 7,
+// @0x0614C6) adds one ONLY when the level is already non-zero (`cmp
+// [bp-0x34], 0; je` @0x0614D8). The port used to add both unconditionally --
+// a Seasoned Scout re-equipped as a Soldier, or any non-scout under de Soto,
+// scored a bonus the engine withholds. Both engines changed together.
 function scoutLevel(u) {
-  let s = 0;
-  if (u.type === 'Scouts') s += 1;
-  if (u.profession === 'Seasoned Scouts') s += 1;
-  if (G.fathersOwned.includes('Hernando de Soto')) s += 1;
+  let s = u.type === 'Scouts' ? 1 : 0;
+  if (s && u.profession === 'Seasoned Scouts') s += 1;
+  if (s && G.fathersOwned.includes('Hernando de Soto')) s += 1;
   return s;
 }
 const d = (n) => 1 + Math.floor(Math.random() * n);
@@ -12786,9 +12820,14 @@ const SAVE_KEY = 'colonization.save';
 // per-colonist CURRENT-JOB array (@JOB row), parallel to the +0x40 specialty
 // array. What the importer cannot see it does not invent: europe crossings,
 // trade routes, and the diplomacy matrices load empty/at peace, flagged.
-const SAV_PROFESSION = (v) =>
-  (v >= 1 && v < (DATA.jobexpert || []).length) ? DATA.jobexpert[v] : null;
-// ...and the same byte, read for a EUROPE MANIFEST entry, where row 0 counts.
+// (The former SAV_PROFESSION with its `v >= 1` guard is gone -- C4.26 unit
+// side, 2026-09-02: every unit-side expert test in the EXE is plain byte
+// equality on +0x17 (`cmp [bx+0x315B], imm` at @0x0614BB, @0x05A2F2,
+// @0x04A7D9, @0x05C6BA, @0x04C7B9, @0x048C65, @0x040732 ...) and the
+// engine's own expert predicate func_0082B2 counts byte 0 as an expert, so
+// there is no reading under which 0 means "none". SAV_PROFESSION0 below is
+// the one importer for every record.)
+// The profession byte, read for a EUROPE MANIFEST entry, where row 0 counts.
 //
 // Profession 0 IS a profession -- Expert Farmers, @JOBEXPERT row 0 -- and the
 // census frame proves it: the Galleon's three riders are records 85/86/87 with

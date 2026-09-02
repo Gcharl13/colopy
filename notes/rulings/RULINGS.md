@@ -10990,3 +10990,25 @@ gives `[0x2DF4]` = 29, the page title pushed @0x037463). Separator `0x181F:0x178
 because no fixture carries a mission of the viewing power, the synthetic `mission` scene
 (every settlement with record index `v % 3 == 0`) is a standing C-vs-JS oracle, frozen at
 0 palette acceptances.
+
+## 2026-09-02g — C4.26 unit side: byte equality on +0x17; scout level, promotion ladder and demotion corrected
+
+**Conflict**: the ports guarded the unit-record profession byte with `>= 1` in places
+(`SAV_PROFESSION`), added the Seasoned and de Soto scout bonuses unconditionally, promoted
+a profession-0 soldier as if unskilled, walked Indentured Servants up to Free Colonists,
+hardened Scouts to Seasoned on a combat win, and cleared a Veteran's profession on DEMOTE.
+
+**Bytes**: every unit-side test is `cmp byte ptr [bx+0x315B], imm` (sites in ledger C4.26);
+`func_0082B2` returns 0 only for 0x1C/0x13/0x19/0x1A/0x1B; `func_061454` @0x0614A6–@0x0614E3
+(Seasoned inside the Scouts branch, de Soto only when level ≠ 0); `func_05C69C` @0x05C6A5–
+@0x05C6F2 (types 1/4, Veteran needs war + PowerRecord bit 8, experts skipped before the
+roll); `func_05C65A` @0x05C65A–@0x05C696 (rungs: 0x1A→0x19, 0x19→0x1C, 0x1B→0x1B,
+else 0x15; 0x15 at war → −1); `func_05B2C2`: the only `+0x17` write is @0x05B577 in the
+colonist-capture branch (message COLONISTCAPTURE2 @0x05B57E); WELLSEASONED is written
+@0x04A9DD in the village-entry roll.
+
+**Ruling**: (1) profession byte 0 is Expert Farmers on the unit side too; no guard anywhere.
+(2) Scout level, promotion and demotion follow the bytes above in both engines. (3) NOT
+modelled, flagged: PowerRecord `+0` bit 0x08 (the Veteran → Continental second gate, meaning
+unread) and the village-entry WELLSEASONED path (the ports have no combat-free Seasoned
+promotion now — the fabricated combat one was removed rather than moved unread).
