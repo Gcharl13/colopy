@@ -74,3 +74,4 @@ tools/dosbox_harness/dosbox.conf
 
 # harness-managed agent worktrees (never project content)
 .claude/worktrees/
+verification/verify_assets_status.json
