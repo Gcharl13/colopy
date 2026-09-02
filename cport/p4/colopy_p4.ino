@@ -28,6 +28,9 @@
  *   g           enter the game loop on the loaded save
  *   k <name>    inject one key by its JS name ("k Space", "k ArrowUp",
  *               "k F5", a single character; "k !<c>" = Alt+<c>)
+ *   a <id>      play sound <id> through the gate — the Sound Test cheat's
+ *               engine path (func_0235D6 @0x23DA0; decimal, e.g. 88 =
+ *               0x58 Fortify, 32800 = 0x8020 the first fanfare)
  *
  * Touch (in the game loop) — the board has NO keyboard path (Elecrow's
  * USB example is device-mode HID only), so play is touch-complete:
@@ -881,6 +884,18 @@ static void audio_take_sounds(void) {
         if (snd.verb == SND_PLAY && (CR.sound_options & 0x08))
             sfx_queue((int)snd.arg);
     }
+}
+/* "a <id>" — the Sound Test's engine path (cheat @CUP row -> DEBUG @SOUND
+ * numeric dialog -> [0x9CC8] -> the gate, func_0235D6 @0x23D9D..0x23DA0):
+ * any 16-bit id through func_00518E's semantics — < 0x10 a driver
+ * command, >= 0x8000 ungated.  The cheat menu and DEBUG.TXT are not in
+ * the port's data, so the bench console stands in for the dialog. */
+static void cmd_sound(const char *arg) {
+    int id = atoi(arg);
+#if COLOPY_AUDIO
+    if (audio_pack_live) { au_cmd((uint16_t)id); return; }
+#endif
+    if (CR.sound_options & 0x08) sfx_play(id);
 }
 
 static void draw_screen(void) {
@@ -2120,6 +2135,7 @@ void loop() {
         case 'v': cmd_view(); break;
         case 'g': start_game(); break;
         case 'k': cmd_key(arg); break;
+        case 'a': cmd_sound(arg); break;
         case 't': {
             if (!sav_loaded && !CS.n_units) { Serial.println("no game state (l <file> or New Game)"); break; }
             int n = atoi(arg);

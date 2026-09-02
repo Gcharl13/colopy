@@ -60,6 +60,8 @@
  *   k <name>    inject one key by its JS name (bench path, no USB
  *               keyboard needed: "k Space", "k ArrowUp", "k F5", or a
  *               single character; "k !<c>" sends <c> with Alt held)
+ *   a <id>      play sound <id> through the gate — the Sound Test cheat's
+ *               engine path (func_0235D6 @0x23DA0; decimal id)
  *
  * With -DCOLOPY_USBHOST a USB keyboard on the Teensy 4.1 host port
  * feeds the same in_key layer directly (USBHost_t36).
@@ -906,6 +908,15 @@ void loop() {
             break;
         case 'k': cmd_key(arg); break;
 #endif
+        case 'a':                    /* the Sound Test's engine path: cheat
+                                      * @CUP -> DEBUG @SOUND -> [0x9CC8] ->
+                                      * the gate (func_0235D6 @0x23DA0) */
+#ifdef COLOPY_AUDIO
+            au_cmd((uint16_t)atoi(arg));
+#else
+            Serial.println("no audio in this build (COLOPY_AUDIO)");
+#endif
+            break;
         case 't': {
             if (!sav_loaded) { Serial.println("load a save first (l <file>)"); break; }
             int n = atoi(arg);

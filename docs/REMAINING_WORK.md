@@ -505,10 +505,28 @@ decode is `spec/ui/options_dialogs.md` §9 and RULINGS 2026-09-02c):
   dispatcher @0x01299A. And the gate's compare is **signed** (`7D` @0x5197):
   fanfares ≥ 0x8000 bypass both switches — the engine and its header were
   wrong the other way (corrected, asserted);
-- cue rows tagged `[inferred]`; **European first-contact fanfare not wired**;
-  **all combat SFX ids TBD** — see F4;
-- the Sound Test and Pick-Music/Sound-Options screens not in cport's input
-  layer — see F4;
+- ~~cue rows tagged `[inferred]`; **European first-contact fanfare not
+  wired**; **all combat SFX ids TBD**~~ — **CLOSED with F4** (the C
+  `check_contact` stub is the one remaining gap for the fanfare);
+- ~~the Sound Test and Pick-Music/Sound-Options screens not in cport's input
+  layer~~ **RE-READ 2026-09-02**: Pick Music (`pick_music`, `func_023344`)
+  and Sound Options (`SCR_OPTIONS` which = 2, `func_0232AE`) were already
+  in cport's input layer and on both board composers; what was missing was
+  their SOUND — now `SND_PICK` ([0x96] @0x23561 + the gated play @0x23564)
+  and `SND_SWITCHES` on leaving the dialog (the [0x5386] mirror
+  @0x23301..0x23322, stop @0x2333B when any switch is off), and the shells
+  re-expand the switches each tick as the loader does @0x074249. Both
+  dialogs are now in the input oracle: `tools/input_compare.py` slice 9
+  drives GAME → Sound Options (toggles, leave) and GAME → Pick Music twice
+  (the shared ask policy picks rows 0 and 1), the census declares `options`
+  + `PICKMUSIC` for all three saves, and the `sx` field pins `w0A`/`w0E` and
+  `t20`/`t21` between the engines — which found and fixed a JS crash in
+  `pickMusic` (`G.dialog.sel` written after a synchronously answered ask).
+  The **Sound Test** (cheat `@CUP` → cmd 0x69 → DEBUG `@SOUND` → the gate,
+  spec §11) is in neither port: no cheat menu, no DEBUG.TXT in the data
+  bundles. Its engine path is exposed on both boards' bench console as
+  `a <id>` (P4/Teensy serial) — the dialog itself stays **TBD** until the
+  cheat menu is ported;
 - PC-speaker and MT-32 variants not reproduced; 25.9 MB is SD-only on both
   boards — **OPEN** (out of scope, unchanged).
 

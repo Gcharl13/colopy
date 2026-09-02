@@ -393,5 +393,6 @@ accepted) → `mov ax,[0x9cc8]; lcall 0x181f,0x4c0` @0x23D9D. Text: DEBUG.TXT
 `@SOUND` = "Play what sound #?\n\nSound:". Any 16-bit integer goes through
 the gate (so `< 0x10` acts as a driver command, `≥ 0x8000` passes ungated).
 Neither port carries the cheat menu (`@CUP`) or DEBUG.TXT in its data
-bundle; the engine entry point is `au_cmd(n)` — see `docs/REMAINING_WORK.md`
-F4.
+bundle; the engine entry point is `au_cmd(n)`, reachable on both boards'
+bench console as `a <id>` (decimal, as the DOS dialog takes it) — see
+`docs/REMAINING_WORK.md` F3/F4.

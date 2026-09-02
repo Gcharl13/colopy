@@ -10284,7 +10284,11 @@ function pickMusic() {
       playTune(row + sub.bias);
     });
   });
-  G.dialog.sel = musicRow(G.tune);
+  // The preselect ([0x96] -> row, the jump table @0x0233E4).  Guarded:
+  // under the scripted harness askEvent answers synchronously and opens no
+  // dialog, which used to throw here (found 2026-09-02 the day the input
+  // oracle first reached Pick Music).
+  if (G.dialog) G.dialog.sel = musicRow(G.tune);
 }
 // GAME "Exit to DOS": @DOS is the confirmation, and there is no DOS to exit
 // to, so Yes unwinds to the main menu the way quitting and relaunching would.

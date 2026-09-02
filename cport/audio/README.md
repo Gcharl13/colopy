@@ -98,9 +98,10 @@ bit-identity.
 11. **PC-speaker / MT-32 driver variants**: not reproduced (SB stack only).
 12. **OPENING.EXE / CLOSING.EXE cinematic audio**: out of scope.
 13. **Sound Test dialog** is in neither port (no `@CUP` cheat menu, no
-    DEBUG.TXT in the bundles); Pick Music and Sound Options ARE in both
-    input layers and now reach the engine through `SND_PICK` /
-    `SND_SWITCHES` (`au_on_sound`).
+    DEBUG.TXT in the bundles); its engine path is the boards' bench
+    command `a <id>` → `au_cmd`. Pick Music and Sound Options ARE in both
+    input layers and reach the engine through `SND_PICK` / `SND_SWITCHES`
+    (`au_on_sound`); `tools/input_compare.py` slice 9 drives both.
 14. **Command 8 timing**: the original polls the driver each idle tick;
     the port answers from the voice flags at the moment of the call —
     the same answer, minus the ISR granularity.
