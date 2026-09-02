@@ -291,3 +291,15 @@ The demand surfaces as the **King speech-bubble dialog**:
    [1,6,5,5,5,2,6,20]). That sum ×0x1f4 (500) yields the back-tax gold shown in the dialog.
    **B** (reseg + thunk_resolve 191F:0C3E→func_030566 + accessor_trace func_032262/032278;
    layout cross-checked against the RAM snapshot).
+
+
+## Amendment 2026-09-02 — the @KINGFRIGATE gate byte
+
+The `[0x925D + p*0x13]` gate (`@0x2F29B`) is RESOLVED: `DGROUP:0x924C` is
+the per-power UNIT CENSUS by type, stride 0x13 (inc `@0x2D240` on a build,
+dec `@0x5BA92` on a loss, zeroed `@0x42181`), and `0x925D = 0x924C + 0x11`
+is the FRIGATE row — the King only sends a frigate to a power that has none.
+The same census's wagon row (`+0xC`) is the @NOMOREWAGONS cap
+(`@0x2D1B3..@0x2D1CD`, every power).  §3's "func_02F052 upkeep tail" label
+is a misnomer: the tail IS the frigate spawn; building upkeep is cut content
+(colony.md amendment).  Both engines carry the gate.  **B.**

@@ -3039,10 +3039,16 @@ function chainCount(c, job) {
   if (!w) return 0;
   return w.chain.filter(b => c.buildings.includes(b)).length;
 }
-// BUILDING UPKEEP. @BUILDING's last column is a per-turn gold charge, and
-// @UPKEEP says what happens when you cannot pay it: "colonists in the buildings
-// will produce at half efficiency" until you do. The base tier (upkeep 0) is
-// free, which is why a new colony costs nothing to run.
+// BUILDING UPKEEP -- CUT CONTENT (RULINGS 2026-09-02). @BUILDING's last
+// column is a per-turn gold charge and GAME.TXT's @UPKEEP describes the
+// half-efficiency penalty, but VICEROY.EXE never charges it: the key
+// string `UPKEEP` does not exist in the EXE's message-key blob (every
+// emitted key does -- FORTFIRE, SPOIL1, NOMOREWAGONS all resolve), @MISC
+// 91/92 '(Building Upkeep)'/'TOTAL UPKEEP' have no consumer (B3.2), and
+// the per-power pass func_02F052 has no gold debit outside the frigate
+// tail. The port used to charge the player every turn and halve indoor
+// output when it could not pay -- a port invention, removed. colonyUpkeep
+// stays for the debug readouts and the Pedia line only.
 function colonyUpkeep(c) {
   return c.buildings.reduce((n, b) => {
     const row = DATA.buildings.find(d => d.name === b);
@@ -3050,13 +3056,6 @@ function colonyUpkeep(c) {
   }, 0);
 }
 function totalUpkeep() { return G.colonies.reduce((n, c) => n + colonyUpkeep(c), 0); }
-function payUpkeep() {
-  const due = totalUpkeep();
-  if (!due) { G.upkeepUnpaid = false; return; }
-  if (G.gold >= due) { G.gold -= due; G.upkeepUnpaid = false; return; }
-  G.upkeepUnpaid = true;
-  showEvent('UPKEEP', { NUMBER0: due });
-}
 // The Sons-of-Liberty / Tory production penalty -- BYTE_VERIFIED
 // @0x9D13..@0x9D98 (and the identical indoor block @0xA029..@0xA0AF):
 //   tories = (pop*(100-sol)+50)/100; divisor = 10 - difficulty for a
@@ -3270,8 +3269,6 @@ function indoorYield(c, p) {
   } else {
     y = expert ? 3 : 1;                  // teacher & the rest @0xA0AF
   }
-  // @UPKEEP: with the bill unpaid, colonists in the buildings work at half.
-  if (G.upkeepUnpaid) y = Math.floor(y / 2);
   return Math.max(0, y);
 }
 // The whole colony's output for one turn, before anything is banked. The order
@@ -3641,32 +3638,59 @@ function warehouseLevel(c) {
 // @0x2D728). The colony +0x1B & 3 skip (@0x2D995) is unread -- not
 // modeled, TBD. Boycott: no test in the disposal bytes; whether the price
 // func embeds it is unread -- the skip is kept, FLAGGED.
-function customHouseSale(c) {
+// Which goods an AI-owned Custom House sells -- func_02D606 (0x191F:0x9C0,
+// the AI twin of the human's per-good +0x8A flag test @0x2D9CE): never
+// FOOD, LUMBER, HORSES, TOOLS or MUSKETS (@0x2D60F..@0x2D62B); ORE only
+// when the colony has no Armory (building 3, @0x2D633) AND made neither
+// tools nor muskets this turn (the [0x8DC8] gross-production tally at
+// goods 0xE/0xF, @0x2D641/@0x2D647); everything else sells.
+function aiCustomSells(c, r, g) {
+  if ([GOOD.FOOD, GOOD.LUMBER, GOOD.HORSES, GOOD.TOOLS, GOOD.MUSKETS].includes(g)) return false;
+  if (g === GOOD.ORE)
+    return !(c.buildings.includes('Armory') ||
+             (r && (r.out[GOOD.TOOLS] > 0 || r.out[GOOD.MUSKETS] > 0)));
+  return true;
+}
+function customHouseSale(c, r) {
   if (!c.buildings.includes('Custom House')) return;
+  const human = curIsHuman(), p = curPower();
   // @0x2D995: a colony whose +0x1B blockade bits are set (& 3) skips the
   // auto-sale -- a Custom House will not sell from a blockaded harbour.
   // The bits come from blockadeCensus() (func_042138's colony scan).
-  if (c.blockade & 3) return;
-  const human = curIsHuman();
+  // HUMAN ONLY: the skip is gated on the owner's controller byte
+  // (@0x2D99B..@0x2D9AE) -- an AI custom house sells through a blockade.
+  if (human && (c.blockade & 3)) return;
+  const rv = human ? null : rivalOf(p);
   for (let g = 0; g < c.stock.length; g++) {
-    if ((c.customOff || {})[g]) continue;
+    if (human) {
+      if ((c.customOff || {})[g]) continue;
+      // A player boycott is the PLAYER'S PowerRecord +0x20 bit (the sale
+      // block itself carries no boycott test @0x2D6ED..@0x2D716; the
+      // port's gate here is its own, kept as a flagged choice).
+      if (isBoycotted(g)) continue;
+    } else if (!aiCustomSells(c, r, g)) continue;
     if (c.stock[g] < 100) continue;
-    // A player boycott is the PLAYER'S PowerRecord +0x20 bit; rival
-    // boycotts are unmodelled (B3.6 -- their sale runs untaxed below).
-    if (human && isBoycotted(g)) continue;
     const amount = c.stock[g] - 50;
     c.stock[g] = 50;
-    // Price: the player's market level stands in for the rival's own
-    // +0x4C ladder (FLAGGED, B3.6) -- same stand-in in both engines.
-    const gross = amount * bidPrice(g);
+    // The OWNER's own bid (0x191F:0x9EA on the pass's current power, set
+    // to the colony owner @0x2D67C), taxed at the OWNER's rate (+0x01
+    // @0x2D737) into the OWNER's royal fund (+0x22 @0x2D785) unless the
+    // war of independence is on ([0x5382]&1 @0x2D728). The sale runs the
+    // Europe SELL accumulator (0x191F:0xA2E @0x2D774): pressure on every
+    // pool, and the +0xBC/+0x7C trade counters.
+    const gross = amount * bidPriceOf(p, g);
+    const tax = human ? G.tax : ((rv && rv.tax) || 0);
+    const cut = (human ? G.declared : (G.flags & WOI_DECLARED)) ? 0 : Math.floor(gross * tax / 100);
     if (human) {
-      const cut = G.declared ? 0 : Math.floor(gross * G.tax / 100);
       G.gold += gross - cut;
       G.kingsFund += cut;
-    } else {
-      const rv = rivalOf(curPower());
-      if (rv) rv.gold = (rv.gold || 0) + gross;
+      G.tradeTons[g] = (G.tradeTons[g] || 0) + amount;
+      G.tradeGold[g] = (G.tradeGold[g] || 0) + Math.floor(gross * (100 - tax) / 100);
+    } else if (rv) {
+      rv.gold = (rv.gold || 0) + gross - cut;
+      rv.kingsFund = (rv.kingsFund || 0) + cut;
     }
+    poolMove(g, amount, +1, human);
   }
 }
 // WAREHOUSE disposal + cargo-ready -- the byte model (func_02D658 loops 2
@@ -3701,6 +3725,30 @@ function warehouseDisposal(c, snapshot, r) {
   for (let g = 1; g < c.stock.length; g++) {
     const over = c.stock[g] - cap;
     if (over <= 0) continue;
+    // AN AI COLONY SELLS ITS OVERFLOW first (@0x2E857..@0x2E86E: owner
+    // controller != 0 -> 0x2E86E; the human jumps straight to the spoil
+    // arithmetic @0x2E7BD), then falls into the SAME spoil arithmetic
+    // below, so the stock still trims to capacity:
+    //   MUSKETS: every 50 tons becomes one free musket lot on the owner's
+    //     PowerRecord +0x49 byte (@0x2E72A..@0x2E743; consumed at
+    //     @0x52658 -- that power's next 50-musket Europe buy is free);
+    //   HORSES: the whole overflow joins the owner's +0x4A horse pool
+    //     (@0x2E745..@0x2E760) and nothing is sold;
+    //   the remainder sells UNTAXED at the owner's bid (0x84BC byte
+    //     @0x2E7A0, gold @0x2E7B7), through the SELL accumulator
+    //     (0x191F:0xA2E @0x2E76C, AI k term). The +0xBC/+0x7C counters
+    //     the engine also bumps are the F5 report's, player-only here.
+    if (!curIsHuman()) {
+      const rv = rivalOf(curPower());
+      if (rv) {
+        let amt = over;
+        if (g === GOOD.MUSKETS)
+          while (amt >= 50) { amt -= 50; rv.musketLots = ((rv.musketLots || 0) + 1) & 0xFF; }
+        if (g === GOOD.HORSES) { rv.horsePool = ((rv.horsePool || 0) + amt) & 0xFFFF; amt = 0; }
+        poolMove(g, amt, +1, false);
+        rv.gold = (rv.gold || 0) + amt * bidPriceOf(curPower(), g);
+      }
+    }
     let produced = r.out[g];
     if (g === GOOD.HORSES) produced += r.horsesBred;
     let pre = over;                    // clamp(0, over, produced), func_0048CC
@@ -3871,6 +3919,7 @@ function colonyTurn(c) {
   const snapshot = c.stock.slice();
   const startFood = snapshot[GOOD.FOOD];
   const r = colonyProduce(c);
+  c.dbgFE = [r.out[GOOD.FOOD], r.eaten];   // the rcol oracle's `fe`
   // The siege census is player-relative (enemies of G.nation) -- a rival
   // colony has no siege model yet (B3.6, FLAGGED; same gate in the C).
   if (curIsHuman() && colonyBesieged(c)) {
@@ -3899,7 +3948,7 @@ function colonyTurn(c) {
   c.stock[GOOD.FOOD] = Math.max(0, c.stock[GOOD.FOOD] - r.eaten);
   // The Custom House sells checked goods down to 50 right at the banking
   // loop (func_02D658 loop 1), before growth reads the food stock.
-  customHouseSale(c);
+  customHouseSale(c, r);
   // FOOD MESSAGES + GROWTH -- the byte model, func_02D658 @0x2E10A..@0x2E36C
   // (read 2026-08-28), replacing the port's latch-based reading. The engine's
   // order is growth, then starvation, then the low-food warning, and the
@@ -4080,14 +4129,22 @@ function advanceConstruction(c, hammers) {
   const needTools = b.tools_x10 * 10;
   if (c.sieged) return;                     // @SIEGE halts completion
   if (c.hammers < b.cost) { c.toolWarned = false; return; }
-  // Completion-time guards. @NOMOREWAGONS: wagons are capped at the colony
-  // count (the PEDIA/manual rule) -- the build stalls, announced once.
-  if (curIsHuman() && b.isUnit && b.name === 'Wagon Train') {
-    const wagons = G.units.filter(u => u.type === 'Wagon Train').length;
-    if (wagons >= G.colonies.length) {
+  // Completion-time guards. @NOMOREWAGONS -- BYTE-READ @0x2D1B3..@0x2D20A
+  // (2026-09-02): when the finished target is the Wagon Train (0xC) the
+  // owner's unit census [0x924C + p*0x13 + 0xC] is compared with the
+  // owner's colony count [0x9298 + p] (@0x2D1C2..@0x2D1CD); at or over
+  // it the message fires and the routine RETURNS before spawning. There
+  // is NO controller gate -- every power is capped; the message goes
+  // through the colony messenger, silent for a rival (cev).
+  if (b.isUnit && b.name === 'Wagon Train') {
+    const human = curIsHuman(), rv = human ? null : rivalOf(curPower());
+    const units = human ? G.units : ((rv && rv.units) || []);
+    const ncol = human ? G.colonies.length : ((rv && rv.colonies) || []).length;
+    const wagons = units.filter(u => u.type === 'Wagon Train').length;
+    if (wagons >= ncol) {
       if (!c.capWarned) {
         c.capWarned = true;
-        cev('NOMOREWAGONS', { STRING0: c.name, NUMBER0: G.colonies.length });
+        cev('NOMOREWAGONS', { STRING0: c.name, NUMBER0: ncol });
       }
       return;
     }
@@ -5560,6 +5617,13 @@ function seedMarket() {
   // the player's is G.accum, aliased into G.rivalAccum[nation].
   G.rivalAccum = [0, 1, 2, 3].map(() => DATA.cargo.map(() => 0));
   G.accum = G.rivalAccum[G.nation];
+  // Four PRICE-LEVEL rows (PowerRecord +0x4C each): every power has its own
+  // market. At new game the engine computes all four from ONE shared random
+  // price base with empty pools (func_036574's tail @0x367E8..@0x36809 runs
+  // the drift for each power in turn over [0x53EA]), so the rivals start
+  // level-for-level with the player: copies, no extra draws. G.market is
+  // the player's row, aliased.
+  G.rivalMarket = [0, 1, 2, 3].map(p => (p === G.nation ? G.market : G.market.slice()));
   // The whole-game PowerRecord trade counters the F5 report reads: net units
   // (+0xBC) and net value (+0x7C), zeroed at game start (func @0x366E7).
   G.tradeTons = DATA.cargo.map(() => 0);
@@ -5585,26 +5649,39 @@ function seedMarket() {
 // table was written, with the worked example at :1433. Neither engine did it.
 const bidPrice = (i) => Math.max(0, G.market[i] - 1);
 const askPrice = (i) => Math.max(0, G.market[i] + DATA.cargo[i].burden);
-function stepPrice(i) {
+// The same bid for ANY power's own market: the engine keeps a per-power bid
+// byte table at DGROUP 0x84BC + power*16 + good = max(0, level - 1), built
+// for all four powers at boot (func_005760 @0x57A5..@0x57BB) and rebuilt for
+// the current power by every drift (@0x30B14..@0x30B24); the AI custom
+// house and overflow sales read it for the OWNER (@0x2E7A0).
+const marketRow = (p) => (G.rivalMarket && G.rivalMarket[p]) || G.market;
+const bidPriceOf = (p, i) => Math.max(0, marketRow(p)[i] - 1);
+function stepPrice(i) { stepPriceOf(G.nation, i); }
+function stepPriceOf(p, i) {
   const c = DATA.cargo[i];
-  const before = G.market[i];
-  while (G.accum[i] <= -100 * c.rise && G.market[i] < c.high) {
-    G.market[i] += 1; G.accum[i] = w16(G.accum[i] + 100 * c.rise);
+  const row = marketRow(p);
+  const acc = G.rivalAccum ? G.rivalAccum[p] : G.accum;
+  const before = row[i];
+  while (acc[i] <= -100 * c.rise && row[i] < c.high) {
+    row[i] += 1; acc[i] = w16(acc[i] + 100 * c.rise);
   }
-  while (G.accum[i] >= 100 * c.fall && G.market[i] > c.low) {
-    G.market[i] -= 1; G.accum[i] = w16(G.accum[i] - 100 * c.fall);
+  while (acc[i] >= 100 * c.fall && row[i] > c.low) {
+    row[i] -= 1; acc[i] = w16(acc[i] - 100 * c.fall);
   }
   // @PRICEUP/@PRICEDOWN fire from the drift fn itself (func_0305A8, RULINGS
-  // 2026-06-19), so BOTH movement paths announce: the end-of-turn recompute
-  // (func_036574 @0x367FC) and the single-good re-drift after a buy/sell
-  // (@0x32902/@0x32D99). Live frames wear MSS2 with the good + number
-  // hilited (SESSION_UI_CATALOG frames 1310280609..). FLAGGED reading: the
+  // 2026-06-19), so BOTH movement paths announce: the per-power pass's
+  // Europe update (func_0363A2 @0x363D3, called from func_02F052 @0x2F218)
+  // and the single-good re-drift after a buy/sell (@0x32902/@0x32D99).
+  // Live frames wear MSS2 with the good + number hilited
+  // (SESSION_UI_CATALOG frames 1310280609..). FLAGGED reading: the
   // announced number is the record's PRICE LEVEL -- whether the engine
-  // prints the level, the bid or the ask is unread.
-  if (G.market[i] !== before && G.eventQueue)
-    showEvent(G.market[i] > before ? 'PRICEUP' : 'PRICEDOWN',
+  // prints the level, the bid or the ask is unread. A rival's market
+  // moves silently (the port's reading; the human gate on the message
+  // path inside the drift is unread).
+  if (p === G.nation && row[i] !== before && G.eventQueue)
+    showEvent(row[i] > before ? 'PRICEUP' : 'PRICEDOWN',
               { STRING0: c.name, STRING1: DATA.nations[G.nation].homeport,
-                NUMBER0: G.market[i] });
+                NUMBER0: row[i] });
 }
 // The traded-lot market pressure -- BYTE_VERIFIED func_03234A (sell) /
 // func_0322D0 (buy), read 2026-08-29:
@@ -5622,8 +5699,12 @@ function stepPrice(i) {
 // sells only as the human player, so k uses the human term (the AI -2
 // case lands with B3.6).
 const w16 = (x) => (x << 16) >> 16;
-function poolMove(i, qty, sign) {
-  const k = (G.difficulty - 2) * 16;
+// `human` selects func_032294's k term: the human seller's difficulty
+// term, or the flat -2 for an AI seller (@0x322A5 controller test ->
+// @0x322B8 `mov [bp-2],0xFFFE`). The AI custom house and overflow sales
+// run this same accumulator (0x191F:0xA2E @0x2D774 / @0x2E76C).
+function poolMove(i, qty, sign, human = true) {
+  const k = (human ? G.difficulty - 2 : -2) * 16;
   const val = ((qty * k / 100) | 0) + (qty << DATA.cargo[i].volatility);
   for (let p = 0; p < 4; p++) {
     let v = val;
@@ -5632,10 +5713,26 @@ function poolMove(i, qty, sign) {
     if (arr) arr[i] = w16(arr[i] + (sign > 0 ? v : -v));
   }
 }
-function driftMarket() {
-  // Attrition drifts the PLAYER's own pool (the rivals' drift cadence is
-  // unread -- FLAGGED, lands with B3.6).
-  DATA.cargo.forEach((c, i) => { G.accum[i] = w16(G.accum[i] + c.attrition); stepPrice(i); });
+function driftMarket() { driftMarketOf(G.nation); }
+// The per-power drift. Every power's market moves once a turn: the
+// per-power pass func_02F052 calls the Europe update func_0363A2 for ITS
+// power (@0x2F218, after the colony loop), which sets the current power
+// (@0x363B5) and runs drift(0, -1) @0x363D3 -- so a rival's prices move
+// on the rival's own pool exactly as the player's do (read 2026-09-02;
+// the old "rivals' drift cadence unread" flag is closed). The port's
+// attrition/threshold model is oracle-locked; it is applied per power.
+//   AI PRICE CAP (@0x30ABB..@0x30B0A, inside the drift, AI powers only):
+//   for HORSES (8), TOOLS (0xE) and MUSKETS (0xF) the level is clamped to
+//   3 + ((4 - difficulty) * 3 >> 1) -- an AI power never pays more than
+//   that for its arms and tools.
+function driftMarketOf(p) {
+  const row = marketRow(p), acc = G.rivalAccum ? G.rivalAccum[p] : G.accum;
+  DATA.cargo.forEach((c, i) => { acc[i] = w16(acc[i] + c.attrition); stepPriceOf(p, i); });
+  if (p !== G.nation) {
+    const cap = 3 + (((4 - G.difficulty) * 3) >> 1);
+    for (const g of [GOOD.HORSES, GOOD.TOOLS, GOOD.MUSKETS])
+      if (row[g] > cap) row[g] = cap;
+  }
 }
 // SELL: gross = price*qty, tax = gross*rate/100, you keep the rest and the
 // King's fund gains the tax. Selling floods the market, so the accumulator
@@ -9473,6 +9570,9 @@ function rivalTurn() {
     turnPower = r.nation;
     for (const c of r.colonies) if (c.colonists) colonyTurn(c);
     turnPower = -1;
+    // The pass's Europe update (func_0363A2 @0x2F218, after the colony
+    // loop): the rival's own market drifts on its own pool.
+    driftMarketOf(r.nation);
     for (const c of r.colonies) if (c.colonists) c.pop = c.colonists.length;
     r.colonies = r.colonies.filter(c => !c.vanished);
     const war = atWar(G.nation, r.nation);
@@ -11125,7 +11225,14 @@ function kingWarCycle() {
   // ---- @KINGFRIGATE (func_02F052 tail) ----
   if ((G.turn & 7) === 0) {
     const { any, frig } = blockadeCensus();
-    if (frig !== 0 || any > 3) {
+    // The [0x925D + p*0x13] gate (@0x2F29B) is RESOLVED 2026-09-02: 0x924C
+    // is the per-power UNIT CENSUS by type, stride 0x13 (inc @0x2D240 on a
+    // build, dec @0x5BA92 on a loss, zeroed @0x42181), and 0x925D = base +
+    // 0x11 = the FRIGATE row -- the King only sends a frigate to a power
+    // that has none.
+    const hasFrigate = G.units.some(u => u.type === 'Frigate') ||
+                       G.europe.some(e => e.type === 'Frigate');
+    if (!hasFrigate && (frig !== 0 || any > 3)) {
       askEvent('KINGFRIGATE',
                { ...S, STRING2: DATA.nations[G.nation].adjective },
                (choice) => {
@@ -12764,9 +12871,47 @@ function importSav(bytes) {
                     // both (B3.6)
                     fathers: i32(powBase + n * 0x13C + 0x07) >>> 0,
                     tax: d[powBase + n * 0x13C + 0x01],
+                    // the rival's royal fund (+0x22), its free musket
+                    // lots (+0x49) and horse pool (+0x4A) -- the AI
+                    // overflow sale writes the last two (@0x2E73B /
+                    // @0x2E75C); the lots are spent by that power's
+                    // Europe musket buy (@0x52658), unported
+                    kingsFund: i32(powBase + n * 0x13C + 0x22),
+                    musketLots: d[powBase + n * 0x13C + 0x49],
+                    horsePool: u16(powBase + n * 0x13C + 0x4A),
                     colonies: [], nextColony: 0, units: [] });
   }
   const rivalOf = (n) => G.rivals.find(r => r.nation === n);
+  // Every power's PRICE-LEVEL row (+0x4C, 16 bytes): the rivals' own
+  // markets. The player's row is G.market (read above), aliased in.
+  G.rivalMarket = [];
+  for (let p = 0; p < 4; p++) {
+    const rb = powBase + p * 0x13C;
+    if (p === nation) { G.rivalMarket.push(G.market); continue; }
+    const row = [];
+    for (let i = 0; i < 16; i++) row.push(d[rb + 0x4C + i]);
+    G.rivalMarket.push(row);
+  }
+  // The WAR MATRIX (B4.6): PowerRecord[a] + 0x34 + b, one byte per pair
+  // (@0x58A72; bits 0x01 resolved @0x5318F, 0x02 war @0x58A7B, 0x08
+  // grievance @0x3F0D7, 0x20 peace-pending @0x57DF0, 0x40 TREATY -- set
+  // by SIGNTREATY @0x57E91, cleared by CANCELTREATY/DECLAREWAR @0x57F3C
+  // and by the @TRADEATWAR gate's "no contact" reading @0x5A450 -- and
+  // 0x80 privateer @0x3F0A1), loaded verbatim so a save's wars are live
+  // from turn one. The +0x40 row is the per-pair TIMER the grievance
+  // cycle decrements (@0x531A3; 1 at signing @0x57EC5), kept for the
+  // unported cycle. The rows are 12 wide (the newgame zero loop @0x7583A
+  // runs to 0xC: 4 powers + 8 tribes); only the European 4x4 is a
+  // relation the port models.
+  G.warMatrix = {}; G.treatyMatrix = {}; G.relTimer = {};
+  for (let a = 0; a < 4; a++) {
+    for (let b = 0; b < 4; b++) {
+      const w = d[powBase + a * 0x13C + 0x34 + b];
+      G.warMatrix[relKey(a, b)] = w;
+      G.treatyMatrix[relKey(a, b)] = (w & 0x40) ? REL.TREATY : 0;
+      G.relTimer[relKey(a, b)] = d[powBase + a * 0x13C + 0x40 + b];
+    }
+  }
   // Worker-slot order is N,E,S,W,NW,NE,SE,SW (smcol tile_N..tile_SW; the
   // prior row-major guess put every worker on the wrong cell -- census3:
   // Jamestown's slots 4/6/7 are NW/SE/SW, and only with this order does the
@@ -13094,6 +13239,11 @@ function loadGame() {
     if (s.region) REGION.set(s.region); else buildRegions();
     G.rumoursDone = new Set(s.rumours || []);
     if (!G.tradeTons) { G.tradeTons = DATA.cargo.map(() => 0); G.tradeGold = DATA.cargo.map(() => 0); }
+    // The per-power market rows: JSON breaks the G.market alias, so
+    // re-point it; an older save has no rows at all.
+    if (!G.rivalMarket) G.rivalMarket = [0, 1, 2, 3].map(p => (p === G.nation ? G.market : G.market.slice()));
+    else G.market = G.rivalMarket[G.nation];
+    if (!G.relTimer) G.relTimer = {};
     G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
     // Saves are version-2 across MANY builds, so a stale one may predate
     // fields the live code relies on. Re-establish the invariants instead of
@@ -13283,7 +13433,6 @@ function endTurn() {
   }
   for (const u of G.units) { u.movesLeft = u.moves; u.slipChecked = false; }
   revealAll();
-  payUpkeep();
   blockadeCensus();
   for (const c of G.colonies) colonyTurn(c);
   // @VANISH removals, deferred out of the loop above.
@@ -15269,8 +15418,13 @@ function onKey(e) {
         case 'f': case 'F': setOrder(5); break;
         case 's': case 'S': setOrder(1); break;
         case 'b': case 'B': buildColony(); break;
-        case 'p': case 'P': setOrder(8); break;
-        case 'r': case 'R': setOrder(9); break;
+        // The P/R keys take the same gated path as the ORDERS menu rows
+        // (@ONLYPIO / @NOROAD / @NOPLOW). They used to bypass it through a
+        // bare setOrder, which let a SHIP take a plow order and be demoted
+        // to a Colonist when the work "finished" (found 2026-09-02 by the
+        // input oracle after the war matrix went live).
+        case 'p': case 'P': improveOrder(ORDER_CLEAR); break;
+        case 'r': case 'R': improveOrder(ORDER_ROAD); break;
         case 'c': case 'C': centreView(); break;
         case 'e': case 'E': returnToEurope(); break;
         case 'l': case 'L': loadCargo(); break;

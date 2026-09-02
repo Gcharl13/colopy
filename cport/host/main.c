@@ -349,10 +349,78 @@ static void print_projection(int job_convert) {
     {
         const PowerRecord *p = colopy_power(cs_nation());
         printf("{\"turn\":%u,\"year\":%u,\"season\":%u,\"rng\":%u,"
-               "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
-               "\"colonies\":[",
+               "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,",
                cs_turn(), cs_year(), cs_season(), CS.rng, p->gold,
                p->kings_fund, p->tax_rate, CR.upkeep_unpaid);
+        /* every power's market row + pool, and the rivals' gold (the JS
+         * mkt/acc/rmkt/racc/rgold) — per-power market parity (B3.6) */
+        printf("\"mkt\":[");
+        for (int g = 0; g < N_GOODS; g++)
+            printf("%s%u", g ? "," : "", p->price_level[g]);
+        printf("],\"acc\":[");
+        for (int g = 0; g < N_GOODS; g++)
+            printf("%s%d", g ? "," : "", (int)(int16_t)p->traffic[g]);
+        printf("],\"rmkt\":[");
+        for (int q = 0; q < 4; q++) {
+            printf("%s[", q ? "," : "");
+            for (int g = 0; g < N_GOODS; g++)
+                printf("%s%u", g ? "," : "", CS.powers[q].price_level[g]);
+            printf("]");
+        }
+        printf("],\"racc\":[");
+        for (int q = 0; q < 4; q++) {
+            printf("%s[", q ? "," : "");
+            for (int g = 0; g < N_GOODS; g++)
+                printf("%s%d", g ? "," : "",
+                       (int)(int16_t)CS.powers[q].traffic[g]);
+            printf("]");
+        }
+        printf("],\"rgold\":[");
+        {
+            int fr = 1;
+            for (int q = 0; q < 4; q++) {
+                if (q == (int)cs_nation()) continue;
+                printf("%s%d", fr ? "" : ",", CR.rivals[q].gold);
+                fr = 0;
+            }
+        }
+        printf("],\"war\":[");
+        for (int a = 0; a < 4; a++) {
+            printf("%s[", a ? "," : "");
+            for (int b = 0; b < 4; b++)
+                printf("%s%u", b ? "," : "", CR.war_matrix[a][b]);
+            printf("]");
+        }
+        printf("],\"treaty\":[");
+        for (int a = 0; a < 4; a++) {
+            printf("%s[", a ? "," : "");
+            for (int b = 0; b < 4; b++)
+                printf("%s%u", b ? "," : "", CR.treaty_matrix[a][b]);
+            printf("]");
+        }
+        printf("],\"rcol\":[");
+        {
+            /* the rivals' FULL colonies, rival by rival in record order
+             * (the JS r.colonies keeps import = record order) */
+            int fr = 1;
+            for (int q = 0; q < 4; q++) {
+                if (q == (int)cs_nation()) continue;
+                for (int ci = 0; ci < CS.n_colonies; ci++) {
+                    const ColonyRecord *c = &CS.colonies[ci];
+                    if ((c->owner_power & 3) != q) continue;
+                    printf("%s{\"name\":\"%.24s\",\"pop\":%u,"
+                           "\"hammers\":%u,\"fe\":[%d,%d],\"stock\":[",
+                           fr ? "" : ",", c->name, c->population,
+                           c->hammers, CR.col[ci].dbg_food,
+                           CR.col[ci].dbg_eat);
+                    fr = 0;
+                    for (int g = 0; g < N_GOODS; g++)
+                        printf("%s%u", g ? "," : "", c->stock[g]);
+                    printf("]}");
+                }
+            }
+        }
+        printf("],\"colonies\":[");
         int first = 1;
         for (int ci = 0; ci < CS.n_colonies; ci++) {
             const ColonyRecord *c = &CS.colonies[ci];

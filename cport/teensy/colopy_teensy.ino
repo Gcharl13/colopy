@@ -417,6 +417,7 @@ static void draw_screen(void) {
         au_on_event(pending_ev.key, pending_ev.p[0]);
 #endif
     }
+    if (CR.combat.active) rm_draw_combat();   /* the Combat Analysis panel */
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
                          { pending_ev.p[0], pending_ev.p[1], 0, 0 },

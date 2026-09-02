@@ -11,6 +11,7 @@ Modes:
 Grows the per-turn trace dumper in C-port Phase 3.
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -127,7 +128,9 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
 }"""
 
 
+PROJ_DEBUG_JS = "true" if os.environ.get("COLOPY_PROJ_DEBUG") else "false"
 INPUT = """([save, events]) => {
+  const PROJ_DEBUG = """ + PROJ_DEBUG_JS + """;
   const SCR = { title: 0, difficulty: 1, nation: 2, name: 3, briefing: 4,
                 hof: 5, map: 6, report: 7, colony: 8, europe: 9, woodcut: 10,
                 village: 11, king: 12, cards: 13, pedia: 14, options: 15,
@@ -229,7 +232,16 @@ INPUT = """([save, events]) => {
       // is reported, not failed. A key BOTH ask a different number of times
       // means the two are answering the same question differently, which is
       // the drift that made the BUY button look like two bugs (G2c).
+      // the Combat Analysis latch: a modal the next key dismisses (a latch
+      // only one engine holds swallows a key the other acts on)
+      cb: G.combat ? 1 : 0,
+      ut: u ? u.type : '',
       askmap: Object.assign({}, _askBy),
+      // the rivals' unit and colony positions -- the input scripts step
+      // onto rival tiles, and a list drift between the engines was
+      // invisible until this field (2026-09-02)
+      rv: G.rivals.map(r => ({ n: r.nation, u: r.units.map(x => [x.x, x.y]),
+                               c: r.colonies.map(x => [x.x, x.y]) })),
       // The dialog KIND, matching the C's UI.dlg enum (colopy_input.h):
       // 0 none, 1 @HOWMUCH5 (Europe sell), 2 @HOWMUCH1 (colony load),
       // 3 @HOWMUCH2 (colony unload), 4 any other openDialog.  This read
@@ -251,7 +263,15 @@ INPUT = """([save, events]) => {
                              typeof x.movesLeft === 'number' ? x.movesLeft : -1]),
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
-      gold: G.gold, year: G.year };
+      gold: G.gold, year: G.year,
+      // DEBUG-only (COLOPY_PROJ_DEBUG=1): the modal/ask/queue state and the
+      // status line after the event -- JS-only fields, never compared.
+      ...(PROJ_DEBUG ? { dbg_msg: G.msg || '', dbg_dialog: G.dialog ? 1 : 0,
+                         dbg_u: u ? JSON.parse(JSON.stringify(u)) : null,
+                         dbg_t10: G.units[10] ? [G.units[10].type, !!G.units[10].ship, G.units[10].x, G.units[10].y] : null,
+                         dbg_ask: G.ask ? (G.ask.key || 1) : 0,
+                         dbg_q: (G.eventQueue || []).map(e => e.key || e),
+                         dbg_combat: G.combat ? 1 : 0 } : {}) };
   };
   for (const [key, alt, shift] of events) {
     G.eventQueue = [];             // record-only popups: never modal
@@ -370,6 +390,15 @@ PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
       ...(STEPRNG ? { steps: G._steps.slice() } : {}),
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
       unpaid: G.upkeepUnpaid ? 1 : 0,
+      mkt: G.market.slice(), acc: G.accum.slice(),
+      rmkt: (G.rivalMarket || []).map(r => r.slice()),
+      racc: (G.rivalAccum || []).map(r => r.slice()),
+      rgold: G.rivals.map(r => r.gold | 0),
+      war: [0, 1, 2, 3].map(a => [0, 1, 2, 3].map(b => relWar(a, b))),
+      treaty: [0, 1, 2, 3].map(a => [0, 1, 2, 3].map(b => relTreaty(a, b))),
+      rcol: G.rivals.flatMap(r => r.colonies.filter(c => c.colonists).map(c => ({
+        name: c.name, pop: c.colonists.length, hammers: c.hammers | 0,
+        fe: c.dbgFE || [0, 0], stock: c.stock.slice() }))),
       colonies: G.colonies.map(c => ({ name: c.name,
         pop: c.colonists.length, sol: c.sol, hammers: c.hammers,
         bip: c.building ? bldIndex(c.building) : -1,

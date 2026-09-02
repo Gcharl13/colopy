@@ -12,6 +12,9 @@
 #include "../core/colopy_sim.h"
 #include "fixtures.h"
 
+static int g_input_save_loaded;   /* the input projection's `rv` field:
+                                   * rivals exist only once a game is loaded */
+
 static uint8_t *slurp(const char *path, long *out_len) {
     FILE *f = fopen(path, "rb");
     if (!f) return 0;
@@ -338,11 +341,42 @@ static void in_project(void) {
      * INTERSECTION by input_compare, so a key only one engine asks (B4.6)
      * is reported rather than failed, while a shared key with different
      * counts is the real drift (G2c). */
+    /* the Combat Analysis latch (sim_trace's `cb`): a modal the next key
+     * dismisses — a latch only one engine holds swallows a key the other
+     * acts on (2026-09-02) */
+    printf("\"cb\":%d,", CR.combat.active ? 1 : 0);
+    /* the selected unit's TYPE (sim_trace `ut`): two engines can agree on
+     * a unit's position and moves and still hold different units there */
+    printf("\"ut\":\"%s\",", su >= 0 ? dat_units[CS.units[su].type].name : "");
     printf("\"askmap\":{");
     for (int i = 0; i < ask_key_count(); i++)
         printf("%s\"%s\":%u", i ? "," : "", ask_key_name(i),
                (unsigned)ask_key_hits(i));
     printf("},");
+    /* the rivals' unit and colony positions (sim_trace's `rv`): the
+     * input scripts step onto rival tiles, and a list drift between the
+     * engines was invisible until this field (2026-09-02) */
+    printf("\"rv\":[");
+    {
+        int fr = 1;
+        /* no rivals exist before a game starts (JS G.rivals = []) */
+        for (int rn = 0; rn < (g_input_save_loaded ? 4 : 0); rn++) {
+            if (rn == (int)cs_nation()) continue;
+            printf("%s{\"n\":%d,\"u\":[", fr ? "" : ",", rn);
+            fr = 0;
+            for (int k = 0; k < CR.n_runits[rn]; k++) {
+                int q = CR.runits_order[rn][k];
+                printf("%s[%d,%d]", k ? "," : "", CR.runit_x[q],
+                       CR.runit_y[q]);
+            }
+            printf("],\"c\":[");
+            for (int k = 0; k < CR.rivals[rn].n_col; k++)
+                printf("%s[%d,%d]", k ? "," : "", CR.rivals[rn].col[k].x,
+                       CR.rivals[rn].col[k].y);
+            printf("]}");
+        }
+    }
+    printf("],");
     /* Every euro menu now, not just the two harbour ones. The scoping was
      * D12's fault: the shop menus baked "(Cost: N)" into the row string
      * here and carried it as a separate right-aligned column in the JS, so
@@ -388,6 +422,7 @@ static void in_project(void) {
            CS.powers[cs_nation()].gold, cs_year());
 }
 int input_main(const char *save) {
+    g_input_save_loaded = save != 0;
     ui_init();
     /* the pulldown/menubar hit-tests need the pak fonts */
     {

@@ -48,14 +48,21 @@ void market_reset_accum(void) {
  * FULL value from all four (@0x322FF — no discount, so Dutch prices
  * also recover faster).  The port sells only as the human player, so
  * k uses the human difficulty term (the AI -2 case lands with B3.6). */
-static void pool_move(int i, int32_t qty, int sign) {
-    int32_t k = ((int32_t)cs_difficulty() - 2) * 16;
+/* `human` selects func_032294's k term: the human seller's difficulty
+ * term, or the flat -2 for an AI seller (@0x322A5 controller test ->
+ * @0x322B8).  The AI custom house and overflow sales run this same
+ * accumulator (0x191F:0xA2E @0x2D774 / @0x2E76C). */
+void market_pool_move(int i, int32_t qty, int sign, int human) {
+    int32_t k = (human ? (int32_t)cs_difficulty() - 2 : -2) * 16;
     int32_t val = qty * k / 100 + (qty << dat_cargo[i].volatility);
     for (int p = 0; p < 4; p++) {
         int32_t v = val;
         if (sign > 0 && p == 3) v = v * 2 / 3;
         traffic_set(p, i, traffic_get(p, i) + (sign > 0 ? v : -v));
     }
+}
+static void pool_move(int i, int32_t qty, int sign) {
+    market_pool_move(i, qty, sign, 1);
 }
 
 static PowerRecord *me(void) { return &CS.powers[cs_nation()]; }
@@ -91,6 +98,15 @@ int market_bid(int i) {                        /* func_030590 @0x030590 */
     int p = market_level(i) - 1;
     return p < 0 ? 0 : p;
 }
+/* the same bid on ANY power's own row: the engine's per-power bid byte
+ * table at DGROUP 0x84BC + power*16 + good = max(0, level - 1), built
+ * for all four at boot (func_005760 @0x57A5..@0x57BB) and rebuilt for
+ * the current power by every drift (@0x30B14..@0x30B24); the AI custom
+ * house and overflow sales read it for the OWNER (@0x2E7A0). */
+int market_bid_of(int power, int i) {
+    int p = (int)CS.powers[power & 3].price_level[i] - 1;
+    return p < 0 ? 0 : p;
+}
 int market_ask(int i) {                        /* func_030566 @0x030566 */
     int p = market_level(i) + dat_cargo[i].burden;
     return p < 0 ? 0 : p;
@@ -103,31 +119,52 @@ int market_boycotted(int i) {
     return (CR.boycotts >> i) & 1;
 }
 
-/* stepPrice (game.js:4313): walk the accumulator across its thresholds. */
-static void step_price(int i) {
+/* stepPrice (game.js:4313): walk the accumulator across its thresholds —
+ * on ANY power's own row and pool.  A rival's market moves silently
+ * (the JS stepPriceOf: the human gate on the drift's message path is
+ * unread; the port's reading). */
+static void step_price_of(int power, int i) {
     const dat_cargo_t *c = &dat_cargo[i];
-    int before = market_level(i);              /* the LEVEL walks, not the bid */
+    PowerRecord *pr = &CS.powers[power & 3];
+    int before = pr->price_level[i];           /* the LEVEL walks, not the bid */
     int p = before;
-    int32_t a = traffic_get((int)cs_nation(), i);
+    int32_t a = traffic_get(power & 3, i);
     while (a <= -100 * c->rise && p < c->high) { p += 1; a += 100 * c->rise; }
     while (a >=  100 * c->fall && p > c->low)  { p -= 1; a -= 100 * c->fall; }
-    traffic_set((int)cs_nation(), i, a);
-    me()->price_level[i] = (uint8_t)p;
-    if (p != before)
+    traffic_set(power & 3, i, a);
+    pr->price_level[i] = (uint8_t)p;
+    if (p != before && (power & 3) == (int)cs_nation())
         ev_emit(p > before ? "PRICEUP" : "PRICEDOWN", p, 0,
                 c->name, dat_nations[cs_nation()].homeport);
 }
+static void step_price(int i) { step_price_of((int)cs_nation(), i); }
 
-/* driftMarket (game.js:4334): the per-turn attrition pass. */
-void market_drift(void) {
-    /* attrition drifts the PLAYER's own pool (the rivals' drift cadence
-     * is unread — FLAGGED, lands with B3.6) */
+/* The per-power drift.  Every power's market moves once a turn: the
+ * per-power pass func_02F052 calls the Europe update func_0363A2 for
+ * ITS power (@0x2F218, after the colony loop), which sets the current
+ * power (@0x363B5) and runs drift(0,-1) @0x363D3 — a rival's prices
+ * move on the rival's own pool exactly as the player's do (read
+ * 2026-09-02).  The port's attrition/threshold model is oracle-locked
+ * and applied per power.
+ *   AI PRICE CAP (@0x30ABB..@0x30B0A, inside the drift, AI powers only):
+ *   for HORSES (8), TOOLS (0xE) and MUSKETS (0xF) the level is clamped
+ *   to 3 + ((4 - difficulty) * 3 >> 1). */
+void market_drift_of(int power) {
     for (int i = 0; i < N_GOODS; i++) {
-        traffic_set((int)cs_nation(), i,
-                    traffic_get((int)cs_nation(), i) + dat_cargo[i].attrition);
-        step_price(i);
+        traffic_set(power & 3, i,
+                    traffic_get(power & 3, i) + dat_cargo[i].attrition);
+        step_price_of(power, i);
+    }
+    if ((power & 3) != (int)cs_nation()) {
+        int cap = 3 + (((4 - (int)cs_difficulty()) * 3) >> 1);
+        static const int CAPPED[3] = { HORSES, TOOLS, MUSKETS };
+        for (int k = 0; k < 3; k++)
+            if (CS.powers[power & 3].price_level[CAPPED[k]] > cap)
+                CS.powers[power & 3].price_level[CAPPED[k]] = (uint8_t)cap;
     }
 }
+/* driftMarket (game.js:4334): the player's per-turn attrition pass. */
+void market_drift(void) { market_drift_of((int)cs_nation()); }
 
 /* sellGoods (game.js:4344): gross at bid, tax to the King's fund, counters
  * truncated per lot, accumulator +qty<<volatility, then re-drift. */

@@ -873,3 +873,65 @@ int rm_options_row_hit(int which, int mx, int my) {
     }
     return -2;
 }
+
+/* ---- the Combat Analysis panel (G.combat / drawCombat) ------------------
+ * spec/ui/combat_analysis.md (func_05E9B0, page 0x11).  Byte-cited
+ * geometry: x = 53, w = 214, h = rows*20 + 6, VERTICALLY CENTRED; the
+ * title is "COMBAT ANALYSIS" (@MISC 75); the attacker column pens at
+ * x = 56 and the defender at x = 160, each value right-aligned at
+ * col_x + 0x50; row pitch 20.  Each column shows its unit sprite, then
+ * one row per modifier that fired, then the modified strength.  The
+ * roll line is the port's own (the engine prints it only in cheat
+ * mode) — mirrors the JS drawCombat exactly. */
+static void combat_col(const rd_font *f, int cx, int by, int rows_total,
+                       const char *type, int icon, int base,
+                       const combat_row *rows, int n, int total) {
+    const uint8_t fc[4] = { 0xFF, 0xFC, 0xFB, 0 };
+    const uint8_t fe[4] = { 0xFF, 0xFE, 0xFD, 0 };
+    const uint8_t e0[4] = { 0xFF, 0x0E, 0x0D, 0 };
+    char buf[16];
+    rd_blit(&RD.icons, icon, cx, by + 11);
+    rd_text(f, type, cx + 18, by + 13, fe);
+    snprintf(buf, sizeof(buf), "%d", base);
+    rd_text(f, buf, cx + 0x50 - rd_text_width(f, buf), by + 13, fc);
+    for (int i = 0; i < n; i++) {
+        int y = by + 11 + (i + 1) * 20;
+        const char *label = rows[i].misc < 221 ? dat_text_misc[rows[i].misc] : "";
+        rd_text(f, label, cx, y, fe);
+        rd_text(f, rows[i].value,
+                cx + 0x50 - rd_text_width(f, rows[i].value), y, e0);
+    }
+    int ty = by + 11 + (rows_total - 1) * 20;
+    rd_text(f, "Strength", cx, ty, fc);
+    snprintf(buf, sizeof(buf), "%d", total);
+    rd_text(f, buf, cx + 0x50 - rd_text_width(f, buf), ty, fc);
+}
+void rm_draw_combat(void) {
+    const combat_panel *c = &CR.combat;
+    if (!c->active) return;
+    dresolve();
+    const rd_font *f = dfont(1);
+    int mx = c->att_n > c->def_n ? c->att_n : c->def_n;
+    int rows = 1 + mx + 1;                    /* head + mods + total */
+    int h = rows * 20 + 6;
+    int x = 53, w = 214, y = (200 - h + 1) / 2;   /* Math.round(100 - h/2) */
+    rm_plaque(x, y, w, h);
+    {
+        const uint8_t fc[4] = { 0xFF, 0xFC, 0xFB, 0 };
+        const char *title = dat_text_misc[75];
+        rd_text(f, title, 160 - rd_text_width(f, title) / 2, y + 3, fc);
+    }
+    combat_col(f, 56, y, rows, dat_units[c->att_type].name, c->att_icon,
+               c->att_base, c->att_rows, c->att_n, c->att_total);
+    combat_col(f, 160, y, rows, dat_units[c->def_type].name, c->def_icon,
+               c->def_base, c->def_rows, c->def_n, c->def_total);
+    {
+        char line[80];
+        snprintf(line, sizeof(line), "Roll %d of %d  --  %s wins",
+                 (int)c->roll, (int)(c->att_total + c->def_total),
+                 c->win ? "attacker" : "defender");
+        const uint8_t ink[4] = { 0xFF, (uint8_t)(c->win ? 0x0E : 0x0C),
+                                 (uint8_t)(c->win ? 0x0D : 0x0B), 0 };
+        rd_text(f, line, 160 - rd_text_width(f, line) / 2, y + h - 9, ink);
+    }
+}

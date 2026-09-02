@@ -387,8 +387,17 @@ int field_yield(const ColonyRecord *c, int sol, int job,
         yld += add;
     }
     if (col >= 8 && !colony_has_name(ci, "Docks")) yld = 0;
-    if (col == 4 && (c->owner_power & 3) == cs_nation() &&
-        father_owned(father_by_name("Henry Hudson"))) yld <<= 1;
+    /* Henry Hudson (father 8) doubles furs — tested against the COLONY
+     * OWNER's Congress: `push 8; push [colony+0x1A]; lcall 0x981:0`
+     * @0x9F6B..@0x9F83 (read 2026-09-02).  The old player-only gate
+     * starved every rival trapper of the bonus (the JS ffOwned reads the
+     * pass's power, i.e. the owner). */
+    if (col == 4) {
+        int hud = father_by_name("Henry Hudson");
+        if (hud >= 0 &&
+            ((CS.powers[c->owner_power & 3].founding_fathers >> hud) & 1))
+            yld <<= 1;
+    }
     if (prof == 27 && yld > 0 && (col <= 4 || col >= 8)) yld += 1;
     if (yld < 0) yld = 0;
     if (yld != 0 && pen < 0) { yld += pen; if (yld < 0) yld = 0; }
@@ -442,7 +451,8 @@ int indoor_yield(int ci, int sol, int job, uint8_t prof) {
         }
         break;
     }
-    if (CR.upkeep_unpaid) y /= 2;
+    /* the @UPKEEP half-rate penalty is gone: building upkeep is cut
+     * content (RULINGS 2026-09-02 — no UPKEEP key in the EXE blob) */
     return y > 0 ? y : 0;
 }
 

@@ -132,7 +132,22 @@ typedef struct COLOPY_PACKED {
     int32_t  gold;                  /* +0x2A */
     uint16_t crosses_accum;         /* +0x2E  crosses toward next immigrant */
     uint16_t cross_threshold;       /* +0x30  the immigration threshold */
-    uint8_t  _pad_32[0x1A];
+    uint16_t ref_strength;          /* +0x32  (docs/DATA_MODEL.md) */
+    /* +0x34  the WAR-RELATION row, one byte per target: 4 powers then
+     * 8 tribes (the newgame zero loop @0x7583A runs to 0xC).  Bits:
+     * 0x01 resolved @0x5318F, 0x02 war @0x58A7B, 0x08 grievance
+     * @0x3F0D7, 0x20 peace-pending @0x57DF0, 0x40 TREATY (SIGNTREATY
+     * @0x57E91 / cleared @0x57F3C; the @TRADEATWAR gate @0x5A450),
+     * 0x80 privateer attribution @0x3F0A1.  Loaded into CR.war_matrix
+     * and folded back on save (B4.6, 2026-09-02). */
+    uint8_t  war_rel[12];
+    uint8_t  rel_timer[4];          /* +0x40  per-pair timer: 1 at signing
+                                     * @0x57EC5, decremented @0x531A3 */
+    uint8_t  _unk_44[4];            /* +0x44  (js-dos "REF" — TBD) */
+    uint8_t  _unk_48;               /* +0x48  zeroed at newgame @0x365D9 */
+    uint8_t  musket_lots;           /* +0x49  free 50-musket lots from AI
+                                     * overflow @0x2E73B, spent @0x52688 */
+    uint16_t horse_pool;            /* +0x4A  AI overflow horses @0x2E75C */
     uint8_t  price_level[16];       /* +0x4C  live bid prices */
     uint16_t traffic[16];           /* +0x5C  per-good traffic accumulator */
     int32_t  trade_gold[16];        /* +0x7C  F5 net trade value */

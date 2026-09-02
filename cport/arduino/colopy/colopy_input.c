@@ -1913,6 +1913,9 @@ void in_key(const char *k, int alt, int shift) {
 }
 
 static void in_key_inner(const char *k, int alt, int shift) {
+    /* the Combat Analysis panel is modal: it swallows the next key and
+     * pops itself (onKey game.js: the G.combat check runs first) */
+    if (CR.combat.active) { CR.combat.active = 0; return; }
     /* an open @HOWMUCH dialog owns the keyboard (onKey, game.js:12403:
      * the G.dialog check runs before every screen case) */
     if (UI.dlg) { dialog_key(k); return; }
@@ -2144,9 +2147,17 @@ static void in_key_inner(const char *k, int alt, int shift) {
         } else if (key_is(k, "s") || key_is(k, "S")) {
             if (ui >= 0) { cmd_set_order(ui, 1); advance(); }
         } else if (key_is(k, "p") || key_is(k, "P")) {
-            if (ui >= 0) { cmd_set_order(ui, 8); advance(); }
+            /* the gated improveOrder path (@ONLYPIO/@NOROAD/@NOPLOW), like
+             * the ORDERS menu rows; a refusal does not advance (JS) */
+            if (ui >= 0) {
+                cmd_improve(ui, 8);
+                if (CS.units[ui].orders == 8) advance();
+            }
         } else if (key_is(k, "r") || key_is(k, "R")) {
-            if (ui >= 0) { cmd_set_order(ui, 9); advance(); }
+            if (ui >= 0) {
+                cmd_improve(ui, 9);
+                if (CS.units[ui].orders == 9) advance();
+            }
         } else if (key_is(k, "c") || key_is(k, "C")) {
             if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
         } else if (key_is(k, "v") || key_is(k, "V")) {
@@ -2580,6 +2591,8 @@ void in_click(int mx, int my, int right) {
 
 static void in_click_inner(int mx, int my, int right) {
     (void)right;
+    /* the Combat Analysis panel: any click dismisses it (onClick) */
+    if (CR.combat.active) { CR.combat.active = 0; return; }
     /* a click on an open numeric dialog commits its entry
      * (dialogClick's non-opts arm, game.js:12410) */
     if (UI.dlg) { dialog_done(0); return; }

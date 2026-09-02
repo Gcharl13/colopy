@@ -83,7 +83,9 @@ static int unit_by_type(const char *name) {
 static int R(int n) { return (int)((rng_next() * (uint32_t)n) >> 15); }
 
 /* combatAnalysis(u, isDefender).total for a live unit (see header). */
-int analysis_total(int ui, int is_defender) {
+/* the modifier inputs of one side (shared by the resolver's total and
+ * the Combat Analysis rows) */
+static void analysis_params(int ui, int is_defender, combat_params *pp) {
     rresolve();
     const UnitRecord *u = &CS.units[ui];
     combat_params p;
@@ -126,6 +128,24 @@ int analysis_total(int ui, int is_defender) {
      * while the declared war is on. */
     p.woi_ref_bombard = (CR.woi_flags & WOI_DECLARED) && CR.unit_is_ref[ui];
     p.difficulty = (int8_t)cs_difficulty();
+    /* the display-only row inputs (game.js combatAnalysis): the
+     * colony's fortification tier and the SoL of the colony the
+     * unit stands in */
+    {
+        int ci = player_colony_at(unit_pos_x(ui), unit_pos_y(ui));
+        if (ci >= 0) {
+            p.colony_level = (uint8_t)(colony_has_name(ci, "Fortress") ? 3
+                             : colony_has_name(ci, "Fort") ? 2
+                             : colony_has_name(ci, "Stockade") ? 1 : 0);
+            p.has_home = 1;
+            p.home_sol = (uint8_t)rt_sol(ci);
+        }
+    }
+    *pp = p;
+}
+int analysis_total(int ui, int is_defender) {
+    combat_params p;
+    analysis_params(ui, is_defender, &p);
     return combat_total(&p);
 }
 
@@ -331,11 +351,35 @@ static void try_promote(int winner, int w_strength, int total) {
 }
 
 int resolve_attack(int att_ui, int def_ui) {
-    int A = analysis_total(att_ui, 0);
-    int D = analysis_total(def_ui, 1);
+    combat_params pa, pd;
+    analysis_params(att_ui, 0, &pa);
+    analysis_params(def_ui, 1, &pd);
+    int A = combat_total(&pa);
+    int D = combat_total(&pd);
 
     int roll = 1 + R(A + D);
     int win = roll <= A;
+    /* the Combat Analysis panel (G.combat, game.js resolveAttack):
+     * Game Options bit 0x0200; filled BEFORE the defeat shuffles the
+     * unit indices, shown over the map until the next key/click */
+    if (CR.game_options & 0x0200) {
+        combat_panel *c = &CR.combat;
+        memset(c, 0, sizeof(*c));
+        c->active = 1;
+        c->win = (uint8_t)win;
+        c->att_type = CS.units[att_ui].type;
+        c->def_type = CS.units[def_ui].type;
+        c->att_icon = (uint8_t)unit_icon_of(att_ui);
+        c->def_icon = (uint8_t)unit_icon_of(def_ui);
+        int b;
+        c->att_n = (uint8_t)combat_rows(&pa, c->att_rows, &b);
+        c->att_base = (int16_t)b;
+        c->def_n = (uint8_t)combat_rows(&pd, c->def_rows, &b);
+        c->def_base = (int16_t)b;
+        c->att_total = (int16_t)A;
+        c->def_total = (int16_t)D;
+        c->roll = (int16_t)roll;
+    }
     int loser = win ? def_ui : att_ui, winner = win ? att_ui : def_ui;
     int dx = unit_pos_x(def_ui), dy = unit_pos_y(def_ui);
     int removed = apply_defeat(loser, winner);

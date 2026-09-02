@@ -10775,3 +10775,88 @@ rm_draw_colony instead of CR.plot_seed / UI.colony_ship_sel.  Indoor
 crew figures in the building field are now clickable in both engines
 (select, then jobs menu — a port addition; the engine's region-2
 action bodies remain unread).
+
+## 2026-09-02 — the rival economy, the war matrix, and what fell out of watching them
+
+Byte reads (all quoted at the code sites; the subagent route was dead in
+this session, every offset below was read directly):
+
+1. **AI Custom House** — the per-good predicate is `func_02D606`
+   (0x191F:0x9C0, the AI twin of the human's +0x8A flag test @0x2D9CE):
+   never food/lumber/horses/tools/muskets (@0x2D60F..@0x2D62B); ore only
+   with no Armory (building 3, @0x2D633) and no tools/muskets made this
+   turn ([0x8DC8] tally at goods 0xE/0xF, @0x2D641/@0x2D647).  The sale
+   itself (@0x2D6ED..@0x2D78E) runs on the pass's CURRENT power = the
+   colony owner (@0x2D67C): the owner's bid (0x191F:0x9EA), the owner's
+   tax (+0x01 @0x2D737) into the owner's royal fund (+0x22 @0x2D785)
+   unless [0x5382]&1, gold via the clamped adder 0x181F:0xABA, and the
+   Europe SELL accumulator 0x191F:0xA2E @0x2D774.  The blockade skip
+   (@0x2D995) is gated on the HUMAN controller (@0x2D99B..@0x2D9AE): an
+   AI custom house sells through a blockade.  No boycott test sits in the
+   block (the port's human gate stays, flagged as its own).
+2. **AI overflow sale** — the branch @0x2E857..@0x2E86E sends an AI owner
+   to 0x2E86E (the human to the spoil arithmetic @0x2E7BD): muskets per
+   50 into PowerRecord +0x49 (@0x2E72A..@0x2E743; consumed by that power's
+   free 50-musket Europe buy @0x52658..@0x52688), horses into the +0x4A
+   pool (@0x2E745..@0x2E760), the rest UNTAXED at the 0x84BC bid byte
+   (@0x2E7A0, gold @0x2E7B7) through the SELL accumulator (@0x2E76C, AI k
+   term), then the same spoil arithmetic trims the stock.
+3. **The 0x84BC table** = per-power bid byte `max(0, level-1)`: built for
+   all four at boot (func_005760 @0x57A5..@0x57BB) and per drift for the
+   current power (@0x30B14..@0x30B24).  Inside that drift an AI power's
+   HORSES/TOOLS/MUSKETS level is capped at `3 + ((4-diff)*3 >> 1)`
+   (@0x30ABB..@0x30B0A).
+4. **Every power's market drifts each turn**: the per-power pass
+   func_02F052 calls func_0363A2 for its power (@0x2F218, after the
+   colony loop), which sets the current power (@0x363B5) and runs
+   drift(0,-1) @0x363D3.  CORRECTION to market.md: func_036574 (the
+   claimed "per-turn drift driver") is the NEW-GAME power init — it
+   zeroes gold/fathers/pools (@0x365A1..@0x3670E) and runs drift(1,-1)
+   per power only at its tail (@0x367E8..@0x36809); its caller
+   func_0755CC carries the AMER2.MP load.  So all four powers START
+   level-for-level from one shared random base.
+5. **Wagon cap for every power** — at build completion of target 0xC
+   (@0x2D1B3..@0x2D20A) the owner's unit census [0x924C + p*0x13 + 0xC]
+   vs colony count [0x9298 + p] (@0x2D1C2..@0x2D1CD); no controller gate.
+   The census 0x924C is the per-power unit-count-by-type table (inc
+   @0x2D240, dec @0x5BA92, zeroed @0x42181) — which RESOLVES the open
+   [0x925D] leaf: `0x924C + 0x11` = the FRIGATE count, so @KINGFRIGATE
+   (@0x2F29B) only goes to a power with no frigate.
+6. **Building upkeep is CUT CONTENT**: no `UPKEEP` key exists in the
+   EXE's message-key blob (every emitted key does), @MISC 91/92 have no
+   consumer (B3.2), and the per-power pass has no gold debit.  king.md's
+   "func_02F052 upkeep tail" is the KINGFRIGATE spawn (@0x2F286..
+   @0x2F39D), not upkeep.  The port's charge and half-rate penalty are
+   removed from both engines.
+7. **War matrix bit 0x40 is TREATY, not "met"**: set by SIGNTREATY
+   (@0x57E91 via the bit-set helper 0x181F:0xA06), cleared by
+   CANCELTREATY/DECLAREWAR (@0x57F3C via 0x181F:0xA10 = func_008000, the
+   bit-clear helper, both ways @0x802C), by the war-declaration resolver
+   (@0x3F29D) and by grievance resolution (`and 0xB7` @0x5318A); the
+   @TRADEATWAR gate (@0x5A450) tests only this bit.  The +0x40 row is a
+   per-pair TIMER (1 at signing @0x57EC5, dec @0x531A3), 4 wide; the
+   +0x34 row is 12 wide (newgame zero loop to 0xC @0x7583A: 4 powers + 8
+   tribes).  Both engines now IMPORT the matrix (B4.6) and the C folds it
+   back on save.  The JS REL.MET/TREATY both being 0x40 is consistent.
+8. **Henry Hudson is owner-keyed**: `push 8; push [colony+0x1A]; lcall
+   0x981:0` @0x9F6B..@0x9F83 — the C's player-only gate starved rival
+   trappers (found by the new rival-colony projection).
+9. **SIEGE**: the only `@SIEGE` emit is case 19 of the colony-screen
+   colonist status builder func_02883E (code 0x14 from the occupation
+   getter func_009102 = @JOB row 20); the colony-turn function has no
+   siege gate.  The port's construction-halting siege remains a flagged
+   port model, now known to have no counterpart in func_02D658.
+
+Port-side lockstep findings from the widened oracle (the turns
+projection now carries every power's market row and pool, the rivals'
+gold, the rivals' FULL colonies with food in/out, and the war/treaty
+matrices; the input projection carries the combat latch, the selected
+unit's type and the rivals' positions): a rival-vs-rival capture moved
+only the C stub, so the record kept running under the victim; a rival
+ship could plant a stub on another power's colony tile in both engines,
+which after a capture double-ran the record in C (stubs now carry a
+record-backed flag); the P/R keys bypassed @ONLYPIO in both engines, so
+a Frigate could take a plow order and be "demoted" to a Colonist; and
+the byte-cited Combat Analysis panel (func_05E9B0, Game Options 0x0200)
+existed only in the JS, so the C acted on the key that the JS spent
+dismissing it — the C now builds and draws the panel.

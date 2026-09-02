@@ -168,3 +168,30 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
    hidden bit instead of declaring war). **No naval blockade mechanic exists** (0
    "blockad*" strings; the closest is land-adjacency **SIEGE**, which restricts a
    besieged colony's production to military units). **B.**
+
+
+## Amendment 2026-09-02 — bit 0x40, the timer row, the import
+
+- **Bit `0x40` of the `+0x34` war row is TREATY (alliance), not "met"**: set
+  by SIGNTREATY (`push 0x40; push b; push a; lcall 0x181F:0xA06` `@0x57E91`),
+  cleared by CANCELTREATY/DECLAREWAR (`@0x57F3C` via `0x181F:0xA10` =
+  `func_008000`, the bit-CLEAR helper, applied both ways `@0x802C..@0x8046`),
+  by the war-declaration resolver `@0x3F29D`, and by grievance resolution
+  (`and 0xB7` `@0x5318A` clears 0x08|0x40 and sets 0x01).  `@0x006090` keys
+  the AI frontier term on it; the @TRADEATWAR gate `@0x5A450` tests only it.
+  The prior "0x40 = met/contacted" gloss is withdrawn; contact has no bit of
+  its own in the row.
+- **The `+0x40` row is a per-pair TIMER, 4 wide**: `mov 1` at signing
+  (`@0x57EC5/@0x57ED0`, both ways), `mov 0` on cancel/war
+  (`@0x57F2D/@0x57F38`), a computed value `@0x59B31`, and the per-turn
+  `dec` when nonzero (`@0x531A3`); the grievance resolution above fires only
+  while it reads 0 (`@0x53171`) and `random_int(0,3) == 0` (`@0x5317E`).  It
+  is NOT a second bit matrix.
+- **The `+0x34` row is 12 wide** (newgame zero loop to 0xC `@0x7583A`: four
+  powers, then the eight tribes) — the getter `func_007F34` reads
+  `PowerRecord[a] + 0x34 + b` for a European `a` and the tribe table for
+  `a >= 4`.
+- **Port status (B4.6 closed)**: both importers load the 4x4 European block
+  verbatim into the war matrix and derive the treaty map from bit 0x40; the
+  C folds both back into `+0x34` on save; the timers ride verbatim (the
+  grievance cycle itself is still unported).

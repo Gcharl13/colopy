@@ -973,6 +973,9 @@ static void draw_screen(void) {
         sfx_pending = event_sfx(pending_ev.key, &sfx_pending2);
 #endif
     }
+    /* the Combat Analysis panel sits over whatever screen is up, read
+     * first and dismissed first (the JS draw order) */
+    if (CR.combat.active) rm_draw_combat();
     if (have_pending && rm_event_exists(pending_ev.key)) {
         rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
                          { pending_ev.p[0], pending_ev.p[1], 0, 0 },

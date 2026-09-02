@@ -132,6 +132,14 @@ size_t colopy_save_sav(uint8_t *buf, size_t cap) {
     p += (size_t)CS.n_colonies * sizeof(ColonyRecord);
     memcpy(p, CS.units, (size_t)CS.n_units * sizeof(UnitRecord));
     p += (size_t)CS.n_units * sizeof(UnitRecord);
+    /* fold the runtime relation matrices back into the +0x34 rows
+     * (B4.6): the JS keeps its MET/TREATY 0x40 in two maps, the record
+     * has one bit — OR them. Tribe columns and the timers ride verbatim. */
+    for (int a = 0; a < 4; a++)
+        for (int b = 0; b < 4; b++)
+            CS.powers[a].war_rel[b] = (uint8_t)
+                (CR.war_matrix[a][b] |
+                 ((CR.treaty_matrix[a][b] & REL_TREATY) ? 0x40 : 0));
     memcpy(p, CS.powers, SAV_POWERS);              p += SAV_POWERS;
     memcpy(p, CS.villages, (size_t)CS.n_villages * sizeof(NativeSettlement));
     p += (size_t)CS.n_villages * sizeof(NativeSettlement);

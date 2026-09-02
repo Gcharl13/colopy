@@ -139,11 +139,37 @@ typedef struct {
                               * else the 2/4/x2-capital bonus REPLACES the
                               * whole tile bonus (exclusive, @0x7D8D..) */
     int8_t  difficulty;
+    /* display-only inputs of the Combat Analysis rows (game.js
+     * combatAnalysis): the colony's fortification level and its SoL */
+    uint8_t colony_level;
+    uint8_t has_home, home_sol;
 } combat_params;
+/* one Combat Analysis row: the @MISC label index + the printed value */
+typedef struct { uint8_t misc; char value[8]; } combat_row;
+#define COMBAT_ROWS_MAX 10
+int  combat_rows(const combat_params *p, combat_row *out, int *base);
+/* the open Combat Analysis panel (G.combat): set by resolve_attack when
+ * Game Options bit 0x0200 is on, dismissed by the next key or click */
+typedef struct {
+    uint8_t active, win;
+    uint8_t att_type, def_type;
+    uint8_t att_icon, def_icon;
+    uint8_t att_n, def_n;
+    int16_t att_base, def_base, att_total, def_total, roll;
+    combat_row att_rows[COMBAT_ROWS_MAX], def_rows[COMBAT_ROWS_MAX];
+} combat_panel;
 int combat_total(const combat_params *p);
 
 /* ---- the Europe market (colopy_market.c) ------------------------------ */
 int     market_bid(int good);
+int     market_bid_of(int power, int good);   /* the 0x84BC per-power bid byte */
+void    market_drift_of(int power);           /* func_0363A2's drift for one power */
+void    market_pool_move(int good, int32_t qty, int sign, int human);
+/* war/treaty relation bits (PowerRecord +0x34 row, spec diplomacy.md) */
+#define REL_WAR       0x02
+#define REL_PRIVATEER 0x80
+#define REL_TREATY    0x40
+#define PARLEY_LOCKOUT 0x10
 int     market_ask(int good);
 int     market_boycotted(int good);
 void    market_drift(void);
@@ -334,6 +360,7 @@ typedef struct {
     uint8_t  taught[32];         /* schoolhouse per-student counters */
     uint8_t  bld[48];            /* the JS-ordered building-id list */
     uint8_t  n_bld;
+    int16_t dbg_food, dbg_eat;   /* last produce: food out / eaten (oracle) */
 } colony_rt;
 
 /* A dock/passenger ENTRY (game.js:4590): a plain name — kind 0 = @CLASS
@@ -385,7 +412,9 @@ void hold_add(hold_slot *hold, uint8_t *n, int good, int qty); /* holdAdd */
 /* sol: the colony's rebel/SoL % (func_008524: 100·(+0xC2)/(+0xC6)),
  * imported once — rival colonies produce no bells (B3.6), so it is
  * static; runtime-founded ones start at 0. */
-typedef struct { int16_t x, y; uint8_t level, pop, spared, sol; } rival_colony;
+typedef struct { int16_t x, y; uint8_t level, pop, spared, sol;
+                 uint8_t full;   /* 1 = record-backed (JS c.colonists), 0 = runtime stub */
+               } rival_colony;
 typedef struct {
     uint8_t met, greeted;
     uint8_t next_colony;         /* colony-name rotation counter */
@@ -630,6 +659,7 @@ typedef struct {
     int8_t  n_routes;
     int16_t unit_route[COLOPY_MAX_UNITS];       /* u.route, -1 none */
     uint8_t unit_stop_index[COLOPY_MAX_UNITS];  /* u.stopIndex */
+    combat_panel combat;                        /* G.combat */
 } colopy_runtime;
 
 /* the .SAV sidecar (colopy_extras.c): the two things the port models

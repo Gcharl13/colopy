@@ -303,6 +303,14 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
             (uint8_t)(dat_cargo[i].start1 +
                       rng_range(0, (int32_t)(dat_cargo[i].start2 -
                                              dat_cargo[i].start1)));
+    /* every other power starts level-for-level with the player: the
+     * engine computes all four from ONE shared random price base with
+     * empty pools (func_036574's tail @0x367E8..@0x36809) — copies, no
+     * extra draws (JS seedMarket rivalMarket) */
+    for (int p = 0; p < 4; p++)
+        if (p != (int)nation)
+            memcpy(CS.powers[p].price_level, CS.powers[nation].price_level,
+                   sizeof(CS.powers[p].price_level));
 
     /* --- runtime: the loader's own build, then the fresh-game
      * overrides (the importer marks everyone met; beginGame does not:

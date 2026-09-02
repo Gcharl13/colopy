@@ -35,16 +35,14 @@
  * progress and rivalTurn's WAR branch only becomes reachable once a war is
  * declared in play. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "colopy_sim.h"
 #include "colopy_data.h"
 #include "colopy_text.h"   /* count MACROS only — no text symbols */
 
-#define REL_WAR       0x02
-#define REL_PRIVATEER 0x80
-#define REL_TREATY    0x40
-#define PARLEY_LOCKOUT 0x10
+/* REL_WAR / REL_PRIVATEER / REL_TREATY / PARLEY_LOCKOUT: colopy_sim.h */
 #define PARLEY_FIRST_TURN 0x28
 
 static int at_war(int a, int b) {
@@ -366,6 +364,9 @@ void rival_turn(void) {
          * same body as the player's, popups silenced.  Mirrors the JS
          * rivalTurn head draw for draw. */
         rival_colony_pass(rn);
+        /* the pass's Europe update (func_0363A2 @0x2F218, after the
+         * colony loop): the rival's own market drifts on its own pool */
+        market_drift_of(rn);
         int war = at_war(cs_nation(), rn);
         /* r.units order (the CR list): ships-then-land at import, plus
          * succession appends.  JS iterates a slice() snapshot; the only
@@ -403,6 +404,7 @@ void rival_turn(void) {
                             r->col[r->n_col].level = 0;
                             r->col[r->n_col].pop = 1;
                             r->col[r->n_col].sol = 0;
+                            r->col[r->n_col].full = 0;
                             r->n_col++;
                         }
                         r->next_colony++;    /* name rotation (names unused) */
@@ -529,6 +531,7 @@ void rival_turn(void) {
                             r->col[r->n_col].pop = (uint8_t)tpop;
                             r->col[r->n_col].spared = 0;
                             r->col[r->n_col].sol = 0;
+                            r->col[r->n_col].full = 0;   /* JS stub: no colonists */
                             r->n_col++;
                         }
                         /* the @CAPTURED family split @0x5DED1, same gate
@@ -794,11 +797,30 @@ static void news_tick(void) {
                     memmove(&vr->col[vi2], &vr->col[vi2 + 1],
                             (size_t)(vr->n_col - vi2 - 1) * sizeof(rival_colony));
                     vr->n_col--;
+                    /* the ColonyRecord at the site follows the stub: the
+                     * JS pushes {...vc, nation: winner} — a FULL colony
+                     * that runs the winner's pass from then on — or
+                     * drops the object outright when it burns.  The C
+                     * used to move only the stub, so the record kept
+                     * running under the victim (found 2026-09-02 by the
+                     * rival-colony projection). */
+                    int rci = -1;
+                    for (int q = 0; q < CS.n_colonies; q++)
+                        if (CS.colonies[q].map_x == vc.x &&
+                            CS.colonies[q].map_y == vc.y) { rci = q; break; }
                     if ((int)rng_next() <= 16383 && wr->n_col < 6) {
                         if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
                             wr->col[wr->n_col++] = vc;
+                        if (rci >= 0)
+                            CS.colonies[rci].owner_power = (uint8_t)
+                                ((CS.colonies[rci].owner_power & 0xF0) |
+                                 (winner & 0x0F));
                         ev_emit("CAPTURED2", 0, 0, dat_nations[winner].country, 0);
                     } else {
+                        if (rci >= 0) {
+                            CR.col[rci].vanished = 1;
+                            colony_vanish_filter();   /* the JS drops it now */
+                        }
                         ev_emit("BURNED3", 0, 0, dat_nations[winner].country, 0);
                     }
                 }
@@ -878,7 +900,20 @@ static void king_war_cycle(void) {
     if ((cs_turn() & 7) == 0) {
         int any = 0, frig = 0;
         blockade_census(&any, &frig);
-        if (frig != 0 || any > 3) {
+        /* the [0x925D + p*0x13] gate (@0x2F29B), RESOLVED 2026-09-02:
+         * 0x924C is the per-power UNIT CENSUS by type (stride 0x13; inc
+         * @0x2D240, dec @0x5BA92, zeroed @0x42181) and 0x925D is its
+         * FRIGATE row (0x11) — the King only sends one to a power that
+         * has none.  Mirrors the JS: map units plus the Europe list. */
+        int has_frigate = 0;
+        for (int i = 0; i < CS.n_units && !has_frigate; i++)
+            if (unit_on_map_player(i) &&
+                strcmp(dat_units[CS.units[i].type].name, "Frigate") == 0)
+                has_frigate = 1;
+        for (int i = 0; i < CR.n_europe && !has_frigate; i++)
+            if (strcmp(dat_units[CR.europe[i].type].name, "Frigate") == 0)
+                has_frigate = 1;
+        if (!has_frigate && (frig != 0 || any > 3)) {
             ev_emit("KINGFRIGATE", 0, 0, dat_nations[me].adjective, 0);
             if (ask_choice() == 0) {
                 if (CR.n_europe <

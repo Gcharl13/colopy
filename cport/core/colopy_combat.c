@@ -3,6 +3,7 @@
  * Ported as a PURE function over explicit parameters so the same arithmetic
  * serves the resolver, the future dialog, and the JS↔C sweep oracle.
  * The floor() chain ORDER is the fidelity — do not reorder. */
+#include <stdio.h>
 #include "colopy_sim.h"
 #include "../data/colopy_data.h"
 
@@ -55,4 +56,58 @@ int combat_total(const combat_params *p) {
     /* step 7 */
     s += s * p->difficulty / 20;
     return s < 1 ? 1 : s;
+}
+
+/* The Combat Analysis rows — the same chain, itemised exactly as the JS
+ * combatAnalysis prints them (spec/ui/combat_analysis.md, func_05E9B0):
+ * @MISC label + value per modifier that fired, plus the base strength.
+ * The arithmetic is combat_total's; this only names what fired. */
+static void row(combat_row *out, int *n, int misc, const char *v) {
+    if (*n >= COMBAT_ROWS_MAX) return;
+    out[*n].misc = (uint8_t)misc;
+    size_t i = 0;
+    for (; i + 1 < sizeof(out[*n].value) && v[i]; i++) out[*n].value[i] = v[i];
+    out[*n].value[i] = 0;
+    (*n)++;
+}
+int combat_rows(const combat_params *p, combat_row *out, int *base) {
+    const dat_units_t *t = &dat_units[p->type];
+    int s = t->combat + ((t->cargo && t->hull) ? t->attack : 0);
+    if (p->damaged) s -= 2;
+    if (s < 1) s = 1;
+    *base = s;
+    int n = 0;
+    char buf[8];                       /* "+150%" at most */
+    if (p->veteran) row(out, &n, 65, "+50%");
+    if (p->fatigue) row(out, &n, 76, p->fatigue == 2 ? "-66%" : "-33%");
+    if (p->holds) {
+        snprintf(buf, sizeof(buf), "-%d%%", (int)p->holds * 12);
+        row(out, &n, 62, buf);
+    }
+    {
+        int terr = p->village_def ? 0 : terrain_defence(p->terrain);
+        if (terr) {
+            snprintf(buf, sizeof(buf), "+%d%%", terr * 25);
+            row(out, &n, p->is_defender ? 79 : 78, buf);
+        }
+    }
+    if (p->is_defender && p->on_colony) {
+        snprintf(buf, sizeof(buf), "+%d%%", ((int)p->colony_level + 1) * 50);
+        row(out, &n, 80, buf);
+    }
+    if (p->orders == 5 || p->orders == 6) row(out, &n, 81, "+50%");
+    if (p->is_defender && p->artillery && !p->on_colony) row(out, &n, 84, "-75%");
+    if (p->privateer_drake) row(out, &n, 90, "+50%");
+    if (p->spain_attacker) row(out, &n, 82, "+50%");
+    if (p->woi_ref_bombard) row(out, &n, 104, "+50%");
+    if (p->has_home) {
+        if (p->home_sol >= 50) {
+            snprintf(buf, sizeof(buf), "+%d%%", (int)p->home_sol);
+            row(out, &n, 133, buf);
+        } else {
+            snprintf(buf, sizeof(buf), "-%d%%", 100 - (int)p->home_sol);
+            row(out, &n, 132, buf);
+        }
+    }
+    return n;
 }

@@ -740,3 +740,37 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
    `new_bells / (−20)` (`mov cx,0xFFEC; cwd; idiv cx; add [bp-0xB8],ax` `@0x2DA12..0x2DA18`), applied only
    when `A > byte[colony+0x1F]` (floor gate `@0x2DA08`). The divisor −20 is a byte-verified constant; only
    `new_bells`'s value is the runtime query return.
+
+
+## Amendment 2026-09-02 — the AI Custom House, the AI overflow sale, upkeep
+
+- **AI-owned Custom House** (`func_02D658` loop 1, `@0x2D980..@0x2D9D3`): the
+  human's per-good +0x8A flag test (`0x181F:0xCFE` = `func_0085B2`) is replaced
+  for an AI owner by `func_02D606` (`0x191F:0x9C0`): never food, lumber,
+  horses, tools or muskets (`@0x2D60F..@0x2D62B`); ore only with no Armory
+  (`push 3; lcall 0x181F:0x9FC` `@0x2D633`) and no tools/muskets made this turn
+  (`[0x8DC8]` tally at goods 0xE/0xF, `@0x2D641/@0x2D647`).  The sale
+  (`@0x2D6ED..@0x2D78E`) uses the pass's current power = the OWNER
+  (`@0x2D67C`): bid `0x191F:0x9EA`, tax +0x01 `@0x2D737` into royal money
+  +0x22 `@0x2D785` unless `[0x5382]&1` (`@0x2D728`), the clamped gold adder
+  `0x181F:0xABA` `@0x2D765`, the SELL accumulator `0x191F:0xA2E` `@0x2D774`.
+  The **blockade skip `@0x2D995` is human-only** (`@0x2D99B..@0x2D9AE`).  No
+  boycott test sits in the block.  **B.**
+- **AI overflow sale** (`@0x2E857..@0x2E86E`, supplementing §Spoilage): an AI
+  owner's overflow goes to 0x2E86E — muskets per 50 into PowerRecord +0x49
+  (`@0x2E72A..@0x2E743`), horses into +0x4A (`@0x2E745..@0x2E760`), the
+  remainder UNTAXED at the 0x84BC bid (`@0x2E7A0`, gold `@0x2E7B7`) through
+  the SELL accumulator (`@0x2E76C`) — then the human's spoil arithmetic
+  `@0x2E7BD` trims the stock identically.  The +0x49 lots are spent by that
+  power's next 50-musket Europe buy (`@0x52658..@0x52688`, price 0 and
+  `dec`).  **B.**
+- **Building upkeep is cut content**: no `UPKEEP` key in the EXE's key blob,
+  no @MISC 91/92 consumer, no debit in the per-power pass (its tail
+  `@0x2F286..@0x2F39D` is the KINGFRIGATE spawn).  Both engines no longer
+  charge it (RULINGS 2026-09-02 §6).
+- **Henry Hudson's fur doubling is keyed on the colony OWNER**
+  (`push 8; push [colony+0x1A]; lcall 0x981:0` `@0x9F6B..@0x9F83`).
+- **Siege**: the only `@SIEGE` emit is case 19 of the colony-screen colonist
+  status builder `func_02883E` (code 0x14 from the occupation getter
+  `func_009102`); `func_02D658` carries no siege gate.  The port's
+  construction-halting siege is a port model, FLAGGED.

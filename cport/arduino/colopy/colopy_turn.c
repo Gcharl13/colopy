@@ -24,6 +24,7 @@
  * ledger and by a status overview.)
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "colopy_sim.h"
@@ -197,6 +198,7 @@ void cr_reset_from_load(void) {
         r->col[r->n_col].level = (uint8_t)lvl;
         r->col[r->n_col].pop = CS.colonies[i].population;
         r->col[r->n_col].sol = (uint8_t)colony_sol(&CS.colonies[i]);
+        r->col[r->n_col].full = 1;
         r->n_col++;
     }
     /* tribes: tension toward the player from the 0x4E-stride TribeData
@@ -262,6 +264,14 @@ void cr_reset_from_load(void) {
      * Every Isabella plot matches the model at this base (plots_pair
      * sheet, 2026-08-28). */
     CR.plot_seed = 0x795;             /* loads pin the layout seed too */
+    /* the WAR MATRIX (B4.6): PowerRecord +0x34 + target, verbatim, and
+     * the TREATY map from its 0x40 bit (importSav) */
+    for (int a = 0; a < 4; a++)
+        for (int b = 0; b < 4; b++) {
+            uint8_t w = CS.powers[a].war_rel[b];
+            CR.war_matrix[a][b] = w;
+            CR.treaty_matrix[a][b] = (w & 0x40) ? REL_TREATY : 0;
+        }
     CR.wc_show = -1;
     CR.ui_select = -1;
     CR.land_ho = 1;                  /* the importer latches these true
@@ -608,17 +618,31 @@ static void advance_construction(int ci, int hammers) {
         int need_tools = (int)dat_units[urow].tools * 10;
         if (r->sieged) return;
         if (c->hammers < cost) { r->tool_warned = 0; return; }
-        /* @NOMOREWAGONS: wagons are capped at the colony count — the
-         * build STALLS (target kept), announced once (game.js:3127).
-         * The census is player-relative; rivals bypass the cap (B3.6). */
-        if (cur_is_human() && strcmp(un, "Wagon Train") == 0) {
-            int wagons = 0, ncol = 0;
-            for (int i = 0; i < CS.n_units; i++)
-                if (unit_on_map_player(i) &&
-                    strcmp(dat_units[CS.units[i].type].name,
-                           "Wagon Train") == 0) wagons++;
-            for (int i = 0; i < CS.n_colonies; i++)
-                if ((CS.colonies[i].owner_power & 3) == cur_power()) ncol++;
+        /* @NOMOREWAGONS — BYTE-READ @0x2D1B3..@0x2D20A (2026-09-02): when
+         * the finished target is the Wagon Train (0xC) the owner's unit
+         * census [0x924C + p*0x13 + 0xC] is compared with the owner's
+         * colony count [0x9298 + p] (@0x2D1C2..@0x2D1CD); at or over it
+         * the message fires and the routine RETURNS before spawning.
+         * There is NO controller gate — every power is capped (the
+         * message is silent for a rival, cev).  Counts mirror the JS:
+         * the human's map units and G.colonies, a rival's r.units and
+         * r.colonies. */
+        if (strcmp(un, "Wagon Train") == 0) {
+            int wagons = 0, ncol = 0, pw = cur_power();
+            if (cur_is_human()) {
+                for (int i = 0; i < CS.n_units; i++)
+                    if (unit_on_map_player(i) &&
+                        strcmp(dat_units[CS.units[i].type].name,
+                               "Wagon Train") == 0) wagons++;
+                for (int i = 0; i < CS.n_colonies; i++)
+                    if ((CS.colonies[i].owner_power & 3) == pw) ncol++;
+            } else {
+                for (int k = 0; k < CR.n_runits[pw]; k++)
+                    if (strcmp(dat_units[CS.units[CR.runits_order[pw][k]]
+                                   .type].name, "Wagon Train") == 0)
+                        wagons++;
+                ncol = CR.rivals[pw].n_col;
+            }
             if (wagons >= ncol) {
                 if (!r->cap_warned) {
                     r->cap_warned = 1;
@@ -924,34 +948,62 @@ void blockade_census(int *any, int *frig) {
     if (frig) *frig = f;
 }
 
-static void custom_house_sale(int ci) {
+/* Which goods an AI-owned Custom House sells — func_02D606 (0x191F:0x9C0,
+ * the AI twin of the human's per-good +0x8A flag test @0x2D9CE): never
+ * FOOD, LUMBER, HORSES, TOOLS or MUSKETS (@0x2D60F..@0x2D62B); ORE only
+ * when the colony has no Armory (building 3, @0x2D633) AND made neither
+ * tools nor muskets this turn (the [0x8DC8] gross tally at goods
+ * 0xE/0xF, @0x2D641/@0x2D647); everything else sells. */
+static int ai_custom_sells(int ci, const colony_output *o, int g) {
+    if (g == FOOD || g == LUMBER || g == HORSES || g == TOOLS || g == MUSKETS)
+        return 0;
+    if (g == ORE)
+        return !(colony_has_name(ci, "Armory") ||
+                 (o && (o->out[TOOLS] > 0 || o->out[MUSKETS] > 0)));
+    return 1;
+}
+static void custom_house_sale(int ci, const colony_output *o) {
     ColonyRecord *c = &CS.colonies[ci];
-    PowerRecord *p = &CS.powers[cur_power()];
+    int pw = cur_power();
+    PowerRecord *p = &CS.powers[pw];
     resolve();
     if (!has_bld(ci, BLD_CUSTOM)) return;
-    /* @0x2D995: the +0x1B blockade bits (& 3) skip the auto-sale — no
-     * Custom House sells from a blockaded harbour. */
-    if (CR.col[ci].blockade & 3) return;
     int human = cur_is_human();
+    /* @0x2D995: the +0x1B blockade bits (& 3) skip the auto-sale — no
+     * Custom House sells from a blockaded harbour.  HUMAN ONLY: the skip
+     * is gated on the owner's controller byte (@0x2D99B..@0x2D9AE); an
+     * AI custom house sells through a blockade. */
+    if (human && (CR.col[ci].blockade & 3)) return;
     for (int g = 0; g < N_GOODS; g++) {
-        if (!((c->custom_house_flags >> g) & 1)) continue;
+        if (human) {
+            if (!((c->custom_house_flags >> g) & 1)) continue;
+            /* the sale block carries no boycott test (@0x2D6ED..@0x2D716);
+             * the port's gate is its own, kept as a flagged choice */
+            if (market_boycotted(g)) continue;
+        } else if (!ai_custom_sells(ci, o, g)) continue;
         if (c->stock[g] < 100) continue;
-        /* a boycott is the PLAYER's +0x20 bit; rival boycotts are
-         * unmodelled (B3.6 — their sale runs untaxed below) */
-        if (human && market_boycotted(g)) continue;
         int amount = c->stock[g] - 50;
         c->stock[g] = 50;
-        /* price: the player's market level stands in for the rival's own
-         * +0x4C ladder (FLAGGED, B3.6) — same stand-in as the JS */
-        int32_t gross = (int32_t)amount * market_bid(g);
+        /* the OWNER's own bid (0x191F:0x9EA on the pass's current power,
+         * set to the colony owner @0x2D67C), taxed at the OWNER's rate
+         * (+0x01 @0x2D737) into the OWNER's royal fund (+0x22 @0x2D785)
+         * unless the war of independence is on ([0x5382]&1 @0x2D728).
+         * The sale runs the Europe SELL accumulator (0x191F:0xA2E
+         * @0x2D774): pressure on every pool, and the +0xBC/+0x7C trade
+         * counters (the F5 report's — player-only here, as the JS). */
+        int32_t gross = (int32_t)amount * market_bid_of(pw, g);
+        int32_t cut = (CR.woi_flags & WOI_DECLARED)
+                          ? 0 : gross * p->tax_rate / 100;
         if (human) {
-            int32_t cut = (CR.woi_flags & WOI_DECLARED)
-                              ? 0 : gross * p->tax_rate / 100;
             p->gold += gross - cut;
             p->kings_fund += cut;
+            p->trade_tons[g] += amount;
+            p->trade_gold[g] += gross * (100 - p->tax_rate) / 100;
         } else {
-            CR.rivals[cur_power()].gold += gross;   /* JS r.gold */
+            CR.rivals[pw].gold += gross - cut;      /* JS r.gold */
+            p->kings_fund += cut;                    /* JS rv.kingsFund */
         }
+        market_pool_move(g, amount, +1, human);
     }
 }
 
@@ -990,6 +1042,32 @@ static void warehouse_disposal(int ci, const uint16_t *snapshot,
     for (int g = 1; g < N_GOODS; g++) {
         int over = (int)c->stock[g] - cap;
         if (over <= 0) continue;
+        /* AN AI COLONY SELLS ITS OVERFLOW first (@0x2E857..@0x2E86E:
+         * owner controller != 0 -> 0x2E86E; the human jumps straight to
+         * the spoil arithmetic @0x2E7BD), then falls into the SAME spoil
+         * arithmetic below, so the stock still trims to capacity:
+         *   MUSKETS: every 50 tons becomes one free musket lot on the
+         *     owner's PowerRecord +0x49 byte (@0x2E72A..@0x2E743;
+         *     consumed @0x52658 — that power's next 50-musket Europe
+         *     buy is free, unported);
+         *   HORSES: the whole overflow joins the owner's +0x4A horse
+         *     pool (@0x2E745..@0x2E760) and nothing is sold;
+         *   the remainder sells UNTAXED at the owner's bid (0x84BC byte
+         *     @0x2E7A0, gold @0x2E7B7) through the SELL accumulator
+         *     (0x191F:0xA2E @0x2E76C, AI k term).  Mirrors the JS. */
+        if (!cur_is_human()) {
+            int pw = cur_power();
+            PowerRecord *p = &CS.powers[pw];
+            int amt = over;
+            if (g == MUSKETS)
+                while (amt >= 50) { amt -= 50; p->musket_lots++; }
+            if (g == HORSES) {
+                p->horse_pool = (uint16_t)(p->horse_pool + amt);
+                amt = 0;
+            }
+            market_pool_move(g, amt, +1, 0);
+            CR.rivals[pw].gold += (int32_t)amt * market_bid_of(pw, g);
+        }
         int32_t produced = o->out[g];
         if (g == HORSES) produced += o->horses_bred;
         int pre = over;              /* clamp(0, over, produced), func_0048CC */
@@ -1048,6 +1126,8 @@ void colony_turn(int ci) {
     uint16_t snapshot[N_GOODS];
     memcpy(snapshot, c->stock, sizeof(snapshot));
     colony_produce(ci, &o);
+    r->dbg_food = (int16_t)o.out[FOOD];    /* the rcol oracle's `fe` */
+    r->dbg_eat = (int16_t)o.eaten;
     /* colonyBesieged (game.js:2995): REF + at-war rival land units within
      * 1 of the colony outnumbering the player's attack-capable land units
      * there.  The census is PLAYER-relative, so a rival colony has no
@@ -1106,7 +1186,7 @@ void colony_turn(int ci) {
     }
     /* the Custom House sells checked goods down to 50 right at the
      * banking loop (func_02D658 loop 1), before growth reads the stock */
-    custom_house_sale(ci);
+    custom_house_sale(ci, &o);
     /* FOOD MESSAGES + GROWTH — the byte model, func_02D658 @0x2E10A..
      * @0x2E36C (read 2026-08-28), replacing the port's latch-based
      * reading.  The engine's order is growth, then starvation, then the
@@ -1245,18 +1325,9 @@ void colony_turn(int ci) {
 }
 
 /* ---- the prefix turn step ---------------------------------------------- */
-/* colonyUpkeep (game.js:2487): reduce over the LIST entries, each priced by
- * DATA.buildings.find(name) — the first row with that name. */
-static int32_t total_upkeep(void) {
-    int32_t due = 0;
-    for (int ci = 0; ci < CS.n_colonies; ci++) {
-        if ((CS.colonies[ci].owner_power & 3) != cs_nation()) continue;
-        const colony_rt *r = &CR.col[ci];
-        for (int k = 0; k < r->n_bld; k++)
-            due += dat_buildings[bld_first_row(r->bld[k])].upkeep;
-    }
-    return due;
-}
+/* Building upkeep is CUT CONTENT (RULINGS 2026-09-02): no UPKEEP key in
+ * the EXE's message blob, no consumer of @MISC 91/92, no gold debit in
+ * the per-power pass — the port's charge + half-rate penalty are gone. */
 
 void turn_step_prefix(void) {
     /* header (game.js:10725): year cadence, 1600 season split */
@@ -1280,14 +1351,6 @@ void turn_step_prefix(void) {
     for (int i = 0; i < CS.n_units; i++)
         if (unit_on_map_player(i)) CR.unit_slip[i] = 0;  /* u.slipChecked */
     colopy_reveal_all();                          /* revealAll (10741) */
-    /* payUpkeep */
-    {
-        int32_t due = total_upkeep();
-        PowerRecord *p = &CS.powers[cs_nation()];
-        if (!due) CR.upkeep_unpaid = 0;
-        else if (p->gold >= due) { p->gold -= due; CR.upkeep_unpaid = 0; }
-        else { CR.upkeep_unpaid = 1; ev_emit("UPKEEP", due, 0, 0, 0); }
-    }
     /* the colony loop (player colonies, record order, like JS G.colonies).
      * func_02F052 @0x59EA is a PER-POWER pass (`ColonyRecord +0x1A ==
      * power` @0x2F256): the human's slice runs here; each RIVAL power's
@@ -1312,6 +1375,11 @@ void turn_step_prefix(void) {
  * both the stub list and the record array. */
 static int rival_col_record(int power, int k) {
     const rival_rt *r = &CR.rivals[power];
+    /* only a record-backed stub (JS c.colonists) maps: a runtime stub a
+     * rival ship planted on ANOTHER power's colony tile (the founding
+     * check tests only the player's and its own colonies, like the JS)
+     * would otherwise double-run that record after a capture */
+    if (!r->col[k].full) return -1;
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == power &&
             CS.colonies[ci].map_x == r->col[k].x &&

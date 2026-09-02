@@ -12,6 +12,7 @@
  * multiplies the movement column by 3 (`SHL al,1 / ADD al,cl` @0x074F04,
  * unit.md §3); a road/river step costs 1. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "colopy_sim.h"

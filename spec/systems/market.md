@@ -239,3 +239,24 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
 1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1. ~~the drift driver/call site.~~ **Done 2026-06-20** — `func_33C96 @0x367FC` (all-goods) + `func_0324F2`/`func_032914` (per-good); the `0x368bd` "table" was a JMP-FAR trampoline misread (§3).
 2. ~~Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.~~ **Done 2026-06-25 — B.** `+0x4C` is a **per-good byte array indexed by `good`** (base `[0x84fc]`, `byte ptr [bx + good + 0x4c]`), confirmed by four accessors that all index identically: **READ** `func_030566 @0x30583` (`price = CARGO_row[good][0] (stride-9 @[bx-0x6900]) + [+0x4C+good]`, clamp ≥0) and `func_030590 @0x3059c` (`[+0x4C+good] − 1`, clamp ≥0); **WRITE** `func_032262 @0x32272` (`[+0x4C+good] += 1` — price step up) and `func_032278 @0x3228d` (`[+0x4C+good] −= 1`, clamp ≥0 — price step down). The byte index is `good` (1-byte stride, 16 entries), so it is **per-good[16], not per-player[4]**. `0x53EA` is separately indexed `good*2` (16 words) at `func_0305A8 @0x305B8` — distinct array, reconciled.
 3. ~~Locate the **boycott** bitmask field.~~ **Done 2026-06-19** — `PowerRecord +0x20` (test `func_030B38`, set `@0x34717`, lift `@0x33423`); see `spec/systems/boycotts.md` §3. Remaining: the Jakob-Fugger clear-all.
+
+
+## Amendment 2026-09-02 — per-power drift, the bid table, the AI price cap
+
+- **CORRECTION to §3's driver claim:** `func_036574` is the NEW-GAME power
+  init (gold/fathers/pools zeroed `@0x365A1..@0x3670E`; its caller
+  `func_0755CC` carries the `AMER2.MP` load); the four `drift(1,-1)` calls at
+  its tail (`@0x367E8..@0x36809`) compute every power's STARTING levels from
+  one shared random base.  The PER-TURN driver is the per-power pass
+  `func_02F052`, which calls `func_0363A2` for its power `@0x2F218` (after the
+  colony loop); that sets the current power `@0x363B5` and runs `drift(0,-1)`
+  `@0x363D3`.  Every European power's market drifts once a turn on its own pool.
+- **The per-power bid table `DGROUP:0x84BC + power*16 + good`** =
+  `max(0, level - 1)`, built for all four powers at boot (`func_005760`
+  `@0x57A5..@0x57BB`) and rebuilt for the current power by the drift
+  (`@0x30B14..@0x30B24`).  Readers include the AI custom house, the AI
+  overflow sale (`@0x2E7A0`) and the native trade valuer (`@0x49FBF`).
+- **AI price cap** inside the drift (`@0x30ABB..@0x30B0A`, controller != 0):
+  for HORSES (8), TOOLS (0xE) and MUSKETS (0xF) the level is clamped to
+  `3 + ((4 - difficulty) * 3 >> 1)`.
+- Both engines carry all three (RULINGS 2026-09-02 §3-4).  **B.**
