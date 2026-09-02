@@ -11066,3 +11066,107 @@ Lane", and its "Open work" listed "a single Prairie ring tile".
 (`<MAP>.MPP`?) for custom maps; whether the ports should apply the load
 pass (G12 — a sim-track lockstep change; the one RNG draw inside
 `func_064A10` `@0x64A16` must be accounted for).
+
+## 2026-09-02c — boot track: the New-Game cinematics re-read whole (B3.10)
+
+`func_004B72` @0x004B72 (card renderer), `func_004D1E` @0x004D1E (card
+sequencer), `func_075352` @0x075352 + `func_075594` @0x075594 (the King's
+audience) and the driver `func_0755CC` @0x0755CC were read end to end
+(`data_extracted/disassembly/VICEROY_annotated.asm`). Corrections to prior
+claims, each with the byte that overturns it:
+
+1. **"pen (14,54)" (cards) and "pen (242,47)" (scroll) are ink-slot stores,
+   not a text origin.** `[0x1F4A]`/`[0x1F50]`/`[0x1F52]` are the popup
+   engine's ink slots (`func_073474 @0x073474` stores the in-game ink table
+   there; `dialog_framework.md` +0x74). The cards store 0x0E/0x36
+   (@0x004CD6/@0x004CDC), the scroll 0xF2/0x2F/0 (@0x075526..0x075532), and
+   both then render their GAME.TXT section through `0x181f:0x3fe`
+   (`func_06F594`, @0x004CE5 / @0x075540), so the text position comes from
+   the section's own `@width/@x/@y` (raw GAME.TXT: `@BUILDn` `@width=310
+   @y=30`; `@VICEROY` `@width=78 @x=232 @y=21`). The batch-3 note of
+   2026-07-31 ("register values, not the origin") was right; this names what
+   they are. Tracker rows 13 and the cards line, and
+   `spec/ui/woodcuts_and_intro.md` §2, are corrected. The ports' card text
+   y=54/pitch 9 and the scroll's single ink 36 stay as MEASURED stand-ins,
+   flagged TBD in the code (no DOS card capture; the level→slot mapping in
+   `func_00E51C` unread).
+2. **The cards advance on a timer; a key/click does not advance them.**
+   `func_004D1E`: card k+1 when `now - [0x90:0x92] >= 0x23A` (@0x004D43);
+   a key/click only sets `[0x8A]` (@0x004D94/@0x004DD5), on which the driver
+   spins after world generation (@0x07596F). The prior "any key/click skips"
+   in §2 read the done flag as a skip. Tick unit closed: PIT divisor 0x7A8
+   (@0x00C843), even-tick gate (@0x00C6A5), so 0x23A ticks = 1873 ms.
+3. **No captions.** Neither renderer draws one, and
+   `docs/screens/07_king_audience.png` shows none; "(click to continue)" /
+   "(click to begin)" in both ports were inventions and are removed. The
+   cards' popup is non-modal (`[0x1F56]|=0x20` @0x004C9E → the modal runner's
+   input loop is skipped @0x06E583); the scroll's is the normal modal wait.
+4. **Card 7's `%STRING0`** is card 4's nation name by slot persistence — the
+   `switch n-2` @0x004C0D registers nothing at n=7. The ports' visible result
+   was right for the wrong reason; commented as such.
+5. **The audience queues tune 0x3E** (@0x07544B, `func_0050BC`) — wired on
+   both boards' screen edge into `SCR_KING`; the new-game cue (0x39 @0x0756E4
+   + queued 0x25 @0x0759A0) moves to the `SCR_CARDS` edge, where the driver
+   plays it. The old BRIEFING→MAP edge never fired once the C chain went
+   through the King and the cards. The JS carries only a tune id (`G.tune`,
+   `[0x96]`), no player — nothing to wire there.
+6. **The ledger row B3.10 was stale on the day it was written** (2026-08-17):
+   the assets it said were "not yet carried" entered `COLOPY.PAK` in `2b51c6e`
+   (2026-08-16), and the C already ran the chain. Pak size delta from this
+   work: 0 bytes; no board budget change.
+7. **Port conveniences removed for fidelity:** the cards' Escape → briefing
+   route (no engine equivalent; the engine's only escape is Alt-X/Alt-Q =
+   exit to DOS, @0x004DA6) and click-per-card advance. Any key now ends the
+   slideshow (getkey + drain @0x004D89..0x004D94), as the bytes say.
+
+**Not decided here:** the card text's on-screen y (needs a DOS capture of a
+LEVN card); the `[0x1F64]` / `[0x1F56]&0x18` flag names (sites @0x06E55C,
+@0x004CA9, @0x07536B, @0x0734B5, `func_06F646`).
+
+## 2026-09-02d — boot track: the tutorial gate is the Tutorial-Hints option (B4.2)
+
+Re-read for the C port of `tutOnce`: every `@TUTORIALn` emit site and its
+guards (`grep` of the nineteen DGROUP key pushes; `func_020EE0/020EFE`
+@0x020EE0..0x020F4E, `func_020F50` @0x020F50..0x021601, the T4/T12 site
+`func_02C5D4` @0x02C670..0x02C7D0, T6 @0x02E900..0x02EA60, T7/T16
+@0x0286A0..0x028D50, T17 @0x035BB0..0x035C40, T5 @0x036480..0x036530, T18
+@0x032640..0x032780) plus the option writers (`func_0755CC @0x0755E5`,
+`func_07431E @0x074341..0x074348`, the @GAMEOPTIONS ladder @0x0230B4..0x0230F3).
+
+1. **The gate is the option bit `[0x5382]&0x80`, not a difficulty test.**
+   Every site tests it (T2 @0x020F3A, the dispatcher's callers @0x021E63 /
+   @0x024AC6, T16 @0x0286DA, T7 @0x028CFD, T4 @0x02C67E, T12 @0x02C74F, T6
+   @0x02E9D5, T17 @0x035BDC, T5 @0x036504). New game writes 0xC600 and sets
+   the bit iff difficulty 0; the dialog toggles it; a save carries it (the
+   ten fixture saves agree: 0xC680 at Discoverer, 0xC600 at Explorer). The
+   JS's `difficulty >= 1` proxy (live evidence 2026-08-08) was observably
+   right for a fresh game and wrong for a toggled option; both engines now
+   read the word, and the Game Options "Tutorial Hints" checkbox is live.
+2. **T2 has no once-flag.** `func_020EFE`'s tail is the option test and the
+   emit (@0x020F3A..0x020F46); the JS `TUT_PHASE = {2: 0x80}` wrote the
+   option bit as T2's flag — after T2 fired, hints were "on" whatever the
+   player chose, and T2 never fired for a save with hints on. Removed.
+3. **T16 and T17 own `[0x5380]` bits 0x10 / 0x20** (@0x0286FF, @0x035C2B);
+   the RULINGS 2026-08-07z6 note "16/17/18 emitter-less" is corrected — T16
+   and T17 go through the plain GAME wrapper `0x181f:0x3fe` (no advisor push,
+   which is why the `0x652` grep missed them); T18 too (@0x032760), with no
+   gate and no flag.
+4. **T5 fires after `@UNREST`** (@0x036514, human power @0x0364BE), not on
+   the Brewster @RECRUITCHOOSE branch. The JS fired it before @UNREST and on
+   both branches; moved (both engines) to the byte order.
+5. **T18 fires on the can't-afford branch** (price·qty > gold @0x032685..
+   0x0326AC), not on a successful buy as the JS had it; ungated, every time.
+   Both engines now fire it when a lot is unaffordable (the JS bounds the ask
+   by gold, so "a single lot" is the port's shape — flagged).
+6. **T4/T17 fire on the screen EDGE of a key/click in both engines** rather
+   than at JS draw time — a headless harness never draws, so the bindings
+   were invisible to the oracles; now they are compared (`tut` field).
+7. **The `[0x5386]` seed 0x0E is the sound switches**, confirmed at the
+   @SOUNDOPTIONS ladder (`and [0x5386],0xf1` @0x023301; `or 2/4/8`
+   @0x02330D/0x023319/0x023322); bit 0 is a combat-aftermath once-flag
+   (@0x05DC49/@0x05DC50); bit 5 has no writer.
+
+**Not decided here:** the §3 predicates condition-for-condition (the C
+mirrors the JS's approximations, each named beside its byte site); T17's
+`%STRING1` source (`0x191f:0xac8`); T18's `[bp+0xC]` arg; T6's record
++0x1A bit 0x40; the T12-bit consumer @0x03F6B2.

@@ -604,6 +604,10 @@ void cmd_move(int ui, int dx, int dy) {
                             CR.wc_after = 0;
                         }
                     }
+                    /* TUTORIAL13: the pioneers have stepped ashore
+                     * (landfall, game.js; bytes: pioneer focus on land,
+                     * turn < 20, func_020F50 @0x0210B9..0x0210C4) */
+                    tut_once(13, 0, 0, 0, 0);
                 }
             }
         }
@@ -963,6 +967,56 @@ void cmd_move(int ui, int dx, int dy) {
                     CR.wc_after = 0;
                 }
             }
+        }
+    }
+    /* Tutorial bindings (moveUnit, game.js) — the JS's flagged
+     * approximations of the focus dispatcher func_020F50 @0x020F50 and
+     * the colony-screen sites func_02C5D4, mirrored one for one:
+     *   a ship docking at an OWN colony teaches loading (12; bytes: at
+     *   colony-screen open with a ship on the tile, @0x02C76F..0x02C7BC)
+     *   or colonist delivery (15) when it carries passengers (bytes:
+     *   colonist focus at a colony, turn < 40, @0x02114C..0x021157);
+     *   a pioneer (20+ tools) on workable ground teaches plow/clear (10)
+     *   or roads (9) (bytes: pioneer focus ADJACENT to an own colony,
+     *   @0x021476/@0x0215C2); soldiers teach defence (14; bytes: soldier
+     *   focus on land, turn < 20, @0x0210F9); a colonist on land teaches
+     *   the terrain (3; bytes: Pioneers on a >= 5-cell site, @0x021345). */
+    {
+        int tc = -1;
+        for (int k = 0; k < CS.n_colonies; k++)
+            if ((CS.colonies[k].owner_power & 3) == me &&
+                CS.colonies[k].map_x == nx && CS.colonies[k].map_y == ny) {
+                tc = k;
+                break;
+            }
+        if (ship && tc >= 0) {
+            if (CR.unit_n_pass[ui] > 0)
+                tut_once(15, 0, 0, CS.colonies[tc].name, 0);
+            else
+                tut_once(12, 0, 0, CS.colonies[tc].name, 0);
+        }
+        if (!ship && u->tools >= 20) {              /* canImprove */
+            if (is_forested_id(tile_terrain(v)) ||
+                !(map_improve(nx, ny) & PLOW_BIT))
+                tut_once(10, 0, 0, 0, 0);
+            else if (!(map_improve(nx, ny) & ROAD_BIT))
+                tut_once(9, 0, 0, 0, 0);
+        }
+        const char *tn = dat_units[u->type].name;
+        if (strcmp(tn, "Soldiers") == 0) tut_once(14, 0, 0, 0, 0);
+        if (!ship && strcmp(tn, "Wagon Train") != 0 &&
+            strcmp(tn, "Artillery") != 0 && strcmp(tn, "Treasure") != 0 &&
+            !tile_water(v)) {
+            /* terrainName (game.js) */
+            int t = v & 0x1F;
+            const char *name;
+            if (tile_mountains(v)) name = "Mountains";
+            else if (tile_hills(v)) name = "Hills";
+            else if (t <= 7) name = dat_terrain_unforested[t];
+            else if (t <= 23)
+                name = dat_terrain_forested[(((t >= 16) ? (t & 7) | 8 : t) - 8) & 7];
+            else name = dat_terrain_other[(t - 24) < 5 ? t - 24 : 0];
+            tut_once(3, 0, 0, name, 0);
         }
     }
 }

@@ -485,7 +485,9 @@ static void attempt_conversions(void) {
         if (ui >= 0)
             CS.units[ui].profession = (uint8_t)JOB_CONVERT;
         ev_emit("INDIANSCONVERT", 0, 0, CS.colonies[best].name, 0);
-        /* tutOnce(19): TUTORIAL* keys are excluded from the parity diff */
+        /* TUTORIAL19 (bytes: the focus dispatcher's convert arm,
+         * profession 0x1B, func_020F50 @0x0215EF..0x0215FA) */
+        tut_once(19, 0, 0, 0, 0);
     }
 }
 /* @DEADCONVERTS — BYTE_VERIFIED func_02EF64 (0x191F:0xA58, read

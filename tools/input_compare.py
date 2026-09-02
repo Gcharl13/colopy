@@ -51,10 +51,12 @@ CATEGORIES = ("screens", "prompts", "popups", "euromenus", "dialogs")
 # says UNDECLARED and the table grows.
 EXPECT = {
     "boot": {
-        "screens": {"title", "difficulty", "nation", "name", "briefing"},
+        "screens": {"title", "difficulty", "nation", "name", "briefing",
+                    "king", "cards", "map"},
         "prompts": set(), "popups": set(), "euromenus": set(), "dialogs": set()},
     "bootclick": {
-        "screens": {"difficulty", "nation", "name", "briefing"},
+        "screens": {"difficulty", "nation", "name", "briefing", "king",
+                    "cards", "map"},
         "prompts": set(), "popups": set(), "euromenus": set(), "dialogs": set()},
     "sav1653": {
         "screens": {"map", "colony", "europe", "report", "trade"},
@@ -133,6 +135,7 @@ def boot_script():
     ev = []
     K = lambda k, a=0, s=0: ev.append([k, a, s])
     C = lambda x, y: ev.append(["CLICK", x, y])
+    T = lambda ms: ev.append(["TICK", ms, 0])
     # title row walk + into the setup chain
     for _ in range(7):
         K("ArrowDown")
@@ -153,6 +156,18 @@ def boot_script():
     K("Escape")                     # a plain key on the name screen
     K("Enter")                      # -> briefing
     K("Escape")                     # briefing ignores it (slice 1)
+    # the cinematic chain: page 1 -> the King's audience -> the ten LEVN
+    # cards on the sequencer's 1873-ms timer (TICK = the scripted clock);
+    # a key ends the slideshow at once (the done flag [0x8A]) -> beginGame
+    K("Enter")                      # briefing page 0 -> 1
+    K("Enter")                      # -> king
+    K("Escape")                     # the scroll ignores it (modal wait)
+    K("Enter")                      # -> cards, card 0, clock stamped
+    T(1000)                         # 1000 ms: still card 0
+    T(1000)                         # 2000 ms: card 1
+    T(5000)                         # 7000 ms: card 3
+    K("Escape")                     # ANY key = done -> beginGame -> map
+    K("ArrowDown")                  # a move on the fresh map
     return ev
 
 
@@ -160,6 +175,7 @@ def boot_click_script():
     ev = []
     C = lambda x, y: ev.append(["CLICK", x, y])
     K = lambda k, a=0, s=0: ev.append([k, a, s])
+    T = lambda ms: ev.append(["TICK", ms, 0])
     C(100, 110)                     # title row 0 -> difficulty
     C(150, 30)                      # difficulty cell 0 (idx 1: 128,7)
     C(25, 120)                      # cell 2 (idx 3: 23,103)
@@ -170,6 +186,14 @@ def boot_click_script():
     K("W")
     C(10, 10)                       # name click -> briefing
     C(10, 10)                       # briefing page 0 -> 1
+    C(10, 10)                       # -> king
+    C(10, 10)                       # -> cards (card 0)
+    # the untouched slideshow: card k at k*1873 ms, done at 10 intervals
+    T(1872)                         # 1872 ms: card 0 (one short)
+    T(1)                            # 1873 ms: card 1
+    T(1873 * 8)                     # 16857 ms: card 9
+    T(1872)                         # 18729 ms: still card 9
+    T(1)                            # 18730 ms: the tenth interval -> map
     return ev
 
 
@@ -492,6 +516,7 @@ def main():
     subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host",
                    check=True)
     feed = "\n".join(("C %d %d" % (e[1], e[2])) if e[0] == "CLICK"
+                     else ("T %d" % e[1]) if e[0] == "TICK"
                      else ("K %s %d %d" % (e[0], e[1], e[2]))
                      for e in events)
     args = ["./smoke", "--input"] + ([] if scen in ("boot", "bootclick")

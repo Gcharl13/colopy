@@ -319,12 +319,18 @@ static void cmd_view(void) {                 /* 'v': render the map view */
  * (the modal rule, game.js:12403).  Every consumed key redraws. */
 static int game_mode = 0;
 
-/* shell-side cue edges (the core/game layers stay untouched): new game =
- * the BRIEFING->MAP transition; woodcut = a new plate on screen */
+/* shell-side cue edges (the core/game layers stay untouched): the King's
+ * audience queues tune 0x3E (func_075352 @0x07544B, the boot variant);
+ * the cards start tune 0x39 with 0x25 queued behind it (func_0755CC
+ * @0x0756E4 / @0x0759A0 = au_on_new_game); woodcut = a new plate on
+ * screen.  (Until 2026-09-02 the new-game cue hung on a BRIEFING->MAP
+ * edge the chain no longer takes, so the board never played it.) */
 #ifdef COLOPY_AUDIO
 static void audio_screen_edges(void) {
     static int last_screen = SCR_TITLE, last_wc = -1;
-    if (last_screen == SCR_BRIEFING && UI.screen == SCR_MAP)
+    if (last_screen != SCR_KING && UI.screen == SCR_KING)
+        au_queue_tune(0x3E);
+    if (last_screen != SCR_CARDS && UI.screen == SCR_CARDS)
         au_on_new_game();
     if (UI.screen == SCR_WOODCUT) {
         if (UI.woodcut != last_wc) {
@@ -795,6 +801,10 @@ void loop() {
 #ifdef COLOPY_AUDIO
         audio_tick();
 #endif
+        /* the timed LEVN slideshow (sequencer func_004D1E, one card per
+         * 0x23A ticks = 1873 ms): the game layer's clock; a change of
+         * card, or the game beginning, redraws */
+        if (in_tick(millis())) draw_screen();
         int bl = blink_now();
         /* zoom >= 2 composes 16-64 subwindows per frame — too dear for
          * the 3 Hz blink; the unit stays drawn (FLAGGED perf choice) */

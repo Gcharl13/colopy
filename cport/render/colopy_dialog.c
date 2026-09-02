@@ -807,6 +807,14 @@ int rm_options_rows(int which) {
 
 void rm_options_toggle(int which, int row) {   /* optionsCommit (7963) */
     *opt_word(which) ^= opt_bit(which, row);
+    /* the game-options word's byte home is the save's globals +2
+     * ([0x5382], the @GAMEOPTIONS commit ladder @0x0230B4..0x0230F3):
+     * keep it in step so Tutorial Hints (0x80) gates the lessons and a
+     * save carries the choice */
+    if (which == 0) {
+        CS.globals[2] = (uint8_t)CR.game_options;
+        CS.globals[3] = (uint8_t)(CR.game_options >> 8);
+    }
 }
 
 static int options_geom(int which, int *x, int *y, int *w, int *h,

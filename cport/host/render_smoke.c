@@ -284,6 +284,10 @@ int render_boot_main(const char *kind, const char *pak_path,
     if (strcmp(kind, "title") == 0) rm_draw_title(arg);
     else if (strcmp(kind, "difficulty") == 0) rm_draw_difficulty(arg);
     else if (strcmp(kind, "nation") == 0) rm_draw_nation(arg);
+    /* king ARG = nation; cards ARG = card 0..9 with the pinned nation 0
+     * / difficulty 0 / leader "Willem" the JS RENDERBOOT block mirrors */
+    else if (strcmp(kind, "king") == 0) rm_draw_king(arg);
+    else if (strcmp(kind, "cards") == 0) rm_draw_cards(arg, 0, 0, "Willem");
     else rm_draw_name(arg ? "Willem" : "");
     FILE *o = fopen(out_path, "wb");
     if (!o) return 1;
@@ -345,6 +349,22 @@ static void in_project(void) {
      * dismisses — a latch only one engine holds swallows a key the other
      * acts on (2026-09-02) */
     printf("\"cb\":%d,", CR.combat.active ? 1 : 0);
+    /* the TUTORIAL lessons this event fired (sim_trace `tut`): the
+     * event ring is drained here — the input harness reads nothing
+     * else from it — and only the lesson keys are projected, so the
+     * option gate, the once-flags and the JS-mirrored sites are all
+     * under the oracle (B4.2, 2026-09-02) */
+    printf("\"tut\":[");
+    {
+        colopy_event e;
+        int fr = 1;
+        while (colopy_next_event(&e)) {
+            if (strncmp(e.key, "TUTORIAL", 8) != 0) continue;
+            printf("%s\"%s\"", fr ? "" : ",", e.key);
+            fr = 0;
+        }
+    }
+    printf("],");
     /* the selected unit's TYPE (sim_trace `ut`): two engines can agree on
      * a unit's position and moves and still hold different units there */
     printf("\"ut\":\"%s\",", su >= 0 ? dat_units[CS.units[su].type].name : "");
@@ -359,8 +379,11 @@ static void in_project(void) {
     printf("\"rv\":[");
     {
         int fr = 1;
-        /* no rivals exist before a game starts (JS G.rivals = []) */
-        for (int rn = 0; rn < (g_input_save_loaded ? 4 : 0); rn++) {
+        /* no rivals exist before a game starts (JS G.rivals = []); a
+         * boot script that plays through the cards into beginGame has
+         * units, and rivals, from then on */
+        int live = g_input_save_loaded || CS.n_units > 0;
+        for (int rn = 0; rn < (live ? 4 : 0); rn++) {
             if (rn == (int)cs_nation()) continue;
             printf("%s{\"n\":%d,\"u\":[", fr ? "" : ",", rn);
             fr = 0;
@@ -479,11 +502,19 @@ int input_main(const char *save) {
         }
     }
     char line[128];
+    uint32_t clock_ms = 0;               /* the scripted clock (JS CLOCK.ms) */
     while (fgets(line, sizeof(line), stdin)) {
         char key[64];
-        int alt = 0, shift = 0, cx, cy;
+        int alt = 0, shift = 0, cx, cy, ms;
         if (sscanf(line, "C %d %d", &cx, &cy) == 2) {
             in_click(cx, cy, 0);
+            in_project();
+            continue;
+        }
+        /* "T ms": the clock advances (the LEVN slideshow's timer) */
+        if (sscanf(line, "T %d", &ms) == 1) {
+            clock_ms += (uint32_t)ms;
+            in_tick(clock_ms);
             in_project();
             continue;
         }

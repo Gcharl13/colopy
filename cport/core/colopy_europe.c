@@ -298,9 +298,14 @@ void europe_seed_from_load(void) {
 /* sailForEurope (game.js:3231): the ship leaves the map wholesale (the
  * JS deletes the object; a NEW one is minted on return). */
 void cmd_sail_for_europe(int ui) {
+    UnitRecord *u = &CS.units[ui];
+    /* TUTORIAL11 (sailForEurope, game.js; bytes: idle naval focus,
+     * turn < 20, func_020F50 @0x02106E..0x021079) — %STRING0 the ship,
+     * %STRING1 the home port */
+    tut_once(11, 0, 0, dat_units[u->type].name,
+             dat_nations[cs_nation()].homeport);
     if (CR.n_europe >= (int)(sizeof(CR.europe) / sizeof(CR.europe[0])))
         return;
-    UnitRecord *u = &CS.units[ui];
     euro_crossing *e = &CR.europe[CR.n_europe++];
     memset(e, 0, sizeof(*e));
     e->type = u->type;

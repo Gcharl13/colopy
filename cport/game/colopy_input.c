@@ -266,12 +266,19 @@ static void begin_goto_page(int ui, int page) {
     advance();                           /* setGoTo (game.js:2268) */
 }
 
-/* the briefing's page-1 dismissal: the JS continues briefing -> king
- * audience -> the ten LEVN tutorial cards -> beginGame (onClick
- * game.js:12076-12084).  The king/cards cinematics need pak assets not
- * yet carried (KINGLSS1/LEVN*.PIK + the @VICEROY scroll) — FLAGGED
- * follow-up; until then the C boot starts the game here.  beginGame
- * ends on centerOn(start) with sel 0 (game.js:749). */
+/* The new-game cinematic chain (driver func_0755CC @0x0755CC): the
+ * briefings (inside func_07431E @0x075691) -> the King's audience
+ * (func_075594 @0x0756DC, skipped in demo mode [0x828]) -> tune 0x39 +
+ * card 1 at once (@0x0756E4/@0x0756EC) -> the LEVN slideshow advancing
+ * on a timer while the world generates -> the post-generation spin on
+ * the sequencer's done flag (@0x07596F) -> the map.  The C mirrors the
+ * JS order briefing -> SCR_KING -> SCR_CARDS -> brief_begin (onClick
+ * game.js 'briefing'/'king'/'cards'); every asset (KINGLSS1/LEVN*.PIK,
+ * KING1/<nation>1.SS, FONTKING.FF, the @VICEROY/@BUILDn text) has been in
+ * COLOPY.PAK since 2b51c6e (2026-08-16).  World generation is instant
+ * here, so the "spin" is: a key/click ends the cards at once, or the
+ * timer plays all ten (in_tick).  beginGame ends on centerOn(start) with
+ * sel 0 (game.js:749). */
 static void brief_begin(void) {
     colopy_init(colopy_front_seed);
     colopy_new_game((uint8_t)UI.nation, (uint8_t)UI.difficulty, UI.leader);
@@ -279,6 +286,37 @@ static void brief_begin(void) {
     UI.sel = 0;
     center_on((int)dat_starts[UI.nation][0], (int)dat_starts[UI.nation][1]);
     UI.screen = SCR_MAP;
+}
+
+/* The scroll's dismissal is the popup engine's modal wait (@0x075540);
+ * the driver then plays tune 0x39 and shows card 1 at once (@0x0756E4 ..
+ * @0x0756EC = the first sequencer call): stamp the slideshow clock
+ * (onClick 'king', game.js). */
+static void cards_begin(void) {
+    UI.card = 0;
+    UI.card_t0 = UI.clock_ms;
+    UI.screen = SCR_CARDS;
+}
+
+/* The intro slideshow clock — sequencer func_004D1E @0x004D1E: card 1
+ * shows at once ([0x92] starts -1, .data 0x1DA30), card k+1 when
+ * `now - [0x90:0x92] >= 0x23A` (@0x004D43), and once ten have shown the
+ * next interval sets the done flag [0x8A] (@0x004D4F).  One tick of that
+ * clock is two PIT interrupts at divisor 0x7A8 (@0x00C843 -> 0x00E508;
+ * even-tick gate @0x00C6A5, [0x92E8] increment @0x00C741) = 2*1960/
+ * 1193182 s = 3.285 ms, so 0x23A = 570 ticks = 1872.6 ms per card.  A
+ * key/click sets [0x8A] at once (@0x004D94/@0x004DD5); the driver spins
+ * on it only after world generation (@0x07596F), which the port does in
+ * zero time — so a key/click ends the slideshow immediately and the
+ * timer alone plays all ten (cardsPoll, game.js). */
+#define CARD_MS 1873u
+int in_tick(uint32_t now_ms) {
+    UI.clock_ms = now_ms;
+    if (UI.screen != SCR_CARDS) return 0;
+    uint32_t k = (now_ms - UI.card_t0) / CARD_MS;
+    if (k >= 10) { brief_begin(); return 1; }
+    if ((int)k > UI.card) { UI.card = (int8_t)k; return 1; }
+    return 0;
 }
 
 /* openPedia (game.js:11429) */
@@ -1518,6 +1556,10 @@ static void wc_dismiss(void) {
          * "Land Ho!  What shall we call this new land?" — an entry
          * dialog, so live-front only (openDialog is inert here) */
         if (plate == 1 && colopy_front_live) {
+            /* TUTORIAL2 (askLandName, game.js): the land-sighting
+             * handler's tail, func_020EFE @0x020F3A..0x020F46 — the
+             * Tutorial-Hints test alone, NO once-flag */
+            tut_once(2, 0, 0, 0, 0);
             UI.dlg = 6;
             snprintf(UI.dlg_entry, sizeof(UI.dlg_entry), "%s",
                      rm_event_default("LANDHO"));
@@ -1907,7 +1949,37 @@ static void custom_house_menu(void) {
 }
 
 static void in_key_inner(const char *k, int alt, int shift);
+/* The screen-open tutorials (colopy_tutorial.c): TUTORIAL4 at the first
+ * colony-screen visit (func_02C5D4 @0x02C67E..0x02C74A; bytes: the
+ * alternative-yield scan of colonist 0's plot — the Food/Lumber pair is
+ * the JS's flagged stand-in) and TUTORIAL17 at the first Europe screen
+ * (@0x035BDC..0x035C2B; %STRING1 is a 0x191f:0xac8 string, unread —
+ * the JS passes the country).  Both engines fire them on the screen
+ * EDGE of a key/click (the JS onClick/onKey wrappers), so the harnesses
+ * see the same events; a screen change from outside a key/click (a
+ * pointer drag) fires at the next one. */
+static void in_key_body(const char *k, int alt, int shift);
+static void in_click_body(int mx, int my, int right);
+static void screen_edge(int prev) {
+    if (UI.screen == prev) return;
+    if (UI.screen == SCR_COLONY)
+        tut_once(4, 0, 0, dat_cargo[FOOD].name, dat_cargo[LUMBER].name);
+    else if (UI.screen == SCR_EUROPE)
+        tut_once(17, 0, 0, dat_nations[cs_nation()].homeport,
+                 dat_nations[cs_nation()].country);
+}
 void in_key(const char *k, int alt, int shift) {
+    int prev = UI.screen;
+    in_key_body(k, alt, shift);
+    screen_edge(prev);
+}
+void in_click(int mx, int my, int right) {
+    int prev = UI.screen;
+    in_click_body(mx, my, right);
+    screen_edge(prev);
+}
+
+static void in_key_body(const char *k, int alt, int shift) {
     in_key_inner(k, alt, shift);
     front_pickup();
 }
@@ -1975,17 +2047,13 @@ static void in_key_inner(const char *k, int alt, int shift) {
         }
         break;
     case SCR_KING:
-        if (key_is(k, "Enter") || key_is(k, " ")) {
-            UI.card = 0;
-            UI.screen = SCR_CARDS;           /* onClick 12080 */
-        }
+        if (key_is(k, "Enter") || key_is(k, " ")) cards_begin();
         break;
     case SCR_CARDS:
-        if (key_is(k, "Enter") || key_is(k, " ")) {
-            if (UI.card < 9) UI.card++;      /* onClick 12082 */
-            else brief_begin();              /* beginGame -> map (12083) */
-        }
-        if (key_is(k, "Escape")) UI.screen = SCR_BRIEFING;   /* 12439 */
+        /* ANY key: the sequencer's getkey + drain sets the done flag
+         * [0x8A] (@0x004D89..0x004D94); the old Escape -> briefing
+         * route had no engine equivalent and is gone */
+        brief_begin();
         break;
     case SCR_REPORT:
         {
@@ -2534,8 +2602,21 @@ static void in_key_inner(const char *k, int alt, int shift) {
                     if (CR.europe[q].state != 0) continue;
                     if (++ord == UI.euro_ship) { port = q; break; }
                 }
-                if (port >= 0)
-                    euro_buy_to_ship(port, UI.market_sel, qty);
+                /* TUTORIAL18 (europeDrop, game.js): the can't-afford
+                 * branch of the Europe buy — BYTE: price*qty > gold
+                 * (@0x032685..0x0326AC) -> status line + @TUTORIAL18
+                 * via the GAME wrapper @0x032760, ungated, no once-flag;
+                 * %STRING0 goods, %NUMBER0 the ask, %NUMBER1 gold.  The
+                 * JS bounds the ask by gold, so both fire when a single
+                 * lot is unaffordable (flagged approximation). */
+                if (port >= 0) {
+                    int32_t ask = market_ask(UI.market_sel);
+                    if (CS.powers[cs_nation()].gold < ask)
+                        tut_once(18, ask, CS.powers[cs_nation()].gold,
+                                 dat_cargo[UI.market_sel].name, 0);
+                    else
+                        euro_buy_to_ship(port, UI.market_sel, qty);
+                }
             }
         }
         if (key_is(k, "s") || key_is(k, "S")) {
@@ -2584,7 +2665,7 @@ static int hit(int mx, int my, int x, int y, int w, int h) {
 }
 
 static void in_click_inner(int mx, int my, int right);
-void in_click(int mx, int my, int right) {
+static void in_click_body(int mx, int my, int right) {
     in_click_inner(mx, my, right);
     front_pickup();
 }
@@ -2639,12 +2720,10 @@ static void in_click_inner(int mx, int my, int right) {
         else UI.screen = SCR_KING;           /* onClick 12078 */
         break;
     case SCR_KING:
-        UI.card = 0;
-        UI.screen = SCR_CARDS;
+        cards_begin();
         break;
     case SCR_CARDS:
-        if (UI.card < 9) UI.card++;
-        else brief_begin();                  /* beginGame -> map */
+        brief_begin();                       /* the done flag (@0x004DD5) */
         break;
     case SCR_REPORT:
         UI.screen = SCR_MAP;

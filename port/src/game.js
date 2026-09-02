@@ -586,6 +586,7 @@ const G = {
   leader: '',
   briefPage: 0,
   card: 0,
+  cardT0: 0,                  // the LEVN slideshow's [0x90:0x92] stamp (ms)
   gold: 0,
   tax: 0,
   year: 1492,
@@ -823,10 +824,12 @@ function beginGame() {
   G.retired = false; G.options = null;
   // Tutorial mask seed 0x0E (@0x755EB); TUTORIAL1 fires with the fleet on
   // the high seas -- the game's very first event.
-  G.tutMask = 0x0E; G.tutSide = {}; G.scored = false;
-  // The other two once-flag homes in the globals block (func_020F50 read,
-  // RULINGS 2026-08-07z6): [0x5380] and [0x5382].
-  G.onceFlags = 0; G.phaseFlags = 0;
+  G.tutMask = 0x0E; G.scored = false;
+  // The [0x5380] once-flags byte (func_020F50 read, RULINGS 2026-08-07z6).
+  G.onceFlags = 0;
+  // The game-options word [0x5382]: 0xC600 (@0x0755E5), then func_07431E
+  // turns Tutorial Hints (0x80) ON iff Discoverer (@0x074341..0x074348).
+  G.gameOptions = 0xC600 | (G.difficulty === 0 ? 0x80 : 0);
   G.soonWarned = false; G.soonWarned2 = false; G.timeChanged = false;
   tutOnce(1, { STRING0: G.units[0].type });
   seedREF();
@@ -1252,10 +1255,38 @@ function drawCards(ctx) {
   usePalette(key);
   if (IMG[key]) ctx.drawImage(IMG[key], 0, 0);
   else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
-  // Renderer func_004B72 lays the card text at pen (14,54), ink 0x0E.
+  // Renderer func_004B72: the card text is drawn by the popup engine
+  // (`lcall 0x181f,0x3fe` @0x004CE5 on GAME.TXT @BUILDn, own directives
+  // @width=310 @y=30) with the popup INK SLOTS [0x1F4A]=0x0E / [0x1F50]=0x36
+  // (@0x004CD6/@0x004CDC -- palette indices under the LEVN palette, not a
+  // pen; the old "pen (14,54)" reading is corrected, RULINGS 2026-09-02c).
+  // The y=54 / pitch 9 here is the port's MEASURED stand-in for the popup
+  // layout, kept until a DOS capture of a card exists to diff against (TBD).
+  // No caption: the engine draws none (the cards advance on a timer).
   cardText(G.card).forEach((l, i) => FONT.tiny.center(ctx, l, 160, 54 + i * 9,
                                                       lut(0x0E), ink(0)));
-  FONT.tiny.center(ctx, '(click to continue)', 160, 190, lut(0x0E), ink(0));
+}
+
+// The intro slideshow clock -- sequencer func_004D1E @0x004D1E: card 1 shows
+// at once ([0x92] starts -1, .data 0x1DA30), card k+1 when `now - [0x90:0x92]
+// >= 0x23A` (@0x004D43), and once ten have shown the next interval sets the
+// done flag [0x8A] (@0x004D4F). One tick of that clock is two PIT interrupts
+// at divisor 0x7A8 (@0x00C843 -> 0x00E508; even-tick gate @0x00C6A5, [0x92E8]
+// increment @0x00C741): 2*1960/1193182 s = 3.285 ms, so 0x23A = 570 ticks =
+// 1872.6 ms per card. A key or click sets [0x8A] at once (@0x004D94/@0x004DD5);
+// the new-game driver spins on that flag only after world generation
+// (@0x07596F), which the port does in zero time -- so a click ends the
+// slideshow immediately, and the timer alone plays all ten (10 intervals).
+// The engine's only other keys are Alt-X / Alt-Q = exit to DOS (@0x004DA6),
+// which have no port equivalent.
+const CARD_MS = 1873;
+const CLOCK = { ms: null };          // a harness pins it; null = wall clock
+function nowMs() { return CLOCK.ms !== null ? CLOCK.ms : performance.now(); }
+function cardsPoll() {
+  if (G.screen !== 'cards') return;
+  const k = Math.floor((nowMs() - G.cardT0) / CARD_MS);
+  if (k >= 10) { beginGame(); G.screen = 'map'; }
+  else if (k > G.card) G.card = k;
 }
 
 // §18.5 / §26.13 — the King's audience. One renderer paints the audience, the
@@ -1370,7 +1401,9 @@ function drawKing(ctx) {
       if (m >= 2) y += 8;
     } else y += 8;
   }
-  FONT.tiny.center(ctx, '(click to begin)', CX, 186, lut(0xFC), ink(0));
+  // No caption: neither the bytes (func_075352, read whole) nor the DOS
+  // capture docs/screens/07_king_audience.png carry one -- the wait is the
+  // popup engine's own modal wait on the @VICEROY scroll (@0x075540).
 }
 
 function wrapText(font, s, width) {
@@ -4493,10 +4526,8 @@ const VIEW_BTN = { x: 303, y: 132, w: 15, h: 13, pitch: 15 };
 const VIEW_PRODUCTION = 0, VIEW_UNITS = 1, VIEW_BUILD = 2;
 
 function drawColony(ctx) {
-  // TUTORIAL4 (func_02C5D4 @0x2C74A): the first Colony Screen visit.
-  // Production fills are representative names, flagged.
-  tutOnce(4, { STRING0: DATA.cargo[GOOD.FOOD].name,
-               STRING1: DATA.cargo[GOOD.LUMBER].name });
+  // TUTORIAL4 (func_02C5D4 @0x2C74A) fires on the screen edge (screenEdge),
+  // not here: a headless harness never draws.
   const c = G.colonies[G.colony];
   if (!c) { G.screen = 'map'; return; }
   usePalette('WOODTILE');
@@ -5832,9 +5863,7 @@ function drawSack(ctx, x, y) {
   });
 }
 function drawEurope(ctx) {
-  // TUTORIAL17: the first European Status visit (binding flagged).
-  tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
-                STRING1: DATA.nations[G.nation].country });
+  // TUTORIAL17 (@0x035BDC) fires on the screen edge (screenEdge), not here.
   // The MASTER palette, not EUROPE.PIK's — census C4.5, 2026-08-19. The DOS
   // capture matches VICEROY.PAL at all 22 indices where the two disagree
   // (checked at 54..59). Measured: 12,817 -> 5,448 px on the census EUROPE
@@ -10221,34 +10250,61 @@ function exitToDos() {
 // @0x20F3A). Every guard bit is byte-cited; only 16/17/18 remain in the
 // side set (no emitter found for them in the EXE). The seed's 0x0E marks
 // the SOUND switches (the shared-word reading), not tutorial steps.
-// The difficulty gate is the sibling TUT keys' [0x53A6]<2, flagged for
-// TUTORIALn itself.
+//
+// RE-READ 2026-09-02 (RULINGS 2026-09-02d): the GATE is the Tutorial-Hints
+// OPTION bit [0x5382]&0x80, tested at every emit site (@0x020F3A T2,
+// @0x021E63/@0x024AC6 the dispatcher's callers, @0x0286DA T16, @0x028CFD T7,
+// @0x02C67E T4, @0x02C74F T12, @0x02E9D5 T6, @0x035BDC T17, @0x036504 T5).
+// New game writes 0xC600 (@0x0755E5) and func_07431E sets the bit iff
+// difficulty == 0 (@0x074341..0x074348) -- which is the "Discoverer only"
+// the COLONY02/COLONY04 saves showed (every Discoverer fixture carries
+// 0xC680, the Explorer ones 0xC600) -- but the Game Options checkbox
+// toggles it (@0x0230F3) and a save carries it, so an Explorer game with
+// hints on fires the lessons. T2 has NO once-flag (the option test alone);
+// T16 and T17 own [0x5380] bits 0x10/0x20 (@0x0286FF, @0x035C2B); T18 has
+// neither gate nor flag (the Europe buy's can't-afford branch @0x032760).
+// The old TUT_PHASE binding wrote the option bit as T2's once-flag; gone.
 const TUT_BIT = { 1: 0x0010, 3: 0x0040, 4: 0x0080, 5: 0x0100, 6: 0x0200,
                   7: 0x0400, 8: 0x0800, 9: 0x1000, 10: 0x2000, 11: 0x4000,
                   12: 0x8000 };
-const TUT_FLAG = { 13: 0x01, 14: 0x02, 15: 0x08, 19: 0x80 };   // [0x5380]
-const TUT_PHASE = { 2: 0x80 };                                 // [0x5382]
+const TUT_FLAG = { 13: 0x01, 14: 0x02, 15: 0x08, 16: 0x10, 17: 0x20,
+                   19: 0x80 };                                 // [0x5380]
 function tutOnce(n, subs) {
-  // Tutorials are DISCOVERER-ONLY: the COLONY02 census save (Explorer,
-  // tutMask 0x0E = no step bits) opens its colony screen with NO tutorial
-  // card under DOSBox, while COLONY04 (Discoverer) accumulates step bits
-  // (0x41DE). The earlier "<2" reading was flagged; live evidence 2026-08-08.
-  if (G.difficulty >= 1) return;
+  if (n !== 18 && !(G.gameOptions & 0x0080)) return;   // T18 is ungated
   if (TUT_BIT[n]) {
     if (G.tutMask & TUT_BIT[n]) return;
     G.tutMask |= TUT_BIT[n];
   } else if (TUT_FLAG[n]) {
     if (G.onceFlags & TUT_FLAG[n]) return;
     G.onceFlags |= TUT_FLAG[n];
-  } else if (TUT_PHASE[n]) {
-    if (G.phaseFlags & TUT_PHASE[n]) return;
-    G.phaseFlags |= TUT_PHASE[n];
-  } else {
-    G.tutSide = G.tutSide || {};
-    if (G.tutSide[n]) return;
-    G.tutSide[n] = true;
   }
+  // T2, T18: no once-flag
   showEvent(`TUTORIAL${n}`, subs || {});
+}
+// The screen-open lessons: TUTORIAL4 at the first colony screen
+// (func_02C5D4 @0x02C67E..0x02C74A; the Food/Lumber pair is a flagged
+// stand-in for the bytes' alternative-yield scan) and TUTORIAL17 at the
+// first Europe screen (@0x035BDC..0x035C2B). Fired on the screen EDGE of a
+// click/key -- both engines the same way, so the harnesses see them -- not
+// at draw time (a headless harness never draws).
+function screenEdge(prev) {
+  if (G.screen === prev) return;
+  if (G.screen === 'colony')
+    tutOnce(4, { STRING0: DATA.cargo[GOOD.FOOD].name,
+                 STRING1: DATA.cargo[GOOD.LUMBER].name });
+  else if (G.screen === 'europe')
+    tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
+                  STRING1: DATA.nations[G.nation].country });
+}
+function onClick(mx, my) {
+  const prev = G.screen;
+  onClickBody(mx, my);
+  screenEdge(prev);
+}
+function onKey(e) {
+  const prev = G.screen;
+  onKeyBody(e);
+  screenEdge(prev);
 }
 
 // The endgame sequence: the @EXPLOITS rating card with an @SCORE joke name,
@@ -12550,20 +12606,21 @@ function checkImmigration() {
              (k) => {
       const slot2 = (k >= 0 && k < 3) ? k : 0;
       G.dockUnits.push(G.dock[slot2].name);
-      tutOnce(5, { STRING0: DATA.nations[G.nation].homeport,
-                   STRING1: G.dockUnits[G.dockUnits.length - 1] });
+      // no TUTORIAL5 on this branch: the bytes fire it only after @UNREST
       G.dock[slot2] = rollImmigrant();
     }, pool);
     return;
   }
   const slot = Math.floor(Math.random() * 3);
   G.dockUnits.push(G.dock[slot].name);
-  // TUTORIAL5 (func_033F6A @0x3651F): recruits are waiting on the docks.
-  tutOnce(5, { STRING0: DATA.nations[G.nation].homeport,
-               STRING1: G.dockUnits[G.dockUnits.length - 1] });
   G.dock[slot] = rollImmigrant();
   showEvent('UNREST', { STRING0: DATA.nations[G.nation].homeport,
                         STRING1: G.dock[0] && (G.dock[0].name || G.dock[0]) || 'Colonists' });
+  // TUTORIAL5 -- BYTE: immediately after @UNREST for a human power
+  // (@0x0364BE..@0x036514; gate @0x036504, once @0x03651F): recruits are
+  // waiting on the docks. %STRING1 = the recruit.
+  tutOnce(5, { STRING0: DATA.nations[G.nation].homeport,
+               STRING1: G.dockUnits[G.dockUnits.length - 1] });
 }
 
 // ------------------------------------------------------------ save / load
@@ -12698,13 +12755,12 @@ function importSav(bytes) {
   //            the port ignores; the two readings of 0x5386 coexist).
   //   g+0x8A = [0x540A] the woodcut shown-bitmask, same 1<<plate convention.
   G.tutMask = u16(g + 0x06);
-  // The other two once-flag homes (func_020F50/020EE0 read): g+0 = [0x5380]
-  // (steps 13/14/15/19 + other once-flags), g+2 = [0x5382] (step 2 at 0x80).
+  // The other two flag homes (func_020F50/020EE0 read): g+0 = [0x5380]
+  // (steps 13/14/15/16/17/19 + other once-flags), g+2 = [0x5382], the
+  // game-options word whose 0x80 (Tutorial Hints) gates every lesson --
+  // the save's word IS the options word the dialog edits (2026-09-02).
   G.onceFlags = d[g];
-  G.phaseFlags = u16(g + 0x02);
-  // Only 16/17/18 remain side-set (no emitter in the EXE); keep them marked
-  // shown on import so none re-fire mid-game.
-  G.tutSide = Object.fromEntries(Array.from({ length: 19 }, (_, i) => [i + 1, true]));
+  G.gameOptions = u16(g + 0x02);
   G.wcSeen = u16(g + 0x8A);
   // Block 34 = the single byte [0x336], the colony-strip NUMBERS toggle
   // (the badge gate, see drawCountRow): it sits 564 bytes past the tribe
@@ -14771,8 +14827,18 @@ function europeDrop(d, target, mx, my) {
       const space = Math.max(0, cap - used) * 100 +
                     (slot ? Math.max(0, 100 - slot.qty) : 0);
       const most = Math.min(space, Math.floor(G.gold / askPrice(d.good)), 100);
-      if (most <= 0) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
-      tutOnce(18, { STRING0: DATA.cargo[d.good].name, NUMBER0: askPrice(d.good) });
+      if (most <= 0) {
+        G.euroMsg = 'We cannot afford that, Your Excellency.';
+        // TUTORIAL18 -- BYTE: the buy's can't-afford branch, price*qty > gold
+        // (@0x032685..0x0326AC) -> status line + the lesson through the GAME
+        // wrapper @0x032760, ungated, no once-flag; %STRING0 goods, %NUMBER0
+        // the ask, %NUMBER1 gold. This port bounds the ask by gold, so it
+        // fires when a single lot is unaffordable (flagged approximation).
+        if (G.gold < askPrice(d.good))
+          tutOnce(18, { STRING0: DATA.cargo[d.good].name,
+                        NUMBER0: askPrice(d.good), NUMBER1: G.gold });
+        return;
+      }
       askAmount('HOWMUCH4', { STRING0: DATA.cargo[d.good].name,
                               STRING1: ship.type, NUMBER1: askPrice(d.good) },
                 most, (qty) => { if (qty) buyToShip(d.good, qty); });
@@ -14836,7 +14902,7 @@ function menuRowAt(mx, my) {
   return row >= 0 && row < DATA.menus[G.openMenu].rows.length ? row : -1;
 }
 
-function onClick(mx, my) {
+function onClickBody(mx, my) {
   if (G.combat) { G.combat = null; return; }
   if (G.eventQueue.length) { G.eventQueue.shift(); return; }
   if (G.dialog) { dialogClick(mx, my); return; }
@@ -14868,11 +14934,14 @@ function onClick(mx, my) {
       if (G.briefPage === 0) G.briefPage = 1;
       else G.screen = 'king';
       break;
-    case 'king': G.card = 0; G.screen = 'cards'; break;
-    case 'cards':
-      if (G.card < 9) G.card++;
-      else { beginGame(); G.screen = 'map'; }
-      break;
+    // The scroll's dismissal is the popup engine's modal wait (@0x075540);
+    // the driver then plays tune 0x39 and shows card 1 at once (@0x0756E4
+    // .. @0x0756EC): stamp the slideshow clock.
+    case 'king': G.card = 0; G.cardT0 = nowMs(); G.screen = 'cards'; break;
+    // A click during the cards sets the sequencer's done flag [0x8A]
+    // (@0x004DD5) and the post-generation spin ends (@0x07596F) -- the
+    // cards do NOT advance on clicks (see cardsPoll).
+    case 'cards': beginGame(); G.screen = 'map'; break;
     case 'woodcut': {
       // Woodcut 1 is the discovery plate and hands over to the naming prompt;
       // woodcut 2 is BUILDING A COLONY and hands over to the new colony.
@@ -15216,7 +15285,7 @@ function commitMenu() {
   else if (G.menuRow === 4) G.screen = 'hof';
 }
 
-function onKey(e) {
+function onKeyBody(e) {
   const k = e.key;
   // Backtick toggles the debug column. Checked first so it works even while a
   // popup is modal -- that is exactly when you want to look at the state.
@@ -15256,12 +15325,14 @@ function onKey(e) {
       if (k === 'Enter') { G.leader = DATA.nations[G.nation].leader; G.screen = 'name'; }
       if (k === 'Escape') G.screen = 'difficulty';
       break;
+    // ANY key during the cards is the sequencer's done flag (getkey + drain
+    // @0x004D89..0x004D94); the old Escape -> briefing route was a port
+    // invention with no engine equivalent and is gone.
+    case 'cards': onClick(-1, -1); break;
     case 'briefing':
-    case 'cards':
     case 'king':
     case 'woodcut':
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
-      if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
@@ -15520,6 +15591,7 @@ function frameBody() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
   G.wallClock = performance.now();
+  cardsPoll();                        // the timed LEVN slideshow
   flushMapMsg();
   // NO auto-dismiss: the prior "120-tick timeout" reading of func_004A80's
   // 0x78 is OVERTURNED by live evidence -- the census DOSBox popups sit on

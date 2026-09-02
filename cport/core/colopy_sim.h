@@ -239,6 +239,11 @@ int  colonist_to_fence(int ci, int k);  /* colonistToFence; unit idx or -1 */
 void colonist_add(ColonyRecord *c);   /* the record-slot push */
 void ev_emit(const char *key, int32_t p0, int32_t p1,
              const char *s0, const char *s1);
+/* the tutorial (colopy_tutorial.c; game.js tutOnce): the Tutorial-Hints
+ * option gate [0x5382]&0x80 + the per-step once-flags in globals +0/+6 */
+int  tut_hints(void);
+int  tut_once(int n, int32_t num0, int32_t num1, const char *s0,
+              const char *s1);
 
 /* Unit-pool mutators shared by the native pass (converts, braves). */
 int  unit_append(int type, int owner, int x, int y);  /* record idx or -1 */
