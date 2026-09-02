@@ -83,7 +83,10 @@ mountains/hills overlay — so a load→save round-trip through MAPEDIT is
 ### Border ring and the sea-lane column (hard rule 2, refined)
 - The outermost 1-tile ring is **not editable** (`_change_map` bounds
   x,y ∈ [1..w−2]/[1..h−2] @0x31E9–0x320D) and is skipped by the continent
-  finder. In AMER2.MP the ring is Ocean (25).
+  finder. In AMER2.MP the ring is Ocean (25) except **21 Prairie (id 3)
+  tiles, all in row 0** (x = 1..18, 23, 24, 27 — census 2026-09-02; the
+  earlier "a single ring tile" count was wrong). VICEROY overwrites row 0
+  with Arctic at load (§"VICEROY loader behavior"), so they never show.
 - **Hard rule 2's "right-edge column = Sea Lane 26" refers to the
   right-most *playable* column x = w−2**: in AMER2.MP all 70 interior rows
   of column 56 are Sea Lane (verified). Sea lane also spreads over the
@@ -209,26 +212,89 @@ nothing after. The post-load normalisation is in §"VICEROY loader behavior".
 
 ## Round-trip verification
 
-`tools/verify.py` enforces read→write byte-identity for *our tools*.
-Note MAPEDIT itself is not byte-preserving (see `_forest_fix` above).
+`tools/asset_codecs.py` (`mp_decode` / `mp_encode`, used by
+`tools/extract_mp.py` / `encode_mp.py`) re-emits the six-byte header and
+the three layers; `tools/verify_assets.py` checks it bit-exact against
+`raw/COLONIZE/AMER2.MP` under `make test` (2026-09-02, G6). `tools/verify.py`
+is the byte-identity check against the golden manifest. Note MAPEDIT itself
+is not byte-preserving (see `_forest_fix` above).
 
 ---
 
-## Open work
+## Open work (rewritten 2026-09-02 — the three earlier bullets are settled)
 
-- Layer-2 bits 3/6 exact game-side semantics (`_is_hostile` @0x44D1
-  tests 0x48) — needs the VICEROY reader.
-- Per-line annotation of VICEROY's .MP loader (find via the AMER2.MP
-  string ref) — confirms the game reads the same three layers.
-- One border-ring anomaly in AMER2.MP: a single ring tile with base id 3
-  (Prairie) among the Ocean ring — likely original data quirk; harmless
-  (ring is non-editable).
+- ~~Layer-2 bits 3/6 exact game-side semantics (`_is_hostile` @0x44D1
+  tests 0x48) — needs the VICEROY reader.~~ **Moot for VICEROY**: layer 2
+  is zeroed at load (`@0x65AA5–0x65AB7`, below) before play, so file bits
+  never reach the game. What `_is_hostile` tests is the *runtime* feature
+  plane that the game itself writes — a MAPEDIT-side question only.
+- ~~Per-line annotation of VICEROY's .MP loader.~~ Done — §"Read/write entry
+  points" (`func_071106` reads exactly the same three layers).
+- ~~One border-ring anomaly: a single Prairie ring tile.~~ Corrected: 21
+  Prairie tiles, all in row 0, overwritten by the Arctic row fill at load.
+- **Still open**: `[0x1E9F]` = `"P"` is `strcat`'d to a custom map name
+  `@0x65EBB` before a sidecar open `@0x65ECF` (`<MAP>.MPP`?) — not traced.
 
+## The three former `TODO_VERIFY` items — settled 2026-09-02 (REMAINING_WORK.md G8, RULINGS 2026-09-02e)
 
-## VICEROY loader behavior (live-verified 2026-07-31, RULINGS batch 7)
+Commit d87e9bb's version of this file carried three `TODO_VERIFY` notes;
+8ba0e1d rewrote the file from the MAPEDIT writer and dropped the markers
+without settling them. Each is now decided against VICEROY's bytes and the
+raw `AMER2.MP` (file offsets into `VICEROY.EXE`):
 
-- **Layer 2 (features) is DISCARDED on load** — VICEROY rebuilds the runtime feature plane
-  (bit0 unit, bit1 settlement); crafted feature bytes never reach the renderer.
-- **Border normalization on load**: rows 0 and h−1 → Arctic; columns 0, 1 and w−1 → Sea Lane
-  for interior rows, overwriting even land (hard rule 2 enforced by the loader itself).
-- Forest alias ids 16..23 are folded to 8..15 at load (matching MAPEDIT's `_forest_fix`).
+1. *"bit 7 (0x80) = possibly 'explored by player 0' flag"* → **No.** Bit 7 is
+   the Mountains-vs-Hills / Major-vs-Minor-river modifier: `func_00624E`
+   `@0x6254–0x6266` (`test bl,0x20 … and ax,0x80; cmp ax,1; sbb dx,dx; and
+   dx,1; add dx,0x1b` → 27 when bit 7 is set, 28 otherwise) and the river
+   draw `@0x68397` (`test byte [0xa8a1],0x80` selects the major-river form).
+   Exploration is a **separate runtime plane** `[0x168]` (allocated
+   `@0x7109D`, zeroed at load `@0x65ABC`) with one bit per power
+   (`add cl,4; mov al,1; shl al,cl` `@0x685F2–0x685F7`). Census: no byte in
+   AMER2.MP has bit 7 set without bit 5 or 6.
+2. *"forest bit 0x40, redundant with ids 8..15, set for all forested
+   tiles?"* → **No.** `0x40` is the **river** bit (VICEROY's river gate
+   `test byte [0xa8a1],0x40` `@0x6838A`; MAPEDIT paint masks above). Forest
+   lives only in the id: AMER2.MP carries 687 tiles with ids 16..23, folded
+   to 8..15 at load (`@0x65A4E–0x65A85`) and at read
+   (`func_006204` `@0x6216–0x622A`).
+3. *"exact post-tile-array layout (Colony/Unit/Native array order and
+   counts)"* → **There is none.** The loader reads the header and exactly
+   three `w·h` layers and stops (`func_071106`, `fclose` `@0x7123C`); the
+   writer emits the same (`func_071246`); 6 + 3·58·72 = 12,534 = the file
+   size. Those records belong to save games (`spec/systems/save.md`).
+
+## VICEROY loader behavior (byte-verified 2026-09-02; supersedes the live-verified 2026-07-31 note)
+
+For a **file map** (`[0x18C]==0`) `new_game_state_init` and the arg-gated
+branch of `func_064A10` normalise the terrain plane after `func_071106` has
+read it. In order (all sites re-read from the listing; `0x181F:0xBA` →
+`func_00DDEA` rect-fill, `0x181F:0xCE` → `func_00E0A2` rectangle *outline* —
+two hlines then two vlines `@0xE0E2/@0xE100/@0xE11E/@0xE13C`):
+
+1. **Rows 0 and h−1 → Arctic (`0x18`)**: `push 1; push 0x18; ax=0, dx=0,
+   bx=w; lcall 0x181f,0xba` `@0x75746–0x75761`, again with `dx=h−1`
+   `@0x75766–0x75785`.
+2. `push [bp+6]; lcall 0x1a1f,0x83e` `@0x7579B` → `func_064A10`. It first
+   draws `random_int(1, 0x7FFF)` into `[0x190]` (`@0x64A16–0x64A23` — **one
+   RNG draw even for a file map**), then `cmp word [bp+6],0; je …; jmp
+   0x65941` `@0x64A2C–0x64A32` skips generation.
+3. **Sea-Lane outlines (`0x1A`)**: `(0,0)–(w−1,h−1)` `@0x65941–0x65960`, then
+   `(1,0)–(w−2,h−1)` `@0x65965–0x65986`. Net: **columns 0, 1, w−2 and w−1**
+   become Sea Lane (the 2026-07-31 note said "0, 1 and w−1" — corrected).
+4. **Rows 0 and h−1 → Arctic again** `@0x6598B–0x659CA` (so the corners and
+   the top/bottom of the ring end as Arctic, not Sea Lane).
+5. **Per-tile fold** `@0x659CF–0x65A9D`: `base = byte & 0x1F` `@0x65A10`;
+   skip `base ≥ 0x18` `@0x65A15`; if bit `0x20` (hills/mountains) is set →
+   `byte = (byte & 0xE0) | (base & 7)` `@0x65A1A–0x65A45` (forest stripped
+   under an overlay, flags kept); else if `0x10 ≤ base < 0x18` →
+   `base −= 8` `@0x659D8–0x659E0` → `@0x65A4E–0x65A85`.
+6. **Layer 2 (feature) memset 0** `@0x65AA5–0x65AB7`; **fog plane memset 0**
+   `@0x65ABC–0x65ACE` (`0x181F:0x484`).
+
+So crafted feature bytes never reach the renderer, rows 0/h−1 are Arctic
+for **every** file map regardless of content, and hard rule 2 is enforced
+by the engine itself. AMER2.MP already satisfies most of it (column 56 =
+Sea Lane in all 70 interior rows, column 57 = Ocean, column 0 = Ocean,
+column 1 mixed) — the load pass is what makes columns 0/57 Sea Lane and
+row 0 Arctic on screen. Neither port applies this pass yet
+(REMAINING_WORK.md G12).

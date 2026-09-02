@@ -11024,3 +11024,45 @@ tools that do not exist, and verified nothing.
 
 **Not decided**: meaning of CONFIG words 0/2..6; the two MOV passes'
 semantics; `COLONIZE.EXE`'s own AMERICA.MOV/CYCLE.DAT/viceroy.pal readers.
+
+## 2026-09-02e — formats track (G8): the three `.MP` TODO_VERIFY items, and two corrections
+
+**Conflict**: `formats/MP_FORMAT.md` at d87e9bb carried three `TODO_VERIFY`
+notes (bit 7 = "explored by player 0"?, bit 0x40 = "forest, redundant with
+ids 8..15"?, "exact post-tile-array layout"); 8ba0e1d rewrote the page and
+removed the markers without deciding them (ledger G8 stayed open). Its
+2026-07-31 "live-verified" loader note said "columns 0, 1 and w−1 → Sea
+Lane", and its "Open work" listed "a single Prairie ring tile".
+
+**Rulings** (VICEROY.EXE file offsets; raw `AMER2.MP` census):
+
+1. **Bit 7 is the Mountains/Major-river modifier, not exploration.**
+   `func_00624E` `@0x6254–0x6266` returns 27 when bit 7 is set with bit 5,
+   else 28; the river drawer tests `[0xa8a1] & 0x80` `@0x68397` for the
+   major form. Exploration is the runtime fog plane `[0x168]` (allocated
+   `@0x7109D`, zeroed at load `@0x65ABC`, one bit per power `@0x685F2`).
+   Census: 0 bytes in AMER2.MP have bit 7 without bit 5 or 6.
+2. **0x40 is the river bit.** `test byte [0xa8a1],0x40` `@0x6838A` gates
+   the river overlay; MAPEDIT's paint masks agree. Forest is carried in
+   the id (687 tiles with ids 16..23, folded at load `@0x65A4E–0x65A85`
+   and at read `@0x6216–0x622A`).
+3. **Nothing follows layer 3.** `func_071106` reads the 6-byte header and
+   three `w·h` layers, then `call 0x70fa0` / `fclose` `@0x71230–0x7123C`;
+   `func_071246` writes the same; 12,534 = 6 + 3·4176.
+4. **Correction — Sea-Lane columns at load are 0, 1, w−2 and w−1**: two
+   `func_00E0A2` outline calls, `(0,0)–(w−1,h−1)` `@0x65941–0x65960` and
+   `(1,0)–(w−2,h−1)` `@0x65965–0x65986`, value `0x1A`; rows 0/h−1 are then
+   re-filled Arctic `@0x6598B–0x659CA`. The 2026-07-31 wording "0, 1 and
+   w−1" missed column w−2 (which in AMER2.MP is already Sea Lane in every
+   interior row, so the live test could not see the difference).
+5. **Correction — the ring anomaly is 21 tiles, not one**: id 3 (Prairie)
+   at row 0, x = 1..18, 23, 24, 27 (256 ring tiles: 235 Ocean, 21 Prairie).
+   Harmless: the Arctic row fill overwrites row 0 at load.
+6. **Layer-2 bits 3/6 are moot for VICEROY**: layer 2 is memset to 0
+   `@0x65AA5–0x65AB7` before play; `_is_hostile`'s `0x48` test reads the
+   runtime plane the game writes itself.
+
+**Not decided**: the `"P"` sidecar suffix `@0x65EBB`/`@0x65ECF`
+(`<MAP>.MPP`?) for custom maps; whether the ports should apply the load
+pass (G12 — a sim-track lockstep change; the one RNG draw inside
+`func_064A10` `@0x64A16` must be accounted for).
