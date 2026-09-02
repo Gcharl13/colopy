@@ -188,6 +188,52 @@ def data_uri(img, fmt="PNG"):
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
+# Part E (docs/REMAINING_WORK.md) -- the screens' own assets, each with a
+# byte-cited consumer in VICEROY.EXE (tools/gen_sd_pack.py PART_E block
+# carries the same list and the per-board pak gate):
+#   CC-00..24 + CCBKGD   the Continental Congress portrait page,
+#                        func_03BB4A @0x03BB4A / func_03BAA6 @0x03BAA6
+PART_E_SS = [f"CC-{i:02d}" for i in range(25)]
+PART_E_PIK = ["CCBKGD"]
+# Sheets whose pixels the running game resolves through a PIK's palette,
+# not their own embedded copy (the same VGA-is-global rule as
+# MASTER_PALETTE_SHEETS): the portrait page uploads CCBKGD's table
+# (func_03BB4A @0x3BB87) and blits the CC sheets through it.  Backgrounds
+# in BAKE_MERGED_PIK are themselves baked through the table the screen
+# streams -- the PIK's palette AFTER the game.js usePalette merge (magenta
+# placeholders from the master, then OPENMENU; an unauthored EGA-stub
+# low-16 row from the master), which is exactly rd_use_palette's DAC.
+# CCBKGD's low-16 IS the EGA stub and its art uses indices 5 and 12.
+SHEET_PALETTE_FROM_PIK = {f"CC-{i:02d}": "CCBKGD" for i in range(25)}
+BAKE_MERGED_PIK = {"CCBKGD"}
+EGA_STUB = [0, 0, 0, 0, 0, 170, 0, 170, 0, 0, 170, 170, 170, 0, 0, 170, 0, 170,
+            170, 85, 0, 170, 170, 170, 85, 85, 85, 85, 85, 255, 85, 255, 85,
+            85, 255, 255, 255, 85, 85, 255, 85, 255, 255, 255, 85, 255, 255, 255]
+
+
+def is_placeholder(c):
+    return c[0] > 240 and c[1] < 110 and c[2] > 240
+
+
+def merged_palette(pal, master, ui):
+    """game.js usePalette (line 36) over three flat 768-entry tables."""
+    out = list(pal)
+    for i in range(256):
+        c = pal[i * 3:i * 3 + 3]
+        if not is_placeholder(c):
+            continue
+        m = master[i * 3:i * 3 + 3]
+        src = m if not is_placeholder(m) else ui[i * 3:i * 3 + 3]
+        out[i * 3:i * 3 + 3] = src
+    if list(pal[:48]) == EGA_STUB:
+        out[:48] = master[:48]
+    return out
+# Backgrounds a screen draws through a palette that is NOT the PIK's own
+# (the way the C port always does: indices through the current DAC).  The
+# JS gets the raw index plane for these so it can re-table at runtime.
+INDEX_PLANE_PIK = []
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     pal_json = json.load(open(ROOT / "data_extracted/palette.json"))
@@ -198,7 +244,8 @@ def main():
     want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2",
                 "KINGLSS1", "KINGLSS2", "COLONY", "EUROPE"] + \
         [f"REPORT{i}" for i in range(1, 10)] + \
-        [f"LEVN{i:04d}" for i in range(1, 11)]
+        [f"LEVN{i:04d}" for i in range(1, 11)] + \
+        PART_E_PIK
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
                "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",
                # Woodcut event plates: the frame plus every plate with a live
@@ -215,7 +262,8 @@ def main():
                # meeting-flow portraits).
                "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5",
                "MYR0", "MYR1", "MYR2", "MYR3"] + \
-              [f"IND{t}A{a}" for t in range(8) for a in range(4)]
+              [f"IND{t}A{a}" for t in range(8) for a in range(4)] + \
+              PART_E_SS
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"
@@ -230,14 +278,26 @@ def main():
                 print("  MISSING", key); continue
             raw = z.read(names[key])
             img = pik_to_png(raw, fallback)
-            img.save(OUT / f"{nm}.png")
             _, _, _, own = load_pik(raw)
             pal = list(own) if own is not None else list(fallback)
+            if nm in BAKE_MERGED_PIK:
+                uip = bundle["backgrounds"]["OPENMENU"]["pal"]
+                merged = merged_palette(pal, fallback,
+                                        [c for rgb in uip for c in rgb])
+                w0, h0, idx0, _ = load_pik(raw)
+                im2 = Image.frombytes("P", (w0, h0), bytes(idx0))
+                im2.putpalette(merged)
+                img = im2.convert("RGB")
+            img.save(OUT / f"{nm}.png")
             bundle["backgrounds"][nm] = {
                 "w": img.width, "h": img.height,
                 "pal": [[pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]]
                         for i in range(256)],
             }
+            if nm in INDEX_PLANE_PIK:
+                _, _, idx, _ = load_pik(raw)
+                bundle["backgrounds"][nm]["idx"] = \
+                    base64.b64encode(bytes(idx)).decode()
             print(f"  {nm}.PIK -> {img.width}x{img.height}")
         for nm in want_ss:
             key = nm + ".SS"
@@ -246,6 +306,12 @@ def main():
             p = tmp / key
             p.write_bytes(z.read(names[key]))
             override = fallback if nm in MASTER_PALETTE_SHEETS else None
+            if nm in SHEET_PALETTE_FROM_PIK:
+                bgp = bundle["backgrounds"][SHEET_PALETTE_FROM_PIK[nm]]["pal"]
+                uip = bundle["backgrounds"]["OPENMENU"]["pal"]
+                override = merged_palette([c for rgb in bgp for c in rgb],
+                                          fallback,
+                                          [c for rgb in uip for c in rgb])
             atlas, recs, mask = sheet_to_png(p, override)
             atlas.save(OUT / f"{nm}.png")
             bundle["sheets"][nm] = {"atlas": f"{nm}.png", "frames": recs}

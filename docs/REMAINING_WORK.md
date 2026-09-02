@@ -375,7 +375,7 @@ pack (67 sheet files packed + `PHYS0C` derived at runtime; 28 backgrounds).
 
 | Group | Count | Pairs with |
 |---|---|---|
-| Founding Father portraits `CC-00..CC-24` | 25 | F3 draws names as text only |
+| Founding Father portraits `CC-00..CC-24` | 25 | ~~F3 draws names as text only~~ **SHIPPED 2026-09-02** (screens track, note E1 below) |
 | Declaration lettering `DEC-LOW/UPP A-Z`, `DEC-SQIG` | 53 | Declaration screen does not exist |
 | Score plates `SCORE01..24` | 24 | End-game score screen unimplemented |
 | Opening cinematic sheets | 14 | `OPENING.EXE` — separate program (Part H) |
@@ -393,6 +393,45 @@ event (the WDCUT12 razed-scene gloss was REFUTED 2026-07-30).
 
 All source files are present in `raw/COLONIZE/`; the blocker is painter work, not
 extraction.
+
+### Part E closure notes (screens track, 2026-09-02)
+
+Every note cites VICEROY.EXE file offsets re-read from
+`data_extracted/disassembly/VICEROY_annotated.asm` on the day; the research
+lead (`part-e-screens.md`) was re-derived, not trusted. Pak sizes are the
+decoded sizes `tools/gen_sd_pack.py` stores. The pak grows per group; the
+Teensy's SD path has a fixed 3.5 MB `pakbuf`, so `gen_sd_pack.py --board
+teensy` leaves the whole Part E group out (the `PART_E` block there) and the
+renderers draw nothing for a missing entry — see `cport/MEMORY_BUDGET.md`.
+
+- **E1 — Founding Father portraits `CC-00..24` + `CCBKGD.PIK` (SHIPPED).**
+  The page is `func_03BB4A(power, new_ff)` @0x03BB4A (thunk `0x191F:0xF74`):
+  CCBKGD.PIK full-screen (@0x3BB6A load, @0x3BB87 its palette to the DAC,
+  @0x3BBB5 buffer→screen 320×200), then `func_03BAA6(power)` @0x03BAA6 walks
+  the 25-byte draw-order table at file 0x1EBDA (`[bx+0x123a]` @0x3BAB8 =
+  `[6,20,1,23,24,22,7,3,8,18,4,21,10,13,0,17,5,12,15,11,2,9,14,19,16]`), tests
+  ownership through `0x181F:0x7B4` @0x3BAC5, builds `"CC-"+NN` (@0x3BAD1..
+  0x3BAFD, NN = the table VALUE = `@FATHERS` index, zero-padded when <10) and
+  blits frame 1 anchored at the sheet's own `es:[bx+0x46]/[+0x48]` at 100 %
+  (@0x3BB25..0x3BB36) — every portrait's position is baked into its `.SS`.
+  Reveal @0x3BBBA..0x3BC0C (bit cleared → draw → present → bit set → draw →
+  staged present arg 8); key/click wait @0x3BC14; game palette back @0x3BC24.
+  Callers: the `@FREEDOM` acquisition `func_03BC42` @0x3BD1D, followed by the
+  Colonizopedia Founding Father page `func_06AE08(ff)` @0x3BD26; and the F3
+  report's dismissal `func_037A20` @0x3806E..0x38073 with `new_ff = -1`.
+  Ports: JS `drawCongressPortraits` / `plateScreen('congress')` + `pediaOnce`
+  (`port/src/game.js`); C `rm_draw_congress` (`cport/render/
+  colopy_report_render.c`), `CR.ff_show` channel (`colopy_turn.c` after
+  `FREEDOM`, `colopy_input.c` F3 exit), `congress_dismiss` → one-shot pedia
+  page. Oracle `tools/render_congress_compare.py` (0 structural, 0 accepted:
+  the CC atlases and CCBKGD are baked through the merged CCBKGD table, which
+  is what the DAC shows — `port/tools/build_assets.py SHEET_PALETTE_FROM_PIK`
+  / `BAKE_MERGED_PIK`). Pak delta **+243,191 B** (3,149,165 → 3,392,356).
+  TBD: the reveal's wipe verb `0x181F:0x3EA` (arg 8) is collapsed to its final
+  frame; the F3 second page is gated in the engine on the timed-message
+  latches `[0x346]`/`[0x9E38]` (@0x38060/@0x38067; both are 20-tick clock
+  latches written beside `msg_append` @0x2C7C1 / @0x35B4E) — runtime clock
+  state the ports do not model, so the page is unconditional.
 
 ---
 

@@ -745,3 +745,39 @@ void rm_draw_woodcut(int n) {
     int w = rd_text_width(&W_NP, caption);
     rd_text(&W_NP, caption, rround(2 * 160 - (w - 1)), 165, np);
 }
+
+/* ---- Part E: the Continental Congress portrait page ----
+ * func_03BB4A @0x03BB4A: CCBKGD.PIK full-screen (buffer -> screen 320x200
+ * @0x3BBB5, its own palette to the DAC @0x3BB87), then func_03BAA6
+ * @0x03BAA6 walks the 25-entry DGROUP draw-order table at file 0x1EBDA
+ * (DG 0x123A, read @0x3BAB8) and, for every father the power owns
+ * (power_has_father 0x181F:0x7B4 @0x3BAC5), builds "CC-" + NN
+ * (@0x3BAD1..0x3BAFD; NN = the table VALUE = the @FATHERS index,
+ * zero-padded @0x3BAE0/0x3BAE6) and blits its frame 1 anchored at the
+ * sheet's own (es:[bx+0x46], es:[bx+0x48]) at 100% @0x3BB25..0x3BB36 —
+ * every portrait's position is baked into its .SS; the table is only
+ * the paint order.  The reveal (@0x3BBBA..0x3BC0C: bit cleared, page
+ * drawn + presented, bit set, drawn again + staged present arg 8) is a
+ * wipe collapsed here to its final frame (the wipe verb 0x181F:0x3EA is
+ * TBD).  Key/click wait @0x3BC14.  No title, frame or OK widget.
+ * Callers: the @FREEDOM acquisition (func_03BC42 @0x3BD1D, then the
+ * Founding Father pedia page @0x3BD26) and the F3 dismissal (func_037A20
+ * @0x38073, new_ff = -1).  A Teensy pak built with `--board teensy`
+ * lacks CCBKGD/CC-*: rd_pak_find fails and the page stays black. */
+static const uint8_t FF_DRAW_ORDER[25] = {
+    6, 20, 1, 23, 24, 22, 7, 3, 8, 18, 4, 21, 10, 13, 0,
+    17, 5, 12, 15, 11, 2, 9, 14, 19, 16
+};
+void rm_draw_congress(int new_ff) {
+    (void)new_ff;                    /* the final frame shows him lit */
+    rd_use_palette("CCBKGD.PIK");
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    rd_pik("CCBKGD.PIK");
+    for (int i = 0; i < 25; i++) {
+        int id = FF_DRAW_ORDER[i];
+        if (!father_owned(id)) continue;
+        char nm[16];
+        snprintf(nm, sizeof(nm), "CC-%02d.SS", id);
+        blit_anchored(nm, 0);
+    }
+}

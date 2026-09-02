@@ -626,6 +626,13 @@ static int pedia_build(int cat, pedia_row *rows) {
     return n;
 }
 
+int rm_pedia_row_of(int cat, int idx) {
+    static pedia_row rows[PEDIA_MAX];
+    int n = pedia_build(cat, rows);
+    for (int i = 0; i < n; i++)
+        if (rows[i].cat == cat && rows[i].idx == idx) return i;
+    return -1;
+}
 int rm_pedia_count(int cat) {
     static pedia_row rows[PEDIA_MAX];
     return pedia_build(cat, rows);

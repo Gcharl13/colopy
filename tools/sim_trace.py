@@ -134,7 +134,8 @@ INPUT = """([save, events]) => {
   const SCR = { title: 0, difficulty: 1, nation: 2, name: 3, briefing: 4,
                 hof: 5, map: 6, report: 7, colony: 8, europe: 9, woodcut: 10,
                 village: 11, king: 12, cards: 13, pedia: 14, options: 15,
-                trade: 16 };
+                trade: 16, congress: 17, declaration: 18, score: 19,
+                endking: 20 };
   if (save) {
     importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
                               savnewcolony: 'savNewColony' }[save]]));
@@ -184,6 +185,7 @@ INPUT = """([save, events]) => {
   openDialog = () => {};
   const _wc = woodcutOnce;
   woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
+  plateScreen = () => {};          // the plate pages: front-only, like woodcuts
   G.eventQueue = []; G.dialog = null; G.combat = null;
   const out = [];
   const proj = () => {
@@ -307,6 +309,24 @@ RENDERWOODCUT = """([save, n]) => {
   const cv = document.querySelector('canvas');
   const ctx = cv.getContext('2d');
   drawWoodcut(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
+RENDERCONGRESS = """([save, mask]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1657;
+  // the owned set pinned from a 25-bit mask (bit i = @FATHERS index i), so
+  // the oracle can show every portrait regardless of the fixture's own
+  G.fathersOwned = DATA.fathers.filter((f, i) => (mask >>> i) & 1).map(f => f.name);
+  G.screen = 'congress';
+  G.plate = { name: 'congress', params: { newFF: -1 }, after: null };
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawCongressPortraits(ctx);
   return cv.toDataURL('image/png');
 }"""
 
@@ -469,6 +489,7 @@ NEWGAME = """([nation, diff, n]) => {
   };
   const _wc = woodcutOnce;
   woodcutOnce = (n2, after) => { const r = _wc(n2, after); G.screen = 'map'; return r; };
+  plateScreen = () => {};
   openDialog = () => {};
   advance = () => {};
   beginGame();
@@ -551,6 +572,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
   // in real play the player dismisses it at once.  Model the dismissal.
   const _wc = woodcutOnce;
   woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
+  plateScreen = () => {};          // the plate pages: front-only, like woodcuts
   // PHASE 5 slice 2: scripted player commands, run before each endTurn.
   // A deterministic, RNG-free policy both engines compute identically
   // (mirrored verbatim in cport/host/main.c script_commands); every move
@@ -737,7 +759,7 @@ def main():
                     "newgame",
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
-                    "renderboot", "input"):
+                    "renderboot", "rendercongress", "input"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -786,6 +808,11 @@ def main():
             return
         elif mode == "renderwoodcut":
             out = page.evaluate(RENDERWOODCUT, [sys.argv[2], int(sys.argv[3])])
+            browser.close()
+            print(out)
+            return
+        elif mode == "rendercongress":
+            out = page.evaluate(RENDERCONGRESS, [sys.argv[2], int(sys.argv[3])])
             browser.close()
             print(out)
             return

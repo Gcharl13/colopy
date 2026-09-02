@@ -380,6 +380,12 @@ static void draw_screen(void) {
     case SCR_CARDS:
         rm_draw_cards(UI.card, UI.nation, UI.difficulty, UI.leader);
         break;
+    /* the Part E plate pages: a pak built with `--board teensy` lacks
+     * their assets (pakbuf is 3.5 MB), so these draw their background
+     * colour and nothing else there — see tools/gen_sd_pack.py PART_E */
+    case SCR_CONGRESS:
+        rm_draw_congress(UI.ff_new);
+        break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);

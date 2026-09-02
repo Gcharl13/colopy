@@ -12,7 +12,10 @@ extern "C" {
 enum {
     SCR_TITLE = 0, SCR_DIFFICULTY, SCR_NATION, SCR_NAME, SCR_BRIEFING,
     SCR_HOF, SCR_MAP, SCR_REPORT, SCR_COLONY, SCR_EUROPE, SCR_WOODCUT,
-    SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA, SCR_OPTIONS, SCR_TRADE
+    SCR_VILLAGE, SCR_KING, SCR_CARDS, SCR_PEDIA, SCR_OPTIONS, SCR_TRADE,
+    /* the Part E plate pages (numbered after trade in BOTH harnesses'
+     * screen maps: sim_trace.py SCR / input_compare.py SCR_NAMES) */
+    SCR_CONGRESS, SCR_DECLARATION, SCR_SCORE, SCR_ENDKING
 };
 
 typedef struct {
@@ -74,6 +77,13 @@ typedef struct {
     int16_t dlg_unit;                /* kinds 2/3: the ship record */
     int8_t  colony_popup_row;
     int8_t  colony_popup_unit;   /* @UNITOPTIONS: units_order index */
+    /* the Part E plate pages */
+    int8_t  ff_new;              /* SCR_CONGRESS: the father lit up
+                                  * (@FATHERS index) or -1 = the F3
+                                  * gallery (func_03BB4A's new_ff) */
+    int8_t  pedia_once;          /* the one-shot Founding Father page
+                                  * (func_06AE08 @0x3BD26): its dismissal
+                                  * returns to the game, not the index */
 } colopy_ui;
 
 extern colopy_ui UI;

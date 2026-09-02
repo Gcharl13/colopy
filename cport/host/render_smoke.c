@@ -275,6 +275,52 @@ int render_woodcut_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* the frame + its index plane, the way every --render* mode emits them */
+static int write_frame(const char *out_path) {
+    FILE *o = fopen(out_path, "wb");
+    if (!o) return 0;
+    fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);
+    for (int i = 0; i < RD_W * RD_H; i++)
+        fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
+    fclose(o);
+    char idx_path[512];
+    snprintf(idx_path, sizeof(idx_path), "%s.idx", out_path);
+    o = fopen(idx_path, "wb");
+    if (o) {
+        fwrite(RD.fb, 1, RD_W * RD_H, o);
+        fwrite(RD.pal, 1, 768, o);
+        fclose(o);
+    }
+    return 1;
+}
+static void load_fixture(const char *save) {
+    if (strcmp(save, "sav1653") == 0)
+        colopy_load_sav(sav1653, sizeof(sav1653));
+    else if (strcmp(save, "savraleigh") == 0)
+        colopy_load_sav(savraleigh, sizeof(savraleigh));
+    else
+        colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    colopy_init(1653);
+    units_session_seed();
+}
+
+/* --rendercongress SAVE PAK OUT.ppm MASK: the Continental Congress
+ * portrait page with the owned set PINNED from a 25-bit mask (bit i =
+ * @FATHERS index i), like sim_trace's rendercongress. */
+int render_congress_main(const char *save, const char *pak_path,
+                         const char *out_path, long mask) {
+    load_fixture(save);
+    CS.powers[cs_nation()].founding_fathers = (uint32_t)mask;
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_congress(-1);
+    if (!write_frame(out_path)) return 1;
+    printf("render congress %s %ld -> %s\n", save, mask, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
 int render_boot_main(const char *kind, const char *pak_path,
                      const char *out_path, int arg) {

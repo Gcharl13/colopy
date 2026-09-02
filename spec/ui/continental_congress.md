@@ -194,3 +194,42 @@ loads CCBKGD.PIK full-screen (`0x181F:0x44e` @0x03BB6D, id `0x1253`), blits the 
    light-up), then **waits for a key/ESC to dismiss** (`0x181F:0x3c0` = `func_004A80` role "ESC"
    @0x03BC14). No boxed dialog, no title bar, no OK widget is drawn — the full CCBKGD screen IS the
    popup; it matches decompiled `congress_screen_render` (25583).
+
+## 7. Amendment 2026-09-02 — the portrait page, byte-complete and ported (screens track)
+
+Re-read of `func_03BB4A` @0x03BB4A / `func_03BAA6` @0x03BAA6 / `func_03BC42` @0x03BC42 /
+`func_037A20` tail @0x38040..0x3807D (all **B**):
+
+- **Two callers, two moments.** (a) The `@FREEDOM` acquisition: `func_03BC42` shows the popup
+  (`0x181F:0x998` key `FREEDOM` @0x3BD0B), then `func_03BB4A(power, ff)` @0x3BD1D (the new
+  father lights up), then the Colonizopedia Founding Father page `func_06AE08(ff)` via
+  `0x1A1F:0x62` @0x3BD26, then the father's effects. (b) The F3 report: after its own
+  key-wait `0x181F:0x3C0` @0x3805B, `func_037A20` calls `func_03BB4A(power, -1)` @0x38073 —
+  the gallery of every owned father — unless `[0x346]` or `[0x9E38]` is set (@0x38060/
+  @0x38067; both are 20-tick timed-message latches written beside `msg_append` @0x2C7C1 /
+  @0x35B5A and cleared on a 600-tick clock @0x2C84A — runtime state, **TBD** for the ports,
+  which show the page unconditionally). The tracker's earlier "OK/dismiss 0x191F:0xF74"
+  gloss was a mislabel: `0x191F:0xF74` IS this page.
+- **Paint order and placement.** `func_03BAA6` loops i=0..24 over the DGROUP table at
+  DG 0x123A = file 0x1EBDA (`mov al,[bx+0x123a]` @0x3BAB8):
+  `[6,20,1,23,24,22,7,3,8,18,4,21,10,13,0,17,5,12,15,11,2,9,14,19,16]` — a permutation
+  that is only the z-order. The value is both the bit tested by `power_has_father`
+  (`0x181F:0x7B4` @0x3BAC5) and the NN of `"CC-NN"` (`strcpy "CC-"` @0x3BAD1, `strcat "0"`
+  when id<10 @0x3BAE0/0x3BAE6, `strcat_itoa` @0x3BAFD), so **NN = the `@FATHERS` index**.
+  Each sheet is loaded into a reset arena (@0x3BB05/0x3BB0F) and its frame 1 blitted with the
+  anchored verb `0x181F:0x2F8` at `dx = es:[bx+0x46]`, `y = es:[bx+0x48]`, scale 0x64
+  (@0x3BB25..0x3BB36): top-left = `(hx − (w>>1), hy − h + 1)`. Resulting rects (ssdec frame
+  0): CC-00 (253,46) 54×125 … CC-24 (197,39) 36×84 — full table in
+  `scratchpad/research/part-e-screens.md` C1.2, all derived from the sheets, none typed in.
+- **Reveal.** `new_ff ≥ 0`: `func_03B900(power,ff,0)` clears the owned bit @0x3BBC9, the page
+  is drawn and presented (@0x3BBD3/@0x3BBE6), the bit is set @0x3BBFA, the page redrawn
+  @0x3BC04 and staged-presented with arg 8 (`0x181F:0x3EA` @0x3BC0C — the wipe, **TBD**);
+  then `wait_keyOrClick` @0x3BC14. The ports draw the final frame only.
+- **Palette.** Only CCBKGD's table reaches the DAC (@0x3BB87). Its low-16 row is the EGA
+  stub, replaced by the master's entries in both ports' palette merge; the art uses indices 5
+  and 12 there, so the JS atlases are baked through that merged table
+  (`port/tools/build_assets.py`). The 25 CC palettes differ from CCBKGD's only at 251/255.
+- **Ports.** JS `drawCongressPortraits` / `plateScreen('congress')` / `pediaOnce`
+  (`port/src/game.js`); C `rm_draw_congress` + `SCR_CONGRESS` + `CR.ff_show`
+  (`cport/render/colopy_report_render.c`, `cport/game/colopy_input.c`, `cport/core/
+  colopy_turn.c`). Oracle `tools/render_congress_compare.py` (0 structural, ceiling 0).

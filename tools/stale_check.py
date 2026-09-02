@@ -256,11 +256,14 @@ def probe_scope_reasons() -> bool:
 
 def probe_render_ceilings() -> bool:
     """G2: every render oracle bounds its palette-model acceptances through
-    render_common.verdict(), and the ceiling table covers all seven."""
+    render_common.verdict(), and the ceiling table carries at least one
+    frozen scene per oracle (seven at the row's close; the Part E screens
+    track adds one per plate page, each with its own ceiling)."""
     sys.path.insert(0, str(ROOT / "tools"))
     import render_common
     tools = sorted((ROOT / "tools").glob("render_*_compare.py"))
-    return (len(tools) == 7 and len(render_common.PALETTE_CEILING) >= 7
+    return (len(tools) >= 7
+            and len(render_common.PALETTE_CEILING) >= len(tools)
             and all("verdict(" in t.read_text() for t in tools))
 
 

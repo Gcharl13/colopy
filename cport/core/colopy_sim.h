@@ -568,6 +568,12 @@ typedef struct {
     int16_t ui_select;               /* LIVE FRONT: select this
                                       * units_order index (-1 none) —
                                       * the landfall party (10905) */
+    int8_t  ff_show;                 /* LIVE FRONT: the Continental
+                                      * Congress portrait page
+                                      * (func_03BB4A): >= 0 the new
+                                      * father to light up (@0x3BD1D),
+                                      * -2 the F3 gallery (@0x38073),
+                                      * -1 none */
     uint8_t land_ho;                 /* woodcut-1 latch (G.landHo;
                                       * loads import it true, 10240) */
     char leader[24];                 /* G.leader — the front sets it at

@@ -634,6 +634,8 @@ const G = {
   colonyPopupUnit: -1,    // @UNITOPTIONS: which G.units entry the menu is for
   colonistSel: 0,
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
+  pediaOnce: false,       // the one-shot Founding Father page (func_06AE08)
+  plates: [], plate: null, // queued full-screen plate pages (plateScreen)
   crosses: 0,             // immigration accumulator
   bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
   rivals: [], metAnyone: false,
@@ -809,6 +811,7 @@ function beginGame() {
   G.dialog = null; G.colonyPopup = null; G.dragArm = null; G.drag = null;
   G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
   G.wcSeen = 0; G.wcAfter = null;    // woodcut shown-bitmask ([0x540A])
+  G.plates = []; G.plate = null; G.pediaOnce = false;
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
   MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
@@ -1371,6 +1374,78 @@ function drawKing(ctx) {
     } else y += 8;
   }
   FONT.tiny.center(ctx, '(click to begin)', CX, 186, lut(0xFC), ink(0));
+}
+
+// ---------------------------------------------------------------- plates
+// Full-screen pages the engine shows modally between the popups, each a
+// wait_keyOrClick (0x181F:0x3C0 = func_004A80) page with no chrome: the
+// Continental Congress portrait page (func_03BB4A), the Declaration signing
+// (func_03DA2A), the end-game score plate (func_03A9C0) and the King's
+// win/loss audience (func_075352).  The port queues them like woodcuts --
+// the popups fire first, the plate shows once the queue drains, and the
+// dismissal hands back to the map (or runs the plate's `after` first).
+// The sim harnesses stub plateScreen out the way they stub woodcutOnce, so
+// the screen stays 'map' under the oracles.
+const PLATE_SCREENS = new Set(['congress', 'declaration', 'score', 'endking']);
+function plateScreen(name, params, after) {
+  G.plates = G.plates || [];
+  G.plates.push({ name, params: params || {}, after: after || null });
+  if (!PLATE_SCREENS.has(G.screen)) plateNext();
+}
+function plateNext() {
+  const p = (G.plates || []).shift();
+  if (!p) { G.screen = 'map'; return; }
+  G.plate = p;
+  G.screen = p.name;
+}
+function plateDismiss() {
+  const p = G.plate;
+  G.plate = null;
+  G.screen = 'map';
+  if (p && p.after) p.after();
+  if (G.screen === 'map') plateNext();
+}
+
+// The Continental Congress portrait page, func_03BB4A @0x03BB4A: CCBKGD.PIK
+// full-screen (buffer -> screen 320x200 @0x3BBB5, its own palette to the DAC
+// @0x3BB87), then func_03BAA6 @0x03BAA6 walks the 25-entry DGROUP draw-order
+// table at file 0x1EBDA (DG 0x123A, read @0x3BAB8) and, for every father the
+// power owns (power_has_father 0x181F:0x7B4 @0x3BAC5), builds "CC-" + NN
+// (@0x3BAD1..0x3BAFD; NN = the table VALUE = the @FATHERS index, zero-padded
+// @0x3BAE0/0x3BAE6) and blits its frame 1 anchored at the sheet's own
+// (es:[bx+0x46], es:[bx+0x48]) at 100% @0x3BB25..0x3BB36 -- every portrait's
+// screen position is baked into its .SS, and the table is only the paint
+// order.  The reveal (@0x3BBBA..0x3BC0C: the new father's bit is cleared,
+// the page drawn and presented, the bit set, the page drawn again and
+// staged-presented with arg 8) is a wipe the port collapses to its final
+// frame (the wipe verb 0x181F:0x3EA is TBD).  Then the key/click wait
+// @0x3BC14, the game palette back @0x3BC24.  No title, frame or OK widget.
+// Two callers: the @FREEDOM acquisition (func_03BC42 @0x3BD1D, followed by
+// the Colonizopedia Founding Father page func_06AE08 @0x3BD26) and the F3
+// report's dismissal (func_037A20 @0x38073, new_ff = -1: the gallery of
+// everyone owned).  The 25 CC sheets carry CCBKGD's palette except entries
+// 251/255 (measured), so the atlas resolves like the DAC does.
+const FF_DRAW_ORDER = [6, 20, 1, 23, 24, 22, 7, 3, 8, 18, 4, 21, 10, 13, 0,
+                       17, 5, 12, 15, 11, 2, 9, 14, 19, 16];
+function fatherOwnedIdx(i) {
+  const f = DATA.fathers[i];
+  return !!f && G.fathersOwned.includes(f.name);
+}
+function drawCongressPortraits(ctx) {
+  usePalette('CCBKGD');
+  ctx.drawImage(IMG.CCBKGD, 0, 0);
+  for (const id of FF_DRAW_ORDER)
+    if (fatherOwnedIdx(id)) sheetAnchored(ctx, 'CC-' + String(id).padStart(2, '0'), 0);
+}
+// func_06AE08(ff) @0x3BD26: the Colonizopedia Founding Father page shown
+// once after the reveal, then straight back to the game (the pedia's own
+// index never opens).
+function pediaOnce(cat, idx) {
+  G.pediaCat = cat;
+  G.pediaSel = Math.max(0, pediaList().findIndex(e => e.idx === idx));
+  G.pediaMode = 'entry';
+  G.pediaOnce = true;
+  G.screen = 'pedia';
 }
 
 function wrapText(font, s, width) {
@@ -9742,6 +9817,12 @@ function updateCongress() {
   // joined the Continental Congress!"
   showEvent('FREEDOM', { STRING0: G.fatherInProgress,
                          STRING1: DATA.nations[G.nation].adjective });
+  // func_03BC42 @0x3BD1D: the CCBKGD portrait page lights the new father up,
+  // then @0x3BD26 his Colonizopedia page (func_06AE08) -- before the effects.
+  {
+    const ffIdx = DATA.fathers.findIndex(f => f.name === G.fatherInProgress);
+    plateScreen('congress', { newFF: ffIdx }, () => pediaOnce(5, ffIdx));
+  }
   applyFatherEffect(G.fatherInProgress);
   G.fatherInProgress = null;
 }
@@ -14888,6 +14969,18 @@ function onClick(mx, my) {
     }
     case 'report':
       G.screen = 'map';
+      // func_037A20 @0x38060..0x38073: dismissing F3 shows the CCBKGD
+      // portrait gallery (func_03BB4A(power, -1)) as a second page, unless
+      // the timed-message latches [0x346]/[0x9E38] are set (TBD: both are
+      // 20-tick clock latches beside msg_append @0x2C7C1/@0x35B5A -- runtime
+      // state the port does not model, so the page is unconditional here).
+      if (G.report === 'F3') plateScreen('congress', { newFF: -1 });
+      break;
+    case 'congress':
+    case 'declaration':
+    case 'score':
+    case 'endking':
+      plateDismiss();
       break;
     case 'village': {
       const b = villageBox(), seed = b.y + 6 + b.textH + 3;
@@ -14900,7 +14993,11 @@ function onClick(mx, my) {
     case 'pedia': {
       // The index is two columns of 22 rows; a click on an entry page returns
       // to the index, which is what Esc does from there too.
-      if (G.pediaMode !== 'index') { G.pediaMode = 'index'; return; }
+      if (G.pediaMode !== 'index') {
+        if (G.pediaOnce) { G.pediaOnce = false; plateNext(); return; }
+        G.pediaMode = 'index';
+        return;
+      }
       const n = pediaList().length;
       const r = Math.floor((my - 24) / 7), i = (mx >= 160 ? 22 : 0) + r;
       if (r >= 0 && r < 22 && i < n) { G.pediaSel = i; G.pediaMode = 'entry'; }
@@ -15264,7 +15361,17 @@ function onKey(e) {
       if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
     case 'report':
-      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
+      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) {
+        G.screen = 'map';
+        if (G.report === 'F3') plateScreen('congress', { newFF: -1 });   // @0x38073
+      }
+      break;
+    // The plate pages are wait_keyOrClick (func_004A80): ANY key dismisses.
+    case 'congress':
+    case 'declaration':
+    case 'score':
+    case 'endking':
+      onClick(-1, -1);
       break;
     case 'options': {
       const n = G.options.rows.length;
@@ -15302,7 +15409,10 @@ function onKey(e) {
       } else {
         if (k === 'ArrowLeft' || k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
         if (k === 'ArrowRight' || k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
-        if (k === 'Escape' || k === 'x') G.pediaMode = 'index';
+        if (k === 'Escape' || k === 'x') {
+          if (G.pediaOnce) { G.pediaOnce = false; plateNext(); }
+          else G.pediaMode = 'index';
+        }
       }
       break;
     }
@@ -15536,7 +15646,8 @@ function frameBody() {
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage,
-     trade: drawTrade, options: drawOptions }[G.screen] || drawMap)(ctx);
+     trade: drawTrade, options: drawOptions,
+     congress: drawCongressPortraits }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

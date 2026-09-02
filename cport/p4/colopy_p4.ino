@@ -929,6 +929,10 @@ static void draw_screen(void) {
     case SCR_CARDS:
         rm_draw_cards(UI.card, UI.nation, UI.difficulty, UI.leader);
         break;
+    /* the Part E plate pages (docs/REMAINING_WORK.md Part E) */
+    case SCR_CONGRESS:
+        rm_draw_congress(UI.ff_new);
+        break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);

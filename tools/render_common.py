@@ -55,6 +55,10 @@ PALETTE_CEILING = {
     "report sav1653 F5": 0,
     "event RAIDSTORES 0 0 - sav1653": 31,
     "woodcut sav1653 1": 21438,
+    # Part E plate pages (screens track, 2026-09-02): the 25 CC sheets carry
+    # CCBKGD's palette except entries 251/255, neither used by the art, so
+    # the page resolves identically through the atlas and the DAC.
+    "congress sav1653 33554431": 0,
 }
 
 
@@ -72,6 +76,27 @@ def sheet_palette(name: str) -> bytes | None:
     sys.path.insert(0, str(ROOT / "tools"))
     import ssdec
     return bytes(ssdec.load_sheet(str(f))["pal"])
+
+
+def pik_palette(name: str) -> bytes | None:
+    """The palette embedded in raw/COLONIZE/<name>.PIK, widened 6->8 bit
+    like gen_sd_pack.load_pik, or None if the file has none."""
+    f = ROOT / "raw/COLONIZE" / name
+    if not f.exists():
+        return None
+    sys.path.insert(0, str(ROOT / "tools"))
+    import ssdec
+    secs = [d for _, d in ssdec.madspack_load(f.read_bytes())]
+    h = secs[0][0] | (secs[0][1] << 8)
+    w = secs[0][2] | (secs[0][3] << 8)
+    pix = next(i for i in range(1, len(secs)) if len(secs[i]) == w * h)
+    pal = None
+    for i in range(len(secs)):
+        if i != pix and len(secs[i]) >= 768:
+            pal = secs[i]
+    if pal is None:
+        return None
+    return bytes(((v << 2) | (v >> 4)) & 0xFF for v in pal[:768])
 
 
 def js_frame(data_url: str) -> Image.Image:

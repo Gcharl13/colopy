@@ -686,6 +686,13 @@ int main(int argc, char **argv) {
                                     const char *out, int arg);
         return render_boot_main(argv[2], argv[3], argv[4], atoi(argv[5]));
     }
+    /* --rendercongress SAVE PAK OUT.ppm MASK (Part E plate pages) */
+    if (argc > 5 && strcmp(argv[1], "--rendercongress") == 0) {
+        extern int render_congress_main(const char *save, const char *pak,
+                                        const char *out, long mask);
+        return render_congress_main(argv[2], argv[3], argv[4],
+                                    atol(argv[5]));
+    }
     /* --renderwoodcut SAVE PAK OUT.ppm N */
     if (argc > 5 && strcmp(argv[1], "--renderwoodcut") == 0) {
         extern int render_woodcut_main(const char *save, const char *pak,

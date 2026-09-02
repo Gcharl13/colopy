@@ -274,6 +274,7 @@ void cr_reset_from_load(void) {
         }
     CR.wc_show = -1;
     CR.ui_select = -1;
+    CR.ff_show = -1;
     CR.land_ho = 1;                  /* the importer latches these true
                                       * (game.js:10240) */
     CR.built_colony = 1;
@@ -1977,6 +1978,11 @@ static void update_congress(void) {
     p->founding_fathers |= 1u << f;
     ev_emit("FREEDOM", 0, 0, dat_fathers[f].name,
             dat_nations[cs_nation()].adjective);
+    /* func_03BC42 @0x3BD1D: the CCBKGD portrait page lights the new
+     * father up (func_03BB4A), then his Colonizopedia page (@0x3BD26) —
+     * a live-front plate like the woodcuts; the harness never picks it
+     * up (front_pickup, colopy_input.c) */
+    CR.ff_show = (int8_t)f;
     /* applyFatherEffect (game.js:7683) -- the wired three */
     if (strcmp(dat_fathers[f].name, "Jakob Fugger") == 0)
         CR.boycotts = 0;                 /* G.boycotts = [] (runtime) */

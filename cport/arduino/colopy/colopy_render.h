@@ -146,6 +146,14 @@ void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */
  * mode 0 = index, 1 = entry page */
 void rm_draw_pedia(int cat, int sel, int mode);
 int  rm_pedia_count(int cat);
+/* the index-row of the entry keyed idx in a category (the sorted
+ * rows), -1 = none — the one-shot Founding Father page's handoff */
+int  rm_pedia_row_of(int cat, int idx);
+/* ---- the Part E plate pages (colopy_report_render.c) ---- */
+/* the Continental Congress portrait page, func_03BB4A @0x03BB4A:
+ * new_ff = the father lit up, -1 = the F3 gallery (drawn identically —
+ * the reveal wipe is collapsed to its final frame) */
+void rm_draw_congress(int new_ff);
 /* the options dialogs (drawOptions 7969): which 0 game / 1 colony
  * report / 2 sound; toggle = optionsCommit's XOR */
 void rm_draw_options(int which, int row);

@@ -10911,3 +10911,37 @@ were contradicted by the tree when re-measured.
 palette layout; whether the stale askmap comment in
 `cport/host/render_smoke.c:340` (it still says "INTERSECTION") is the C
 track's to fix — it is a comment, and it is noted here rather than edited.
+
+## 2026-09-02c — screens track: the Part E plate pages (E1 portraits)
+
+**Conflict**: `docs/UI_AUDIT_TRACKER.md` row 5 glossed `0x191F:0xF74` as the
+F3 report's "OK/dismiss"; `docs/REMAINING_WORK.md` Part E listed the 25
+`CC-NN.SS` portraits as unshipped with no consumer named.
+
+**Bytes** (`VICEROY_annotated.asm`, re-read): `0x191F:0xF74` is the thunk of
+`func_03BB4A(power, new_ff)` @0x03BB4A — the CCBKGD.PIK **portrait page**
+(load @0x3BB6A, DAC @0x3BB87, blit 320×200 @0x3BBB5, key/click wait
+`0x181F:0x3C0` @0x3BC14). F3 (`func_037A20`) waits for its own key
+@0x3805B and only then calls the page @0x38073 with `new_ff = -1`; the
+`@FREEDOM` handler `func_03BC42` calls it @0x3BD1D with the new father and
+follows with the pedia page `func_06AE08` @0x3BD26. The painter
+`func_03BAA6` @0x03BAA6 reads the draw-order table at file 0x1EBDA and
+blits each owned `CC-NN` at its sheet-baked anchor (`es:[bx+0x46]/[+0x48]`,
+@0x3BB25..0x3BB36).
+
+**Decisions**:
+1. Row 5's gloss is corrected in place; the page is ported to both engines
+   as the `congress` plate (JS `plateScreen`, C `SCR_CONGRESS` via the
+   `CR.ff_show` live-front channel), with `tools/render_congress_compare.py`
+   as its oracle (ceiling 0).
+2. The CC atlases and CCBKGD are baked through CCBKGD's palette **after the
+   usePalette merge** (its low-16 is the EGA stub; the art uses indices 5
+   and 12): the DAC shows the master's row there, so the JS PNGs must too —
+   not a raised ceiling.
+3. Recorded TBD, not guessed: the reveal wipe (`0x181F:0x3EA`, arg 8) and
+   the `[0x346]`/`[0x9E38]` latches gating the F3 second page (timed
+   message flashes, 20-tick latches @0x2C7C1 / @0x35B4E).
+4. `tools/stale_check.py` probe G2 no longer pins "exactly seven" render
+   oracles: it requires a ceiling entry per oracle, whatever their number.
+5. The Teensy SD path (`pakbuf` 3,500,000 B) cannot hold the Part E pak:
+   `gen_sd_pack.py --board teensy` omits the group rather than truncating.
