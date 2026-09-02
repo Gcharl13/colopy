@@ -463,15 +463,54 @@ including `0x4D`/`0x4E`/`0x4F`/`0x5B` which F2 showed are real bank samples. The
 byte-decoded index lists exactly five ids as not-samples and `0x46` captures
 silent, so **4** is right. Regenerated.
 
-**F3. Then that branch's own open list:** the human A/B listen pass (needs
-speakers); tune `0x34` hit the 240 s capture cap and likely loops; SFX preemption
-modelled not decoded; pending queue depth 1 vs the original's 8-deep ring;
-`au_cmd(1)` stop semantics approximated; driver commands other than 1/8 unported;
-`[0x828]` rotation override unexposed; scheduler PRNG a stand-in; cue rows tagged
-`[inferred]`; **European first-contact fanfare not wired**; **all combat SFX ids
-TBD**; the Sound Test and Pick-Music/Sound-Options screens not in cport's input
-layer; play far-call thunk identity untraced; PC-speaker and MT-32 variants not
-reproduced; 25.9 MB is SD-only on both boards.
+**F3. Then that branch's own open list** (re-cut into sub-items 2026-09-02; the
+decode is `spec/ui/options_dialogs.md` §9 and RULINGS 2026-09-02c):
+
+- the human A/B listen pass (needs speakers) — **OPEN, see F3a**;
+- tune `0x34` hit the 240 s capture cap and likely loops — **OPEN** (a capture
+  property; only the listen pass or a longer capture settles it);
+- ~~SFX preemption modelled not decoded~~ **DECODED 2026-09-02**: ASOUND's
+  digital entry `0:0xCE2` (file 0xEE2) stops a busy DSP (`call 0x684; call
+  0x96E` @0xF12) before copying the next 8-byte index entry into the 32-slot
+  ring — new kills old, the model the mixer already had; the SFX wrapper
+  @0x1DF6 pops the handler's return on success so the FM effect is skipped;
+- ~~pending queue depth 1 vs the original's 8-deep ring~~ **CLOSED
+  2026-09-02**: the ring @0x129A5..0x129EE is real code with **no reachable
+  lock** (`[0x26C5]` writers only @0x129C1/@0x129C7, no caller of either), so
+  the original never queues; the driver's tune head stop-marks ch1–6 first
+  (file 0x3724), so a new tune REPLACES. cport's `pending` slot is removed;
+  `smoke --audio` asserts replace-not-queue;
+- ~~`au_cmd(1)` stop semantics approximated~~ **DECODED**: cmd 1 @0x1AA0 =
+  `call 0x1A64; call 0x1A8C` — stop-mark all nine FM channel records, the
+  digital ring untouched; cmd 8 @0x1AA7 ORs the FM records only, so a digital
+  sample never holds the pump (both asserted in `smoke --audio`);
+- ~~driver commands other than 1/8 unported~~ **PORTED**: 0 reset @0x150F, 2/3
+  stop music (@0x1866/@0x1A64), 4 FM-sfx + DSP stop (@0x188F), 5 FM-sfx stop
+  (@0x1A8C), 6/7 mute/unmute (@0x18AB/@0x1934, modelled as an output gate);
+  VICEROY itself sends only 0/1/8 (sites in spec §9). The mixer is now three
+  voices after the driver's channel split (ch1–6 / ch7–9 / DSP), +2.6 KB BSS
+  (`cport/MEMORY_BUDGET.md`);
+- ~~`[0x828]` rotation override unexposed~~ **EXPOSED** as `au_set_demo()`;
+  writers @0x70D00 (`/D` switch) and @0x4DA6 (idle-poll key codes 0x12D/0x110)
+  byte-read; neither port has a caller yet (no `/D`, no abort keys);
+- ~~scheduler PRNG a stand-in~~ **REPLACED** by the engine's: `0x9EF:0x32` =
+  `func_00C322 = random_int` over MS C `rand` @0x103D4, and `0x9EF:0x2C`
+  @0xC31C = `srand(BIOS ticks & 0x7FFF)` at @0x4F28 and @0x5040 (the pushed
+  tick words are ignored). Same generator, same scaling, both seed points
+  (`au_set_tick_source`); on a **private state by ruling** — the original
+  re-seeds the SIM's shared `[0x28EE]` from the clock, which the port does not
+  reproduce (RULINGS 2026-09-02c gives the three reasons);
+- ~~play far-call thunk identity untraced~~ **TRACED**: `0x2D8:0xE` = file
+  `0x518E` = the gate `func_00518E` itself; `0x1059:0xA` = the resident
+  dispatcher @0x01299A. And the gate's compare is **signed** (`7D` @0x5197):
+  fanfares ≥ 0x8000 bypass both switches — the engine and its header were
+  wrong the other way (corrected, asserted);
+- cue rows tagged `[inferred]`; **European first-contact fanfare not wired**;
+  **all combat SFX ids TBD** — see F4;
+- the Sound Test and Pick-Music/Sound-Options screens not in cport's input
+  layer — see F4;
+- PC-speaker and MT-32 variants not reproduced; 25.9 MB is SD-only on both
+  boards — **OPEN** (out of scope, unchanged).
 
 **F3a. Music is now DATA-complete but EAR-unverified.** `verify_pack.py` proves
 each render survived IMA encoding (SNR per entry) and each slice is bit-identical

@@ -9,7 +9,7 @@ no malloc, no I/O; boards opt in with `#define COLOPY_AUDIO`; absent from
 |---|---|
 | `colopy_audio.h` | public API (the only header shells include) |
 | `colopy_audio.c` | byte-pinned caller layer: gate `func_00518E`, scheduler `func_004EE6`, queue/class verbs, switches |
-| `colopy_audio_mix.c` | 2-voice mixer + IMA decoder, `au_render()` s16 mono 22050 |
+| `colopy_audio_mix.c` | 3-voice mixer (FM ch1-6 / FM ch7-9 / DSP) + IMA decoder, `au_render()` s16 mono 22050 |
 | `colopy_audio_pak.c` | COLAUDIO.PAK reader (RAM buffer or SD stream callback) |
 | `colopy_audio_cues.c` | §24.4 event/woodcut → cue table |
 
@@ -26,8 +26,25 @@ bit-identity.
   4→(19,4) 5/6/7→0x33/0x35/0x36` with already-playing guards, pick
   `base + random(0,count-1)`, re-roll while == current, class derivation
   and the `[0x9A]←[0x98]` double buffer — all from the 2026-08-17 pins.
-- The **gate**: driver commands < 0x10 (1 = stop), bit 0x20 → Event-Music
-  gate, bit 0x40 → SFX gate.
+- The **gate**: the SIGNED compare @0x5197 — ids ≥ 0x8000 (fanfares) and
+  ids < 0x10 (driver commands) pass ungated; bit 0x20 → Event-Music gate,
+  bit 0x40 → SFX gate (spec §9, RULINGS 2026-09-02c).
+- **Driver commands 0..8** per the ASOUND.COL handlers (spec §9): 0 reset,
+  1 = stop-mark all nine FM channels (music + FM sfx, NOT the digital
+  sample), 2/3 stop music, 4 stop FM sfx + DSP, 5 stop FM sfx, 6/7
+  mute/unmute, 8 = FM records only (a digital sample never holds the pump).
+- **No queue anywhere**: VICEROY's dispatcher ring is unreachable (its lock
+  has no caller) and the driver's tune head stop-marks ch1-6 first — a new
+  tune REPLACES the playing one; `0:0xCE2` stops a sample in flight — a new
+  digital SFX kills the old.
+- **The scheduler's PRNG**: the RTL MS-C `rand` (`state*0x343FD+0x269EC3`,
+  high 15 bits) with `random_int(lo,hi) = lo + ((rand*(hi-lo+1))>>15)` and
+  both `srand(ticks & 0x7FFF)` seed points (@0x4F28/@0x5040) — on a PRIVATE
+  state (the deliberate deviation, RULINGS 2026-09-02c).
+- **`[0x828]`** (`au_set_demo`): window (1,24) @0x4F82; writers @0x70D00
+  ('/D' switch) and @0x4DA6 (abort keys).
+- **The title tune** 0x33 through the raw driver entry (@0x75C2A) —
+  `au_on_title()`, no gate, no switch.
 - **Queue/class verbs**: `func_0050BC/0050F0/0050FC/005108/00513C`
   semantics including the exact one-shot condition (Event on + BG off).
 - **Switch mirror bits**: bit1 BG / bit2 Event / bit3 SFX; stop sent when
@@ -36,9 +53,12 @@ bit-identity.
 
 ## THE APPROXIMATIONS CATALOGUE (everything that is NOT bytes)
 
-1. **PRNG**: seeded xorshift32 (`rnd()` with modulo) stands in for the RTL
-   rand the original seeds from tick words `[0x83A8]`/`[0x83A6]`. Same
-   wall-clock class, different generator and no mid-pump re-seed effect.
+1. **PRNG state is private.** The generator, scaling and seed points are
+   the original's; the original runs them on the SIM's shared `[0x28EE]`
+   state (every music pick re-seeds the game's random stream from the
+   clock). The port keeps the scheduler off `CS.rng` on purpose — RULINGS
+   2026-09-02c gives the three reasons. With no tick source installed the
+   scheduler is fully deterministic (the host tests).
 2. **SFX id → COLDIG slice map**: **not an approximation** — byte-decoded
    from the sound drivers' own sample table
    (`data_extracted/coldig_index.json`: `sfx_id_to_index` + `samples`,
@@ -48,18 +68,22 @@ bit-identity.
 3. **Tune/fanfare audio**: DOSBox OPL renders of the real driver, IMA4
    compressed — authentic hardware family, still an emulator render.
    Lengths and (non-)looping are capture-derived.
-4. **Voice model**: codec picks the voice — IMA renders serialize on the
-   music voice (observed: the driver queues FM sounds), PCM slices mix on
-   one SFX voice with new-preempts-old. The real driver's channel
-   allocation is undecoded.
-5. **Pending queue depth 1** vs the original's 8-deep dispatch ring.
-6. **`au_cmd(1)` stop** silences both voices + pending; which exact voices
-   the real driver's stop command touches is undecoded (forced-next
-   surviving stop IS byte-pinned).
-7. **Driver commands other than 1/8**: not ported (ids 0..0x0F pass the
-   gate in the original; their meanings are sealed in the driver).
-8. **`[0x828]` widen-to-24 rotation override**: window byte-pinned but not
-   exposed (its writer/meaning is unmapped — spec §8 item 5).
+4. **Voice model**: three voices after the driver's channel split (FM
+   ch1-6 music, FM ch7-9 sfx, DSP samples), each new-replaces-old. Still
+   approximations inside it: the FM channel records are 9 mono channels
+   sharing one OPL, the port sums three independent renders; the digital
+   ring's FM-fallback-when-full and the `[0x24D]` suppression (digital
+   samples muted until the first tune handler runs — runtime value TBD)
+   are not modelled; commands 2/6/7 (release, mute, unmute) are modelled
+   as stop / output gate rather than OPL volume writes.
+5. ~~Pending queue depth 1 vs the original's 8-deep dispatch ring.~~
+   Resolved 2026-09-02: neither exists in play (the ring is dead code) —
+   no queue in the port either.
+6. ~~`au_cmd(1)` stop semantics undecoded.~~ Decoded (ASOUND @0x1AA0):
+   FM channels 1-9, digital untouched.
+7. ~~Driver commands other than 1/8 not ported.~~ Ported per the handler
+   bodies (0/1/3/4/5/8 exact in effect; 2/6/7 approximated as above).
+8. ~~`[0x828]` unexposed.~~ `au_set_demo()`; writers byte-read (spec §9).
 9. **Cue-table rows tagged `[inferred]`** in `colopy_audio_cues.c`: key↔cue
    pairing by GAME.TXT text, not a traced call site. European first-contact
    fanfare `0x8020+power` and all combat SFX ids: **TBD, not wired** (no
@@ -71,3 +95,6 @@ bit-identity.
 12. **OPENING.EXE / CLOSING.EXE cinematic audio**: out of scope.
 13. **Sound Test dialog** and the Pick-Music/Sound-Options UI screens are
     not in cport's input layer yet; `au_*` exposes everything they need.
+14. **Command 8 timing**: the original polls the driver each idle tick;
+    the port answers from the voice flags at the moment of the call —
+    the same answer, minus the ISR granularity.

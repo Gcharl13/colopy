@@ -232,10 +232,95 @@ Builder verb `0x181f:0x3fe` → wrapper @0x06F594: hardwires file "GAME"
    resolution lives inside `?SOUND.COL` (MZ driver overlays; in `col.zip`,
    materialized to `raw/COLONIZE/` by `bin/reconstitute.py` — not decoded).
 4. 16×8-byte table at DGROUP 0x26F0 (id→byte[+6] @0x0129FF) — writer TBD.
-5. `[0x828]` flag — its window override is byte-pinned (§4: `(1,24)`, all
-   indices); its *writer/meaning* is still TBD.
-6. Play far-call target `0x2D8:0xE` — carries AX=id at every caller
+5. ~~`[0x828]` flag — its window override is byte-pinned (§4: `(1,24)`, all
+   indices); its *writer/meaning* is still TBD.~~ **CLOSED 2026-09-02** —
+   see §9: two writers, both byte-read.
+6. ~~Play far-call target `0x2D8:0xE` — carries AX=id at every caller
    (@0x50B5 the scheduler's pick; @0x50E5/@0x5134 stop issued as AX=1,
    matching the gate's command-1 semantics), so it behaves as the gated
    play entry; its thunk identity vs `0x181f:0x4c0`/`func_00518E` is
-   still untraced.
+   still untraced.~~ **CLOSED 2026-09-02** — it IS the gate: file =
+   `0x2400 + 0x2D8·16 + 0xE = 0x518E = func_00518E` (a resident far call,
+   not in the RTLink map). See §9.
+
+## 9. Amendment 2026-09-02 — the gate's polarity, the dispatcher ring, the driver commands, the scheduler's PRNG, `[0x828]` (B)
+
+Byte-read for the cport audio engine (`cport/audio/colopy_audio.c`);
+corrections to §5 recorded in `notes/rulings/RULINGS.md` 2026-09-02c.
+
+- **Gate `func_00518E` @0x518E — the compare is SIGNED.** `cmp cx,0x10 /
+  jge` is `83 F9 10 7D 03` @0x5197 (`7D` = JGE), so every id ≥ 0x8000 is a
+  negative int16 and takes the `bx=1` "command" branch (@0x519C) straight
+  to `lcall 0x1059:0xA` @0x51C8 — the **fanfares 0x8020..0x8027 bypass both
+  switches**. For ids 0x10..0x7FFF: `dx` = bit 0x20, `di` = bit 0x40;
+  `or dx,dx; je` (@0x51B3) → with 0x20 set the play happens iff `[0xA0]`
+  (Event Music) ≠ 0 (@0x51B7); otherwise (or with Event off) `or di,di; je
+  ret` (@0x51BD) → with 0x40 set the play happens iff `[0xA4]` ≠ 0
+  (@0x51C1). An id with neither bit (0x10..0x1F) never plays. §5's "bit
+  0x20 → tune gate applies to fanfares" is withdrawn.
+- **`0x2D8:0xE` = the gate** (file `0x518E`); **`0x1059:0xA` = the resident
+  dispatcher @0x01299A** (`cmp byte [0x26C5],0; jne queue; ljmp [0xA658]` =
+  driver vector 1). Queue path @0x129A5: `cmp al,8; jae ret` (drop at 8
+  pending), `mov [bx+0x26B4],id; inc [0x26C4]`. Lock @0x129C1 (`mov byte
+  [0x26C5],0xFF`), unlock @0x129C7 + FIFO replay through `0x1059:0xA`
+  @0x129D6..0x129E7.
+- **The 8-deep ring is dead code.** The only writers of `[0x26C5]` are the
+  two `C6 06 C5 26` at 0x129C1/0x129C7; no `lcall 0x1059:0x31/0x37`
+  (`9A 31 00 59 10` / `9A 37 00 59 10`), no far pointer `31 00 59 10` /
+  `37 00 59 10`, and no near `E8` call in segment 0x1059 targets them. The
+  lock stays 0 from load, so every play/command reaches the driver
+  synchronously — VICEROY never queues or preempts on its side.
+- **Commands VICEROY sends** (`lcall 0x1059:0xA` sites: 0x4EFD, 0x51C8,
+  0x559D, 0x55E4, 0x129DC; `lcall 0x181F:0x4DE` sites: 0x2333B, 0x74276,
+  0x75C2A, 0x77AEC, 0x7842B): **0** @0x7842B (boot, after the driver load)
+  and @0x77AEC (abort path); **1** @0x2333B (Sound Options), @0x74276 (load
+  game), @0x559D (exit), and via the gate from the queue/class verbs;
+  **8** @0x4EFD (scheduler) and @0x55E4 (exit spin); and **tune 0x33 raw**
+  @0x75C2A in the title composer `func_0759E8` (`push 0x33; lcall
+  0x181f,0x4de` — bypasses the gate and every switch).
+- **Driver side (ASOUND.COL, file offsets; load = file − 0x200).**
+  Dispatcher @0x1C35: id ≤ 8 → `call cs:[0x1B59+2·id]`; 0x20..0x3F → `mov
+  byte [0x24D],0xFF` then `cs:[0x1B6B+…]`; 0x40..0x5D → `cs:[0x1BB9+…]`;
+  0x8020..0x8026 → `cs:[0x1BAB+…]` (`cmp bx,0x8026; ja` rejects 0x8027 —
+  the shipped config's driver evidently accepts it, since F2a captured
+  signal for it; the port lets the pak decide). Handlers: **1 @0x1AA0 =
+  `call 0x1A64; call 0x1A8C`** = stop-mark FM channels 1–6 **and** 7–9 (the
+  nine 0x2C-byte records at 0x8036…); the digital ring is not touched. 3
+  @0x1A64 ch1–6 only; 5 @0x1A8C ch7–9 only; 4 @0x188F ch7–9 release +
+  `lcall 0:0xD82` (DSP stop + sample-ring clear); 0 @0x150F full OPL reset;
+  2 @0x1866 release/fade ch1–6; 6 @0x18AB / 7 @0x1934 mute/unmute (volume
+  save/restore — register-pattern glosses); **8 @0x1AA7 = OR of byte+0 over
+  the nine FM records** — a digital sample in flight does NOT hold the
+  pump. SFX wrapper @0x1DF6: plays the digital sample only when `[0xA0]==0`
+  and `[0x24D]==0xFF`, via `0:0xCE2` (@0xEE2): a busy DSP (`[0x5E]≠0`) is
+  stopped first (`call 0x684; call 0x96E` @0xF12) — **new kills old**; a
+  success pops the return address so the FM effect is skipped, a rejection
+  falls back to FM. Tune heads (e.g. 0x20 @0x3724) `call 0x1864` first, so
+  a **new tune replaces** the playing one — there is no driver-side queue
+  either.
+- **The scheduler's PRNG is the game's.** `0x9EF:0x32` = `func_00C322` =
+  `random_int(lo,hi)`: `lcall 0xD1D:0xE04` (= MS C `rand` @0x103D4: state
+  `[0x28EE]/[0x28F0]` ← state·0x343FD + 0x269EC3, return `(state>>16) &
+  0x7FFF`) then `lo + ((rand·(hi−lo+1)) >> 15)` (the `sar dx,1; rcr ax,1`
+  ×7 after the byte shift @0xC336..0xC358). `0x9EF:0x2C` = @0xC31C → `call
+  0xC2F8`: `lcall 0xC0C:0x12` (@0xE4D2 reads the BIOS tick dword at
+  0040:006C), `and ah,0x7F`, `lcall 0xD1D:0xDF2` (= `srand` @0x103C2:
+  `[0x28EE]=arg, [0x28F0]=0`). The tick words the scheduler pushes
+  (`[0x83A8]` @0x4F24, `[0x83A6]` @0x503C) are **ignored** — @0xC31C reads no
+  argument. So each pump that picks runs `srand(ticks&0x7FFF)` @0x4F28 →
+  `random_int(0,8|4)` → `random_int(0,count−1)` (re-rolled while == `[0x96]`)
+  → `srand(ticks&0x7FFF)` @0x5040, on the **same** state every `0x181F:0x4D4`
+  call in the game uses. Port decision: RULINGS 2026-09-02c (private state,
+  same generator, same seed points).
+- **`[0x828]`** — writers: `mov byte [0x828],1` @0x70D00 (command-line
+  switch **'D'**: parser @0x70CB4, `sub ax,0x43; cmp ax,0x17; ja; jmp
+  cs:[bx+0x156]`, table @0x70DB6 index 1) together with `mov word
+  [0x826],1` (autoplay); and @0x4DA6 in `func_004D1E` (idle poll) when the
+  key code is 0x12D or 0x110 (@0x4D9A/@0x4DA0), followed by the driver
+  reset + exit. Readers (22 `80 3E 28 08` sites): the scheduler @0x4F82
+  (window (1,24)); new game @0x756D4; the difficulty/player menus
+  @0x74329/0x7434D/0x74380; input suppression @0x5A49/@0x674BB; timed
+  screen exits @0x2C7DE/@0x35C30/@0x53215; colony paint skip @0x268F8; the
+  boot flow @0x7598D..@0x75C37; the exit filename @0x56A9. The gloss
+  "auto-play / demo mode" is from those consumers (ANCHOR); the two
+  key codes' keyboard meaning is TBD.

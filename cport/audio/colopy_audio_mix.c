@@ -1,13 +1,16 @@
-/* 2-voice mixer + IMA ADPCM decoder — the playback model under the ported
+/* 3-voice mixer + IMA ADPCM decoder — the playback model under the ported
  * caller API (docs/AUDIO_PORT.md).
  *
- * Voice model (approximation, catalogued in README.md): entries decode onto
- * a voice chosen by CODEC, mirroring the original hardware split under the
- * SB driver — IMA renders (FM-family sounds: tunes, fanfares, FM sfx) own
- * the MUSIC voice and serialize, like the OPL chip did (observed live:
- * a play request while sounding is queued, not preempted); PCM8 slices
- * (digitized COLDIG sounds) own the SFX voice and mix over the music, like
- * the DSP did. A new SFX preempts the playing SFX (single-DMA model).
+ * Voice model (2026-09-02, from the ASOUND.COL decode): the driver keeps
+ * nine FM channel records — tunes/fanfares on channels 1-6, the FM-rendered
+ * SFX on 7-9 — plus the DSP sample ring.  MUSIC = ch1-6 (IMA renders of
+ * tunes/fanfares; a new tune stop-marks ch1-6 first, so it REPLACES the
+ * playing one — no queue), FM = ch7-9 (IMA renders of the SFX ids the
+ * driver has no sample for), DIGITAL = the sample ring (verbatim COLDIG
+ * slices; 0:0xCE2 stops a sample in flight, so new kills old).  Which
+ * voice an entry takes is decided by the engine (colopy_audio.c
+ * start_entry) from the id and codec.  Mute (cmd 6/7) zeroes the output
+ * while the voices keep running, as the driver zeroes OPL volumes.
  *
  * Internal format: s16 mono @ AU_MIX_RATE (22050). PCM8 payloads are 11025
  * Hz and are zero-order-held x2. IMA blocks are self-contained (predictor +
@@ -51,7 +54,8 @@ typedef struct {
     uint8_t raw[RAW_CHUNK];
 } au_voice;
 
-static au_voice music, sfx;
+static au_voice music, fm, digital;
+static int muted;
 
 static int16_t clamp16(int32_t v) {
     if (v > 32767) return 32767;
@@ -133,17 +137,19 @@ static int32_t voice_next(au_voice *v) {
 }
 
 void au_mix_start_music(const au_entry *e) { voice_start(&music, e); }
-void au_mix_start_sfx(const au_entry *e) { voice_start(&sfx, e); }
+void au_mix_start_fm(const au_entry *e) { voice_start(&fm, e); }
+void au_mix_start_digital(const au_entry *e) { voice_start(&digital, e); }
 void au_mix_stop_music(void) { music.active = 0; }
-void au_mix_stop_sfx(void) { sfx.active = 0; }
+void au_mix_stop_fm(void) { fm.active = 0; }
+void au_mix_stop_digital(void) { digital.active = 0; }
 int au_mix_music_active(void) { return music.active; }
+int au_mix_fm_active(void) { return fm.active; }
+void au_mix_set_mute(int on) { muted = !!on; }
 
 void au_render(int16_t *out, int nframes) {
     for (int i = 0; i < nframes; i++) {
-        int was = music.active;
-        int32_t s = voice_next(&music) + voice_next(&sfx);
-        if (was && !music.active)
-            au_engine_music_ended();
-        out[i] = clamp16(s);
+        int32_t s = voice_next(&music) + voice_next(&fm) +
+                    voice_next(&digital);
+        out[i] = muted ? 0 : clamp16(s);
     }
 }
