@@ -71,3 +71,6 @@ colopy_p4_*.zip
 tools/dosbox_harness/shots/
 tools/dosbox_harness/dosbox.log
 tools/dosbox_harness/dosbox.conf
+
+# harness-managed agent worktrees (never project content)
+.claude/worktrees/
