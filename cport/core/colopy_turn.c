@@ -17,11 +17,13 @@
  * (A third limit used to be listed here -- "unit BUILD targets: the importer
  * nulls them (bip >= 42), so the completion path handles buildings only".
  * That was FIXED and the comment outlived it: the picker encodes a unit
- * target as 0xC0+u, advance_construction resolves it through
- * BUILD_UNIT_NAMES (see is_unit below), and the .CPX sidecar persists it
- * across a save.  Wagon Trains, Artillery and ships all complete.  Removed
- * 2026-08-19 in the staleness sweep -- it had been read as current by the
- * ledger and by a status overview.)
+ * target in the record's own +0x94 vocabulary (0x2A + (type - 0x0B),
+ * func_00B5A8 -- since 2026-09-02; before that a port-private 0xC0+u
+ * marker with a .CPX sidecar), advance_construction resolves it through
+ * build_target_unit_type, and the .SAV carries it.  Wagon Trains,
+ * Artillery and ships all complete.  Removed 2026-08-19 in the staleness
+ * sweep -- it had been read as current by the ledger and by a status
+ * overview.)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -557,13 +559,19 @@ static void sol_announce(int ci) {
 }
 
 /* ---- construction (advanceConstruction, game.js:3114) ------------------ */
-/* the colony-buildable UNITS (BUILDABLE_UNITS, game.js:2963) — the
- * record's @BUILDING index cannot express them, so the picker stores
- * 0xC0+u (colopy_input.c's encoding). */
-static const char *const BUILD_UNIT_NAMES[7] = {
-    "Wagon Train", "Artillery", "Caravel", "Merchantman", "Galleon",
-    "Privateer", "Frigate",
-};
+/* The record's +0x94 build target names a UNIT as 0x2A + (type - 0x0B):
+ * classifier func_00B5A8 (thunk 0x181F:0xCC2) @0x00B5B1..@0x00B5E1 —
+ * id < 0 -> none, id < 0x2A -> building id, id - 0x2A < 7 -> unit type
+ * 0x0B + (id - 0x2A) (Artillery, Wagon Train, Caravel, Merchantman,
+ * Galleon, Privateer, Frigate); the picker stores row - 2 @0x02B710.
+ * (Replaces the port's former 0xC0+u marker and its .CPX sidecar,
+ * C3.7 2026-09-02.) */
+int build_target_unit_type(uint8_t bip) {
+    return (bip >= 0x2A && bip <= 0x30) ? 0x0B + (bip - 0x2A) : -1;
+}
+uint8_t build_target_for_unit_type(int type) {
+    return (uint8_t)(0x2A + (type - 0x0B));
+}
 static int unit_row_named(const char *name) {
     for (int i = 0; i < DAT_UNITS_COUNT; i++)
         if (strcmp(dat_units[i].name, name) == 0) return i;
@@ -607,11 +615,9 @@ static void advance_construction(int ci, int hammers) {
      * — it is what prices the Wagon Train's 1x32=32 at "(40 Hammers)").
      * Tools = the next byte x10 (@0x0B6E3, the same x10 a building's
      * tools byte gets @0x0B694). */
-    int is_unit = bip >= 0xC0 && bip < 0xC0 + 7;
-    if (is_unit) {
-        const char *un = BUILD_UNIT_NAMES[bip - 0xC0];
-        int urow = unit_row_named(un);
-        if (urow < 0) return;
+    int urow = build_target_unit_type((uint8_t)bip);
+    if (urow >= 0) {
+        const char *un = dat_units[urow].name;
         int cost = (int)dat_units[urow].cost * 32;
         if (cost < 40) cost = 40;
         else if (cost < 52) cost = 52;

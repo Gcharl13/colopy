@@ -166,10 +166,12 @@ def probe_diplomacy_live() -> bool:
 
 
 def probe_unit_builds() -> bool:
-    """Also pinned: colony UNIT builds complete (0xC0+u encoding resolved by
-    advance_construction). Holds while that stays true."""
+    """Also pinned: colony UNIT builds complete (the record's own
+    0x2A + (type - 0x0B) encoding, func_00B5A8, resolved by
+    advance_construction through build_target_unit_type -- C3.7 2026-09-02
+    replaced the port-private 0xC0+u marker). Holds while that stays true."""
     t = _strip_comments(_c_text())
-    return "BUILD_UNIT_NAMES" in t and "0xC0" in t
+    return "build_target_unit_type" in t and "0x2A" in t
 
 
 # ---- G2d: a scoped comparison must say WHY, and the why must still hold ----

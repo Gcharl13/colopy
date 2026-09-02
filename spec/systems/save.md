@@ -128,6 +128,14 @@ The 43-block table above is not the end of the file. The serializer's tail
 | 47 | `[0x168]` | w·h | **per-power fog plane** (bit `1<<(power+4)` = explored) |
 | 48–49 | `0x86F6` / `0x85E8` | 0x10E each | pathfinding/region scratch |
 | 50–51 | `0x945E` / `0x85C8` | 0x20 each | AI word arrays |
+| 52 | `ss:[bp-6]` | 4 | **Amendment 2026-09-02** — a stack local: the serializer reseeds the C runtime RNG just before (`0x181f:0x4ca` = `func_00C31C` → `func_00C2F8`: timer `0xc0c:0x12` `& 0x7FFF` → `srand 0xd1d:0xdf2` @0x073A21..@0x073A2A) and writes the 4 bytes at `[bp-6]` @0x073A2D..@0x073A3C. Opaque (0x7285D172 in nine shipped saves); preserved verbatim. |
+| 53 | `DGROUP 0x8D80` | 4 | **Amendment 2026-09-02** — the plot/skill seed base (@0x073A45..@0x073A53; loader @0x0741F6). COLONY00.SAV carries **1410965** — exactly the value the ports pin on load (`G.plotSeedBase`), so that pin is now byte-backed. |
+| 54 | `DGROUP 0x190` | 2 | **Amendment 2026-09-02** — the map-detail salt (@0x073A5C..@0x073A6A; loader @0x074211). COLONY00.SAV carries **19129** (low nibble 9, as the census measured); the ports still pin 1657 — see RULINGS 2026-09-02c, follow-up row in REMAINING_WORK. |
+| 55 | `0x1B22:0000` | 0x378 | **Amendment 2026-09-02** — the **trade-route table**, 12 × 0x4A records (@0x073A73..@0x073A83 via the far-pointer verb `0x1A1F:0xC9C`; loader mirror @0x07422C..@0x07423D, `0x1A1F:0xCB4`). Active count = globals `[0x53A0]` (g+0x20). Layout per `trade_routes.md` §2 (note: `+0x21` is the stop **count**). Both ports decode/encode it (C3.7). |
+
+The trailing tail is therefore 2·0x10E + 2·0x20 + 4 + 4 + 2 + 0x378 = **1502 bytes**
+(measured in all ten shipped saves). The earlier "the file ends at block 51" reading
+missed the four writes after @0x073A1D.
 
 Validated against all ten shipped `COLONY0#.SAV` (tools/dosbox_harness/game/):
 header + version 73 + 58×72 + the four planes account for the file sizes

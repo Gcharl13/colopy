@@ -12684,11 +12684,15 @@ function importSav(bytes) {
   // census baseline (nibble 9 = the unique sweep minimum); the full value
   // stays unknowable from one frame.
   G.mapSeed = 1657;
-  // [0x8D80] (the plot/skill seed base) is the BIOS launch tick, per-SESSION
-  // -- also not in the save. Loads pin it to the census session's measured
-  // clock (1410965; & 0x7FFF = 0x795) exactly as the C's cr_reset_from_load
-  // does, so the seeded picks (colony layouts, village teach skills) agree
-  // across both engines and with the census baselines.
+  // [0x8D80] (the plot/skill seed base) is the BIOS launch tick, per-SESSION.
+  // It IS in the save after all -- one of the four trailing writes after the
+  // planes (@0x073A45, save.md block 53; found 2026-09-02) -- and COLONY00.SAV
+  // carries exactly 1410965 (& 0x7FFF = 0x795), the census session's measured
+  // clock this pin was taken from. (The same tail holds [0x190] = 19129 for
+  // COLONY00; the 1657 pin above keeps its low nibble 9 -- reading the full
+  // word is a follow-up, RULINGS 2026-09-02c.) Both engines pin, so the
+  // seeded picks (colony layouts, village teach skills) agree across both
+  // and with the census baselines.
   G.plotSeedBase = 1410965;
   // The globals block (0x5380, 0x8E bytes -- the serializer's block 3,
   // func_0734F8 @0x073562, full 43-block order read 2026-08-07) carries the
@@ -12986,16 +12990,20 @@ function importSav(bytes) {
     const dividend = i32(b + 0xC2), divisor = i32(b + 0xC6);
     // Construction state: banked hammers u16 @+0x92, the target's @BUILDING
     // index @+0x94 (0xFF = none; Jamestown's 0x06 = Docks matches the
-    // census3 picker's highlighted row). An index past the 42 buildings
-    // would be a colony-built unit target -- unobserved, left null.
+    // census3 picker's highlighted row). A UNIT target is 0x2A + (type -
+    // 0x0B) -- classifier func_00B5A8 @0x00B5CE..@0x00B5E1: id - 0x2A < 7
+    // -> unit type 0x0B + (id - 0x2A), Artillery .. Frigate; the picker's
+    // commit @0x02B710 stores row - 2 (C3.7, 2026-09-02).
     const bip = d[b + 0x94];
+    const unitTarget = (bip >= 0x2A && bip <= 0x30) ? DATA.units[0x0B + bip - 0x2A] : null;
     const c = { name, x: d[b], y: d[b + 1], nation: owner, colonists,
                 stock: [], buildings, hammers: u16(b + 0x92),
                 // +0x1C flags byte, kept verbatim: the map's population-number
                 // ink reads bits 4/2 (func_004314 @0x00448B-@0x0044A4).
                 recFlags1c: d[b + 0x1C],
                 depletionCounter,
-                building: (DATA.buildings[bip] || {}).name || null,
+                building: unitTarget ? unitTarget.name
+                        : (DATA.buildings[bip] || {}).name || null,
                 // FLOOR, not round: the DOS colony screen prints 36% for
                 // Isabella (107/292 = 36.64) and 5% for Vlissingen
                 // (64/1082 = 5.92) -- the engine's integer division
@@ -13074,10 +13082,20 @@ function importSav(bytes) {
       // and 9 (Build Road) restore as of 2026-08-29: their only companion
       // state is the +0x16 work counter imported below, and the work
       // processors are byte-modeled -- a pioneer resumes mid-job. Values
-      // with unread companion state (trade route, goto, live-in-village,
-      // 7, the 11/12 internals) still reset to 0, FLAGGED.
+      // with unread companion state (goto, live-in-village, 7, the 11/12
+      // internals) still reset to 0, FLAGGED. 2 (Trade Route) restores as
+      // of 2026-09-02 (C3.7): the companion state is the +0x17 byte's two
+      // nibbles -- low = route index (func_0075D4), high = current stop
+      // (func_0075FE) -- and the route table itself is in the save's
+      // trailing block (read below, once the colonies are known). The
+      // engine tests the @UNIT cargo column for a carrier (@0x06136E).
       const ro = d[b + 0x08];
       if (ro === 1 || ro === 5 || ro === 6 || ro === 8 || ro === 9) u.orders = ro;
+      if (ro === 2 && Number(type.cargo) > 0) {
+        u.orders = ORDER_TRADE;
+        u.route = d[b + 0x17] & 0x0F;
+        u.stopIndex = d[b + 0x17] >> 4;
+      }
       // Go To (orders 3): the goal rides in +0x09/+0x0A -- the setter
       // @0x41B62/@0x41B69 writes them with orders 3 for the human
       // (@0x41B4B). Restored when the goal is on the map; a garbage goal
@@ -13125,6 +13143,58 @@ function importSav(bytes) {
       G.units.push(u);
     }
   }
+  // TRADE ROUTES -- the .SAV's trailing block (C3.7, 2026-09-02). After
+  // the four planes the serializer writes (@0x0739BC..@0x073A88; loader
+  // mirror @0x0741DA..@0x07423D): 0x86F6 0x10E + 0x85E8 0x10E (blocks
+  // 48-49), 0x945E 0x20 + 0x85C8 0x20 (50-51), a 4-byte stack local
+  // ([bp-6], the residue of the serializer's RNG reseed 0x181f:0x4ca),
+  // DGROUP 0x8D80 4 B, DGROUP 0x190 2 B, then segment 0x1B22:0000 for
+  // 0x378 bytes = 12 x 0x4A route records. Record (trade_routes.md par.2):
+  // name[32] +0x00; type byte +0x20 (0 = sea, 1 = land @0x061282); stop
+  // COUNT +0x21 (dec @0x06051A, loop bound @0x02EEED); 4 stops of 10 B at
+  // +0x22: dest word (colony record index, 0x3E7 Europe, 0x3E8 none),
+  // count byte +2 (low nibble UNLOAD, high LOAD -- func_060382), LOAD
+  // goods nibble-packed at +3..+5, UNLOAD at +6..+8 (addr_of_good_byte
+  // @0x060350; odd n = high nibble @0x0603F2). Count = globals [0x53A0]
+  // = g+0x20. Stops become G.colonies ordinals (the port's model); a
+  // stop at a colony that is not ours is dropped.
+  G.routes = [];
+  {
+    const tailBase = planeBase + 4 * plane;
+    const routeBase = tailBase + 2 * 0x10E + 2 * 0x20 + 4 + 4 + 2;
+    const nroutes = Math.min(MAX_ROUTES, u16(g + 0x20));
+    const ordOf = {};
+    { let k = 0; for (let i = 0; i < ncol; i++)
+        if ((d[colBase + i * 0xCA + 0x1A] & 3) === nation) ordOf[i] = k++; }
+    const nib = (o, k) => (k & 1) ? (d[o + (k >> 1)] >> 4) : (d[o + (k >> 1)] & 0x0F);
+    if (routeBase + nroutes * 0x4A <= d.length) {
+      for (let r = 0; r < nroutes; r++) {
+        const rb = routeBase + r * 0x4A;
+        const rt = { name: str(rb, 32), sea: d[rb + 0x20] === 0, stops: [], cursor: 0,
+                     loads: [], unloads: [] };
+        const ns = Math.min(MAX_STOPS, d[rb + 0x21]);
+        for (let k = 0; k < ns; k++) {
+          const sb = rb + 0x22 + k * 10;
+          const dest = u16(sb);
+          let stop;
+          if (dest === 0x3E7) stop = STOP_EUROPE;
+          else if (ordOf[dest] !== undefined) stop = ordOf[dest];
+          else continue;
+          const nl = Math.min(6, d[sb + 2] >> 4), nu = Math.min(6, d[sb + 2] & 0x0F);
+          const load = [], unload = [];
+          for (let j = 0; j < nl; j++) load.push(nib(sb + 3, j));
+          for (let j = 0; j < nu; j++) unload.push(nib(sb + 6, j));
+          rt.stops.push(stop); rt.loads.push(load); rt.unloads.push(unload);
+        }
+        G.routes.push(rt);
+      }
+    }
+    // A bound carrier whose route index is past the table: the engine's
+    // automation would find no route; unbind (mirrors the C loader).
+    for (const u of G.units)
+      if (u.orders === ORDER_TRADE && !(u.route < G.routes.length)) { u.orders = 0; u.route = undefined; }
+  }
+
   // A ship's MANIFEST is in CHAIN order, not record order.
   //
   // UnitRecord +0x18/+0x1A are the alias-confirmed chain links, and a ship is

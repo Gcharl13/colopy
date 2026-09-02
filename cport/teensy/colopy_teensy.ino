@@ -638,45 +638,10 @@ static void run_turn(void) {
 
 static bool sav_loaded = false;
 
-/* ---- the .SAV sidecar (mirrors the P4 build) -------------------------
- * The .SAV goes out byte-exact, so a colony's UNIT build target (the
- * port's own 0xC0+u marker, stripped by the writer) and the trade-route
- * table have nowhere to live in it.  They go in a companion .CPX file
- * with the same stem; colopy_extras_read() validates it against the
- * loaded save and drops itself if it does not belong. */
-static void sidecar_path(const char *name, char *out, size_t cap) {
-    snprintf(out, cap, "%s", name);
-    size_t l = strlen(out);
-    if (l > 4 && strcasecmp(out + l - 4, ".SAV") == 0)
-        snprintf(out + l - 4, cap - (l - 4), ".CPX");
-    else
-        snprintf(out + l, cap - l, ".CPX");
-}
-
-static uint8_t sidebuf[8192];        /* shared by save and load */
-
-static void sidecar_save(const char *name) {
-    size_t sn = colopy_extras_write(sidebuf, sizeof(sidebuf));
-    if (!sn) return;
-    char path[80];
-    sidecar_path(name, path, sizeof(path));
-    SD.remove(path);
-    File f = SD.open(path, FILE_WRITE);
-    if (!f) return;
-    f.write(sidebuf, sn);
-    f.close();
-}
-
-static void sidecar_load(const char *name) {
-    char path[80];
-    sidecar_path(name, path, sizeof(path));
-    File f = SD.open(path, FILE_READ);
-    if (!f) return;
-    size_t sn = f.read(sidebuf, sizeof(sidebuf));
-    f.close();
-    if (sn && colopy_extras_read(sidebuf, sn))
-        Serial.println("sidecar applied (build targets + trade routes)");
-}
+/* (The former .CPX sidecar is gone — C3.7, 2026-09-02: a colony's unit
+ * build target and the trade routes are IN the .SAV, as the DOS game
+ * writes them: +0x94 = 0x2A + (type - 0x0B), and the trailing
+ * 12 x 0x4A route block; see cport/core/colopy_sav.c.) */
 
 static void cmd_load(const char *name) {
     File f = SD.open(name, FILE_READ);
@@ -686,7 +651,6 @@ static void cmd_load(const char *name) {
     colopy_status st = colopy_load_sav(savbuf, n);
     if (st != COLOPY_OK) { Serial.printf("load failed: %d\n", (int)st); return; }
     colopy_init(1653);              /* the shared parity seed */
-    sidecar_load(name);             /* build targets + trade routes */
     units_session_seed();           /* importer runtime setup: full moves,
                                      * orders 0 — the host entries do the
                                      * same after init; without it the
@@ -709,7 +673,6 @@ static void cmd_save(const char *name) {
     File f = SD.open(name, FILE_WRITE);
     if (!f || f.write(savbuf, n) != n) { Serial.println("SD write failed"); return; }
     f.close();
-    sidecar_save(name);
     Serial.printf("wrote %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }

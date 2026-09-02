@@ -148,15 +148,13 @@ static LCD *g_lcd = nullptr;
 static uint16_t *fbuf = nullptr;      /* 1024x600 RGB565, in PSRAM */
 static uint8_t *pakbuf = nullptr;     /* COLOPY.PAK from SD, in PSRAM */
 static uint8_t *savbuf = nullptr;     /* .SAV image buffer (~80 KB) */
-static uint8_t *sidebuf = nullptr;    /* the .SAV sidecar, in PSRAM */
 /* COLOPY.PAK is 3,148,409 B today. The old 3,500,000 cap left 10% headroom
  * and every asset still to ship (Part E of docs/REMAINING_WORK.md: 139 .SS
  * and 7 .PIK sheets) grows it. 8 MB of the P4's 32 MB PSRAM is cheap —
- * fbuf is 1.2 MB, savbuf 80 KB, sidebuf 8 KB — and sd_read_file() now
+ * fbuf is 1.2 MB, savbuf 80 KB — and sd_read_file() now
  * refuses an oversize file outright rather than loading a prefix. */
 #define PAKBUF_CAP 8000000
 #define SAVBUF_CAP 80000
-#define SIDEBUF_CAP 8192
 static uint16_t lut565[256];
 static int pak_ready = 0;
 static bool sav_loaded = false;
@@ -1774,9 +1772,9 @@ static void mem_report(void) {
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                   (unsigned)heap_caps_get_total_size(MALLOC_CAP_SPIRAM),
                   (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
-    Serial.printf("our PSRAM:     fbuf %u, pakbuf %u, savbuf %u, sidebuf %u\n",
+    Serial.printf("our PSRAM:     fbuf %u, pakbuf %u, savbuf %u\n",
                   (unsigned)((size_t)P4_W * P4_H * 2), (unsigned)PAKBUF_CAP,
-                  (unsigned)SAVBUF_CAP, (unsigned)SIDEBUF_CAP);
+                  (unsigned)SAVBUF_CAP);
     stack_report("now");
 }
 
@@ -1788,47 +1786,10 @@ static void run_turn(void) {
     turn_step5();
 }
 
-/* ---- the .SAV sidecar -----------------------------------------------
- * The .SAV is written byte-exact, so a colony's UNIT build target (the
- * port's own 0xC0+u marker, stripped by the writer) and the trade-route
- * table have nowhere to live in it.  They go in a companion file with
- * the same stem and a .CPX extension; colopy_extras_read() validates it
- * against the loaded save and drops itself if it does not belong, so a
- * missing or stale sidecar simply means the old behaviour. */
-static void sidecar_path(const char *name, char *out, size_t cap) {
-    snprintf(out, cap, "/sdcard/%s", name);
-    size_t l = strlen(out);
-    if (l > 4 && strcasecmp(out + l - 4, ".SAV") == 0)
-        snprintf(out + l - 4, cap - (l - 4), ".CPX");
-    else
-        snprintf(out + l, cap - l, ".CPX");
-}
-
-static void sidecar_save(const char *name) {
-    if (!sidebuf) return;            /* PSRAM, not a static: the core's
-                                      * own statics already crowd internal
-                                      * SRAM — 'm' prints what is left */
-    size_t sn = colopy_extras_write(sidebuf, SIDEBUF_CAP);
-    if (!sn) return;
-    char path[112];
-    sidecar_path(name, path, sizeof(path));
-    FILE *f = fopen(path, "wb");
-    if (!f) return;
-    fwrite(sidebuf, 1, sn, f);
-    fclose(f);
-}
-
-static void sidecar_load(const char *name) {
-    if (!sidebuf) return;
-    char path[112];
-    sidecar_path(name, path, sizeof(path));
-    FILE *f = fopen(path, "rb");
-    if (!f) return;
-    size_t sn = fread(sidebuf, 1, SIDEBUF_CAP, f);
-    fclose(f);
-    if (sn && colopy_extras_read(sidebuf, sn))
-        Serial.println("sidecar applied (build targets + trade routes)");
-}
+/* (The former .CPX sidecar is gone — C3.7, 2026-09-02: a colony's unit
+ * build target and the trade routes are IN the .SAV, as the DOS game
+ * writes them: +0x94 = 0x2A + (type - 0x0B), and the trailing
+ * 12 x 0x4A route block; see cport/core/colopy_sav.c.) */
 
 static void cmd_load(const char *name) {
     if (!sd_ready) { Serial.println("no SD card"); return; }
@@ -1837,7 +1798,6 @@ static void cmd_load(const char *name) {
     colopy_status st = colopy_load_sav(savbuf, n);
     if (st != COLOPY_OK) { Serial.printf("load failed: %d\n", (int)st); return; }
     colopy_init(1653);              /* the shared parity seed */
-    sidecar_load(name);             /* build targets + trade routes */
     units_session_seed();           /* importer runtime setup: full moves,
                                      * orders 0 — without it the first
                                      * digest diverges from the host */
@@ -1865,7 +1825,6 @@ static void cmd_save(const char *name) {
         return;
     }
     fclose(f);
-    sidecar_save(name);
     Serial.printf("wrote %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }
@@ -2042,7 +2001,6 @@ void setup() {
                                         MALLOC_CAP_SPIRAM);
     pakbuf = (uint8_t *)heap_caps_malloc(PAKBUF_CAP, MALLOC_CAP_SPIRAM);
     savbuf = (uint8_t *)heap_caps_malloc(SAVBUF_CAP, MALLOC_CAP_SPIRAM);
-    sidebuf = (uint8_t *)heap_caps_malloc(SIDEBUF_CAP, MALLOC_CAP_SPIRAM);
     if (!fbuf || !pakbuf || !savbuf)
         Serial.println("PSRAM alloc FAILED (is PSRAM enabled in Tools?)");
     if (fbuf && g_lcd) {                     /* black screen + pillarbox */

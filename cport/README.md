@@ -88,9 +88,11 @@ gameplay mechanics still missing and every flagged approximation, is
   against hardware** (`COLOPY_BLE_MOUSE`); it needs a core with hosted
   BT for the P4 and C6 firmware that exposes Bluetooth, neither of
   which can be verified from this repo.
-- **Sidecar-only state.**  A colony's unit build target and the trade
-  routes ride in a companion `.CPX` file, not the `.SAV` — the DOS
-  format has no field for either and the `.SAV` is written byte-exact.
+- ~~**Sidecar-only state.**~~ **Gone (C3.7, 2026-09-02).**  A colony's
+  unit build target (`+0x94 = 0x2A + (type − 0x0B)`, `func_00B5A8`) and
+  the trade routes (the `.SAV`'s trailing 12 × 0x4A block, `save.md`
+  block 55) are in the `.SAV` exactly as the DOS game writes them; the
+  `.CPX` companion file no longer exists.
 - Cosmetic TBDs remain: the colony dither/speckle pass, a handful of
   unresolved display strings, and no resource model on the map.
 - ~~Go To moves ONE square a turn.~~ **Fixed 2026-08-29**: Go To now

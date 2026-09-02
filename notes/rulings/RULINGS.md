@@ -10911,3 +10911,75 @@ were contradicted by the tree when re-measured.
 palette layout; whether the stale askmap comment in
 `cport/host/render_smoke.c:340` (it still says "INTERSECTION") is the C
 track's to fix — it is a comment, and it is noted here rather than edited.
+
+## 2026-09-02c — C3.7: the `.SAV` carries unit build targets AND trade routes; the `.CPX` sidecar was built on two false premises
+
+**Conflict**: `cport/core/colopy_extras.c` (and `docs/REMAINING_WORK.md` C3.7,
+`cport/README.md`, both board shells) held that "the DOS colony record's
+`building_in_production` byte only names buildings" and that "the .SAV has no
+field for trade routes", so the port carried a private `0xC0+u` unit marker
+(stripped to 0xFF on save) plus a companion `.CPX` file. The JS importer nulled
+any `+0x94 >= 42` as "unobserved".
+
+**Bytes** (research `core-c3` claims 25–28, independently re-read):
+
+- `func_00B5A8` (thunk `0x181F:0xCC2`) @0x00B5B1..@0x00B5E1 classifies
+  `ColonyRecord+0x94`: `< 0` none; `< 0x2A` building id; `id − 0x2A < 7` →
+  **unit type `0x0B + (id − 0x2A)`** (Artillery, Wagon Train, Caravel,
+  Merchantman, Galleon, Privateer, Frigate). The picker commit @0x02B710
+  stores `row − 2`; completion `func_02D0E4` class 2 @0x02D1AA spawns via
+  `0x181f:0x95c` and bumps the per-power type census `[0x924C + owner·0x13 +
+  type]` @0x02D240. **COLONY00.SAV and COLONY01.SAV ship with `0x2B` (Wagon
+  Train) targets in Fort Orange / Bahia** — the DOS game itself writes them.
+- The serializer does not stop at block 51. After `0x945E`/`0x85C8`
+  (@0x0739F0..@0x073A1D) it writes `ss:[bp-6]` 4 B (@0x073A2D..@0x073A3C,
+  the residue of an RNG reseed `0x181f:0x4ca` = `func_00C31C` → `func_00C2F8`:
+  timer `0xc0c:0x12 & 0x7FFF` → `srand 0xd1d:0xdf2`), `DGROUP 0x8D80` 4 B
+  (@0x073A45), `DGROUP 0x190` 2 B (@0x073A5C), then **`0x1B22:0000` for
+  `0x378` bytes = 12 × 0x4A route records** (@0x073A73..@0x073A83). The loader
+  mirrors it @0x0741DA..@0x07423D. Tail = 1502 bytes in all ten shipped saves.
+- Route record: name[32]; `+0x20` type (0 sea / 1 land @0x061282); `+0x21`
+  **stop count** (dec @0x06051A, loop bound @0x02EEED — the spec's "cursor"
+  gloss was a label error, corrected in `trade_routes.md`); 4 × 10-byte stops
+  at `+0x22`: dest word (colony record index / 0x3E7 Europe / 0x3E8 none),
+  count byte (`func_060382`: low nibble UNLOAD, high LOAD), LOAD goods
+  nibble-packed at `+3..+5`, UNLOAD at `+6..+8` (`addr_of_good_byte`
+  @0x060350, odd n = high nibble @0x0603F2). Count = `[0x53A0]` = globals
+  `g+0x20`. Unit binding: `UnitRecord+0x17` low nibble route
+  (`func_0075D4`/setter `func_0075E4`), high nibble current stop
+  (`func_0075FE`/`func_007610`), plus orders `+0x08 == 2`; a carrier is a type
+  whose @UNIT cargo column is non-zero (`byte [0x5237 + type·14]` @0x06136E).
+
+**Decision**:
+
+1. `colopy_extras.c`, the `.CPX` read/write in `cport/p4/colopy_p4.ino`,
+   `cport/teensy/colopy_teensy.ino` and the host test are **deleted**. The
+   `0xFF` strip in `colopy_save_sav` is gone.
+2. A unit target is stored as **`0x2A + (type − 0x0B)`** in both engines
+   (`build_target_unit_type` / `build_target_for_unit_type`,
+   `cport/core/colopy_turn.c`; JS `importSav` maps it to
+   `DATA.units[0x0B + id − 0x2A].name`).
+3. `colopy_sav.c` `routes_from_sav` / `routes_to_sav` decode and re-encode the
+   route block, `[0x53A0]`, and the bound carriers' `+0x17` nibbles; the JS
+   importer decodes the same block and restores orders 2. Stops are kept as
+   the ports' player-colony ordinals (converted from / to record indices on
+   the way through the file; a stop at a non-player colony is dropped —
+   FLAGGED, the DOS destination picker's owner filter was not read). A bound
+   carrier whose route index is past `[0x53A0]` is unbound on load in both
+   engines (the automation would find no route anyway).
+4. Verification: COLONY01.SAV's real DOS route ("New Amsterdam Cargo", land,
+   stops records 2,5,12,3 → ordinals 0,3,6,1) decodes identically in C and JS
+   and round-trips byte-exact through the C writer (`smoke --savfile`); a
+   C-written image with two routes, cargo lanes, a bound Merchantman and a
+   Caravel target reloads identically in both. All five input oracles, the
+   four sim oracles and the seven render oracles stay green (the fixtures
+   carry no routes; the 0x2B targets they DO carry now import as Wagon Train
+   rows in both engines identically).
+
+**Found on the way, not acted on**: `DGROUP 0x8D80` in COLONY00.SAV is
+**1410965** — exactly the value both engines pin as `plotSeedBase` on load,
+so that pin is now byte-backed. `DGROUP 0x190` in COLONY00.SAV is **19129**
+(low nibble 9, as the census measured) where the ports pin 1657: reading the
+full word from the tail is a follow-up (new ledger row C3.8) because it may
+move the map-detail placement the render census baselines were frozen on;
+not changed here.

@@ -41,7 +41,7 @@ A trade route automates a ship or wagon train: the player defines a sequence of 
   |-----|-------|------|
   | `+0x00..+0x1F` | route **name** string (32 B; memcpy `@0x61273`, uniqueness strcmp `@0x611FF`) | **B** |
   | `+0x20` | route **type** byte: **0=sea, 1=land** (`@0x61282`; selects `@TRADENAMES` idx 3/4) | **B** |
-  | `+0x21` | current-stop **cursor** (init 2 `@0x61286`; inc `@0x60C7A`) | **B** |
+  | `+0x21` | stop **COUNT** (init 2 `@0x61286` = the two creation stops; inc `@0x60C7A` on add; `dec` on stop delete `@0x06051A`; loop bound `@0x02EEED`) — **Amendment 2026-09-02**: the earlier "current-stop cursor" gloss was a label error; the current stop lives in the unit's `+0x17` high nibble | **B** |
   | `+0x22..+0x49` | **stop array** — stride `0x0A`, **up to 4 stops** (`(0x4A−0x22)/0x0A`); `set_stop_ptr(i)` `@0x05FE7A` (`[0x9E18] = base + 0x22 + i·0x0A`) | **B** |
 - **Stop entry (0x0A bytes):**
   | off | field | tier |
@@ -67,6 +67,12 @@ A trade route automates a ship or wagon train: the player defines a sequence of 
 @TRADEMANY @TRADENONE @TRADENONE2 @TRADENOCARGO @TRADENOWANT @TRADEWITH` (some also
 serve native trade — see `spec/systems/natives.md`). **B (present).**
 
+> **Amendment 2026-09-02 (C3.7):** the route table IS SAVED — it is the last
+> block of the `.SAV` (segment `0x1B22`, 0x378 bytes, serializer `@0x073A73`,
+> loader `@0x07422C`; `save.md` block 55). Both ports read and write it, with
+> unit binding in `UnitRecord+0x17` (nibbles) + orders 2. The "session runtime
+> only" model and the port's `.CPX` sidecar are gone.
+>
 > **Correction:** the earlier `[0x82c]` "route table" hint was **wrong** — `[0x82c]`
 > is a graphics clip/draw-context far pointer (used by blitters `@0x5234`/`@0x42C50`),
 > not the route table. The route table is segment `0x1B22` via `func_05FE60`.

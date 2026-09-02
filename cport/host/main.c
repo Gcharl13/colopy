@@ -721,6 +721,55 @@ int main(int argc, char **argv) {
         dump_turns(argv[2], atoi(argv[3]), agitate, script);
         return 0;
     }
+    /* --savfile IN OUT: load any .SAV from disk, print the decoded route
+     * table / route-bound units / unit build targets (C3.7), write the
+     * image back to OUT and report whether it is byte-identical. */
+    if (argc > 3 && strcmp(argv[1], "--savfile") == 0) {
+        static uint8_t in[80000], out[80000];
+        FILE *f = fopen(argv[2], "rb");
+        if (!f) { printf("no such file: %s\n", argv[2]); return 1; }
+        size_t n = fread(in, 1, sizeof(in), f);
+        fclose(f);
+        colopy_status st = colopy_load_sav(in, n);
+        if (st != COLOPY_OK) { printf("load failed: %d\n", (int)st); return 1; }
+        printf("routes %d\n", CR.n_routes);
+        for (int r = 0; r < CR.n_routes; r++) {
+            const struct colopy_route *rt = &CR.routes[r];
+            printf(" [%d] \"%s\" %s stops", r, rt->name, rt->sea ? "sea" : "land");
+            for (int k = 0; k < rt->n_stops; k++) {
+                printf(" %d(L", rt->stops[k]);
+                for (int j = 0; j < rt->n_load[k]; j++)
+                    printf("%s%d", j ? "," : "", rt->load[k][j]);
+                printf("/U");
+                for (int j = 0; j < rt->n_unload[k]; j++)
+                    printf("%s%d", j ? "," : "", rt->unload[k][j]);
+                printf(")");
+            }
+            printf("\n");
+        }
+        for (int i = 0; i < CS.n_units; i++)
+            if (CR.unit_route[i] >= 0)
+                printf(" unit %d %s route %d stop %d orders %d\n", i,
+                       dat_units[CS.units[i].type].name, CR.unit_route[i],
+                       CR.unit_stop_index[i], CS.units[i].orders);
+        for (int i = 0; i < CS.n_colonies; i++) {
+            int t = build_target_unit_type(CS.colonies[i].building_in_production);
+            if (t >= 0)
+                printf(" colony %d %.24s builds %s (0x%02X)\n", i,
+                       CS.colonies[i].name, dat_units[t].name,
+                       CS.colonies[i].building_in_production);
+        }
+        size_t m = colopy_save_sav(out, sizeof(out));
+        int same = m == n && memcmp(in, out, n) == 0;
+        printf("roundtrip %s (%u -> %u bytes)\n", same ? "byte-exact" : "DIFFERS",
+               (unsigned)n, (unsigned)m);
+        if (!same)
+            for (size_t k = 0; k < n && k < m; k++)
+                if (in[k] != out[k]) { printf(" first diff at 0x%X\n", (unsigned)k); break; }
+        f = fopen(argv[3], "wb");
+        if (f) { fwrite(out, 1, m, f); fclose(f); }
+        return same ? 0 : 1;
+    }
     /* --saveout SAVE N FILE: run N full turns, write the .SAV image —
      * the Phase-3 cross-load acceptance (the JS port must import it). */
     if (argc > 4 && strcmp(argv[1], "--saveout") == 0) {
@@ -806,57 +855,71 @@ int main(int argc, char **argv) {
                ov.n_colonies, ov.n_settlements, ov.tax_rate, colopy_digest());
     }
 
-    /* the .SAV sidecar (colopy_extras.c): the unit-build target and the
-     * trade-route table cannot ride in the fixed DOS save (the writer
-     * strips the 0xC0+u marker so the file stays legal), so the shells
-     * write a companion file.  Round-trip it here: plant both kinds of
-     * state, serialise, wipe, reload, compare.  The .SAV itself is
-     * untouched by any of this — the byte-exact check above still runs
-     * on the same fixtures. */
+    /* C3.7 (2026-09-02): the unit-build target and the trade-route table
+     * ride IN the .SAV — +0x94 = 0x2A + (type - 0x0B) (func_00B5A8) and
+     * the trailing 12 x 0x4A route block (@0x073A73) plus the carriers'
+     * +0x17 route/stop nibbles (func_0075D4/func_0075FE).  Plant both
+     * kinds of state, serialise, wipe, reload, compare.  The byte-exact
+     * check above still runs on the untouched fixtures. */
     {
         colopy_load_sav(savraleigh, sizeof(savraleigh));
-        CHECK(CS.n_colonies > 0, "sidecar: fixture has colonies");
-        CS.colonies[0].building_in_production = 0xC2;   /* Caravel */
+        CHECK(CS.n_colonies > 0, "savtail: fixture has colonies");
+        CHECK(CS.tail_len == 1502, "savtail: fixture tail is 1502 bytes");
+        CHECK(build_target_unit_type(0x2C) == 0x0D &&
+              strcmp(dat_units[0x0D].name, "Caravel") == 0,
+              "savtail: 0x2C decodes as the Caravel");
+        CHECK(build_target_unit_type(0x29) < 0 && build_target_unit_type(0x31) < 0
+              && build_target_unit_type(0xFF) < 0,
+              "savtail: building ids / none are not unit targets");
+        CS.colonies[0].building_in_production = build_target_for_unit_type(0x0D);
         CR.n_routes = 2;
         memcpy(CR.routes[0].name, "Sugar Run", 10);
         CR.routes[0].sea = 1;
         CR.routes[0].n_stops = 2;
         CR.routes[0].stops[0] = 0;
         CR.routes[0].stops[1] = 999;                    /* Europe */
+        CR.routes[0].n_load[0] = 2;
+        CR.routes[0].load[0][0] = 3; CR.routes[0].load[0][1] = 5;
+        CR.routes[0].n_unload[1] = 1;
+        CR.routes[0].unload[1][0] = 14;
         memcpy(CR.routes[1].name, "Ore Loop", 9);
         CR.routes[1].sea = 0;
         CR.routes[1].n_stops = 1;
         CR.routes[1].stops[0] = 1;
-        CR.unit_route[0] = 1;
-        CR.unit_stop_index[0] = 0;
+        int carrier = -1;
+        for (int i = 0; i < CS.n_units && carrier < 0; i++)
+            if (dat_units[CS.units[i].type].cargo > 0) carrier = i;
+        CHECK(carrier >= 0, "savtail: fixture has a carrier");
+        CR.unit_route[carrier] = 1;
+        CR.unit_stop_index[carrier] = 0;
+        CS.units[carrier].orders = 2;
 
-        static uint8_t side[4096];
-        size_t sn = colopy_extras_write(side, sizeof(side));
-        CHECK(sn > 0, "sidecar: write produced bytes");
+        static uint8_t img[80000];
+        size_t sn = colopy_save_sav(img, sizeof(img));
+        CHECK(sn == sizeof(savraleigh), "savtail: image keeps the file size");
+        CHECK(img[SAV_PRELUDE + 0x20] == 2, "savtail: [0x53A0] route count written");
 
         colopy_load_sav(savraleigh, sizeof(savraleigh));  /* wipe */
-        CHECK(CS.colonies[0].building_in_production != 0xC2,
-              "sidecar: reload cleared the build marker");
-        CHECK(CR.n_routes == 0, "sidecar: reload cleared the routes");
+        CHECK(CS.colonies[0].building_in_production != 0x2C,
+              "savtail: reload cleared the build target");
+        CHECK(CR.n_routes == 0, "savtail: reload cleared the routes");
 
-        CHECK(colopy_extras_read(side, sn) == 1, "sidecar: applied");
-        CHECK(CS.colonies[0].building_in_production == 0xC2,
-              "sidecar: build target restored");
-        CHECK(CR.n_routes == 2, "sidecar: route count restored");
+        CHECK(colopy_load_sav(img, sn) == COLOPY_OK, "savtail: image loads");
+        CHECK(CS.colonies[0].building_in_production == 0x2C,
+              "savtail: build target restored (0x2A + 2 = Caravel)");
+        CHECK(CR.n_routes == 2, "savtail: route count restored");
         CHECK(strcmp(CR.routes[0].name, "Sugar Run") == 0,
-              "sidecar: route 0 name restored");
-        CHECK(CR.routes[0].stops[1] == 999,
-              "sidecar: the Europe stop survived");
-        CHECK(CR.routes[1].sea == 0 && CR.routes[1].n_stops == 1,
-              "sidecar: route 1 restored");
-        CHECK(CR.unit_route[0] == 1, "sidecar: unit assignment restored");
-
-        /* it must REFUSE a sidecar written beside a different save */
-        colopy_load_sav(sav1653, sizeof(sav1653));
-        CHECK(colopy_extras_read(side, sn) == 0,
-              "sidecar: refused against a different save");
-        /* and refuse junk */
-        CHECK(colopy_extras_read(side, 4) == 0, "sidecar: refused a stub");
+              "savtail: route 0 name restored");
+        CHECK(CR.routes[0].sea == 1 && CR.routes[0].stops[1] == 999,
+              "savtail: the Europe stop survived");
+        CHECK(CR.routes[0].n_load[0] == 2 && CR.routes[0].load[0][1] == 5 &&
+              CR.routes[0].n_unload[1] == 1 && CR.routes[0].unload[1][0] == 14,
+              "savtail: cargo lanes restored");
+        CHECK(CR.routes[1].sea == 0 && CR.routes[1].n_stops == 1 &&
+              CR.routes[1].stops[0] == 1,
+              "savtail: route 1 restored");
+        CHECK(CR.unit_route[carrier] == 1 && CS.units[carrier].orders == 2,
+              "savtail: unit binding restored from +0x17 / orders 2");
     }
 
     /* Phase 2 slice 1: colony production. The full oracle is

@@ -643,10 +643,11 @@ typedef struct {
     char ask_rows[18][26];
     int8_t n_ask_rows;
     /* trade routes (game.js:7713: MAX_ROUTES 12, MAX_STOPS 4, Europe
-     * stop id 999).  Session-runtime like the JS G.routes — never in
-     * the .SAV; stops are PLAYER-colony ordinals (G.colonies index). */
+     * stop id 999).  The decoded form of the .SAV's trailing 12 x 0x4A
+     * route block (colopy_sav.c routes_from_sav/routes_to_sav, C3.7);
+     * stops are PLAYER-colony ordinals (G.colonies index). */
     struct colopy_route {
-        char    name[26];
+        char    name[32];                /* record +0x00, 32 bytes */
         int8_t  sea;
         int8_t  n_stops;
         int16_t stops[4];
@@ -662,12 +663,10 @@ typedef struct {
     combat_panel combat;                        /* G.combat */
 } colopy_runtime;
 
-/* the .SAV sidecar (colopy_extras.c): the two things the port models
- * that the fixed DOS save has no room for — a colony's UNIT build
- * target and the trade-route table.  Shell-only; the parity harness
- * never calls these. */
-size_t colopy_extras_write(unsigned char *buf, size_t cap);
-int    colopy_extras_read(const unsigned char *buf, size_t len);
+/* ColonyRecord +0x94 unit-target encoding (func_00B5A8 @0x00B5CE):
+ * 0x2A + (type - 0x0B) for unit types 0x0B..0x11, else a @BUILDING id */
+int     build_target_unit_type(uint8_t bip);       /* -1 = not a unit */
+uint8_t build_target_for_unit_type(int type);
 
 #define COLOPY_MAX_ROUTES 12
 #define COLOPY_MAX_STOPS  4

@@ -1022,14 +1022,13 @@ int ui_build_rows_probe(int cci, const char **names) {
     return build_rows(cci, names);
 }
 
-/* the JS c.building NAME for the record's target byte. Units cannot be
- * expressed in the record's @BUILDING index, so a unit target committed
- * from the picker is held as 0xC0+u (input-layer encoding, outside the
- * sav's 0..41/0xFF vocabulary — a save-out with a unit under way would
- * need a real mirror; FLAGGED with the turn step's unit-build TBD). */
+/* the JS c.building NAME for the record's target byte: a @BUILDING index,
+ * or a unit target 0x2A + (type - 0x0B) — the engine's own encoding
+ * (func_00B5A8 @0x00B5CE; picker commit @0x02B710 stores row - 2). */
 static const char *build_target_name(const ColonyRecord *c) {
     int bip = c->building_in_production;
-    if (bip >= 0xC0 && bip < 0xC7) return BUILD_UNITS[bip - 0xC0];
+    int ut = build_target_unit_type((uint8_t)bip);
+    if (ut >= 0) return dat_units[ut].name;
     return bip < DAT_BUILDINGS_COUNT ? dat_buildings[bip].name : NULL;
 }
 /* test-only probe: the CURRENT colony's build-target name, exported so
@@ -1076,12 +1075,9 @@ static void rush_buy(void) {
         cost_h = dat_buildings[first].cost;
         tools10 = dat_buildings[first].tools_x10;
         nm = dat_buildings[first].name;
-    } else if (bip >= 0xC0 && bip < 0xC7) {
-        nm = BUILD_UNITS[bip - 0xC0];
-        int ur = -1;
-        for (int i = 0; i < DAT_UNITS_COUNT; i++)
-            if (strcmp(dat_units[i].name, nm) == 0) { ur = i; break; }
-        if (ur < 0) return;
+    } else if (build_target_unit_type((uint8_t)bip) >= 0) {
+        int ur = build_target_unit_type((uint8_t)bip);
+        nm = dat_units[ur].name;
         /* BYTE_VERIFIED func_00B65A: @UNIT hammers byte x32 (@0x0B6B7)
          * with the clamp ladder <40 -> 40, 40..51 -> 52 (@0x0B6BD) */
         cost_h = dat_units[ur].cost * 32;
@@ -1453,8 +1449,9 @@ static void build_picker_commit(void) {
                 for (int i = 0; i < DAT_BUILDINGS_COUNT && id < 0; i++)
                     if (strcmp(dat_buildings[i].name, nm) == 0) id = i;
                 if (id < 0)
-                    for (int u = 0; u < 7; u++)
-                        if (strcmp(BUILD_UNITS[u], nm) == 0) id = 0xC0 + u;
+                    for (int t = 0x0B; t <= 0x11; t++)
+                        if (strcmp(dat_units[t].name, nm) == 0)
+                            id = build_target_for_unit_type(t);
                 if (id >= 0) c->building_in_production = (uint8_t)id;
             }
         }
