@@ -213,6 +213,57 @@ void rd_blit_silhouette(const rd_entry *sheet, int idx, int x, int y,
     }
 }
 
+/* 0x181F:0x2F8 / 0xC56:4 = func_00E964 @0x00E964 -- the SCALED blit.
+ *
+ * The kernel keeps or drops whole source rows and columns off ONE mask
+ * table built once per call (@0x00EA00-@0x00EA36): an accumulator starts
+ * at 0x32 and adds `pct` per index i; when it reaches 0x64 the index is
+ * KEPT (mask 0xFF, acc -= 0x64), else dropped.  w' counts kept indices
+ * below w and h' below h (@0x00EA1A-@0x00EA25).  The passed x is the
+ * CENTRE and the passed y the BOTTOM row: x_left = x - (w' >> 1)
+ * (@0x00EA38-@0x00EA3D), y_top = y - h' + 1 (@0x00EA41-@0x00EA48).  The
+ * row loop indexes the mask by source row (@0x00EB1E) and skips a dropped
+ * row's RLE data; inside a row the same mask is indexed by source column
+ * (@0x00EB73) and the destination column advances only on kept pixels
+ * (@0x00EB91 `add bx, [bp-0x10]`); 0xFD (transparent) is skipped
+ * (@0x00EB8A).  So a 50% blit keeps even indices, a 25% blit keeps
+ * 1, 5, 9, 13, ... -- nearest-neighbour decimation from a fixed phase.
+ * The negative-frame mirror flag ([bp-0x10] = -1) is not modelled: no
+ * caller here passes one. */
+void rd_blit_scaled(const rd_entry *sheet, int idx, int x, int y, int pct) {
+    rd_frame f;
+    if (!rd_sheet_frame(sheet, idx, &f)) return;
+    int n = f.w > f.h ? f.w : f.h;
+    if (n > 256) n = 256;
+    uint8_t mask[256];
+    int acc = 0x32, w2 = 0, h2 = 0;
+    for (int i = 0; i < n; i++) {
+        acc += pct;
+        if (acc >= 0x64) {
+            mask[i] = 1; acc -= 0x64;
+            if (i < f.w) w2++;
+            if (i < f.h) h2++;
+        } else {
+            mask[i] = 0;
+        }
+    }
+    int x0 = x - (w2 >> 1), dy = y - h2 + 1;
+    for (int r = 0; r < f.h; r++) {
+        if (!mask[r]) continue;
+        const uint8_t *src = f.pix + r * f.w;
+        int dx = x0;
+        for (int c = 0; c < f.w; c++) {
+            if (!mask[c]) continue;
+            uint8_t v = src[c];
+            if (v != RD_TRANSPARENT && dx >= 0 && dx < RD_W &&
+                dy >= 0 && dy < RD_H)
+                RD.fb[dy * RD_W + dx] = v;
+            dx++;
+        }
+        dy++;
+    }
+}
+
 void rd_blit_name(const char *sheet_name, int idx, int x, int y) {
     rd_entry e;
     if (rd_pak_find(&RD.pak, sheet_name, &e)) rd_blit(&e, idx, x, y);

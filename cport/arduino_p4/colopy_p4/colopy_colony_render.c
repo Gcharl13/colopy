@@ -1048,9 +1048,10 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                              CS.units[ui2].type <= 0x12;
                 int y = 147 - (isship ? 1 + (k > 0 ? 1 : 0) : 0);
                 rm_unit_panel(x, y, 16, CS.units[ui2].type,
-                           CS.units[ui2].flags, CS.units[ui2].orders,
+                           rm_unit_flags_ui(ui2), CS.units[ui2].orders,
                            (int)dat_nations[cs_nation()].color,
-                           (int)dat_units[CS.units[ui2].type].icon - 1);
+                           (int)dat_units[CS.units[ui2].type].icon - 1,
+                           (int)cs_nation());
                 if (k == sel) rm_hollow_rect(x - 1, 146, 18, 18, 0x0A);
             }
             int ui = ships[sel];

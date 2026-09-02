@@ -21,8 +21,9 @@
 #include "colopy_data.h"
 
 static int g_res;
-static int JX_VET_SOLDIERS = -1, JX_VET_DRAGOONS = -1, JX_SEASONED = -1;
+static int JX_VET_SOLDIERS = -1, JX_VET_DRAGOONS = -1;
 static int JX_PETTY = -1, JX_INDENT = -1, JX_FREE = -1, JX_JESUIT = -1;
+static int JX_CONVERT = -1;
 static int FF_WASHINGTON = -1, FF_DRAKE = -1;
 static void rresolve(void) {
     if (g_res) return;
@@ -31,11 +32,11 @@ static void rresolve(void) {
         const char *n = dat_jobexpert[i];
         if (strcmp(n, "Veteran Soldiers") == 0 && JX_VET_SOLDIERS < 0) JX_VET_SOLDIERS = i;
         if (strcmp(n, "Veteran Dragoons") == 0 && JX_VET_DRAGOONS < 0) JX_VET_DRAGOONS = i;
-        if (strcmp(n, "Seasoned Scouts") == 0 && JX_SEASONED < 0) JX_SEASONED = i;
         if (strcmp(n, "Petty Criminals") == 0 && JX_PETTY < 0) JX_PETTY = i;
         if (strcmp(n, "Indentured Servants") == 0 && JX_INDENT < 0) JX_INDENT = i;
         if (strcmp(n, "Free Colonists") == 0 && JX_FREE < 0) JX_FREE = i;
         if (strcmp(n, "Jesuit Missionaries") == 0 && JX_JESUIT < 0) JX_JESUIT = i;
+        if (strcmp(n, "Indian Converts") == 0 && JX_CONVERT < 0) JX_CONVERT = i;
     }
     for (int i = 0; i < DAT_FATHERS_COUNT; i++) {
         if (strcmp(dat_fathers[i].name, "George Washington") == 0) FF_WASHINGTON = i;
@@ -295,12 +296,15 @@ static int apply_defeat(int loser, int winner) {
         else if (strcmp(t->name, "Cavalry") == 0) down = "Regulars";
         else if (strcmp(t->name, "Cont. Army") == 0) down = "Colonists";
         if (down) {
-            int was_vet = prof_is(loser, JX_VET_SOLDIERS) ||
-                          prof_is(loser, JX_VET_DRAGOONS);
+            /* Jesuit -> Missionaries: `cmp [bx+0x315B], 0x18` @0x05B60E */
             if (strcmp(down, "Colonists") == 0 && prof_is(loser, JX_JESUIT))
                 become_type(loser, "Missionaries");
             else become_type(loser, down);
-            if (was_vet) CS.units[loser].profession = DAT_JOBEXPERT_COUNT; /* none (28) */
+            /* The DEMOTE branch (@0x05B5AA-@0x05B68F, key @0x05B679) is a
+             * TYPE ladder only: func_05B2C2's sole write of +0x17 is the
+             * colonist-CAPTURE strip @0x05B577 (0x15 -> 0x1C, above).  The
+             * port used to clear a Veteran's profession here too -- never
+             * in the bytes (C4.26 unit side, 2026-09-02). */
             ev_emit("DEMOTE", 0, 0, dat_units[CS.units[loser].type].name, 0);
             return -1;
         }
@@ -309,45 +313,70 @@ static int apply_defeat(int loser, int winner) {
     return loser;
 }
 
-/* tryPromote (game.js:7185): §14.6 — only the player's own men. */
+/* func_0082B2 (0x181F:0xC9A), the engine's "is an expert" predicate:
+ * 0 ONLY for 0x1C (none), 0x13 Free Colonists, 0x19 Indentured Servants,
+ * 0x1A Petty Criminals, 0x1B Indian Converts (@0x0082B5-@0x0082D1); every
+ * other byte, INCLUDING 0 = Expert Farmers, is an expert (@0x0082D3). */
+static int is_expert_class(int p) {
+    return !(p == DAT_JOBEXPERT_COUNT || p == JX_FREE || p == JX_INDENT ||
+             p == JX_PETTY || p == JX_CONVERT);
+}
+
+/* func_05C69C @0x05C69C, the combat promoter, re-read 2026-09-02 (C4.26
+ * unit side).  Gates, in order: only TYPES 1 Soldiers / 4 Dragoons
+ * (@0x05C6A5-@0x05C6B3); a Veteran (0x15 @0x05C6BA) continues only under
+ * declared war ([0x5382] bit 0 @0x05C6C1) AND PowerRecord +0 bit 0x08
+ * (@0x05C6CB-@0x05C6D6 -- semantics unread, NOT modelled, FLAGGED); any
+ * other EXPERT (func_0082B2 != 0 @0x05C6E0-@0x05C6F2, so profession 0
+ * too) is skipped before the roll.  Then S = total + strength +/-
+ * difficulty (human +, AI -, @0x05C6F5-@0x05C729) - 10 for 0x1A / 5 for
+ * 0x19 (@0x05C738-@0x05C746), random_int(1, S) unless Washington (attr
+ * 0xB, @0x05C74A-@0x05C769), and the rung table func_05C65A (@0x05C65A-
+ * @0x05C696): default 0x15; 0x15 at war -> -1 (type step); 0x1A -> 0x19;
+ * 0x19 -> 0x1C (plain, NOT Free Colonists); 0x1B -> 0x1B, a no-op via
+ * `cmp ax, [bp-6]; jne` @0x05C78D.  The type step (@0x05C795-@0x05C7B5)
+ * is human-only, 1 -> 9 and 4 -> 7.  Keys @0x05C834 VETERAN / @0x05C868
+ * VALOR.  Removed from here: the port's "Scout hardens to Seasoned"
+ * branch -- the engine's WELLSEASONED site is the village-entry roll
+ * @0x04A9DD (`mov [bx+0x315B], 0x16`, key @0x04AA14), not combat;
+ * FLAGGED as not modelled on that path. */
 static void try_promote(int winner, int w_strength, int total) {
     rresolve();
     if ((CS.units[winner].owner_flags & 0x0F) != cs_nation() ||
         is_rival_side(winner)) return;
-    int penalty = prof_is(winner, JX_PETTY) ? 10
-                : prof_is(winner, JX_INDENT) ? 5 : 0;
+    const char *ty = dat_units[CS.units[winner].type].name;
+    if (CS.units[winner].type != 1 && CS.units[winner].type != 4) return;
+    int from = CS.units[winner].profession;   /* 28 = none; any other
+                                                 stray byte is an expert
+                                                 to func_0082B2 */
+    if (from == JX_VET_SOLDIERS) {
+        if (!(CR.woi_flags & WOI_DECLARED)) return;
+    } else if (is_expert_class(from)) {
+        return;
+    }
+    int penalty = from == JX_PETTY ? 10 : from == JX_INDENT ? 5 : 0;
     int S = total + cs_difficulty() - penalty;
     if (S < 1) S = 1;
     if (!ff(FF_WASHINGTON) && 1 + R(S) > w_strength) return;
-    const char *ty = dat_units[CS.units[winner].type].name;
-    if (strcmp(ty, "Scouts") == 0 && !prof_is(winner, JX_SEASONED)) {
-        CS.units[winner].profession = (uint8_t)JX_SEASONED;
-        ev_emit("WELLSEASONED", 0, 0, 0, 0);
-        return;
-    }
-    /* SAV_PROFESSION (game.js:10207): bytes outside 1..27 read as NO
-     * profession — the ladder's null rung. */
-    uint8_t from = CS.units[winner].profession;
-    int next = -1;
-    if (from == 0 || from >= DAT_JOBEXPERT_COUNT) next = JX_VET_SOLDIERS;
-    else if (prof_is(winner, JX_PETTY)) next = JX_INDENT;
-    else if (prof_is(winner, JX_INDENT)) next = JX_FREE;
-    else if (prof_is(winner, JX_FREE)) next = JX_VET_SOLDIERS;
-    if (next >= 0 && !prof_is(winner, JX_VET_SOLDIERS)) {
-        CS.units[winner].profession = (uint8_t)next;
-        ev_emit(next == JX_VET_SOLDIERS ? "VETERAN" : "VALOR", 0, 0, ty, 0);
-        return;
-    }
-    /* @CONTINENTAL: at the ceiling the TYPE advances, war only
-     * (game.js:7209 — Soldiers -> Cont. Army, Dragoons -> Cont. Cav.) */
-    if (CR.woi_flags & WOI_DECLARED) {
+    int next = JX_VET_SOLDIERS;                       /* func_05C65A */
+    if (from == JX_VET_SOLDIERS) next = -1;
+    else if (from == JX_PETTY) next = JX_INDENT;
+    else if (from == JX_INDENT) next = DAT_JOBEXPERT_COUNT;   /* 0x1C */
+    else if (from == JX_CONVERT) next = JX_CONVERT;
+    if (next == from) return;                         /* @0x05C78D */
+    if (next < 0) {
+        /* @CONTINENTAL: at the ceiling the TYPE advances (reached only at
+         * war): Soldiers -> Cont. Army, Dragoons -> Cont. Cav. */
         const char *to = strcmp(ty, "Soldiers") == 0 ? "Cont. Army"
                        : strcmp(ty, "Dragoons") == 0 ? "Cont. Cav." : 0;
         if (to) {
             become_type(winner, to);
             ev_emit("CONTINENTAL", 0, 0, ty, 0);
         }
+        return;
     }
+    CS.units[winner].profession = (uint8_t)next;
+    ev_emit(next == JX_VET_SOLDIERS ? "VETERAN" : "VALOR", 0, 0, ty, 0);
 }
 
 int resolve_attack(int att_ui, int def_ui) {

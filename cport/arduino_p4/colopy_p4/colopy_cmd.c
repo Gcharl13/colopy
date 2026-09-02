@@ -53,13 +53,19 @@ static int dsum_roll(int k, int n) {
     for (int i = 0; i < k; i++) t += d_roll(n);
     return t;
 }
-static int scout_level(int ui) {          /* scoutLevel (game.js:8726) */
-    int s = 0;
-    if (strcmp(dat_units[CS.units[ui].type].name, "Scouts") == 0) s++;
+/* scoutLevel -- func_061454 @0x0614A6-@0x0614E3 (C4.26 unit side,
+ * 2026-09-02): level = 1 iff the TYPE is Scouts (`cmp [bx+0x3146], 5`);
+ * the Seasoned test (`cmp [bx+0x315B], 0x16` @0x0614BB -- plain byte
+ * equality, no `>= 1` guard) runs ONLY inside that branch (@0x0614B7);
+ * de Soto (attribute 7, @0x0614C6) adds one ONLY when the level is
+ * already non-zero (`cmp [bp-0x34], 0; je` @0x0614D8).  The port added
+ * both unconditionally.  Both engines changed together. */
+static int scout_level(int ui) {
+    int s = strcmp(dat_units[CS.units[ui].type].name, "Scouts") == 0;
     uint8_t p = CS.units[ui].profession;
-    if (p < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none (C4.26 unit side) */ &&
+    if (s && p < DAT_JOBEXPERT_COUNT &&
         strcmp(dat_jobexpert[p], "Seasoned Scouts") == 0) s++;
-    if (father_owned(father_by_name("Hernando de Soto"))) s++;
+    if (s && father_owned(father_by_name("Hernando de Soto"))) s++;
     return s;
 }
 static int type_row(const char *name) {
