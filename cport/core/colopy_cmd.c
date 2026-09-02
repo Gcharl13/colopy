@@ -172,8 +172,14 @@ void cmd_skip(int ui) {
     CR.unit_moves_undef[ui] = 0;         /* a NUMBER was written */
 }
 
-/* setOrder (game.js:11181): orders n, moves spent. */
+/* setOrder (game.js:11181): orders n, moves spent.  Fortify is the one
+ * order with a sound: func_021FF2 (the Fortify command; ships jump
+ * straight there @0x22031) plays 0x58 @0x220F9 right before writing
+ * orders = 5 @0x022105 — the same pair the @UNITOPTIONS row 4 handler
+ * writes @0x2B26A/@0x2B273.  (Its adjacent-treaty-partner @HAVETREATY
+ * ask @0x220CE is not modelled.) */
 void cmd_set_order(int ui, int n) {
+    if (n == 5) snd_play(0x58);
     CS.units[ui].orders = (uint8_t)n;
     CS.units[ui].moves_remaining = 0;
     CR.unit_moves_undef[ui] = 0;
@@ -473,6 +479,10 @@ int cmd_found_colony(int ui, const char *name) {
         if (best >= 0) c->tiles[best] = (int8_t)slot;
     }
     unit_remove(ui);
+    /* sfx 0x54 for a human power's new colony — func_040C1E @0x040DF6,
+     * gated on [0x5394] < 4 and controller 0 (@0x40DE3..0x40DF4), fired
+     * on EVERY founding, before the once-only woodcut 2 @0x40E00 */
+    snd_play(0x54);
     /* the FIRST colony fires woodcut 2, BUILDING A COLONY
      * (buildColony game.js:2150; dismissal opens the colony, 12093) */
     if (!CR.built_colony) {
@@ -773,6 +783,12 @@ void cmd_move(int ui, int dx, int dy) {
                                     break;
                                 }
                             if (ci2 >= 0) colony_capture_record(ci2, pop);
+                            /* sfx 0x4B: a European attacker at a colony
+                             * tile with no defending unit, shown —
+                             * func_05CA7E @0x5D5B7..0x5D5C7 ([bp-0xd8]
+                             * = European + colony + no defender
+                             * @0x5D4C4..0x5D4D8) */
+                            snd_play(0x4B);
                             ev_emit((CR.woi_flags & WOI_DECLARED)
                                         ? "CAPTURED3" : "CAPTURED",
                                     loot, 0, dat_nations[me].adjective,
@@ -946,6 +962,14 @@ void cmd_move(int ui, int dx, int dy) {
                                        ? 0 : u->moves_remaining - cost);
     u->map_x = (uint8_t)nx;
     u->map_y = (uint8_t)ny;
+    /* sfx 0x52: a human Wagon Train arriving on a colony tile —
+     * func_03ECF0 @0x3F5C4..0x3F5E3 (type 0xC, owner nibble < 4,
+     * controller 0, after func_008D26(x,y) >= 0 @0x3F5AE).  The engine
+     * tests ANY colony; the port only lands here on its own (a foreign
+     * colony returns through the trade branch above). */
+    if (strcmp(dat_units[u->type].name, "Wagon Train") == 0 &&
+        colony_rec_at(nx, ny) >= 0)
+        snd_play(0x52);
     colopy_reveal(nx, ny, unit_sight_radius(ui));
     /* DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
      * land first enters a player ship's view (running-game observation,

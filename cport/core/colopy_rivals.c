@@ -1076,6 +1076,10 @@ static void king_tax_demand(void) {
         p->tax_rate = (uint8_t)(p->tax_rate - cut);
         int wc = CR.king_war_country >= 1 && CR.king_war_country <= 8
                      ? CR.king_war_country : 1;
+        /* func_034318 (tax change, [bp+8] = signed delta): a cut takes
+         * `push 2; lcall 0x181f:0x4b6` @0x34566 — class one-shot 2 —
+         * where a raise plays tune 0x3E (@0x34572) */
+        snd_emit(SND_CLASS_ONESHOT, 2);
         ev_emit("KINGVICTORY", cut, p->tax_rate, KING_COUNTRIES[wc - 1], 0);
         return;
     } else if (sev < 0x28A && CR.king_weddings < 30) {
@@ -1110,6 +1114,10 @@ static void king_tax_demand(void) {
         for (int g = 1; g < 16; g++)
             if (tot[g] > tot[good]) good = g;
     }
+    /* tune 0x3E before the demand — func_034318 @0x34572 (no boycott-able
+     * good: right before the section runs @0x34583) and @0x34649 (with
+     * one: right before the @TAXOPTIONS choice) */
+    snd_play(0x3E);
     ev_emit(key, raise, p->tax_rate + raise, s2 ? s2 : dat_cargo[good].name, 0);
     /* @TAXOPTIONS (game.js:8667): row 0 kisses the ring, row 1 holds the
      * Party — teaParty (8676): the good is dumped at the first colony
@@ -1329,6 +1337,22 @@ static void hof_write(void) {
 void end_game_sequence(void) {
     CR.retired = 1;
     hof_write();                     /* endGameSequence (game.js:8122) */
+    /* the score screen's tune — func_03A9C0: the rank [bp-0xc0] starts
+     * at -1 (@0x3A9C4) and the loop @0x3AA41..0x3AA68 sets it to n-1 for
+     * every n in 1..24 with n*n/3 < score (score = base*mult/100
+     * @0x3AA31..0x3AA3E, BEFORE the >>1 @0x3AA6A), clamped <= 0x17
+     * @0x3AA71; then @0x3AD51: rank >= 0x17 -> 0x24, > 6 -> 0x25, else
+     * 0x21 (@0x3AD58/@0x3AD65/@0x3AD6A, play @0x3AD6D) */
+    {
+        score_parts_t sp;
+        score_parts(&sp);
+        int score = sp.mult * sp.base / 100;
+        int rank = -1;
+        for (int n = 1; n <= 24; n++)
+            if (n * n / 3 < score) rank = n - 1;
+        if (rank > 0x17) rank = 0x17;
+        snd_play(rank >= 0x17 ? 0x24 : rank > 6 ? 0x25 : 0x21);
+    }
     ev_emit("EXPLOITS", 0, 0, 0, 0);
     (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
     CR.screen_map = 0;                   /* G.screen = 'report' */

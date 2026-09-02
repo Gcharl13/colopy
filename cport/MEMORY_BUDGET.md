@@ -20,7 +20,7 @@ These are static sizes of the C core, measured on the host build
 | `colopy_boot_render.o` | 22,464 | boot/title/menu scratch |
 | `colopy_colony_render.o` | 6,448 | colony scene bands |
 | `colopy_input.o` | 5,360 | dialog rows, pointer, menu state |
-| audio (`audio/*.o`) | 6,928 | 2 voice structs (2,600 each) + pak TOC |
+| audio (`audio/*.o`) | 9,508 | 3 voice structs (2,600 each: FM ch1-6 / FM ch7-9 / DSP, 2026-09-02) + pak TOC |
 | **total BSS, core+render+game+audio** | **219,304** | |
 | **total `.data`** | 3,372 | |
 | `colopy_data.o` | 11,264 text + 8,648 data | the sim's numeric tables (yields, cargo, units, buildings, jobs, map, tribes) — `const`, so flash |

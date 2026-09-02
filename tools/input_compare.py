@@ -43,7 +43,8 @@ EM_NAMES = {1: "recruit", 2: "purchase", 3: "train", 4: "ship", 5: "dockunit"}
 DG_NAMES = {1: "HOWMUCH5", 2: "HOWMUCH1", 3: "HOWMUCH2", 4: "other"}
 CATEGORIES = ("screens", "prompts", "popups", "euromenus", "dialogs")
 
-# What each scenario reaches TODAY (measured 2026-09-02), declared so a loss
+# What each scenario reaches TODAY (measured 2026-09-02; `options` +
+# PICKMUSIC added the same day by slice 9 -- the sound dialogs), declared so a loss
 # is a failure and not a silent narrowing.  Absences are as load-bearing as
 # presences: `shipopts` is missing from every scenario because no fixture
 # parks a ship in a colony at the point the script clicks the dock (the
@@ -59,24 +60,24 @@ EXPECT = {
                     "cards", "map"},
         "prompts": set(), "popups": set(), "euromenus": set(), "dialogs": set()},
     "sav1653": {
-        "screens": {"map", "colony", "europe", "report", "trade"},
+        "screens": {"map", "colony", "europe", "report", "trade", "options"},
         "prompts": {"BUYME1", "CARGOREADY1", "GIVECASH", "NEEDTOOLS",
-                    "NEEDTOOLS0", "REALLYBUY", "SUREDISBAND", "TRADETYPE",
-                    "WAREHOUSEFULL", "WHICHFREEDOM"},
+                    "NEEDTOOLS0", "PICKMUSIC", "REALLYBUY", "SUREDISBAND",
+                    "TRADETYPE", "WAREHOUSEFULL", "WHICHFREEDOM"},
         "popups": {"popup", "build", "occupation"},
         "euromenus": {"recruit", "purchase", "train", "dockunit"},
         "dialogs": set()},
     "savraleigh": {
-        "screens": {"map", "colony", "europe", "report", "trade"},
+        "screens": {"map", "colony", "europe", "report", "trade", "options"},
         "prompts": {"BUYME1", "CARGOREADY1", "KINGWAR", "KINGWIFE", "KISSUP",
-                    "LOBOTOMIZE", "REALLYBUY", "RECRUITCHOOSE", "SUREDISBAND",
-                    "TRADETYPE", "WHICHFREEDOM"},
+                    "LOBOTOMIZE", "PICKMUSIC", "REALLYBUY", "RECRUITCHOOSE",
+                    "SUREDISBAND", "TRADETYPE", "WHICHFREEDOM"},
         "popups": {"popup", "build"},
         "euromenus": {"recruit", "purchase", "train", "dockunit"},
         "dialogs": set()},
     "savnewcolony": {
-        "screens": {"map", "europe", "report", "trade"},
-        "prompts": {"REALLYBUY", "TRADETYPE"},
+        "screens": {"map", "europe", "report", "trade", "options"},
+        "prompts": {"PICKMUSIC", "REALLYBUY", "TRADETYPE"},
         "popups": set(),
         "euromenus": {"recruit", "purchase", "train", "dockunit"},
         "dialogs": set()},
@@ -498,6 +499,46 @@ def colony_clicks(C, K):
     C(136, 152)
     C(136, 152)
     K("Escape")                     # close, no change
+    # slice 9 (2026-09-02, audio F4/F3): the two sound dialogs of the GAME
+    # menu (MENU.TXT @GAME rows 2 and 3), so the cue projection `sx` pins
+    # Sound Options' switch word on leaving (the 'w' verb, [0x5386] bits
+    # @0x023301 + the stop @0x2333B) and Pick Music's [0x96] write + play
+    # (the 't' verb @0x23561/@0x23564).  The @PICKMUSIC prompt is answered
+    # by the shared (hits-1) % 2 policy: row 0 = Bird Song, then row 1 =
+    # Smoky Tune -- the sub-picker rows 13..15 are out of that policy's
+    # reach, so PICKINDEPENDENCE/PICKMILITARY/PICKINDIAN stay uncovered.
+    K("Escape")                     # -> map (a no-op if already there)
+    K("g", 1)                       # Alt+G opens GAME
+    K("ArrowDown")
+    K("ArrowDown")                  # -> Sound Options
+    K("Enter")                      # -> the options screen (which = sound)
+    K("Enter")                      # row 0 Background Music: off
+    K("ArrowDown")
+    K("Enter")                      # row 1 Event Music: off
+    K("ArrowDown")
+    K("Enter")                      # row 2 Sound Effects: off
+    K("Enter")                      # ... and on again
+    K("ArrowUp")
+    K("ArrowUp")
+    K("Enter")                      # row 0 Background Music: on again
+    K("Escape")                     # leave: word 0x0A -> stop (Event off)
+    K("g", 1)
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowDown")                  # -> Pick Music
+    K("Enter")                      # @PICKMUSIC ask -> row 0 -> tune 0x20
+    K("g", 1)
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowDown")
+    K("Enter")                      # again -> row 1 -> tune 0x21
+    K("g", 1)
+    K("ArrowDown")
+    K("ArrowDown")
+    K("Enter")                      # Sound Options once more
+    K("ArrowDown")
+    K("Enter")                      # Event Music back on -> word 0x0E
+    K("Escape")                     # leave: all on, no stop
 
 
 def main():

@@ -11170,3 +11170,122 @@ guards (`grep` of the nineteen DGROUP key pushes; `func_020EE0/020EFE`
 mirrors the JS's approximations, each named beside its byte site); T17's
 `%STRING1` source (`0x191f:0xac8`); T18's `[bp+0xC]` arg; T6's record
 +0x1A bit 0x40; the T12-bit consumer @0x03F6B2.
+
+## 2026-09-02h — audio track: the gate's polarity, the dead dispatcher ring, and where the scheduler's PRNG lives
+
+**Conflict 1 — fanfares and the Event Music switch.** `spec/ui/options_dialogs.md`
+§5, `cport/audio/colopy_audio.h` and `au_cmd` said the 0x8020+ fanfares carry
+bit 0x20 and are therefore gated on `[0xA0]`. The gate's compare is signed:
+`func_00518E @0x5197` is `83 F9 10 7D 03` (`cmp cx,0x10; jge`), so every id
+≥ 0x8000 is negative, takes the `bx=1` command branch @0x519C and reaches
+`lcall 0x1059:0xA` @0x51C8 ungated. **Ruling: fanfares (0x8020..0x8027)
+play with every switch off.** The header text, the spec (§9) and the engine
+are corrected; `smoke --audio` asserts it.
+
+**Conflict 2 — the "8-deep pending ring" (ledger F3).** The dispatcher
+@0x01299A does carry a lock byte `[0x26C5]`, an 8-slot ring `[0x26B4]` and a
+FIFO replay (@0x129C7..0x129EE). Its lock/unlock entries @0x129C1/@0x129C7
+have no caller of any shape (no `lcall 0x1059:0x31/0x37`, no far pointer, no
+near `E8` in the segment), and the only writers of `[0x26C5]` are those two
+instructions. **Ruling: the ring is unreachable; every play and command is
+synchronous.** The engine's depth-1 `pending` slot (an "observed
+serialisation" that had no byte behind it) is removed; the driver's own tune
+head stop-marks channels 1–6 before assigning sequences (ASOUND file 0x3724
+→ `call 0x1864`), so a new tune REPLACES the playing one, and `0:0xCE2` stops
+a digital sample in flight before starting the next (new kills old).
+
+**Conflict 3 — `au_cmd(1)` / `au_playing()`.** ASOUND command 1 @0x1AA0 is
+`call 0x1A64; call 0x1A8C` = stop-mark FM channels 1–6 AND 7–9; the digital
+ring is untouched (that is command 4 @0x188F, `lcall 0:0xD82`). Command 8
+@0x1AA7 ORs byte+0 of the nine FM records only. **Ruling: stop leaves a
+digital sample running; a digital sample never holds the pump; an
+FM-rendered SFX does.** The mixer gains a third voice (FM ch7–9) so the
+FM-only SFX ids no longer serialise on the music voice.
+
+**Decision — the scheduler PRNG.** `0x9EF:0x32` is `func_00C322 =
+random_int(lo,hi)` over MS C `rand` @0x103D4 on `[0x28EE]/[0x28F0]` — the
+one state every `0x181F:0x4D4` in the game uses — and `0x9EF:0x2C` @0xC31C
+re-seeds that state from the BIOS tick word (`srand(ticks & 0x7FFF)`,
+ignoring the pushed `[0x83A8]/[0x83A6]`) at @0x4F28 and @0x5040. So in the
+original, every background-music pick re-seeds the SIM's random stream from
+the wall clock. The port ports the generator (same LCG constants, same
+`>>15` scaling, same two seed points via `au_set_tick_source`) but on a
+**private state word**, deliberately NOT the shared `CS.rng`/`G.rngState`:
+(1) a wall-clock re-seed of the sim stream is an input no replay can
+reproduce and no oracle can compare — the C board would silently diverge from
+the JS reference while `sim_compare` (which never pumps) stayed green, the
+exact "green while covering less" shape Part G just closed; (2) the JS
+reference has no scheduler, so lockstep would require it to re-seed from a
+clock it does not read; (3) the statistical effect on the sim is nil (a
+re-seed replaces one uniformly distributed state with another), so nothing
+observable in play depends on the sharing. Recorded here so it is not
+re-litigated: the sharing is REAL in the EXE, and the port's isolation is a
+choice, not a reading.
+
+**`[0x828]`** is now exposed as `au_set_demo()`: writers @0x70D00 (command
+line `/D`, with autoplay `[0x826]`) and @0x4DA6 (idle-poll key codes
+0x12D/0x110, then driver reset + exit). Gloss "demo/auto-play" from its 22
+readers (ANCHOR); neither port sets it (no `/D` switch, no abort-key path).
+
+**Not decided**: the runtime value of ASOUND `[0x24D]` before any tune has
+run (digital samples are suppressed while it is not 0xFF — needs a DOSBox
+trace); which key codes 0x12D/0x110 are; the FM-fallback-on-busy path of
+the digital ring.
+
+## 2026-09-02i — audio track: the cue table re-cut from the 40 play sites
+
+All forty `lcall 0x181F:0x4C0` sites were read (`spec/ui/options_dialogs.md`
+§10). Rows of `cport/audio/colopy_audio_cues.c` (2026-08-17) that the bytes
+contradict, and what replaced them:
+
+1. **`CANCELPEACE → 0x58` withdrawn.** The cited site @0x220F9 is the
+   Fortify command `func_021FF2` (writes `orders = 5` @0x22105 after the
+   play; ships jump straight there @0x22031), not the treaty break: the
+   map-move resolver pushes `CANCELPEACE` @0x3F22F with no play site in
+   reach. **Ruling: 0x58 is the Fortify sound** — `cmd_set_order(5)` /
+   `setOrder(5)` and the `@UNITOPTIONS` row 4 (@0x2B26A/@0x2B273); the
+   `@SHIPOPTIONS` handler has no play site, so "Anchor in harbor" is silent.
+2. **`CHIEFHOWDY → 0x8024` withdrawn.** The site @0x48C41 is the establish-
+   mission path under the `MISSION0` push (@0x48B53's block). `MISSION0`
+   takes the row.
+3. **`BURNED/BURNED2/BURNED3 → 0x53` withdrawn.** Those keys are pushed
+   @0x5DAE6/@0x5DB0B/@0x5DB12 with no play site nearby; the 0x53 @0x5DFB7 is
+   the `INDIANBURNCOLONY` arm (human owner) and carries `push 0x32; lcall
+   0x181f:0x48e` @0x5DFBF with it — the row now queues tune 0x32 too, and
+   woodcut 11 no longer doubles it.
+4. **`INDIANBURNCOLONY2`, `INDIANWINCOLONY2 → 0x53` withdrawn**: both are the
+   rival-colony arms (@0x5DFEE/@0x5E026) on the far side of the human gate.
+5. **`INDIANWINCOLONY → 0x53` replaced by `0x45` + queue `0x32`.** The queue
+   is byte-adjacent (@0x5E013 before the push @0x5E01F). The 0x45 (@0x5D83A;
+   0x44 for a ship attacker, which natives lack) is the "native won versus a
+   colony" block @0x5D7B4..0x5D842 of the same function; that the block
+   precedes the `INDIANWINCOLONY` arm is the function's outcome structure,
+   not a traced jump chain — recorded as ANCHOR in the row.
+6. **`INTERVENTION → 0x3F + class request 3` corrected to `INTERVENE` with
+   class SET 3**: the key pushed @0x3D7BB is `INTERVENE`, and @0x3D790 is
+   `push 3; lcall 0x181f:0x498` (`func_0050F0`, the setter), not `0x4AC`.
+7. **Woodcut 2 → 0x54 moved to the founding.** `func_040C1E` plays 0x54
+   @0x40DF6 on every human founding, before the once-only plate @0x40E00; the
+   plate row would have silenced every colony after the first.
+8. **The colony-open 0x54 (@0x2C660) is NOT unconditional**: the second draw
+   pass that plays it runs only when `[0x34A] ≥ 0` (`jl` @0x2C640), and
+   `[0x34A]` is written @0x2D2F7 by the `BUILT` report helper when the
+   answer is 1 (zoom) and the building is not 0x10/0x1F — i.e. the sound is
+   the "new building" flourish on zooming to a colony from its BUILT card.
+   Neither port's BUILT notice has a zoom arm: TBD, not wired.
+9. **The undefended rival-colony capture takes 0x4B** (@0x5D5BE: European
+   attacker, colony on the tile, no defending unit, shown). The engine's
+   own European capture is not on that path (the 0x4B arm ends @0x5D5CC
+   without a capture; the `0x7E0 → 0x5e72d` path @0x5D5D0 is the NATIVE
+   arm, size ≤ 1), so where the engine plays 0x4A for a European capture is
+   untraced — the port's capture is itself a flagged stand-in.
+
+**Engine-side decisions**: sounds are queued by the core at the action's
+site (`snd_emit`, `colopy_next_sound`) and drained by the shell, so the
+audio module still never touches core state; the JS logs the same cues
+(`sfx()`) and both projections compare them as `sx` — cue-for-cue parity is
+now an oracle, not a hope (72 of 100 sav1653 turns carry cues). The "show"
+flag `[bp+0xc]` of the combat sounds is read as "a human power on either
+side" — the port has no rival-vs-rival battle the player watches. The
+default sound word is 0x0E (`mov [0x5386],0xE` @0x755EB), not the ports'
+former 0x07, and the P4 fallback gates on bit 0x08 (SFX), not 0x04 (Event).

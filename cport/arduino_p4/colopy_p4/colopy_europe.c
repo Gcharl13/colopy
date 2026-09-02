@@ -668,6 +668,12 @@ void euro_arm_dock(int k, int verb) {
     if (to < 0) return;
     if (ARM[verb].buy) {
         if (!market_buy(ARM[verb].good, ARM[verb].qty)) return;
+        /* the @ARMOPTIONS handler (fn @0x33C96, rows via the jump table
+         * @0x341AA): row 4 "Arm with Muskets" plays 0x58 @0x3405A before
+         * the re-type + purchase, row 8 "Equip with Horses" plays 0x5C
+         * @0x34129; the sell rows are silent */
+        if (ARM[verb].good == MUSKETS) snd_play(0x58);
+        else if (ARM[verb].good == HORSES) snd_play(0x5C);
     } else {
         market_sell(ARM[verb].good, ARM[verb].qty);
     }

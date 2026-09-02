@@ -19,6 +19,8 @@
  *   k <name>    inject one key by its JS name (bench path, no USB
  *               keyboard needed: "k Space", "k ArrowUp", "k F5", or a
  *               single character; "k !<c>" sends <c> with Alt held)
+ *   a <id>      play sound <id> through the gate — the Sound Test cheat's
+ *               engine path (func_0235D6 @0x23DA0; decimal id)
  *
  * With -DCOLOPY_USBHOST a USB keyboard on the Teensy 4.1 host port
  * feeds the same in_key layer directly (USBHost_t36).
@@ -102,6 +104,16 @@ static int audio_rd(void *ctx, uint32_t off, void *dst, uint32_t len) {
     if (!audio_f.seek(off)) return 0;
     return audio_f.read((uint8_t *)dst, len) == (int)len;
 }
+/* the BIOS tick word for the scheduler's two srand() points (@0x4F28/
+ * @0x5040): 18.2 Hz from millis(), masked like func_00C2F8 does */
+static uint16_t audio_ticks(void) {
+    return (uint16_t)((millis() * 182u / 10000u) & 0x7FFF);
+}
+/* the core's action cues (colopy_next_sound) -> the engine's verbs */
+static void audio_take_sounds(void) {
+    colopy_sound snd;
+    while (colopy_next_sound(&snd)) au_on_sound(snd.verb, snd.arg);
+}
 static void audio_init(void) {
     audio_f = SD.open("COLAUDIO.PAK", FILE_READ);
     if (!audio_f) { Serial.println("no COLAUDIO.PAK -- audio silent"); return; }
@@ -111,6 +123,7 @@ static void audio_init(void) {
         return;
     }
     au_seed(micros());
+    au_set_tick_source(audio_ticks);
     AudioMemory(8);                          /* MQS + source blocks */
     Serial.printf("audio up: COLAUDIO.PAK %lu bytes, MQS pins 10/12\n",
                   (unsigned long)audio_f.size());
@@ -121,8 +134,16 @@ static void audio_tick(void) {
      * PowerRecord that no version of the records carries; the WoI
      * flag lives in CR.woi_flags (colopy_sim.h). */
     au_set_war((CR.woi_flags & WOI_DECLARED) != 0);
+    /* [0xA2]/[0xA0]/[0xA4] re-expanded from the [0x5386] bits, as the
+     * loader does @0x074249 */
+    au_load_switches((uint8_t)(CR.sound_options & 0x0E));
     au_pump();
     audio_ring_fill();
+}
+#else
+static void audio_take_sounds(void) {    /* keep the ring drained */
+    colopy_sound snd;
+    while (colopy_next_sound(&snd)) {}
 }
 #endif
 
@@ -286,7 +307,10 @@ static int game_mode = 0;
  * edge the chain no longer takes, so the board never played it.) */
 #ifdef COLOPY_AUDIO
 static void audio_screen_edges(void) {
-    static int last_screen = SCR_TITLE, last_wc = -1;
+    static int last_screen = -1, last_wc = -1;
+    /* the title composer's raw tune 0x33 @0x75C2A */
+    if (last_screen != SCR_TITLE && UI.screen == SCR_TITLE)
+        au_on_title();
     if (last_screen != SCR_KING && UI.screen == SCR_KING)
         au_queue_tune(0x3E);
     if (last_screen != SCR_CARDS && UI.screen == SCR_CARDS)
@@ -417,6 +441,7 @@ static void draw_screen(void) {
 #ifdef COLOPY_AUDIO
     audio_screen_edges();
 #endif
+    audio_take_sounds();                 /* the core's action cues */
     if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
 #ifdef COLOPY_AUDIO
@@ -569,6 +594,7 @@ static int board_ask(void) {
     colopy_event q[8];
     int n = 0;
     colopy_event e2;
+    audio_take_sounds();                 /* cues fired before the ask */
     while (colopy_next_event(&e2)) {
 #ifdef COLOPY_AUDIO
         au_on_event(e2.key, e2.p[0]);
@@ -851,6 +877,15 @@ void loop() {
             break;
         case 'k': cmd_key(arg); break;
 #endif
+        case 'a':                    /* the Sound Test's engine path: cheat
+                                      * @CUP -> DEBUG @SOUND -> [0x9CC8] ->
+                                      * the gate (func_0235D6 @0x23DA0) */
+#ifdef COLOPY_AUDIO
+            au_cmd((uint16_t)atoi(arg));
+#else
+            Serial.println("no audio in this build (COLOPY_AUDIO)");
+#endif
+            break;
         case 't': {
             if (!sav_loaded) { Serial.println("load a save first (l <file>)"); break; }
             int n = atoi(arg);

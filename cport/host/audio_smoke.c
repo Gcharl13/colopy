@@ -29,7 +29,10 @@ static uint8_t pak[96 * 1024];
 static uint32_t pak_build(const uint16_t *ids, int n) {
     /* tunes/fanfares (bit 0x20): 1 silent IMA block; the first tune id
      * (0x20) instead carries the Python fixture blob so the render path
-     * exercises real coefficients. SFX (bit 0x40): 64 bytes of PCM8. */
+     * exercises real coefficients. SFX (bit 0x40): 64 bytes of PCM8 —
+     * except 0x47, shipped as an IMA render like the real pack's FM-only
+     * ids (coldig_index.json sfx_ids_not_samples), so the FM voice is
+     * exercised too. */
     static uint8_t pcm[64];  /* first sample nonzero so "did it play" reads */
     for (int i = 0; i < 64; i++) pcm[i] = (uint8_t)(136 + ((i & 7) << 3));
     uint32_t off = CAUD_HDRLEN + (uint32_t)n * CAUD_TOCENT;
@@ -40,7 +43,7 @@ static uint32_t pak_build(const uint16_t *ids, int n) {
     pak[10] = pak[11] = 0;
     for (int i = 0; i < n; i++) {
         const uint8_t *pl; uint32_t len; uint8_t codec; uint16_t rate;
-        if (ids[i] & 0x20) {
+        if ((ids[i] & 0x20) || ids[i] == 0x47) {
             if (ids[i] == 0x20) { pl = AUFIX_BLOB; len = AUFIX_BLOB_LEN; }
             else { pl = silent_block; len = sizeof silent_block; }
             codec = CAUD_CODEC_IMA4; rate = 22050;
@@ -79,7 +82,7 @@ static void reset_all(uint8_t switches) {
 static const uint16_t ALL_IDS[] = {
     0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B,
     0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x35, 0x36, 0x38, 0x39,
-    0x3A, 0x3B, 0x3E, 0x3F, 0x40, 0x42, 0x54, 0x8024,
+    0x3A, 0x3B, 0x3E, 0x3F, 0x40, 0x42, 0x47, 0x54, 0x8024, 0x8025,
 };
 #define N_IDS ((int)(sizeof ALL_IDS / sizeof ALL_IDS[0]))
 
@@ -93,6 +96,8 @@ static const uint16_t FOLK[12] = {0x20, 0x21, 0x22, 0x23, 0x3A, 0x3B, 0x38,
                                   0x24, 0x25, 0x26, 0x27, 0x39};
 static const uint16_t INDEP[6] = {0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D};
 static const uint16_t MILIT[4] = {0x2E, 0x2F, 0x30, 0x31};
+
+static uint16_t tick_fixed(void) { return 0x1234; }
 
 static uint16_t pump_once(void) {   /* pump, note the pick, silence it */
     au_pump();
@@ -131,9 +136,22 @@ int audio_smoke_main(void) {
         au_render(b, 8);
         CHECK(b[0] == 0, "sfx must gate on SFX switch");
     }
+    au_cmd(0x8024);                  /* all three OFF: the signed compare
+                                      * @0x5197 sends 0x8000+ straight to
+                                      * the driver */
+    CHECK(au_playing(), "fanfare 0x8024 must pass with every switch off");
+    au_cmd(1);
+    au_cmd(0x8025);
+    CHECK(au_playing(), "fanfare 0x8025 must pass with every switch off");
+    au_cmd(1);
+    au_cmd(0x1F);                    /* neither bit: the gate's dx=di=0 fall-through */
+    CHECK(!au_playing(), "0x10..0x1F never play");
     reset_all(0x04);                 /* Event only */
-    au_cmd(0x8024);
-    CHECK(au_playing(), "fanfare (bit 0x20) passes on Event Music");
+    au_cmd(0x20);
+    CHECK(au_playing(), "tune passes on Event Music");
+    au_cmd(1);
+    au_cmd(0x47);
+    CHECK(!au_playing(), "FM sfx must gate on the SFX switch, not Event");
     reset_all(0x08);                 /* SFX only */
     au_cmd(0x42);
     {
@@ -141,11 +159,14 @@ int audio_smoke_main(void) {
         au_render(b, 4);
         CHECK(b[0] != 0, "sfx plays with SFX switch on");
     }
-    au_cmd(1);
+    au_cmd(1);                       /* stop-marks FM channels only */
     {
         int16_t b[4];
         au_render(b, 4);
-        CHECK(b[0] == 0, "cmd 1 stops the sfx voice");
+        CHECK(b[0] != 0, "cmd 1 must leave the digital sample running");
+        au_cmd(4);                   /* @0x188F: DSP stop + ring clear */
+        au_render(b, 4);
+        CHECK(b[0] == 0, "cmd 4 stops the sfx voice");
     }
 
     /* ---- switch encoding (bits @0x023301) + stop-on-any-off ---- */
@@ -165,23 +186,120 @@ int audio_smoke_main(void) {
     CHECK(au_current_tune() == 0x2C, "forced-next wins the pump");
     drain();
 
-    /* ---- pending queue (observed driver serialization) ---- */
+    /* ---- a new tune REPLACES the playing one (ASOUND tune head stop-marks
+     * ch1-6 first, file 0x3724; no driver-side queue) ---- */
     reset_all(0x0E);
-    au_cmd(0x21);
+    au_cmd(0x20);                    /* the long fixture blob */
     CHECK(au_playing(), "tune started");
-    au_cmd(0x22);                    /* second play while sounding: queued */
-    CHECK(au_playing(), "still sounding");
+    au_cmd(0x21);                    /* one silent block: replaces, not queued */
     {
         int16_t b[512];
-        int saw22 = 0;
-        for (int i = 0; i < 64 && au_playing(); i++) {
-            au_render(b, 512);
-        }
-        /* 0x21 is one silent block (1024 samples) -> 0x22 must have
-         * auto-started from the pending slot before draining fully */
-        (void)saw22;
+        int n = 0;
+        while (au_playing() && n < 64) { au_render(b, 512); n++; }
+        /* 0x21 is 1024 samples = 2 renders; the 0x20 blob is far longer */
+        CHECK(n <= 3, "second play must REPLACE (rendered %d x 512)", n);
     }
-    CHECK(!au_playing(), "pending chain drained");
+
+    /* ---- driver commands (ASOUND handlers): which voices each touches ---- */
+    reset_all(0x0E);
+    au_cmd(0x20);                    /* music voice */
+    au_cmd(0x47);                    /* FM sfx voice (IMA render) */
+    au_cmd(0x42);                    /* digital voice (PCM8) */
+    CHECK(au_playing(), "music + fm sounding");
+    au_cmd(1);                       /* cmd 1 @0x1AA0 = cmd 3 + cmd 5 */
+    CHECK(!au_playing(), "cmd 1 stop-marks all 9 FM channels");
+    {
+        int16_t b[4];
+        au_render(b, 4);
+        CHECK(b[0] != 0, "cmd 1 leaves the digital ring alone");
+    }
+    au_cmd(0);                       /* cmd 0 @0x150F: full reset */
+    {
+        int16_t b[4];
+        au_render(b, 4);
+        CHECK(b[0] == 0, "cmd 0 silences the digital voice too");
+    }
+    au_cmd(0x20);
+    au_cmd(0x47);
+    au_cmd(5);                       /* @0x1A8C: ch7-9 only */
+    CHECK(au_playing(), "cmd 5 leaves music playing");
+    au_cmd(3);                       /* @0x1A64: ch1-6 only */
+    CHECK(!au_playing(), "cmd 3 stops music");
+    au_cmd(0x47);
+    au_cmd(0x42);
+    au_cmd(4);                       /* @0x188F: ch7-9 + DSP stop */
+    CHECK(!au_playing(), "cmd 4 stops the FM sfx");
+    {
+        int16_t b[4];
+        au_render(b, 4);
+        CHECK(b[0] == 0, "cmd 4 stops the digital sample");
+    }
+    au_cmd(0x42);
+    au_cmd(6);                       /* mute */
+    {
+        int16_t b[4];
+        au_render(b, 4);
+        CHECK(b[0] == 0, "cmd 6 mutes the output");
+        au_cmd(7);
+        au_render(b, 4);
+        CHECK(b[0] != 0, "cmd 7 restores it");
+    }
+    au_cmd(0);
+
+    /* ---- cmd 8: a digital sample must NOT hold the pump; an FM sfx does ---- */
+    reset_all(0x0E);
+    au_cmd(0x42);
+    CHECK(!au_playing(), "digital sample does not report as playing (@0x1AA7)");
+    au_pump();
+    CHECK(au_playing() && (au_current_tune() & 0x20),
+          "pump ran over a digital sample");
+    drain();
+    au_cmd(0x47);
+    CHECK(au_playing(), "FM sfx holds the pump (ch7-9 records)");
+    {
+        uint16_t before = au_current_tune();
+        au_pump();
+        CHECK(au_current_tune() == before, "pump waits for the FM sfx");
+    }
+    drain();
+
+    /* ---- the raw title tune bypasses every switch (@0x75C2A) ---- */
+    reset_all(0x00);
+    au_on_title();
+    CHECK(au_playing(), "title tune 0x33 plays with everything off");
+    drain();
+
+    /* ---- [0x828] demo: window (1,24) — indices 13..24 reachable at peace
+     * without the 1-in-9 crossover ---- */
+    {
+        reset_all(0x0E);
+        au_set_demo(1);
+        int seen_hi = 0;
+        for (int i = 0; i < 400; i++) {
+            uint16_t id = pump_once();
+            if (!in_set(id, FOLK, 12)) seen_hi++;
+            CHECK(in_set(id, FOLK, 12) || in_set(id, INDEP, 6) ||
+                  in_set(id, MILIT, 4) || id == 0x33 || id == 0x32,
+                  "demo pick 0x%X outside indices 1..24", id);
+        }
+        /* 12 of 24 indices are non-folk: expect ~200 of 400, 4 sigma = 40 */
+        CHECK(seen_hi > 150 && seen_hi < 250, "demo window ratio off: %d/400",
+              seen_hi);
+        au_set_demo(0);
+    }
+
+    /* ---- the tick re-seed: same ticks -> same pick; the two seed points
+     * (@0x4F28 before the window roll, @0x5040 after the pick) ---- */
+    {
+        reset_all(0x0E);
+        au_set_tick_source(tick_fixed);
+        uint16_t a = pump_once();
+        au_set_current(0);
+        uint16_t b2 = pump_once();
+        CHECK(a == b2, "fixed tick source must reproduce the pick (0x%X vs 0x%X)",
+              a, b2);
+        au_set_tick_source(0);
+    }
 
     /* ---- class windows (jump table @0x5008) ---- */
     struct { uint8_t cls; const uint16_t *set; int n; } CL[] = {

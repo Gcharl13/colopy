@@ -463,15 +463,72 @@ including `0x4D`/`0x4E`/`0x4F`/`0x5B` which F2 showed are real bank samples. The
 byte-decoded index lists exactly five ids as not-samples and `0x46` captures
 silent, so **4** is right. Regenerated.
 
-**F3. Then that branch's own open list:** the human A/B listen pass (needs
-speakers); tune `0x34` hit the 240 s capture cap and likely loops; SFX preemption
-modelled not decoded; pending queue depth 1 vs the original's 8-deep ring;
-`au_cmd(1)` stop semantics approximated; driver commands other than 1/8 unported;
-`[0x828]` rotation override unexposed; scheduler PRNG a stand-in; cue rows tagged
-`[inferred]`; **European first-contact fanfare not wired**; **all combat SFX ids
-TBD**; the Sound Test and Pick-Music/Sound-Options screens not in cport's input
-layer; play far-call thunk identity untraced; PC-speaker and MT-32 variants not
-reproduced; 25.9 MB is SD-only on both boards.
+**F3. Then that branch's own open list** (re-cut into sub-items 2026-09-02; the
+decode is `spec/ui/options_dialogs.md` §9 and RULINGS 2026-09-02h):
+
+- the human A/B listen pass (needs speakers) — **OPEN, see F3a**;
+- tune `0x34` hit the 240 s capture cap and likely loops — **OPEN** (a capture
+  property; only the listen pass or a longer capture settles it);
+- ~~SFX preemption modelled not decoded~~ **DECODED 2026-09-02**: ASOUND's
+  digital entry `0:0xCE2` (file 0xEE2) stops a busy DSP (`call 0x684; call
+  0x96E` @0xF12) before copying the next 8-byte index entry into the 32-slot
+  ring — new kills old, the model the mixer already had; the SFX wrapper
+  @0x1DF6 pops the handler's return on success so the FM effect is skipped;
+- ~~pending queue depth 1 vs the original's 8-deep ring~~ **CLOSED
+  2026-09-02**: the ring @0x129A5..0x129EE is real code with **no reachable
+  lock** (`[0x26C5]` writers only @0x129C1/@0x129C7, no caller of either), so
+  the original never queues; the driver's tune head stop-marks ch1–6 first
+  (file 0x3724), so a new tune REPLACES. cport's `pending` slot is removed;
+  `smoke --audio` asserts replace-not-queue;
+- ~~`au_cmd(1)` stop semantics approximated~~ **DECODED**: cmd 1 @0x1AA0 =
+  `call 0x1A64; call 0x1A8C` — stop-mark all nine FM channel records, the
+  digital ring untouched; cmd 8 @0x1AA7 ORs the FM records only, so a digital
+  sample never holds the pump (both asserted in `smoke --audio`);
+- ~~driver commands other than 1/8 unported~~ **PORTED**: 0 reset @0x150F, 2/3
+  stop music (@0x1866/@0x1A64), 4 FM-sfx + DSP stop (@0x188F), 5 FM-sfx stop
+  (@0x1A8C), 6/7 mute/unmute (@0x18AB/@0x1934, modelled as an output gate);
+  VICEROY itself sends only 0/1/8 (sites in spec §9). The mixer is now three
+  voices after the driver's channel split (ch1–6 / ch7–9 / DSP), +2.6 KB BSS
+  (`cport/MEMORY_BUDGET.md`);
+- ~~`[0x828]` rotation override unexposed~~ **EXPOSED** as `au_set_demo()`;
+  writers @0x70D00 (`/D` switch) and @0x4DA6 (idle-poll key codes 0x12D/0x110)
+  byte-read; neither port has a caller yet (no `/D`, no abort keys);
+- ~~scheduler PRNG a stand-in~~ **REPLACED** by the engine's: `0x9EF:0x32` =
+  `func_00C322 = random_int` over MS C `rand` @0x103D4, and `0x9EF:0x2C`
+  @0xC31C = `srand(BIOS ticks & 0x7FFF)` at @0x4F28 and @0x5040 (the pushed
+  tick words are ignored). Same generator, same scaling, both seed points
+  (`au_set_tick_source`); on a **private state by ruling** — the original
+  re-seeds the SIM's shared `[0x28EE]` from the clock, which the port does not
+  reproduce (RULINGS 2026-09-02h gives the three reasons);
+- ~~play far-call thunk identity untraced~~ **TRACED**: `0x2D8:0xE` = file
+  `0x518E` = the gate `func_00518E` itself; `0x1059:0xA` = the resident
+  dispatcher @0x01299A. And the gate's compare is **signed** (`7D` @0x5197):
+  fanfares ≥ 0x8000 bypass both switches — the engine and its header were
+  wrong the other way (corrected, asserted);
+- ~~cue rows tagged `[inferred]`; **European first-contact fanfare not
+  wired**; **all combat SFX ids TBD**~~ — **CLOSED with F4** (the C
+  `check_contact` stub is the one remaining gap for the fanfare);
+- ~~the Sound Test and Pick-Music/Sound-Options screens not in cport's input
+  layer~~ **RE-READ 2026-09-02**: Pick Music (`pick_music`, `func_023344`)
+  and Sound Options (`SCR_OPTIONS` which = 2, `func_0232AE`) were already
+  in cport's input layer and on both board composers; what was missing was
+  their SOUND — now `SND_PICK` ([0x96] @0x23561 + the gated play @0x23564)
+  and `SND_SWITCHES` on leaving the dialog (the [0x5386] mirror
+  @0x23301..0x23322, stop @0x2333B when any switch is off), and the shells
+  re-expand the switches each tick as the loader does @0x074249. Both
+  dialogs are now in the input oracle: `tools/input_compare.py` slice 9
+  drives GAME → Sound Options (toggles, leave) and GAME → Pick Music twice
+  (the shared ask policy picks rows 0 and 1), the census declares `options`
+  + `PICKMUSIC` for all three saves, and the `sx` field pins `w0A`/`w0E` and
+  `t20`/`t21` between the engines — which found and fixed a JS crash in
+  `pickMusic` (`G.dialog.sel` written after a synchronously answered ask).
+  The **Sound Test** (cheat `@CUP` → cmd 0x69 → DEBUG `@SOUND` → the gate,
+  spec §11) is in neither port: no cheat menu, no DEBUG.TXT in the data
+  bundles. Its engine path is exposed on both boards' bench console as
+  `a <id>` (P4/Teensy serial) — the dialog itself stays **TBD** until the
+  cheat menu is ported;
+- PC-speaker and MT-32 variants not reproduced; 25.9 MB is SD-only on both
+  boards — **OPEN** (out of scope, unchanged).
 
 **F3a. Music is now DATA-complete but EAR-unverified.** `verify_pack.py` proves
 each render survived IMA encoding (SNR per entry) and each slice is bit-identical
@@ -480,10 +537,40 @@ scheduler's rotation matches, or that `0x34`'s loop point is right. The human A/
 listen pass in F3 is the gate for all of that and remains open. Nothing in this
 repo can close it.
 
-**F4. On the fallback COLDIG cue path** (used when no `COLAUDIO.PAK` is on the card): 24 of the 40 `lcall 0x181F:0x4C0` play sites
+**F4.** ~~On the fallback COLDIG cue path (used when no `COLAUDIO.PAK` is on the card): 24 of the 40 `lcall 0x181F:0x4C0` play sites
 stay silent because their event is TBD (four compute the id at runtime); only 12
-cues are wired. `sfx_play()` blocks for the sample's length — one voice, no
-mixing.
+cues are wired.~~ **CLOSED 2026-09-02 — all 40 sites read, 36 wired on both
+paths** (`spec/ui/options_dialogs.md` §10 is the inventory; RULINGS
+2026-09-02i the corrections). The core now queues a cue at the ACTION that
+fires it (`snd_emit` → `colopy_next_sound`, `cport/core/colopy_events.c`) and
+the JS logs the same cues (`sfx()`), so the sim and input oracles compare them
+cue for cue (`sx`; 72 of 100 sav1653 turns carry cues, 0 disagreements). Wired
+this way: Fortify 0x58 (`func_021FF2` @0x220F9, `@UNITOPTIONS` row 4 @0x2B273),
+arming 0x58/0x5C and blessing 0x8024 (`@ARMOPTIONS` handler @0x3405A/@0x34129/
+@0x34185), founding 0x54 (@0x40DF6, every colony), the Wagon Train's 0x52
+(@0x3F5E0), the king's 0x3E / class one-shot 2 (@0x34572/@0x34649/@0x34566),
+the score tune 0x24/0x25/0x21 (@0x3AD51..0x3AD6D with the rank loop
+@0x3AA41), Pick Music (@0x23561/@0x23564), Sound Options' stop (@0x2333B), the
+church fanfare (@0x28CE1..0x28CF8, gloss TBD), and **the combat set** — attack
+sound 0x42/0x4C/0x40/0x41 (@0x5D2A4..0x5D317), win 0x43/0x49/0x40 (@0x5D4EB..
+0x5D50F), ship-vs-ship 0x4D (@0x5B775), village hit 0x48 / razed 0x4A
+(@0x5D683/@0x5D6BC), undefended capture 0x4B (@0x5D5BE). By message key (both
+the pack table and the P4 `EVENT_SFX`): `SHIPSUNK` 0x57, `TRAINPROFESSION`/
+`TRAINFAIL` 0x8025, `MISSION0`/`HERESY0` 0x8024, `HERESY1` 0x53, `CHIEFKILL`
+0x55, `REFIT` 0x54, `TEAPARTY` 0x56, `INTERVENE` 0x3F + class set 3, the five
+raid rows (the `RAIDSHIP` pair in order), `INDIANBURNCOLONY` 0x53 + tune 0x32,
+`INDIANWINCOLONY` 0x45 + tune 0x32. **The European first-contact fanfare
+`0x8020 + power`** (@0x58040..0x58097) fires in the JS `checkContact`; the C
+`check_contact` is still a stub (B-track), so the C emits none — no scripted
+scenario meets a rival, which is why the oracle does not see the gap.
+**Still TBD, with the blocker named:** #6 colony-open 0x54 (gated on `[0x34A]`,
+which only the BUILT report's zoom arm sets @0x2D2F7 — neither port has that
+arm); #32 the native-attacker sound `0x3B + type` (no native unit attacks
+through either port's resolver); #3 the Sound Test (needs the `@CUP` cheat
+menu and DEBUG.TXT in the bundles — the engine entry is `au_cmd(n)`, §11);
+the cooldown re-parley of #23; #4's meaning. The fallback `sfx_play()` still
+blocks for the sample's length — one voice — and its gate now reads the SFX
+bit (0x08, per the mirror @0x023301), not the Event Music bit it read before.
 
 ---
 

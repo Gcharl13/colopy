@@ -39,12 +39,12 @@ slice, sha256-checked against the committed slice table.
 | Command-id space (<0x10 driver cmds; 0x20–0x3F tunes; 0x40–0x5F SFX; 0x8020+ fanfares), gates, switches | **byte-verified** (`spec/ui/options_dialogs.md` §5) |
 | Tune-id ↔ name table | **byte-verified** (§24.1 tech ref) |
 | Background scheduler algorithm (`func_004EE6`) | **byte-verified** (spec §4; remaining tail pinned in Phase A) |
-| Event → cue map | **byte-verified** (§24.4 tech ref) — the cport wiring notes per-row confidence |
+| Event → cue map | **byte-verified** — all 40 `lcall 0x181F:0x4C0` sites (spec/ui/options_dialogs.md §10); action cues queued by the core, key cues by table |
 | Tune audio (renders), tune lengths, loop behaviour | **empirical capture** |
 | SFX id → COLDIG.BIN (offset,len) map | **byte-verified** (`data_extracted/coldig_index.json` — the drivers' own sample table; `sfx_id_to_index` + `rate_rule` at ASOUND `0x00F19`). Superseded the empirical `data/coldig_slices.json` on 2026-08-17. |
 | SFX payload bytes | **bit-clean** (verbatim COLDIG.BIN slices) |
 | Fanfare banks (0x8020+power, 0x8024) | **TBD** until captured |
-| Driver-internal behaviours (SFX preemption, stop nuances) | **modelled** (approximation) |
+| Driver-internal behaviours (SFX preemption, stop, commands 0–8, no queue) | **byte-verified** from ASOUND.COL (spec/ui/options_dialogs.md §9, 2026-09-02); channel-record field meanings still glossed |
 | PC-speaker / MT-32 driver variants; OPENING/CLOSING cinematic audio | **out of scope** |
 
 ## Pipeline (tools/audio/)
@@ -106,8 +106,10 @@ absent from `colopy_digest()` — the fidelity oracles cannot move. Public API i
 
 Backends own the DAC: host = deterministic WAV writer (tests) + optional
 listen; ESP32-P4 = I2S DMA (gated on hardware verification); Teensy 4.1 = MQS.
-Mixer: 2 voices (music stream + one SFX one-shot; a new SFX preempts the
-playing SFX — modelled, see Approximations).
+Mixer: 3 voices after the driver's channel split — FM ch1–6 (tunes,
+fanfares), FM ch7–9 (the SFX ids the driver renders on the OPL), the DSP
+sample ring — each new-replaces-old, which is what the driver's handlers do
+(spec §9).
 
 ## Size budget (measured, 2026-08-17 pack)
 
@@ -147,11 +149,18 @@ driver (DOSBox 0.74, sb16 at 220/7/1) and recorded:
 - Tune/fanfare/FM-sfx renders: empirical captures of the real driver under
   DOSBox's OPL emulation — authentic hardware family, not byte-derived
   sequences. Lengths/loop behaviour capture-derived (0x34 capped).
-- SFX preemption, stop semantics inside the driver, pending-queue depth 1:
-  modelled.
-- Scheduler PRNG: wall-clock-seeded xorshift standing in for the RTL rand.
-- Cue rows tagged `[inferred]`; European first-contact fanfare
-  (0x8020+power) and combat SFX ids: not wired (no byte-cited row).
+- SFX preemption (new kills old), stop semantics (cmd 1 = FM channels
+  1–9, digital untouched), commands 0–8: **decoded** from ASOUND.COL
+  2026-09-02; the "pending queue" is gone with the dead dispatcher ring.
+  Still modelled: the `[0x24D]` digital-suppression state and the ring's
+  FM fallback when full; commands 2/6/7 as stop/mute rather than OPL
+  register writes.
+- Scheduler PRNG: the RTL MS-C `rand` with both tick re-seeds — on a
+  PRIVATE state by decision (RULINGS 2026-09-02h), not the sim's shared
+  LCG the original actually re-seeds.
+- Cue rows: all 40 play sites read and wired where a port site exists
+  (spec/ui/options_dialogs.md §10, 2026-09-02); the C `check_contact` stub
+  keeps the C board from firing the first-contact fanfare the JS fires.
 - PC-speaker and MT-32 driver variants: not reproduced.
 - OPENING.EXE / CLOSING.EXE cinematic audio: out of scope.
 

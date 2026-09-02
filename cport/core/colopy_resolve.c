@@ -350,6 +350,40 @@ static void try_promote(int winner, int w_strength, int total) {
     }
 }
 
+/* ---- the land decider's sounds (func_05CA7E, all gated on the show flag
+ * [bp+0xc] @0x5D1D8 — in the port, a human power on either side) --------
+ * Attack sound @0x5D2A4..0x5D317: attacker a ship ([bp-0x84], types
+ * 0xD..0x12) or either side Artillery (type 0xB) -> 0x42; attacker type
+ * in {4,5,8,7} (Dragoons, Scouts, Cavalry, Cont. Cav.) -> 0x4C; else both
+ * ATTACK columns ([type*14+0x5236] = @UNIT col 3, the C `attack`) <= 1 ->
+ * 0x40, otherwise 0x41. */
+static int type_is_ship(int t) {
+    return t >= 0 && t < DAT_UNITS_COUNT && dat_units[t].hull > 0;
+}
+int combat_attack_sound(int att_type, int def_type) {
+    if (type_is_ship(att_type) || att_type == 0xB || def_type == 0xB)
+        return 0x42;
+    if (att_type == 4 || att_type == 5 || att_type == 8 || att_type == 7)
+        return 0x4C;
+    int aa = att_type < DAT_UNITS_COUNT ? dat_units[att_type].attack : 0;
+    int da = def_type < DAT_UNITS_COUNT ? dat_units[def_type].attack : 0;
+    return (aa <= 1 && da <= 1) ? 0x40 : 0x41;
+}
+static int unit_is_human(int ui) {
+    return (CS.units[ui].owner_flags & 0x0F) == cs_nation();
+}
+/* func_005FD4 (0x181F:0x6BE @0x5CBC3 -> [bp-0xd4]): a settlement on the
+ * defender's tile — any colony, or a native village */
+static int settlement_at(int x, int y) {
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if (CS.colonies[ci].map_x == x && CS.colonies[ci].map_y == y)
+            return 1;
+    for (int vi = 0; vi < CS.n_villages; vi++)
+        if (CS.villages[vi].map_x == x && CS.villages[vi].map_y == y)
+            return 1;
+    return 0;
+}
+
 int resolve_attack(int att_ui, int def_ui) {
     combat_params pa, pd;
     analysis_params(att_ui, 0, &pa);
@@ -359,6 +393,15 @@ int resolve_attack(int att_ui, int def_ui) {
 
     int roll = 1 + R(A + D);
     int win = roll <= A;
+    /* the sounds: attack @0x5D317 (after the roll @0x5D188, before the
+     * consequences), then the attacker-won sound @0x5D50F when a defender
+     * existed ([bp-0x6e]==0): ship or Artillery attacker -> 0x43, a
+     * settlement on the tile ([bp-0xd4] >= 0) -> 0x49, else 0x40.  The
+     * native-attacker variant (0x3B + type @0x5D205) has no port site:
+     * no native unit attacks through this resolver. */
+    int show = unit_is_human(att_ui) || unit_is_human(def_ui);
+    int att_type = CS.units[att_ui].type, def_type = CS.units[def_ui].type;
+    if (show) snd_play(combat_attack_sound(att_type, def_type));
     /* the Combat Analysis panel (G.combat, game.js resolveAttack):
      * Game Options bit 0x0200; filled BEFORE the defeat shuffles the
      * unit indices, shown over the map until the next key/click */
@@ -382,6 +425,9 @@ int resolve_attack(int att_ui, int def_ui) {
     }
     int loser = win ? def_ui : att_ui, winner = win ? att_ui : def_ui;
     int dx = unit_pos_x(def_ui), dy = unit_pos_y(def_ui);
+    if (win && show)
+        snd_play(type_is_ship(att_type) || att_type == 0xB ? 0x43
+                 : settlement_at(dx, dy) ? 0x49 : 0x40);
     int removed = apply_defeat(loser, winner);
     if (removed >= 0) {
         if (winner > removed) winner--;
@@ -436,12 +482,20 @@ int naval_attack(int att_ui, int def_ui) {
     int A = ta->attack ? ta->attack : ta->combat;
     int D = td->hull ? td->hull : td->combat;
     int win = 1 + R(A + D) <= A;
+    /* a ship attacker takes the 0x42 attack sound (@0x5D2A4 [bp-0x84]);
+     * the port's naval path is only ever the player's move, so shown */
+    snd_play(0x42);
     if (!win && !ship_attacker_type(CS.units[def_ui].type)) {
+        /* the flagged evade stand-in: no consequence, so no 0x4D */
         ev_emit("EVASIVE", 0, 0, td->name, ta->name);
         CS.units[att_ui].moves_remaining = 0;
         CR.unit_moves_undef[att_ui] = 0;
         return 1;
     }
+    if (win) snd_play(0x43);             /* ship attacker won @0x5D4FB */
+    /* func_05B2C2 (the consequence applier) @0x5B75D..0x5B778: both units
+     * ship types 0xD..0x12 and shown -> 0x4D before 0x1A1F:0x1A0(def,1,1) */
+    snd_play(0x4D);
     int loser = win ? def_ui : att_ui, winner = win ? att_ui : def_ui;
     /* a hold going down is seized (pre-battle damaged = this hit sinks) */
     hold_slot spoils[EURO_HOLD_MAX];

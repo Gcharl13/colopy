@@ -647,7 +647,7 @@ const G = {
   goTo: null, succession: false, retired: false,
   // The three option words. Game Options defaults with Combat Analysis on and
   // water cycling enabled (its bit is inverted, so clear = on).
-  gameOptions: 0x0200, colonyOptions: 0, soundOptions: 0x07,
+  gameOptions: 0x0200, colonyOptions: 0, soundOptions: 0x0E,   // `mov [0x5386],0xE` @0x755EB: BG/Event/SFX all on
   options: null,
   // [0x96], the current tune id. The rotation that would set it lives in the
   // external sound driver, which does not port; Pick Music still writes it.
@@ -2576,6 +2576,10 @@ function buildColony() {
     G.units.splice(G.sel, 1);
     G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
     G.colony = G.colonies.length - 1;
+    // sfx 0x54 for a human power's new colony -- func_040C1E @0x040DF6
+    // (gated on [0x5394] < 4 and controller 0 @0x40DE3..0x40DF4), on EVERY
+    // founding, before the once-only woodcut.
+    sfx(0x54);
     // First colony fires woodcut 2, BUILDING A COLONY (human only) --
     // spec/ui/woodcuts_and_intro.md, func_040C1E @0x040E00.
     if (!G.builtColony) { G.builtColony = true; woodcutOnce(2); }
@@ -5233,7 +5237,10 @@ function unitOptionsCommit(k) {
       return;
     case 1: u.orders = 0; return;
     case 2: u.orders = 1; return;
-    case 3: u.orders = 5; return;
+    // func_02B046 row 4 @0x2B26A: orders = 5, then 0x58 @0x2B273 (rows 2/3
+    // are silent @0x2B252/@0x2B25E; the @SHIPOPTIONS handler @0x2ABD1 has
+    // no play site at all, so "Anchor in harbor" below stays silent)
+    case 3: u.orders = 5; sfx(0x58); return;
     default: return;                       // "No changes."
   }
 }
@@ -5280,6 +5287,15 @@ function shipOptionsCommit(k, c) {
     default: return;                       // "No changes."
   }
 }
+// fanfare 0x8024 -- func_02883E @0x28CE1..0x28CF8: the new job is 0x18
+// (Missionary, @JOB row 24) or 0x10 (Preacher, row 16) AND the occupation
+// read before the write (0x181F:0xC54 -> func_009102(slot) @0x2885A, held
+// in [bp-0x6a]) equals it.  The mechanism is byte-read; why a re-assignment
+// to the same job is the trigger (or whether the outside-unit branch of
+// func_009102 -- the +0x17 class byte -- is the one meant) is TBD.
+function churchFanfare(p, job) {
+  if ((job === 'Preacher' || job === 'Missionary') && p.job === job) sfx(0x8024);
+}
 function colonyPopupCommit() {
   const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
   if (!r) { G.colonyPopup = null; return; }
@@ -5314,6 +5330,7 @@ function colonyPopupCommit() {
           G.colonyPopup = null;
           return;
         }
+        churchFanfare(p, job);
         p.job = job;
         p.cell = null;
         G.colonyPopup = null;
@@ -5328,7 +5345,7 @@ function colonyPopupCommit() {
       else if (r.job === 'Teacher' && teacherGuard(c, p)) {
         G.colonyPopup = null;
         return;
-      } else p.job = r.job;
+      } else { churchFanfare(p, r.job); p.job = r.job; }
     }
   } else {
     const p = c.colonists[G.colonistSel];
@@ -5344,6 +5361,7 @@ function colonyPopupCommit() {
         G.colonyPopup = null;
         return;
       }
+      churchFanfare(p, job);
       p.job = job;
       p.cell = null;                        // a building job means leaving the fields
     }
@@ -6465,6 +6483,11 @@ function euroContextCommit(r) {
         if (r.dim) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
         const paid = buyGoods(v.good, v.qty);
         if (!paid) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+        // the @ARMOPTIONS handler (fn @0x33C96): row 4 "Arm with Muskets"
+        // plays 0x58 @0x3405A, row 8 "Equip with Horses" 0x5C @0x34129;
+        // the sell rows are silent
+        if (v.good === GOOD.MUSKETS) sfx(0x58);
+        else if (v.good === GOOD.HORSES) sfx(0x5C);
         G.euroMsg = `${entryName(e)} equipped (${paid}$).`;
       } else {
         const net = sellGoods(v.good, v.qty);
@@ -6475,6 +6498,7 @@ function euroContextCommit(r) {
     }
     case 'bless':
       G.dockUnits[k] = { name: entryName(e), type: 'Missionaries' };
+      sfx(0x8024);                    // @ARMOPTIONS row 10 @0x34185, after type := 3
       G.euroMsg = `${entryName(e)} blessed as a Missionary.`;
       return;
     case 'unbless':
@@ -8178,6 +8202,9 @@ function attackVillage(v, u) {
     const A = combatStrength(u, false);
     const D = Math.floor(combatStrength(defender, true) * (4 + v.level) / 4);
     const win = 1 + Math.floor(Math.random() * (A + D)) <= A;
+    // the land decider's attack sound @0x5D317 (defender = the Braves the
+    // port synthesises; the player is always the attacker here)
+    sfx(combatAttackSound(u.type, 'Braves'));
     if (!win) {
       const i = G.units.indexOf(u);
       if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
@@ -8185,7 +8212,11 @@ function attackVillage(v, u) {
       return;
     }
     u.movesLeft = 0;
-    if (v.pop > 1) { v.pop -= 1; G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is reduced.`; return; }
+    // the village branch of func_05CA7E @0x5D666: population > 1 ->
+    // `dec [bx+4]` @0x5D67A then 0x48 @0x5D683; otherwise the settlement
+    // is destroyed (0x191F:0x248 @0x5D6A9) and 0x4A plays @0x5D6BC
+    if (v.pop > 1) { v.pop -= 1; sfx(0x48); G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is reduced.`; return; }
+    sfx(0x4A);
     const gold = razeGold(v);
     G.gold += gold;
     t.avenge = true;                                // the post-Declaration flag
@@ -8945,6 +8976,9 @@ function navalAttack(att, def) {
   const A = unit(att.type).attack || unit(att.type).combat;
   const D = unit(def.type).hull || unit(def.type).combat;
   const win = 1 + Math.floor(Math.random() * (A + D)) <= A;
+  // a ship attacker takes the 0x42 attack sound (@0x5D2A4 [bp-0x84]); the
+  // port's naval path is only ever the player's move, so it is shown
+  sfx(0x42);
   // @EVASIVE: "%STRING0 %STRING1 evades %STRING2 %STRING3." The engine's
   // evade condition is unmapped (COLONIZATION_TECHNICAL_REFERENCE §14.6) --
   // the port's flagged stand-in: a gunless ship (not a SHIP_ATTACKER) that
@@ -8953,8 +8987,12 @@ function navalAttack(att, def) {
     showEvent('EVASIVE', { STRING0: ownerAdjective(def), STRING1: def.type,
                            STRING2: ownerAdjective(att), STRING3: att.type });
     att.movesLeft = 0;
-    return true;
+    return true;                     // the flagged evade stand-in: no 0x4D
   }
+  if (win) sfx(0x43);               // ship attacker won @0x5D4FB
+  // func_05B2C2 (the consequence applier) @0x5B75D..0x5B778: both units
+  // ship types 0xD..0x12 and shown -> 0x4D before 0x1A1F:0x1A0(def,1,1)
+  sfx(0x4D);
   const loser = win ? def : att, winner = win ? att : def;
   // A hold going down is seized rather than simply lost -- and a MULTI-slot
   // hold runs @PICKACARGO ("Which cargo shall we capture?") first.
@@ -9269,6 +9307,18 @@ function resolveAttack(att, def) {
   const A = AA.total, D = DD.total;
   const roll = 1 + Math.floor(Math.random() * (A + D));
   const win = roll <= A;
+  // The land decider's sounds, all under the show flag [bp+0xc] @0x5D1D8 --
+  // in the port, a human power on either side: the attack sound @0x5D317
+  // (after the roll @0x5D188), then when the attacker won and a defender
+  // existed ([bp-0x6e]==0) the win sound @0x5D50F: ship or Artillery
+  // attacker -> 0x43, a settlement on the tile ([bp-0xd4] >= 0) -> 0x49,
+  // else 0x40.  The native-attacker variant (0x3B + type @0x5D205) has no
+  // port site: no native unit attacks through this resolver.
+  const show = G.units.includes(att) || G.units.includes(def);
+  if (show) sfx(combatAttackSound(att.type, def.type));
+  if (show && win)
+    sfx((unit(att.type) || {}).hull > 0 || att.type === 'Artillery' ? 0x43
+        : settlementAt(def.x, def.y) ? 0x49 : 0x40);
   // §14.4: the Combat Analysis dialog itemises the modifiers that drove the
   // roll. The engine shows it after the roll but BEFORE resolution renders;
   // the port applies the result first and then shows the same numbers over the
@@ -9372,6 +9422,13 @@ function checkContact() {
                                        G.colonies.some(c => near(c, rc)));
     if (!seen) continue;
     r.met = true;
+    // the European contact handler func_057F4E: a first meeting (relation
+    // bit 0x20 clear @0x57FD3) or a parley after the 16-turn cooldown
+    // (@0x57FEC) plays fanfare 0x8020 + the OTHER power (the four feeders
+    // @0x58040/@0x58088/@0x5808E/@0x58094 into the one play @0x58043).
+    // Only the first meeting has a port site (checkContact); the
+    // cooldown re-parley has none yet.
+    sfx(0x8020 + r.nation);
     setWar(G.nation, r.nation, REL.MET, true);
     setWar(r.nation, G.nation, REL.MET, true);
     if (r.attitude === undefined) r.attitude = 8;
@@ -10206,8 +10263,43 @@ function musicRow(id) {
 // "$sound$" driver overlay (§5), which has no port. The id is real state --
 // the same [0x96] the picker preselects from -- so the round trip is honest.
 function playTune(id) {
-  G.tune = id;
+  G.tune = id;                        // [0x96] @0x23561 ...
+  sfxVerb('t', id);                   // ... then the gated play @0x23564
   G.msg = `Music: ${DATA.events.PICKMUSIC.tail[musicRow(id)]} (no audio in this build).`;
+}
+// ---- the sound-layer cue log ----------------------------------------------
+// This build has no audio, but the ENGINE's play sites are real state
+// transitions the C port fires through colopy_next_sound() and the boards
+// play; the JS logs the same cues at the same sites so the oracles can pin
+// the two engines cue for cue (`sx` in the sim/input projections).  Verbs:
+// 'p' gated play (func_00518E, 0x181F:0x4C0), 'q' queue tune (0x48E), 'o'
+// class one-shot (0x4B6), 'r' class request (0x4AC), 's' class set (0x498),
+// 't' Pick Music ([0x96] = id + play), 'w' Sound Options closed (bits).
+// Every site cites its offset; the inventory is spec/ui/options_dialogs.md
+// §10.  The log is not game state: sfxDrain() empties it, nothing saves it.
+const SFX_LOG = [];
+function sfxVerb(verb, arg) {
+  if (SFX_LOG.length < 64) SFX_LOG.push(verb + arg.toString(16).toUpperCase());
+}
+function sfx(id) { sfxVerb('p', id); }
+function sfxDrain() { return SFX_LOG.splice(0); }
+// func_05CA7E's attack sound @0x5D2A4..0x5D317: a ship attacker (types
+// 0xD..0x12) or Artillery on either side -> 0x42; a mounted attacker (types
+// 4/5/8/7 = Dragoons, Scouts, Cavalry, Cont. Cav.) -> 0x4C; else both
+// ATTACK columns ([type*14+0x5236], @UNIT col 3) <= 1 -> 0x40, otherwise 0x41.
+const MOUNTED_ATTACKERS = ['Dragoons', 'Scouts', 'Cavalry', 'Cont. Cav.'];
+function combatAttackSound(attType, defType) {
+  const a = unit(attType) || {}, d = unit(defType) || {};
+  if (a.hull > 0 || attType === 'Artillery' || defType === 'Artillery') return 0x42;
+  if (MOUNTED_ATTACKERS.includes(attType)) return 0x4C;
+  return (Number(a.attack) <= 1 && Number(d.attack) <= 1) ? 0x40 : 0x41;
+}
+// func_005FD4 (0x181F:0x6BE @0x5CBC3): a settlement on the tile -- any
+// colony (ours or a rival's mirror) or a native village.
+function settlementAt(x, y) {
+  return !!(colonyAt(x, y) ||
+            G.rivals.some(r => r.colonies.some(c => c.x === x && c.y === y)) ||
+            G.villages.some(v => v.x === x && v.y === y));
 }
 function pickMusic() {
   askEvent('PICKMUSIC', {}, (choice) => {
@@ -10221,7 +10313,11 @@ function pickMusic() {
       playTune(row + sub.bias);
     });
   });
-  G.dialog.sel = musicRow(G.tune);
+  // The preselect ([0x96] -> row, the jump table @0x0233E4).  Guarded:
+  // under the scripted harness askEvent answers synchronously and opens no
+  // dialog, which used to throw here (found 2026-09-02 the day the input
+  // oracle first reached Pick Music).
+  if (G.dialog) G.dialog.sel = musicRow(G.tune);
 }
 // GAME "Exit to DOS": @DOS is the confirmation, and there is no DOS to exit
 // to, so Yes unwinds to the main menu the way quitting and relaunching would.
@@ -10316,6 +10412,18 @@ function endGameSequence() {
   if (G.scored) return;
   G.retired = true;
   const s = scoreParts();
+  // the score screen's tune -- func_03A9C0: the rank [bp-0xc0] starts at -1
+  // (@0x3A9C4) and the loop @0x3AA41..0x3AA68 sets it to n-1 for every n in
+  // 1..24 with n*n/3 < score (score = base*mult/100 @0x3AA31..0x3AA3E,
+  // BEFORE the >>1 @0x3AA6A), clamped <= 0x17 @0x3AA71; then @0x3AD51:
+  // rank >= 0x17 -> 0x24, > 6 -> 0x25, else 0x21 (play @0x3AD6D)
+  {
+    const score = Math.floor(s.mult * s.base / 100);
+    let rank = -1;
+    for (let n = 1; n <= 24; n++) if (Math.floor(n * n / 3) < score) rank = n - 1;
+    if (rank > 0x17) rank = 0x17;
+    sfx(rank >= 0x17 ? 0x24 : rank > 6 ? 0x25 : 0x21);
+  }
   // The Hall of Fame entry (HALLFAME.DAT record semantics).
   // HALLFAME.DAT semantics (capture-pinned 2026-08-07): score = the POINTS
   // (+0x24, scoreParts base), rating = the Colonization Rating % (+0x26,
@@ -10869,6 +10977,10 @@ function kingTaxDemand() {
     if (cut <= 0) return;
     G.tax -= cut;
     const wc = G.kingWarCountry >= 1 && G.kingWarCountry <= 8 ? G.kingWarCountry : 1;
+    // func_034318 (tax change, [bp+8] = signed delta): a cut takes
+    // `push 2; lcall 0x181f:0x4b6` @0x34566 -- class one-shot 2 -- where a
+    // raise plays tune 0x3E (@0x34572)
+    sfxVerb('o', 2);
     showEvent('KINGVICTORY', { STRING0: kingSalutation(),
       STRING1: G.leader || DATA.nations[G.nation].leader,
       STRING2: KING_COUNTRIES[wc - 1], NUMBER0: cut, NUMBER1: G.tax });
@@ -10903,6 +11015,10 @@ function kingTaxDemand() {
   const subs = { STRING0: kingSalutation(), STRING1: G.leader || DATA.nations[G.nation].leader,
                  STRING2: s2 || DATA.nations[G.nation].adjective, STRING3: party,
                  NUMBER0: raise, NUMBER1: G.tax + raise };
+  // tune 0x3E before the demand -- func_034318 @0x34572 (no boycott-able
+  // good: right before the section runs @0x34583) and @0x34649 (with one:
+  // right before the @TAXOPTIONS choice)
+  sfx(0x3E);
   askEvent(key, subs, (choice) => {
     // @TAXOPTIONS row 0 kisses the ring, row 1 holds the Party.
     if (choice === 1) {
@@ -13595,6 +13711,12 @@ function step(u, nx, ny) {
   const cost = moveCost(u, u.x, u.y, nx, ny);
   u.movesLeft = (cost > u.movesLeft) ? 0 : u.movesLeft - cost;
   u.x = nx; u.y = ny;
+  // sfx 0x52: a human Wagon Train arriving on a colony tile -- func_03ECF0
+  // @0x3F5C4..0x3F5E3 (type 0xC, owner nibble < 4, controller 0, after
+  // func_008D26(x,y) >= 0 @0x3F5AE).  The engine tests ANY colony; the port
+  // only lands here on its own (a foreign colony returns through the trade
+  // branch before the step).
+  if (u.type === 'Wagon Train' && G.units.includes(u) && colonyAt(nx, ny)) sfx(0x52);
   reveal(nx, ny, sightRadius(u));
   // DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
   // land first enters a player ship's view (running-game observation,
@@ -13853,6 +13975,10 @@ function moveSel(dx, dy) {
                     buildings: STARTING_BUILDINGS.slice(),
                     hammers: 0, building: null, sol: 0 };
         G.colonies.push(c);
+        // sfx 0x4B: a European attacker at a colony tile with no defending
+        // unit, shown -- func_05CA7E @0x5D5B7..0x5D5C7 ([bp-0xd8] = European
+        // + colony + no defender @0x5D4C4..0x5D4D8)
+        sfx(0x4B);
         // Byte-read split (func_05CA7E @0x5DED1): a human-involved capture
         // announces @CAPTURED before the declaration and @CAPTURED3 (no
         // plunder line) once [0x5382]&1 -- the declared flag -- is set.
@@ -13970,6 +14096,11 @@ function nextUnit() {
 function setOrder(n) {
   const u = G.units[G.sel];
   if (!u) return;
+  // Fortify is the one order with a sound: func_021FF2 (the Fortify
+  // command; ships jump straight there @0x22031) plays 0x58 @0x220F9 right
+  // before writing orders = 5 @0x022105.  (Its adjacent-treaty-partner
+  // @HAVETREATY ask @0x220CE is not modelled.)
+  if (n === 5) sfx(0x58);
   u.orders = n;
   u.movesLeft = 0;
   advance();
@@ -15342,7 +15473,13 @@ function onKeyBody(e) {
       if (k === 'ArrowUp') G.options.row = (G.options.row + n - 1) % n;
       if (k === 'ArrowDown') G.options.row = (G.options.row + 1) % n;
       if (k === 'Enter' || k === ' ') optionsCommit();
-      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.options = null; }
+      if (k === 'Escape' || k === 'x') {
+        // Sound Options leaving the dialog (func_0232AE): the rows are
+        // mirrored into [0x5386] @0x23301..0x23322, then driver command 1
+        // (stop) is sent @0x2333B if ANY switch is off @0x23327..0x23339
+        if (G.options.which === 'sound') sfxVerb('w', G.soundOptions & 0x0E);
+        G.screen = 'map'; G.options = null;
+      }
       break;
     }
     case 'trade': {

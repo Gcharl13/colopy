@@ -281,7 +281,10 @@ void cr_reset_from_load(void) {
      * the options dialog writes both homes (importSav, game.js) */
     CR.game_options = (uint16_t)(CS.globals[2] | (CS.globals[3] << 8));
     CR.colony_options = 0;
-    CR.sound_options = 0x07;
+    CR.sound_options = 0x0E;         /* new-game seed `mov [0x5386],0xE`
+                                      * @0x755EB: bits 0x02 BG / 0x04
+                                      * Event / 0x08 SFX all on (the old
+                                      * 0x07 left SFX off + a stray bit 0) */
     CR.rumour_floor = 1;             /* G defaults (game.js:588) */
     /* REF strength is READ from the save's global block (importer
      * game.js:10265: [0x53DA/DC/DE/E0] = globals +0x5A..0x60, Regulars /

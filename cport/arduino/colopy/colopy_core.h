@@ -114,6 +114,30 @@ typedef struct {
 
 /* Drain notices; returns 0 when the queue is empty. */
 int           colopy_next_event(colopy_event *out);
+
+/* ---- sound cues (game -> the shell's audio backend) --------------------
+ * The engine's `mov ax,id; lcall 0x181F:0x4C0` play sites and the sound
+ * layer's verbs, queued at the sim/UI site that fires them (each site is
+ * cited where it is emitted; the inventory is spec/ui/options_dialogs.md
+ * §10).  Presentation only: absent from colopy_digest(), drained by the
+ * shell after each command/key.  A pack-backed shell routes them to
+ * au_cmd()/au_queue_tune()/au_class_*(); the COLDIG fallback plays the
+ * SND_PLAY ids it has samples for and ignores the rest. */
+enum {
+    SND_PLAY = 0,        /* gated play, func_00518E (0x181F:0x4C0) */
+    SND_QUEUE_TUNE = 1,  /* func_0050BC (0x181F:0x48E) */
+    SND_CLASS_ONESHOT = 2, /* func_00513C (0x181F:0x4B6) */
+    SND_CLASS_REQUEST = 3, /* func_005108 (0x181F:0x4AC) */
+    SND_CLASS_SET = 4,   /* func_0050F0 (0x181F:0x498) */
+    SND_PICK = 5,        /* Pick Music: [0x96] = id, then the gated play */
+    SND_SWITCHES = 6     /* Sound Options closed: arg = the [0x5386] bits;
+                          * stop (cmd 1) when any switch is off @0x23327 */
+};
+typedef struct {
+    uint8_t  verb;             /* SND_* */
+    uint16_t arg;              /* id / class / switch bits */
+} colopy_sound;
+int           colopy_next_sound(colopy_sound *out);
 /* Resolve the blocking question: option index, or number, or text (any
  * unused argument ignored; text may be NULL). */
 colopy_status colopy_answer(int32_t choice, const char *text);

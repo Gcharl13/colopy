@@ -12,6 +12,7 @@ extern "C" {
 #include <stdint.h>
 
 #include "colopy_state.h"
+#include "colopy_core.h"       /* the front-end contract: events + sound cues */
 
 /* ---- RNG: the Microsoft C runtime LCG the engine ships ----------------- */
 /* state = state*214013 + 2531011; result = (state>>16) & 0x7FFF — byte-read
@@ -244,6 +245,11 @@ void ev_emit(const char *key, int32_t p0, int32_t p1,
 int  tut_hints(void);
 int  tut_once(int n, int32_t num0, int32_t num1, const char *s0,
               const char *s1);
+/* a sound-layer verb at the site that fires it (colopy_core.h SND_*) */
+void snd_emit(int verb, uint16_t arg);
+#define snd_play(id) snd_emit(SND_PLAY, (uint16_t)(id))
+/* the land decider's attack sound by unit types (func_05CA7E @0x5D2A4) */
+int  combat_attack_sound(int att_type, int def_type);
 
 /* Unit-pool mutators shared by the native pass (converts, braves). */
 int  unit_append(int type, int owner, int x, int y);  /* record idx or -1 */
