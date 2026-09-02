@@ -586,6 +586,7 @@ const G = {
   leader: '',
   briefPage: 0,
   card: 0,
+  cardT0: 0,                  // the LEVN slideshow's [0x90:0x92] stamp (ms)
   gold: 0,
   tax: 0,
   year: 1492,
@@ -1252,10 +1253,38 @@ function drawCards(ctx) {
   usePalette(key);
   if (IMG[key]) ctx.drawImage(IMG[key], 0, 0);
   else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
-  // Renderer func_004B72 lays the card text at pen (14,54), ink 0x0E.
+  // Renderer func_004B72: the card text is drawn by the popup engine
+  // (`lcall 0x181f,0x3fe` @0x004CE5 on GAME.TXT @BUILDn, own directives
+  // @width=310 @y=30) with the popup INK SLOTS [0x1F4A]=0x0E / [0x1F50]=0x36
+  // (@0x004CD6/@0x004CDC -- palette indices under the LEVN palette, not a
+  // pen; the old "pen (14,54)" reading is corrected, RULINGS 2026-09-02c).
+  // The y=54 / pitch 9 here is the port's MEASURED stand-in for the popup
+  // layout, kept until a DOS capture of a card exists to diff against (TBD).
+  // No caption: the engine draws none (the cards advance on a timer).
   cardText(G.card).forEach((l, i) => FONT.tiny.center(ctx, l, 160, 54 + i * 9,
                                                       lut(0x0E), ink(0)));
-  FONT.tiny.center(ctx, '(click to continue)', 160, 190, lut(0x0E), ink(0));
+}
+
+// The intro slideshow clock -- sequencer func_004D1E @0x004D1E: card 1 shows
+// at once ([0x92] starts -1, .data 0x1DA30), card k+1 when `now - [0x90:0x92]
+// >= 0x23A` (@0x004D43), and once ten have shown the next interval sets the
+// done flag [0x8A] (@0x004D4F). One tick of that clock is two PIT interrupts
+// at divisor 0x7A8 (@0x00C843 -> 0x00E508; even-tick gate @0x00C6A5, [0x92E8]
+// increment @0x00C741): 2*1960/1193182 s = 3.285 ms, so 0x23A = 570 ticks =
+// 1872.6 ms per card. A key or click sets [0x8A] at once (@0x004D94/@0x004DD5);
+// the new-game driver spins on that flag only after world generation
+// (@0x07596F), which the port does in zero time -- so a click ends the
+// slideshow immediately, and the timer alone plays all ten (10 intervals).
+// The engine's only other keys are Alt-X / Alt-Q = exit to DOS (@0x004DA6),
+// which have no port equivalent.
+const CARD_MS = 1873;
+const CLOCK = { ms: null };          // a harness pins it; null = wall clock
+function nowMs() { return CLOCK.ms !== null ? CLOCK.ms : performance.now(); }
+function cardsPoll() {
+  if (G.screen !== 'cards') return;
+  const k = Math.floor((nowMs() - G.cardT0) / CARD_MS);
+  if (k >= 10) { beginGame(); G.screen = 'map'; }
+  else if (k > G.card) G.card = k;
 }
 
 // §18.5 / §26.13 — the King's audience. One renderer paints the audience, the
@@ -1370,7 +1399,9 @@ function drawKing(ctx) {
       if (m >= 2) y += 8;
     } else y += 8;
   }
-  FONT.tiny.center(ctx, '(click to begin)', CX, 186, lut(0xFC), ink(0));
+  // No caption: neither the bytes (func_075352, read whole) nor the DOS
+  // capture docs/screens/07_king_audience.png carry one -- the wait is the
+  // popup engine's own modal wait on the @VICEROY scroll (@0x075540).
 }
 
 function wrapText(font, s, width) {
@@ -14868,11 +14899,14 @@ function onClick(mx, my) {
       if (G.briefPage === 0) G.briefPage = 1;
       else G.screen = 'king';
       break;
-    case 'king': G.card = 0; G.screen = 'cards'; break;
-    case 'cards':
-      if (G.card < 9) G.card++;
-      else { beginGame(); G.screen = 'map'; }
-      break;
+    // The scroll's dismissal is the popup engine's modal wait (@0x075540);
+    // the driver then plays tune 0x39 and shows card 1 at once (@0x0756E4
+    // .. @0x0756EC): stamp the slideshow clock.
+    case 'king': G.card = 0; G.cardT0 = nowMs(); G.screen = 'cards'; break;
+    // A click during the cards sets the sequencer's done flag [0x8A]
+    // (@0x004DD5) and the post-generation spin ends (@0x07596F) -- the
+    // cards do NOT advance on clicks (see cardsPoll).
+    case 'cards': beginGame(); G.screen = 'map'; break;
     case 'woodcut': {
       // Woodcut 1 is the discovery plate and hands over to the naming prompt;
       // woodcut 2 is BUILDING A COLONY and hands over to the new colony.
@@ -15256,12 +15290,14 @@ function onKey(e) {
       if (k === 'Enter') { G.leader = DATA.nations[G.nation].leader; G.screen = 'name'; }
       if (k === 'Escape') G.screen = 'difficulty';
       break;
+    // ANY key during the cards is the sequencer's done flag (getkey + drain
+    // @0x004D89..0x004D94); the old Escape -> briefing route was a port
+    // invention with no engine equivalent and is gone.
+    case 'cards': onClick(-1, -1); break;
     case 'briefing':
-    case 'cards':
     case 'king':
     case 'woodcut':
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
-      if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
@@ -15520,6 +15556,7 @@ function frameBody() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
   G.wallClock = performance.now();
+  cardsPoll();                        // the timed LEVN slideshow
   flushMapMsg();
   // NO auto-dismiss: the prior "120-tick timeout" reading of func_004A80's
   // 0x78 is OVERTURNED by live evidence -- the census DOSBox popups sit on

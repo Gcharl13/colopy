@@ -156,7 +156,22 @@ INPUT = """([save, events]) => {
   } else {
     G.screen = 'title'; G.menuRow = 0; G.difficulty = 0; G.nation = 0;
     G.leader = '';
+    // the boot scripts play through the King and the ten cards into
+    // beginGame: the same shared stream the C's brief_begin installs
+    // (colopy_init(colopy_front_seed) = 1653), so the new game's draws
+    // (plot seed, rivals, dock, market) agree -- the NEWGAME oracle's
+    // convention
+    let _s = 1653 >>> 0;
+    Math.random = () => {
+      const lo = (_s & 0xFFFF) * 214013;
+      const hi = ((_s >>> 16) * 214013) & 0xFFFF;
+      _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+      return ((_s >>> 16) & 0x7FFF) / 32768;
+    };
   }
+  // the scripted clock: a TICK event advances it (the C harness's "T ms");
+  // the LEVN slideshow's timer reads nowMs() through it
+  CLOCK.ms = 0;
   // the shared trace conventions (TURNS block): asks answered by the
   // seq%2 policy, popups record-only (no modal queue), dialogs inert,
   // woodcuts dismissed at once
@@ -271,6 +286,7 @@ INPUT = """([save, events]) => {
   for (const [key, alt, shift] of events) {
     G.eventQueue = [];             // record-only popups: never modal
     if (key === 'CLICK') onClick(alt, shift);
+    else if (key === 'TICK') { CLOCK.ms += alt; cardsPoll(); }
     else onKey({ key: key === 'Space' ? ' ' : key, altKey: !!alt,
                  shiftKey: !!shift, preventDefault: () => {} });
     out.push(proj());
@@ -285,12 +301,19 @@ RENDERBOOT = """([kind, arg]) => {
   if (kind === 'title') { G.menuRow = arg; G.screen = 'title'; }
   else if (kind === 'difficulty') { G.difficulty = arg; G.screen = 'difficulty'; }
   else if (kind === 'nation') { G.nation = arg; G.screen = 'nation'; }
+  // king ARG = nation; cards ARG = the card 0..9 with the pinned nation 0
+  // / difficulty 0 / leader 'Willem' the C --renderboot mirrors
+  else if (kind === 'king') { G.nation = arg; G.screen = 'king'; }
+  else if (kind === 'cards') { G.card = arg; G.nation = 0; G.difficulty = 0;
+                               G.leader = 'Willem'; G.screen = 'cards'; }
   else { G.leader = arg ? 'Willem' : ''; G.screen = 'name'; }
   const cv = document.querySelector('canvas');
   const ctx = cv.getContext('2d');
   if (kind === 'title') drawTitle(ctx);
   else if (kind === 'difficulty') drawDifficulty(ctx);
   else if (kind === 'nation') drawNation(ctx);
+  else if (kind === 'king') drawKing(ctx);
+  else if (kind === 'cards') drawCards(ctx);
   else drawName(ctx);
   return cv.toDataURL('image/png');
 }"""

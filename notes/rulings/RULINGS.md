@@ -10911,3 +10911,59 @@ were contradicted by the tree when re-measured.
 palette layout; whether the stale askmap comment in
 `cport/host/render_smoke.c:340` (it still says "INTERSECTION") is the C
 track's to fix — it is a comment, and it is noted here rather than edited.
+
+## 2026-09-02c — boot track: the New-Game cinematics re-read whole (B3.10)
+
+`func_004B72` @0x004B72 (card renderer), `func_004D1E` @0x004D1E (card
+sequencer), `func_075352` @0x075352 + `func_075594` @0x075594 (the King's
+audience) and the driver `func_0755CC` @0x0755CC were read end to end
+(`data_extracted/disassembly/VICEROY_annotated.asm`). Corrections to prior
+claims, each with the byte that overturns it:
+
+1. **"pen (14,54)" (cards) and "pen (242,47)" (scroll) are ink-slot stores,
+   not a text origin.** `[0x1F4A]`/`[0x1F50]`/`[0x1F52]` are the popup
+   engine's ink slots (`func_073474 @0x073474` stores the in-game ink table
+   there; `dialog_framework.md` +0x74). The cards store 0x0E/0x36
+   (@0x004CD6/@0x004CDC), the scroll 0xF2/0x2F/0 (@0x075526..0x075532), and
+   both then render their GAME.TXT section through `0x181f:0x3fe`
+   (`func_06F594`, @0x004CE5 / @0x075540), so the text position comes from
+   the section's own `@width/@x/@y` (raw GAME.TXT: `@BUILDn` `@width=310
+   @y=30`; `@VICEROY` `@width=78 @x=232 @y=21`). The batch-3 note of
+   2026-07-31 ("register values, not the origin") was right; this names what
+   they are. Tracker rows 13 and the cards line, and
+   `spec/ui/woodcuts_and_intro.md` §2, are corrected. The ports' card text
+   y=54/pitch 9 and the scroll's single ink 36 stay as MEASURED stand-ins,
+   flagged TBD in the code (no DOS card capture; the level→slot mapping in
+   `func_00E51C` unread).
+2. **The cards advance on a timer; a key/click does not advance them.**
+   `func_004D1E`: card k+1 when `now - [0x90:0x92] >= 0x23A` (@0x004D43);
+   a key/click only sets `[0x8A]` (@0x004D94/@0x004DD5), on which the driver
+   spins after world generation (@0x07596F). The prior "any key/click skips"
+   in §2 read the done flag as a skip. Tick unit closed: PIT divisor 0x7A8
+   (@0x00C843), even-tick gate (@0x00C6A5), so 0x23A ticks = 1873 ms.
+3. **No captions.** Neither renderer draws one, and
+   `docs/screens/07_king_audience.png` shows none; "(click to continue)" /
+   "(click to begin)" in both ports were inventions and are removed. The
+   cards' popup is non-modal (`[0x1F56]|=0x20` @0x004C9E → the modal runner's
+   input loop is skipped @0x06E583); the scroll's is the normal modal wait.
+4. **Card 7's `%STRING0`** is card 4's nation name by slot persistence — the
+   `switch n-2` @0x004C0D registers nothing at n=7. The ports' visible result
+   was right for the wrong reason; commented as such.
+5. **The audience queues tune 0x3E** (@0x07544B, `func_0050BC`) — wired on
+   both boards' screen edge into `SCR_KING`; the new-game cue (0x39 @0x0756E4
+   + queued 0x25 @0x0759A0) moves to the `SCR_CARDS` edge, where the driver
+   plays it. The old BRIEFING→MAP edge never fired once the C chain went
+   through the King and the cards. The JS carries only a tune id (`G.tune`,
+   `[0x96]`), no player — nothing to wire there.
+6. **The ledger row B3.10 was stale on the day it was written** (2026-08-17):
+   the assets it said were "not yet carried" entered `COLOPY.PAK` in `2b51c6e`
+   (2026-08-16), and the C already ran the chain. Pak size delta from this
+   work: 0 bytes; no board budget change.
+7. **Port conveniences removed for fidelity:** the cards' Escape → briefing
+   route (no engine equivalent; the engine's only escape is Alt-X/Alt-Q =
+   exit to DOS, @0x004DA6) and click-per-card advance. Any key now ends the
+   slideshow (getkey + drain @0x004D89..0x004D94), as the bytes say.
+
+**Not decided here:** the card text's on-screen y (needs a DOS capture of a
+LEVN card); the `[0x1F64]` / `[0x1F56]&0x18` flag names (sites @0x06E55C,
+@0x004CA9, @0x07536B, @0x0734B5, `func_06F646`).

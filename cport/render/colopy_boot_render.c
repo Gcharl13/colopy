@@ -326,12 +326,18 @@ void rm_draw_cards(int card, int nation, int difficulty,
             /* the per-card %STRING subs (1138-1143) */
             char out[224];
             const char *s0 = 0, *s1 = 0;
+            /* func_004B72's switch on n-2 (@0x004C0D) registers slots
+             * for cards 2/3/4 only (%STRING0/1 via 0x181f:0x438/0x416
+             * @0x004C1C..0x004C96); card 7's "%STRING0" has NO
+             * registration — slot 0 still holds card 4's nation name
+             * (nothing clears it between cards), so the nation name is
+             * the byte-true result by slot persistence. */
             if (card == 1) {
                 s0 = dat_text_misc[165 + (difficulty < 5 ? difficulty : 0)];
                 s1 = leader;
             } else if (card == 2) s0 = nn->homeport;
             else if (card == 3) { s0 = nn->country; s1 = dat_myleader[nation & 3]; }
-            else if (card == 6) s0 = nn->country;
+            else if (card == 6) s0 = nn->country;   /* slot persistence */
             size_t o = 0;
             for (const char *r = line; *r && o + 1 < sizeof(out);) {
                 if (s0 && strncmp(r, "%STRING0", 8) == 0) {
@@ -346,14 +352,23 @@ void rm_draw_cards(int card, int nation, int difficulty,
                     out[o++] = *r++;
             }
             out[o] = 0;
-            /* renderer func_004B72: pen ink 0x0E, centred (1153) */
+            /* renderer func_004B72: the text goes through the popup
+             * engine (`lcall 0x181f,0x3fe` @0x004CE5 on @BUILDn, own
+             * directives @width=310 @y=30) with the popup INK SLOTS
+             * [0x1F4A]=0x0E / [0x1F50]=0x36 (@0x004CD6/@0x004CDC —
+             * palette indices under the LEVN palette, NOT a pen; the
+             * old "pen (14,54)" reading is corrected, RULINGS
+             * 2026-09-02c).  y=54 / pitch 9 / the shadow flag are the
+             * port's MEASURED stand-ins for that layout, kept until a
+             * DOS capture of a card exists to diff against (TBD). */
             center_shadow(&B_TINY, out, 160, y, blut(0x0E), 1);
             y += 9;
         }
         if (!le) break;
         p = le + 1;
     }
-    center_shadow(&B_TINY, "(click to continue)", 160, 190, blut(0x0E), 1);
+    /* no caption: the engine draws none — the cards advance on the
+     * sequencer's timer (func_004D1E), see in_tick */
 }
 
 /* sheetAnchored (game.js:1165): the frame's own (hx, hy) descriptor is
@@ -388,10 +403,14 @@ static int wrap_next(const rd_font *f, const char *p, int width,
     return (int)i;
 }
 
-/* the King's audience (drawKing 1248): KINGLSS1 throne room, the
- * nation canopy banner, the KING1 figure, and the GAME.TXT @VICEROY
- * scroll laid out by its own directives @width=78 @x=232 @y=21 in
- * FONTKING ink 36 — '^^' lines centred in the column, body wrapped. */
+/* the King's audience (drawKing; painter func_075352 @0x075352 called
+ * by func_075594 with variant 1/1 and key "VICEROY"/"VICEROY2" for the
+ * Dutch @0x0755A7): KINGLSS1.PIK (@0x07536E) + the nation banner sheet
+ * ENGLND1/FRANCE1/SPAIN1/DUTCH1 (@0x0753B8 switch on [0x5398]) + KING1
+ * (@0x07543C; the boot variant also queues tune 0x3E @0x07544B), then
+ * FONTKING (@0x0754F2) and the @VICEROY scroll through the popup engine
+ * (@0x075540) from the section's own directives @width=78 @x=232 @y=21
+ * — '^^' lines centred in the column, body wrapped. */
 void rm_draw_king(int nation) {
     static const char *const STEM[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
                                          "DUTCH1" };
@@ -452,7 +471,14 @@ void rm_draw_king(int nation) {
         if (!le) break;
         p = le + 1;
     }
-    center_shadow(&B_TINY, "(click to begin)", CX, 186, blut(0xFC), 1);
+    /* no caption: neither func_075352 (read whole, 0x075352..0x075593)
+     * nor the DOS capture docs/screens/07_king_audience.png carries one;
+     * the wait is the popup engine's modal wait on the scroll
+     * (@0x075540).  The scroll's own inks are the popup slots
+     * [0x1F4A]=0xF2 / [0x1F50]=0x2F / [0x1F52]=0 (@0x075526..0x075532,
+     * under KINGLSS1's palette); the single ink 36 above is the
+     * pixel-measured stand-in (RULINGS 2026-07-31 batch 3) until the
+     * 2bpp glyph level -> slot mapping is read (TBD). */
 }
 
 /* the Hall of Fame table (drawHof game.js:12358) — REBUILT from the

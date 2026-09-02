@@ -70,6 +70,79 @@
    or trace `0x181F:0x254` at @0x06B71B/@0x06BA67.
 2. `0x181F:0xBA` band-fill args @0x06BA48 semantics.
 3. `[0x540A]` shown-bitmask savegame persistence.
-4. Card-interval tick unit (trace `func_00E4C6`/`[0x267A]`).
+4. ~~Card-interval tick unit (trace `func_00E4C6`/`[0x267A]`).~~ **Closed
+   2026-09-02** — see the amendment below: 3.285 ms per tick, 1873 ms per card.
 5. Runtime pointer tables `[0x838C]` (@HOMEPORT) / `[0x8394]`
    (@DIFFICULTY) loader — pins card-2/3 bindings A→B.
+
+## Amendment 2026-09-02 — §2 re-read whole (B3.10 close; RULINGS 2026-09-02c)
+
+`func_004B72` (0x004B72..0x004D1C) and `func_004D1E` (0x004D1E..0x004DF6) were
+read end to end, with the new-game driver `func_0755CC` @0x0755CC and the
+King painter `func_075352` @0x075352. Corrections and additions to §2:
+
+- **Not a pen.** `[0x1F4A]`/`[0x1F50]` (and `[0x1F52]`) are the popup engine's
+  **ink slots** (`dialog_framework.md` +0x74 record; `func_073474 @0x073474`
+  stores the in-game ink table into the same words). The card renderer saves
+  them, stores **0x0E / 0x36** (@0x004CD6/@0x004CDC), calls the GAME-section
+  popup wrapper `0x181f:0x3fe` = `func_06F594` on `"BUILD"+n` (@0x004CE5), and
+  restores them (@0x004CEA). The text is therefore laid out by the **standard
+  popup engine** from `@BUILDn`'s own directives — raw GAME.TXT lines
+  3367-3416 carry `@width=310 @y=30` (the JSON extractor strips them). Under
+  LEVN0001's palette 0x0E = (255,255,154), 0x36 = (105,138,195). The ports'
+  `y=54, pitch 9` is a measured stand-in (no DOS capture of a card exists to
+  diff) — **TBD** until one does. Same shape for the scroll: `func_075352`
+  stores **0xF2 / 0x2F / 0** @0x075526..0x075532 (KINGLSS1 palette: (113,85,69)
+  / (97,28,40) / black) and renders `@VICEROY` (`@VICEROY2` for the Dutch,
+  `strcat_itoa(2)` @0x0755AE) through the same wrapper @0x075540 from its own
+  `@width=78 @x=232 @y=21`; the earlier "pen (242,47)" was these ink stores.
+  Which glyph level reads which slot needs the 2bpp text primitive
+  (`func_00E51C`) — TBD.
+- **Non-modal.** The renderer ORs `[0x1F56] |= 0x20` (@0x004C9E) before the
+  popup call; the modal runner tests that flag byte (`@0x06E583 test es:[bx+0xa],
+  0x20`) and **skips its whole input loop**, and `func_06D88C @0x06D890` skips
+  the popup's own present because the card presents itself through the staged
+  fade `func_005160(8)` (@0x004D05). The audience does not set 0x20, so the
+  scroll waits in the normal modal loop — that wait is the audience's only
+  "dismissal"; **no caption is drawn on either screen** (the ports' "(click to
+  continue)"/"(click to begin)" were inventions, removed).
+- **Sequencer semantics (replaces "any key/click skips").** `[0x92]` starts at
+  -1 (.data, file 0x1DA30) so card 1 shows on the first call; card k+1 when
+  `now - [0x90:0x92] >= 0x23A` (@0x004D35..0x004D46); with `[0x8C] == 10`
+  the next interval sets the done flag `[0x8A]` (@0x004D4F). A key (getkey +
+  drain @0x004D89..0x004D94) or click (@0x004DD5) sets `[0x8A]` **and nothing
+  else** — the cards keep advancing on the timer. The driver ignores the
+  return during world generation and spins on it only afterwards
+  (`@0x07596F lcall 0x181f,0x3ac ; or ax,ax ; je`), so a key/click ends the
+  slideshow as soon as generation is done. Alt-X (0x12D) / Alt-Q (0x110) set
+  the demo flag `[0x828]` and exit to DOS (`exit(3)` @0x004DB9); with `[0x828]`
+  already set, any key/click exits.
+- **Tick unit (open item 4).** `[0x267A:0x267C]` → `0x1B5A:0x92E8` at timer
+  install (@0x00C84E..0x00C857); the INT 8 handler bumps `[0x8338]` every
+  interrupt (@0x00C69B) and `[0x92E8]` on even ones (@0x00C6A5 → @0x00C741);
+  PIT divisor 0x7A8 = 1960 (@0x00C843 → `out 0x43,0x36 / out 0x40` @0x00E508).
+  One tick = 2·1960/1193182 s = **3.285 ms**; 0x23A = 570 ticks = **1873 ms**
+  per card, ≈ 18.7 s for ten untouched.
+- **Substitutions.** The `switch n-2` @0x004C0D registers slots for cards
+  2/3/4 only (@0x004C1C..0x004C96; card 4's `%STRING1` is `@MYLEADER[player]`
+  via `0x181f:0x422(0x87c, 0x7b, player)` = `func_06FAE8`). Card 7's
+  "%STRING0" has **no registration** — slot 0 still holds card 4's nation name
+  (nothing clears it), so the nation name is the byte-true result by slot
+  persistence. Card 1 alone blanks the screen first (`func_004A32` @0x004BB3)
+  and latches the PIK palette (`func_00D1E4` @0x004CFE).
+- **Boot order** (`func_0755CC`): `[0x5382]=0xC600`, `[0x5386]=0x0E`
+  (@0x0755E5/@0x0755EB) → 16 price seeds → `func_07431E` (difficulty, nation,
+  name, briefings; Tutorial Hints `|= 0x80` iff difficulty 0 @0x074348) → the
+  audience `func_075594` @0x0756DC (skipped when `[0x828]`) → cursor hide,
+  **tune 0x39** @0x0756E4, first sequencer call @0x0756EC → world generation
+  with the sequencer polled → the spin @0x07596F → palette restore → **queue
+  tune 0x25** @0x0759A0. The audience itself queues **tune 0x3E** @0x07544B.
+  No RNG draw occurs inside the audience or the cards (no `0x181f:0x4d4`/`0x35c`
+  in 0x075352..0x0755CB or 0x004B72..0x004DF6).
+- **Port state (both engines, lockstep):** `cardsPoll` (game.js) / `in_tick`
+  (colopy_input.c) advance the card from a clock stamped on entering the
+  cards (`G.cardT0` / `UI.card_t0`) at 1873 ms per card; the harnesses script
+  that clock (`TICK` events / `T ms`); a key/click on the cards begins the game
+  at once (world generation is instant here). Oracles:
+  `tools/render_boot_compare.py` (king ×2 nations, cards ×4) and
+  `tools/input_compare.py boot`/`bootclick`.

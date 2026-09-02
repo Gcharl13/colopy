@@ -49,6 +49,17 @@ W, H = 320, 200
 # 2026-09-02 on the committed fixtures, all seven at 0 structural.
 PALETTE_CEILING = {
     "boot title 0": 0,
+    # the whole boot walk (render_boot_compare KINDS), frozen 2026-09-02:
+    # every screen composes under ONE palette on both sides, so 0
+    "boot difficulty 0": 0,
+    "boot nation 0": 0,
+    "boot name 1": 0,
+    "boot king 0": 0,
+    "boot king 3": 0,
+    "boot cards 0": 0,
+    "boot cards 1": 0,
+    "boot cards 3": 0,
+    "boot cards 6": 0,
     "map sav1653 20 30 0 -1 0": 37,
     "colony sav1653 0 -1 0 0 1": 141,
     "europe sav1653 0 0 0 -1": 0,
@@ -72,6 +83,17 @@ def sheet_palette(name: str) -> bytes | None:
     sys.path.insert(0, str(ROOT / "tools"))
     import ssdec
     return bytes(ssdec.load_sheet(str(f))["pal"])
+
+
+def pik_palette(name: str) -> bytes | None:
+    """The 768-byte palette a raw/COLONIZE/<name>.PIK carries (widened
+    6->8 bit like the DAC upload), or None if absent / palette-less."""
+    f = ROOT / "raw/COLONIZE" / name
+    if not f.exists():
+        return None
+    sys.path.insert(0, str(ROOT / "tools"))
+    import gen_sd_pack
+    return gen_sd_pack.load_pik(f.read_bytes())[3]
 
 
 def js_frame(data_url: str) -> Image.Image:

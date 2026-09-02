@@ -45,6 +45,10 @@ typedef struct {
     int8_t  village_row;             /* G.villageRow */
     int8_t  woodcut;                 /* G.woodcut — the open plate */
     int8_t  card;                    /* G.card — the open LEVN card */
+    uint32_t clock_ms;               /* the front's clock as of the last
+                                      * in_tick (a harness scripts it) */
+    uint32_t card_t0;                /* G.cardT0: the slideshow's
+                                      * [0x90:0x92] stamp, in clock_ms */
     int8_t  pedia_cat;               /* G.pediaCat (7 = Complete) */
     int16_t pedia_sel;               /* G.pediaSel */
     int8_t  pedia_mode;              /* G.pediaMode: 0 index, 1 entry */
@@ -104,6 +108,11 @@ int  ui_colony_popup_model(char labels[][40], char notes[][40],
 int  ui_colony_popup_small(void);
 void in_key(const char *key, int alt, int shift);
 void in_click(int mx, int my, int right);
+/* the front's clock: the timed LEVN slideshow (sequencer func_004D1E,
+ * one card per 0x23A ticks = 1873 ms) advances here.  Returns 1 when the
+ * screen changed (a card advanced, or the game began) so the shell can
+ * redraw. */
+int  in_tick(uint32_t now_ms);
 
 #ifdef __cplusplus
 }
