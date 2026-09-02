@@ -2383,17 +2383,110 @@ function unitToColonist(u, c) {
 // Until now an unassigned man stayed in c.colonists, so he drew in the members
 // group and went on eating from a job he no longer had.
 //
-// Refuses to empty a colony: the engine's own behaviour when the LAST colonist
-// leaves is unread, and abandonment has its own explicit command (@ABANDON,
-// shift-A on the map), so this does not invent a second path to it. FLAGGED.
-function colonistToFence(c, i) {
+// Taking a colonist OUT (C3.1, byte model 2026-09-02). Driver
+// func_02883E(slot, job) -> validator func_025A1E (thunk 0x191F:0x618) ->
+// refusal code (jump table @0x028AF0); code 0 runs the colonist op
+// func_009318 (0x181F:0xC36). For an EJECT (classify_pair_bounds
+// func_00929A == 2: slot < size and job >= 0x13) the validator
+// @0x025A63..@0x025AC2 tests, in this order:
+//   1. has building 0 (Stockade) AND size <= 3 -> 21 @KEEPSTOCKADE (0xBBA)
+//   2. job not Soldier (0x15) / Dragoon (0x17) AND func_025900() != 0
+//                                               -> 20 @SIEGE (0xC7C)
+//   3. size == 1                                -> 3  the @ABANDON prompt
+// so the LAST colonist is NOT refused. The code-3 handler @0x0288C8..
+// @0x02892A builds "ABANDON" + "2" when the owner's colony count
+// [0x9298+owner] < 2 AND year > 1575 (@0x0288F3..@0x028902; the GAME.TXT
+// text says "after 1600", the byte gate is > 1575 -- bytes win), STRING0 =
+// colony name; the box returns 1-based and only row 1 ("Yes, it is God's
+// will.") proceeds (@0x02891F..@0x028925).
+const JOB_OUT_COLONIST = 19, JOB_OUT_PIONEER = 20, JOB_OUT_SOLDIER = 21,
+      JOB_OUT_SCOUT = 22, JOB_OUT_DRAGOON = 23, JOB_OUT_MISSIONARY = 24;
+// func_008BC6: byte [DS:0x2F5 + job] (file 0x1DC95) -- jobs 0x13..0x18 ->
+// @UNIT rows Colonists, Pioneers, Soldiers, Scouts, Dragoons, Missionaries
+const OUTSIDE_JOB_UNIT = { 19: 0, 20: 2, 21: 1, 22: 5, 23: 4, 24: 3 };
+// func_00903E(job): the goods list debited on the way out (jump table
+// @0x0090B6, base 0x82B0): Colonist none; Pioneer [tools]; Soldier
+// [muskets]; Scout [horses]; Dragoon [muskets, horses]; Missionary none.
+const OUTSIDE_JOB_GOODS = { 19: [], 20: [14], 21: [15], 22: [8], 23: [15, 8], 24: [] };
+// func_025900 -- the @SIEGE predicate @0x025900..@0x025A1C. "Strength" is
+// 0x181f:0x8bc(unit, 0xA) = func_0073A8 case 0xA @0x007486..@0x0074B3: the
+// COUNT of non-ship units (type outside 0x0D..0x12) in the stack whose
+// @UNIT attack byte [0x5236+type*14] > 1. friendly = the colony tile's
+// stack (@0x025912..@0x025929) + every adjacent tile whose top unit has the
+// colony's owner (@0x0259B0..@0x0259C1); enemy = adjacent European
+// (owner < 4) stacks of another owner WITHOUT the treaty bit (relation
+// 0x181f:0xa38(owner, unitOwner) & 0x40 clear, @0x02594F..@0x025959 ->
+// @0x0259C8); natives skipped (@0x02599B). Returns max(0, enemy -
+// friendly) (@0x0259E0..@0x0259EA). The port has no chain: a stack is "the
+// units on the tile". REF units are not scanned (their owner nibble in the
+// engine is unread -- FLAGGED, same in the C).
+function colonySiegeExcess(c) {
+  const combat = (list, x, y) => list.filter(u => u.x === x && u.y === y &&
+    !u.ship && Number((unit(u.type) || {}).attack) > 1).length;
+  let friendly = combat(G.units, c.x, c.y), enemy = 0;
+  for (const [dx, dy] of DIR8) {
+    const x = c.x + dx, y = c.y + dy;
+    if (G.units.some(u => u.x === x && u.y === y)) { friendly += combat(G.units, x, y); continue; }
+    for (const r of G.rivals) {
+      if (!r.units.some(u => u.x === x && u.y === y)) continue;
+      if (!haveTreaty(G.nation, r.nation)) enemy += combat(r.units, x, y);
+      break;
+    }
+  }
+  return Math.max(0, enemy - friendly);
+}
+// the validator's EJECT branch: null proceed, else the refusal key
+// ('ABANDON' = code 3, the prompt)
+function colonistOutRefusal(c, job) {
+  if (colonyLevel(c) > 0 && c.colonists.length <= 3) return 'KEEPSTOCKADE';
+  if (job !== JOB_OUT_SOLDIER && job !== JOB_OUT_DRAGOON && colonySiegeExcess(c) > 0) return 'SIEGE';
+  if (c.colonists.length === 1) return 'ABANDON';
+  return null;
+}
+// func_009318 mode 2 (eject) @0x009500..@0x009572 + the shared tail: spawn
+// func_008BC6(job) at the colony tile (0x427:0x6b4), profession +0x17 :=
+// colony +0x40+slot (@0x009548), a Pioneer's tools +0x15 := min(100,
+// stock[Tools]/20*20) (@0x0093D4..@0x0093EC, @0x009552), then func_008FB4
+// removes the slot (@0x00955D; +0xC6 -= 100 @0x009031 has no home in this
+// model's percentage sol -- the C keeps the record's divisor). The
+// equipment loop @0x0095CE..@0x00960D debits the job's goods: 50 each for
+// horses and muskets (@0x0093EF/@0x0093F4), the computed amount for tools,
+// floored at 0 (@0x009607). Size 0 afterwards sets the emptied flag
+// [0x348] (@0x009614) -- the colony screen closes ([0x346]=0 @0x028D69)
+// and its exit removes the record (func_02EE34 @0x02C94C).
+function ejectColonist(c, i, job) {
   const p = c.colonists[i];
-  if (!p || c.colonists.length <= 1) return null;
-  c.colonists.splice(i, 1);
-  const u = mkUnit(p.profession || p.type || 'Colonists', c.x, c.y);
+  if (!p) return null;
+  const toolsAmt = Math.min(100, Math.floor(c.stock[GOOD.TOOLS] / 20) * 20);
+  const u = mkUnit(DATA.units[OUTSIDE_JOB_UNIT[job]].name, c.x, c.y);
+  u.profession = p.profession || null;
+  if (job === JOB_OUT_PIONEER) u.tools = toolsAmt;
   G.units.push(u);
+  c.colonists.splice(i, 1);
+  for (const g of OUTSIDE_JOB_GOODS[job])
+    c.stock[g] = Math.max(0, c.stock[g] - (g === GOOD.TOOLS ? toolsAmt : 50));
+  if (c.colonists.length === 0) {
+    G.screen = 'map';
+    removePlayerColony(c);
+    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
+  }
   return u;
 }
+// The whole "take him out" path: validator, the refusal messages / the
+// @ABANDON ask (row 1 proceeds), then the op.
+function colonistOut(c, i, job) {
+  if (!c.colonists[i]) return;
+  const code = colonistOutRefusal(c, job);
+  if (code === 'KEEPSTOCKADE' || code === 'SIEGE') { showEvent(code); return; }
+  if (code === 'ABANDON') {
+    const key = (G.colonies.length < 2 && G.year > 1575) ? 'ABANDON2' : 'ABANDON';
+    askEvent(key, { STRING0: c.name }, (k) => { if (k === 0) ejectColonist(c, i, job); });
+    return;
+  }
+  ejectColonist(c, i, job);
+}
+// "Return to the fence" = out as a plain Colonist (job 0x13).
+function colonistToFence(c, i) { colonistOut(c, i, JOB_OUT_COLONIST); }
 function buildColony() {
   const u = G.units[G.sel];
   if (!u) return;
@@ -2564,32 +2657,11 @@ const STARTING_BUILDINGS = DATA.buildings
 const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
 
 // ------------------------------------------- colonial authority + orders
-// spec/ui/context_dialogs.md §7. @ABANDON carries `@default=2`, so the
-// highlighted row is "Never! That would be folly." -- the engine defends you
-// against a stray keypress, and the port keeps that default.
-function abandonColony() {
-  const c = G.colonies[G.colony];
-  if (!c) return;
-  // @KEEPSTOCKADE (@width=220): "We cannot voluntarily reduce below three the
-  // population of a colony that has a stockade, fort, or fortress."
-  // Abandoning always reduces below three, so any stockade level refuses.
-  if (colonyLevel(c) > 0) { showEvent('KEEPSTOCKADE'); return; }
-  askEvent(G.year >= 1600 ? 'ABANDON2' : 'ABANDON', { STRING0: c.name }, (choice) => {
-    // Row 0 abandons ("Yes, it is God's will."), row 1 refuses -- and row 1 is
-    // the @default.
-    if (choice !== 0) return;
-    // The colonists walk back out onto the map.
-    for (const p of c.colonists) {
-      const u = mkUnit('Colonists', c.x, c.y);
-      u.profession = p.profession || null;
-      G.units.push(u);
-    }
-    removePlayerColony(c);
-    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
-    G.screen = 'map';
-    notice(`${c.name} is abandoned.`);
-  });
-}
+// (There is no "Abandon colony" command in the EXE: `push 0xbee` (ABANDON)
+// occurs once, @0x0288DB, inside the colonist-out driver; no MENU/NAMES row
+// says Abandon. The shift-A abandonColony() this port had was an invention
+// and is gone -- RULINGS 2026-09-02e. A colony is abandoned by taking its
+// last colonist out, colonistOut above.)
 function renameColony() {
   const c = G.colonies[G.colony];
   if (!c) return;
@@ -15468,10 +15540,9 @@ function onKey(e) {
           });
       }
       if (k === 'Enter') { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
-      // Colonial authority: R renames, shift-A abandons (@ABANDON defaults to
-      // the refusal, so a stray press cannot lose you a colony).
+      // Colonial authority: R renames. (No abandon key: the EXE has no such
+      // command -- the last colonist out is the abandonment, colonistOut.)
       if (k === 'r' || k === 'R') renameColony();
-      if (k === 'A') abandonColony();
       if (k === 'Escape' || k === 'x') G.screen = 'map';
       break;
     }

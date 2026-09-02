@@ -103,6 +103,9 @@ gameplay mechanics still missing and every flagged approximation, is
   the colony picture", but no byte-read rectangle for it exists, so
   leaving a colony rides the two exits that do: the jobs menu's "Return
   to the fence" row and the drop-out-of-the-fields drag.  TBD.
-- **Taking the LAST colonist out of a colony is refused.**  What the
-  engine does there is unread, and abandonment already has its own
-  command (`@ABANDON`, shift-A), so no second path into it was invented.
+- ~~**Taking the LAST colonist out of a colony is refused.**~~ **Fixed
+  2026-09-02 (C3.1)**: the engine's own validator order is implemented —
+  `@KEEPSTOCKADE` (Stockade and size ≤ 3), `@SIEGE` (`func_025900`), then
+  the `@ABANDON`/`@ABANDON2` ask when the last colonist leaves; "Yes"
+  ejects him and the colony record is removed (`func_02EE34`).  There is
+  no separate abandon command in the EXE; the port's shift-A one is gone.

@@ -11031,3 +11031,64 @@ route index equalled the deleted one and leaving every higher index unshifted
    drops it). Not changed here.
 5. Oracles: all green (the fixtures carry no routes; the host test `routes:` pins
    delete/renumber/stop-step/tile-bit on the 1653 game).
+
+## 2026-09-02e — C3.1: the last colonist out is not refused — it is the abandonment; the shift-A "Abandon colony" command was an invention
+
+**Conflict**: both ports refused to take the last colonist out of a colony
+("engine behaviour unread") and offered a separate abandon command instead (JS
+`abandonColony()` on shift-A, C `COLOPY_CMD_ABANDON_COLONY`), gated on
+`G.year >= 1600` for `@ABANDON2` and on "any stockade level refuses".
+
+**Bytes** (research `core-c3` claims 1–10, all re-read; T1 `func_025900` read
+here):
+
+- Job changes/ejects/joins go through `func_02883E(slot, job)` → validator
+  `func_025A1E` (thunk `0x191F:0x618`, trampoline @0x02887A) → code in
+  `[bp-0x62]`, dispatched through the 22-entry table @0x028AF0 (base 0x25900).
+- Eject branch (`classify_pair_bounds func_00929A` == 2: slot < size, job ≥
+  0x13) @0x025A63..@0x025AC2, in order: has building 0 (Stockade,
+  `0x181f:0x9fc`) AND size ≤ 3 → **21 @KEEPSTOCKADE**; job ∉ {0x15, 0x17} AND
+  `func_025900()` ≠ 0 → **20 @SIEGE**; size == 1 → **3** = the @ABANDON prompt.
+  **The last colonist is not refused.**
+- Code-3 handler @0x0288C8..@0x02892A: STRING0 = colony name; key "ABANDON" +
+  "2" when `[0x9298+owner] < 2` AND `[0x538A] > 0x627` (1575) — the GAME.TXT
+  text says "after 1600"; the byte gate is > 1575; answer 1 (row 1, "Yes, it
+  is God's will.") proceeds.
+- `func_025900` @0x025900..@0x025A1C (T1 resolved): strength =
+  `0x181f:0x8bc(unit, 0xA)` = `func_0073A8` case 0xA @0x007486..@0x0074B3 =
+  the COUNT of non-ship units (type ∉ 0x0D..0x12) in the stack with @UNIT
+  attack `[0x5236+type·14] > 1`. friendly = the colony tile's stack + adjacent
+  same-owner stacks; enemy = adjacent European (owner < 4) stacks of another
+  owner whose relation (`0x181f:0xa38(owner, unitOwner)`) lacks bit 0x40
+  (treaty); natives skipped. Result max(0, enemy − friendly).
+- Eject op `func_009318` mode 2 @0x009500..@0x009572: spawn
+  `func_008BC6(job)` = `byte [DS:0x2F5+job]` (file 0x1DC95: jobs 0x13..0x18 →
+  unit types 0, 2, 1, 5, 4, 3), profession `+0x17` := colony `+0x40+slot`,
+  Pioneer tools := min(100, stock[Tools]/20·20), `func_008FB4` slot removal
+  (incl. `+0xC6 −= 100` @0x009031); equipment loop @0x0095CE..@0x00960D over
+  `func_00903E(job)` (jump table @0x0090B6 base 0x82B0: Colonist none,
+  Pioneer [tools], Soldier [muskets], Scout [horses], Dragoon [muskets,
+  horses], Missionary none), 50 each for horses/muskets, floored at 0; a
+  failed spawn (@0x009529) still debits. Size 0 → `[0x348]=1` (@0x00961A);
+  the driver clears `[0x346]` (@0x028D69) so the colony screen exits, and the
+  exit runs `func_02EE34` (@0x02C94C).
+- `push 0xbee` (ABANDON) occurs exactly once in the EXE (@0x0288DB); no
+  MENU/NAMES row contains "Abandon".
+
+**Decision**:
+
+1. Both engines implement the validator order, the prompt (with the byte gate
+   `colonies < 2 && year > 1575`), the eject op with equipment banking, and
+   the immediate record removal when the colony empties (`colonistOut` /
+   `ejectColonist`; `colonist_out` / `colonist_eject` / `colonist_out_refusal`
+   / `colony_siege_excess`). "Return to the fence" is job 0x13.
+2. **The ejected unit's type comes from the job, not the specialty**: a Veteran
+   Soldier sent to the fence is a *Colonists* unit carrying the veteran
+   profession (the old ports armed him for free through `PROFESSION_UNIT`).
+3. `abandonColony()` / shift-A and `COLOPY_CMD_ABANDON_COLONY` are **deleted**.
+4. FLAGGED: REF units are not scanned by the ports' `func_025900` (their owner
+   nibble in the engine is unread; both ports keep them outside the European
+   unit lists). The `+0xC6 −= 100` divisor step lives only in the C record
+   (the JS sol model is a percentage with no divisor).
+5. Oracles all green; the host test `lastout:` pins codes 3/21, the Pioneer
+   tools rule (57 → 40) and the record removal.

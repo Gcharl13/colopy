@@ -1389,6 +1389,16 @@ static void occupation_commit(void) {
              * the plaza row draws him in the garrison group and the food
              * count no longer feeds him (colonist_to_fence). */
             colonist_to_fence(cci, k);
+            /* the last colonist out empties the colony: the engine closes
+             * the screen ([0x346]=0 @0x028D69) and removes the record at
+             * the exit (func_02EE34 @0x02C94C) — colonist_eject did the
+             * removal, so leave the screen */
+            if (player_colony_rec(UI.colony) != cci ||
+                CS.colonies[cci].population == 0) {
+                UI.colony_popup = 0;
+                UI.screen = SCR_MAP;
+                return;
+            }
             if (UI.colonist_sel >= c->population)
                 UI.colonist_sel = (int8_t)(c->population ? c->population - 1 : 0);
         } else if (row >= 9 && row < fence_row) {

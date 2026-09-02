@@ -776,7 +776,7 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   construction-halting siege is a port model, FLAGGED.
 
 
-## 7. Amendment 2026-09-02 — colony removal (`func_02EE34`) and what the ports mirror
+## 8. Amendment 2026-09-02 — colony removal (`func_02EE34`) and what the ports mirror
 
 **BYTE_VERIFIED** `func_02EE34(idx)` @0x02EE34..@0x02EF45 (thunk `0x191F:0x254`; called
 from the colony-screen exit @0x02C94C when the "emptied" flag `[0x348]` is set, and from
@@ -803,3 +803,56 @@ from the colony-screen exit @0x02C94C when the "emptied" flag `[0x348]` is set, 
 
 Nothing is done to units standing on the tile, to buildings or stock: the record is
 simply gone.
+
+
+## 9. Amendment 2026-09-02 — taking a colonist OUT (`func_02883E` → `func_025A1E` → `func_009318`), the `@SIEGE` predicate, and abandonment
+
+**BYTE_VERIFIED.** Every job change / eject / join runs `func_02883E(slot, job)` (page 02):
+validator `func_025A1E` (thunk `0x191F:0x618`, trampoline @0x02887A) → code in `[bp-0x62]`,
+dispatched through the 22-entry table @0x028AF0 (base 0x25900): 1 `@ONE_LEAVE`, 2
+`@ONE_ENTER`, **3 `@ABANDON`**, 4 `@FULL`, 5 `@GRADUATE`, 6/14/15 `@DROPOUT`/`@NOMATCH`/
+`@NOSCHOOL`, 7/8/9 `@UNIV3`/`@COLLEGE2`/`@SCHOOL1`, 10/11/12 `@MEETINGHALL`/`@TOWNHALL`/
+`@ASSEMBLY`, 13 `@NODOCKS`, 16 `@NOTEACHER`, 17 `@NEEDCOLLEGE`, 18 `@NEEDUNIVERSITY`, 19
+silent, **20 `@SIEGE`**, **21 `@KEEPSTOCKADE`**, 22 `@MORETHANTHREE`; 0 proceeds.
+
+**Eject branch** (`classify_pair_bounds func_00929A(slot, job)` == 2: slot < size, job ≥
+0x13) @0x025A63..@0x025AC2, in order:
+1. has building 0 (Stockade, `0x181f:0x9fc`) AND size ≤ 3 → **21**.
+2. job ∉ {0x15 Soldier, 0x17 Dragoon} AND `func_025900()` ≠ 0 → **20**.
+3. size == 1 → **3**. *(The last colonist is NOT refused.)*
+
+**Code 3** @0x0288C8..@0x02892A: STRING0 = colony name; key `"ABANDON"` + `"2"` when
+`[0x9298+owner] < 2` AND `[0x538A] > 0x627` (1575) (@0x0288F3..@0x028902 — the GAME.TXT
+text says 1600; bytes win); `0x181f:0x652` returns 1-based, answer 1 = row 1 proceeds
+(@0x02891F..@0x028925).
+
+**`func_025900` (the `@SIEGE` predicate)** @0x025900..@0x025A1C: strength =
+`0x181f:0x8bc(unit, 0xA)` = `func_0073A8` case 0xA @0x007486..@0x0074B3 = the **count** of
+non-ship units (type ∉ 0x0D..0x12) in the stack whose @UNIT attack `[0x5236+type·14] > 1`.
+friendly = the colony tile's stack (@0x025912..@0x025929) + adjacent stacks whose top unit
+has the colony's owner (@0x0259B0..@0x0259C1); enemy = adjacent European (owner < 4)
+stacks of another owner whose relation `0x181f:0xa38(owner, unitOwner)` lacks bit 0x40
+(treaty) (@0x02594F..@0x025959 → @0x0259C8); natives skipped (@0x02599B). Returns
+max(0, enemy − friendly) (@0x0259E0..@0x0259EA); out-params: strongest enemy owner,
+friendly total, enemy total (all NULL from the validator).
+
+**Eject op** `func_009318` mode 2 @0x009500..@0x009572: spawn `0x427:0x6b4(type =
+func_008BC6(job), owner, x, y)` with `func_008BC6` = `byte [DS:0x2F5 + job]` (file 0x1DC95:
+jobs 0x13..0x18 → unit types 0 Colonists, 2 Pioneers, 1 Soldiers, 5 Scouts, 4 Dragoons,
+3 Missionaries); profession `+0x17` := colony `+0x40+slot` (@0x009548); job 0x14 →
+tools `+0x15` := min(100, stock[Tools]/20·20) (@0x0093D4..@0x0093EC, @0x009552);
+`func_008FB4(slot)` removes the slot (@0x00955D: shifts `+0x20`/`+0x40`/the `+0x60`
+nibbles, field cells == slot → 0xFF / > slot → −1, `dec +0x1F`, `+0xC6 −= 100`
+@0x009031). Equipment loop @0x0095CE..@0x00960D over `func_00903E(job)` (jump table
+@0x0090B6, base 0x82B0): Colonist —; Pioneer [tools]; Soldier [muskets]; Scout [horses];
+Dragoon [muskets, horses]; Missionary —; 50 each for horses/muskets (@0x0093EF/@0x0093F4),
+the computed amount for tools, floored at 0 (@0x009607). A failed spawn (@0x009529 → the
+loop) still debits. Size 0 → `[0x348] = 1` (@0x009614..@0x00961A); the driver then clears
+`[0x346]` (@0x028D69) so the colony screen exits, and the exit runs `func_02EE34`
+(@0x02C94C, §8).
+
+**There is no "Abandon colony" command**: `push 0xbee` occurs once (@0x0288DB); no
+MENU/NAMES row says Abandon. Both ports implement the above (`colonistOut` /
+`colonist_out`); their shift-A / `COLOPY_CMD_ABANDON_COLONY` inventions are removed
+(RULINGS 2026-09-02e). FLAGGED: REF units are not scanned by the ports' `func_025900`
+(their owner nibble is unread); the `+0xC6` step lives only in the C record.

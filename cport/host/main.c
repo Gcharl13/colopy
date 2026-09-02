@@ -976,6 +976,34 @@ int main(int argc, char **argv) {
               "routes: the carrier's stop nibble stepped back");
     }
 
+    /* C3.1: the last colonist out — validator order func_025A1E
+     * (Stockade & size <= 3 -> 21, siege -> 20, size 1 -> 3) and the
+     * eject op func_009318 mode 2 emptying the colony -> record gone. */
+    {
+        colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+        int ci = -1;
+        for (int i = 0; i < CS.n_colonies && ci < 0; i++)
+            if ((CS.colonies[i].owner_power & 3) == cs_nation() &&
+                CS.colonies[i].population == 1) ci = i;
+        CHECK(ci >= 0, "lastout: savnewcolony has a size-1 player colony");
+        int ncol = CS.n_colonies, nunits = CS.n_units;
+        CHECK(colony_siege_excess(ci) == 0, "lastout: no siege on the fixture");
+        CHECK(colonist_out_refusal(ci, 0x13) == 3, "lastout: size 1 -> code 3 (@ABANDON)");
+        CS.colonies[ci].buildings[0] |= 0x01;            /* Stockade bit */
+        colony_bld_seed(ci);                             /* runtime list */
+        CHECK(colonist_out_refusal(ci, 0x13) == 21, "lastout: Stockade & size<=3 -> 21");
+        CS.colonies[ci].buildings[0] &= (uint8_t)~0x01;
+        colony_bld_seed(ci);
+        CS.colonies[ci].stock[TOOLS] = 57;
+        int x = CS.colonies[ci].map_x, y = CS.colonies[ci].map_y;
+        int ui = colonist_eject(ci, 0, 0x14);            /* out as a Pioneer */
+        CHECK(ui >= 0 && CS.units[ui].type == 2 && CS.units[ui].tools == 40 &&
+              CS.units[ui].map_x == x && CS.units[ui].map_y == y,
+              "lastout: a Pioneer with min(100, 57/20*20) = 40 tools on the tile");
+        CHECK(CS.n_units == nunits + 1, "lastout: one unit spawned");
+        CHECK(CS.n_colonies == ncol - 1, "lastout: the emptied colony record is gone");
+    }
+
     /* Phase 2 slice 1: colony production. The full oracle is
      * tools/sim_compare.py (17 colonies, JS vs C, exact); this in-harness
      * check pins one value so `make test` alone catches a regression:

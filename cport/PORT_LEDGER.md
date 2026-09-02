@@ -125,7 +125,7 @@ trail. `excluded` / `n.a.` are structural (render + browser layers).
 | `buildColony` | 2110 | 147 |  | ported |
 | `STARTING_BUILDINGS` | 2258 | 2 |  | ported |
 | `colonyAt` | 2261 | 5 |  | unevidenced |
-| `abandonColony` | 2267 | 22 |  | ported |
+| `abandonColony` | 2267 | 22 |  | ~~ported~~ removed 2026-09-02 (C3.1: no such command in the EXE; the last colonist out is the abandonment — `colonist_out`) |
 | `renameColony` | 2290 | 10 |  | ported |
 | `pillage` | 2301 | 15 |  | ported |
 | `beginGoToPage` | 2332 | 28 |  | ported |
