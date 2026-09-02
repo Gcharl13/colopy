@@ -41,7 +41,9 @@
  *   long-press      Space — skip the active unit (>= 600 ms); with
  *                   NOTHING active (everything fortified/sentried) it
  *                   ENDS THE TURN, as does ORDERS -> "Wait for next
- *                   unit", the one row left live in that state; on the
+ *                   unit", the one row left live in that state (both
+ *                   are shell chrome on the engine's Space semantics,
+ *                   func_024224 @0x024255 — RULINGS 2026-09-02n); on the
  *                   Europe market bar it BUYS 100 of that good (a tap
  *                   there sells, as the DOS pointer layer does)
  *   two-finger tap  Escape — close a menu/screen, dismiss a dialog
@@ -113,15 +115,13 @@ static LCD *g_lcd = nullptr;
 static uint16_t *fbuf = nullptr;      /* 1024x600 RGB565, in PSRAM */
 static uint8_t *pakbuf = nullptr;     /* COLOPY.PAK from SD, in PSRAM */
 static uint8_t *savbuf = nullptr;     /* .SAV image buffer (~80 KB) */
-static uint8_t *sidebuf = nullptr;    /* the .SAV sidecar, in PSRAM */
 /* COLOPY.PAK is 3,148,409 B today. The old 3,500,000 cap left 10% headroom
  * and every asset still to ship (Part E of docs/REMAINING_WORK.md: 139 .SS
  * and 7 .PIK sheets) grows it. 8 MB of the P4's 32 MB PSRAM is cheap —
- * fbuf is 1.2 MB, savbuf 80 KB, sidebuf 8 KB — and sd_read_file() now
+ * fbuf is 1.2 MB, savbuf 80 KB — and sd_read_file() now
  * refuses an oversize file outright rather than loading a prefix. */
 #define PAKBUF_CAP 8000000
 #define SAVBUF_CAP 80000
-#define SIDEBUF_CAP 8192
 static uint16_t lut565[256];
 static int pak_ready = 0;
 static bool sav_loaded = false;
@@ -1400,47 +1400,52 @@ static void service_request(void) {
     if (!UI.request) return;
     char r = (char)UI.request;
     UI.request = 0;
-    if (sd_ready && r == 'S') {
-        /* ten numbered slots, as the DOS game had.  SHELL CHROME: each
-         * row says whether the slot is already taken so a save cannot
-         * silently land on top of another game. */
+    if (sd_ready && (r == 'S' || r == 'L')) {
+        /* THE DOS PICKERS (C3.6, byte-read 2026-09-02): the slot picker
+         * func_072CC2(key, count) lists COLONY%02d.SAV rows 0..count-1
+         * (filename builder func_072C78: "COLONY" + %02d + ".SAV"), a
+         * missing file reading "(EMPTY)" (0x20EE @0x072F0C, valid byte
+         * [0xA60C+n]=0 @0x072F20).  The SAVE dialog func_072F7A calls it
+         * with (SAVEGAME, 8) @0x072F7E — EIGHT manual slots 00..07 — and
+         * the LOAD dialog func_073158 with (LOADGAME, 0xA) @0x073161 —
+         * TEN rows 00..09, so the two autosave slots 08 (decade) and 09
+         * (every turn) are loadable but never offered to save over; an
+         * empty row is refused @0x073190.  What a present row displays
+         * (the 0x1a1f:0xd04 header reader) is unread — the filename is
+         * shown, FLAGGED. */
+        int count = r == 'S' ? 8 : 10;
         static char names[10][16], rows[10][32];
-        for (int i = 0; i < 10; i++) {
-            snprintf(names[i], sizeof(names[i]), "COLONY0%d.SAV", i);
+        int present[10];
+        for (int i = 0; i < count; i++) {
+            snprintf(names[i], sizeof(names[i]), "COLONY%02d.SAV", i);
             char path[64];
             snprintf(path, sizeof(path), "/sdcard/%s", names[i]);
             FILE *pf = fopen(path, "rb");
-            int used = pf != NULL;
+            present[i] = pf != NULL;
             if (pf) fclose(pf);
-            snprintf(rows[i], sizeof(rows[i]), "%s  %s", names[i],
-                     used ? "(in use)" : "(empty)");
+            snprintf(rows[i], sizeof(rows[i]), "%s%s", names[i],
+                     present[i] ? "" : "  (EMPTY)");
             pick_rows[i] = rows[i];
         }
-        int k = shell_pick("SAVE GAME - pick a slot", 10);
-        if (k >= 0) cmd_save(names[k]);
-    } else if (sd_ready && r == 'L') {
-        static char names[10][32];
-        int n = 0;
-        DIR *d = opendir("/sdcard");
-        if (d) {
-            struct dirent *e;
-            while ((e = readdir(d)) != NULL && n < 10) {
-                const char *nm = e->d_name;
-                size_t L = strlen(nm);
-                if (L > 4 && strcasecmp(nm + L - 4, ".SAV") == 0) {
-                    snprintf(names[n], sizeof(names[n]), "%s", nm);
-                    pick_rows[n] = names[n];
-                    n++;
-                }
+        if (r == 'S') {
+            int k = shell_pick("SAVE GAME", 8);
+            if (k >= 0) cmd_save(names[k]);
+        } else {
+            int k;
+            do {
+                k = shell_pick("LOAD GAME", 10);
+            } while (k >= 0 && !present[k]);      /* @0x073190: refused */
+            if (k >= 0) {
+                cmd_load(names[k]);
+                UI.screen = SCR_MAP;
+                land_view();
             }
-            closedir(d);
         }
-        int k = shell_pick("LOAD GAME - pick a save", n);
-        if (k >= 0) {
-            cmd_load(pick_rows[k]);
-            UI.screen = SCR_MAP;
-            land_view();
-        }
+    } else if (sd_ready && (r == '8' || r == '9')) {
+        /* the per-turn autosave (func_005642): slot 9, or 8 on a decade
+         * boundary — silent, no picker */
+        cmd_save(r == '8' ? "COLONY08.SAV" : "COLONY09.SAV");
+        return;
     }
     draw_screen();
 }
@@ -1788,9 +1793,9 @@ static void mem_report(void) {
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                   (unsigned)heap_caps_get_total_size(MALLOC_CAP_SPIRAM),
                   (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
-    Serial.printf("our PSRAM:     fbuf %u, pakbuf %u, savbuf %u, sidebuf %u\n",
+    Serial.printf("our PSRAM:     fbuf %u, pakbuf %u, savbuf %u\n",
                   (unsigned)((size_t)P4_W * P4_H * 2), (unsigned)PAKBUF_CAP,
-                  (unsigned)SAVBUF_CAP, (unsigned)SIDEBUF_CAP);
+                  (unsigned)SAVBUF_CAP);
     stack_report("now");
 }
 
@@ -1802,47 +1807,10 @@ static void run_turn(void) {
     turn_step5();
 }
 
-/* ---- the .SAV sidecar -----------------------------------------------
- * The .SAV is written byte-exact, so a colony's UNIT build target (the
- * port's own 0xC0+u marker, stripped by the writer) and the trade-route
- * table have nowhere to live in it.  They go in a companion file with
- * the same stem and a .CPX extension; colopy_extras_read() validates it
- * against the loaded save and drops itself if it does not belong, so a
- * missing or stale sidecar simply means the old behaviour. */
-static void sidecar_path(const char *name, char *out, size_t cap) {
-    snprintf(out, cap, "/sdcard/%s", name);
-    size_t l = strlen(out);
-    if (l > 4 && strcasecmp(out + l - 4, ".SAV") == 0)
-        snprintf(out + l - 4, cap - (l - 4), ".CPX");
-    else
-        snprintf(out + l, cap - l, ".CPX");
-}
-
-static void sidecar_save(const char *name) {
-    if (!sidebuf) return;            /* PSRAM, not a static: the core's
-                                      * own statics already crowd internal
-                                      * SRAM — 'm' prints what is left */
-    size_t sn = colopy_extras_write(sidebuf, SIDEBUF_CAP);
-    if (!sn) return;
-    char path[112];
-    sidecar_path(name, path, sizeof(path));
-    FILE *f = fopen(path, "wb");
-    if (!f) return;
-    fwrite(sidebuf, 1, sn, f);
-    fclose(f);
-}
-
-static void sidecar_load(const char *name) {
-    if (!sidebuf) return;
-    char path[112];
-    sidecar_path(name, path, sizeof(path));
-    FILE *f = fopen(path, "rb");
-    if (!f) return;
-    size_t sn = fread(sidebuf, 1, SIDEBUF_CAP, f);
-    fclose(f);
-    if (sn && colopy_extras_read(sidebuf, sn))
-        Serial.println("sidecar applied (build targets + trade routes)");
-}
+/* (The former .CPX sidecar is gone — C3.7, 2026-09-02: a colony's unit
+ * build target and the trade routes are IN the .SAV, as the DOS game
+ * writes them: +0x94 = 0x2A + (type - 0x0B), and the trailing
+ * 12 x 0x4A route block; see cport/core/colopy_sav.c.) */
 
 static void cmd_load(const char *name) {
     if (!sd_ready) { Serial.println("no SD card"); return; }
@@ -1851,7 +1819,6 @@ static void cmd_load(const char *name) {
     colopy_status st = colopy_load_sav(savbuf, n);
     if (st != COLOPY_OK) { Serial.printf("load failed: %d\n", (int)st); return; }
     colopy_init(1653);              /* the shared parity seed */
-    sidecar_load(name);             /* build targets + trade routes */
     units_session_seed();           /* importer runtime setup: full moves,
                                      * orders 0 — without it the first
                                      * digest diverges from the host */
@@ -1879,7 +1846,6 @@ static void cmd_save(const char *name) {
         return;
     }
     fclose(f);
-    sidecar_save(name);
     Serial.printf("wrote %u bytes, digest %08lX\n", (unsigned)n,
                   (unsigned long)colopy_digest());
 }
@@ -1964,21 +1930,65 @@ static void land_view(void) {
 /* enter the game UI at the TITLE screen — the real boot: New Game runs
  * the full flow (difficulty/nation/name/briefing -> colopy_new_game),
  * LOAD GAME opens the shell's SD picker.  Needs only the pak. */
+/* HALLFAME.DAT — the DOS game's own Hall of Fame file (C3.6, 2026-09-02;
+ * the port's HOF.DAT is gone): 5 records x 42 bytes = 0xD2, read with
+ * fopen("HALLFAME.DAT","rb") + fread(0xD2) @0x03ADB1..@0x03ADD2 in
+ * func_03ADA6 and written "wb" @0x03B2B8.  Record (spec/systems/save.md
+ * par.6.5, capture-pinned): name[24] +0x00; nation word +0x18 (0xFFFF =
+ * empty slot); declared-independence +0x1A; independence-won +0x1C;
+ * year +0x1E; +0x20 undisplayed; difficulty +0x22; score points +0x24;
+ * rating % +0x26 (the int16 ranking key); +0x28 undisplayed. */
+#define HALLFAME_RECS 5
+#define HALLFAME_STRIDE 42
+static uint16_t hf_rd16(const uint8_t *p) { return (uint16_t)(p[0] | (p[1] << 8)); }
+static void hf_wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); }
+
 static void hof_load_sd(void) {
     if (!sd_ready) return;
-    FILE *f = fopen("/sdcard/HOF.DAT", "rb");
+    FILE *f = fopen("/sdcard/HALLFAME.DAT", "rb");
     if (!f) return;
-    size_t n = fread(CR.hof, sizeof(colopy_hof_rec), 6, f);
+    uint8_t raw[HALLFAME_RECS * HALLFAME_STRIDE];
+    size_t n = fread(raw, 1, sizeof(raw), f);
     fclose(f);
-    CR.n_hof = (uint8_t)n;
+    CR.n_hof = 0;
+    for (int i = 0; i < HALLFAME_RECS && (size_t)((i + 1) * HALLFAME_STRIDE) <= n; i++) {
+        const uint8_t *r = raw + i * HALLFAME_STRIDE;
+        if ((int16_t)hf_rd16(r + 0x18) < 0) continue;      /* empty slot */
+        colopy_hof_rec *h = &CR.hof[CR.n_hof++];
+        memset(h, 0, sizeof(*h));
+        memcpy(h->name, r, 24);
+        h->name[23] = 0;
+        h->nation = (uint8_t)hf_rd16(r + 0x18);
+        h->declared = (uint8_t)(hf_rd16(r + 0x1A) != 0);
+        h->independent = (uint8_t)(hf_rd16(r + 0x1C) != 0);
+        h->year = hf_rd16(r + 0x1E);
+        h->difficulty = (uint8_t)hf_rd16(r + 0x22);
+        h->score = (int16_t)hf_rd16(r + 0x24);
+        h->rating = (int16_t)hf_rd16(r + 0x26);
+    }
 }
 
 static void hof_save_sd(void) {
     if (!sd_ready || !CR.hof_dirty) return;
     CR.hof_dirty = 0;
-    FILE *f = fopen("/sdcard/HOF.DAT", "wb");
+    FILE *f = fopen("/sdcard/HALLFAME.DAT", "wb");
     if (!f) return;
-    fwrite(CR.hof, sizeof(colopy_hof_rec), CR.n_hof, f);
+    uint8_t raw[HALLFAME_RECS * HALLFAME_STRIDE];
+    memset(raw, 0, sizeof(raw));
+    for (int i = 0; i < HALLFAME_RECS; i++) {
+        uint8_t *r = raw + i * HALLFAME_STRIDE;
+        if (i >= CR.n_hof) { hf_wr16(r + 0x18, 0xFFFF); continue; }   /* empty */
+        const colopy_hof_rec *h = &CR.hof[i];
+        memcpy(r, h->name, 24);
+        hf_wr16(r + 0x18, h->nation);
+        hf_wr16(r + 0x1A, h->declared ? 1 : 0);
+        hf_wr16(r + 0x1C, h->independent ? 1 : 0);
+        hf_wr16(r + 0x1E, h->year);
+        hf_wr16(r + 0x22, h->difficulty);
+        hf_wr16(r + 0x24, (uint16_t)h->score);
+        hf_wr16(r + 0x26, (uint16_t)h->rating);
+    }
+    fwrite(raw, 1, sizeof(raw), f);
     fclose(f);
 }
 
@@ -1992,7 +2002,7 @@ static void boot_title(void) {
     colopy_front_seed = esp_random();  /* the DOS engine seeds from the
                                         * BIOS clock; the P4 has a TRNG */
     ui_init();                   /* SCR_TITLE */
-    hof_load_sd();               /* the Hall of Fame table (HOF.DAT) */
+    hof_load_sd();               /* the Hall of Fame table (HALLFAME.DAT) */
     draw_screen();
     Serial.println("title up (touch; or l <sav> + g for a direct load)");
 }
@@ -2056,7 +2066,6 @@ void setup() {
                                         MALLOC_CAP_SPIRAM);
     pakbuf = (uint8_t *)heap_caps_malloc(PAKBUF_CAP, MALLOC_CAP_SPIRAM);
     savbuf = (uint8_t *)heap_caps_malloc(SAVBUF_CAP, MALLOC_CAP_SPIRAM);
-    sidebuf = (uint8_t *)heap_caps_malloc(SIDEBUF_CAP, MALLOC_CAP_SPIRAM);
     if (!fbuf || !pakbuf || !savbuf)
         Serial.println("PSRAM alloc FAILED (is PSRAM enabled in Tools?)");
     if (fbuf && g_lcd) {                     /* black screen + pillarbox */

@@ -128,6 +128,14 @@ The 43-block table above is not the end of the file. The serializer's tail
 | 47 | `[0x168]` | w·h | **per-power fog plane** (bit `1<<(power+4)` = explored) |
 | 48–49 | `0x86F6` / `0x85E8` | 0x10E each | pathfinding/region scratch |
 | 50–51 | `0x945E` / `0x85C8` | 0x20 each | AI word arrays |
+| 52 | `ss:[bp-6]` | 4 | **Amendment 2026-09-02** — a stack local: the serializer reseeds the C runtime RNG just before (`0x181f:0x4ca` = `func_00C31C` → `func_00C2F8`: timer `0xc0c:0x12` `& 0x7FFF` → `srand 0xd1d:0xdf2` @0x073A21..@0x073A2A) and writes the 4 bytes at `[bp-6]` @0x073A2D..@0x073A3C. Opaque (0x7285D172 in nine shipped saves); preserved verbatim. |
+| 53 | `DGROUP 0x8D80` | 4 | **Amendment 2026-09-02** — the plot/skill seed base (@0x073A45..@0x073A53; loader @0x0741F6). COLONY00.SAV carries **1410965** — exactly the value the ports pin on load (`G.plotSeedBase`), so that pin is now byte-backed. |
+| 54 | `DGROUP 0x190` | 2 | **Amendment 2026-09-02** — the map-detail salt (@0x073A5C..@0x073A6A; loader @0x074211). COLONY00.SAV carries **19129** (low nibble 9, as the census measured); the ports still pin 1657 — see RULINGS 2026-09-02j, follow-up row in REMAINING_WORK. |
+| 55 | `0x1B22:0000` | 0x378 | **Amendment 2026-09-02** — the **trade-route table**, 12 × 0x4A records (@0x073A73..@0x073A83 via the far-pointer verb `0x1A1F:0xC9C`; loader mirror @0x07422C..@0x07423D, `0x1A1F:0xCB4`). Active count = globals `[0x53A0]` (g+0x20). Layout per `trade_routes.md` §2 (note: `+0x21` is the stop **count**). Both ports decode/encode it (C3.7). |
+
+The trailing tail is therefore 2·0x10E + 2·0x20 + 4 + 4 + 2 + 0x378 = **1502 bytes**
+(measured in all ten shipped saves). The earlier "the file ends at block 51" reading
+missed the four writes after @0x073A1D.
 
 Validated against all ten shipped `COLONY0#.SAV` (tools/dosbox_harness/game/):
 header + version 73 + 58×72 + the four planes account for the file sizes
@@ -183,6 +191,23 @@ asserts the 1653 game's figures field by field.
   `SAVE_FORMAT_CROSSREF` "reordered vs runtime" claim is **refuted**: within a PowerRecord,
   disk byte order = runtime byte order. (Symmetry is total: the serializer issues **43×**
   `fwrite` `0xD1D:0x60C`, the loader **43×** `fread` `0xD1D:0x528`, one per DGROUP block.) **B.**
+- **Slots and the option-driven autosave — Amendment 2026-09-02 (C3.6, BYTE_VERIFIED).**
+  Filename builder `func_072C78(buf, n)`: `strcpy("COLONY")` (0x20E2) @0x072C7B,
+  `0x181f:0xe9a(buf, n, width 2)` = `func_00C362` zero-padded @0x072C92, `strcat(".SAV")`
+  (0x20E9) @0x072C97 ⇒ `COLONY%02d.SAV`. Slot picker `func_072CC2(key, count)` (thunk
+  `0x1A1F:0xCE8`): rows 0..count−1 (@0x072ED5..@0x072EDC), a missing file shows `(EMPTY)`
+  (0x20EE @0x072F0C) with valid byte `[0xA60C+n]=0` @0x072F20. **SAVE dialog `func_072F7A`
+  calls it with `(SAVEGAME, 8)` @0x072F7E — eight manual slots 00..07; LOAD dialog
+  `func_073158` with `(LOADGAME, 0xA)` @0x073161 — ten rows 00..09**, an invalid row refused
+  @0x073190. The Game-Options **Autosave** bit `[0x5383]&4` (@0x0058D7 and @0x005A29, gate
+  `[0x829]==0` unread) calls `func_005642` @0x005642..@0x005667, which pushes **8** when
+  `year%10==0 && [0x538C]==0 && turn>2` (the decade boundary) **else 9** and saves through
+  `0x181f:0x5b6` (`func_072CA4`) — **one save per turn, slot 8 or 9, never both**. The slot
+  **10** save @0x005AF3 is gated on `[0x104]!=0` (set @0x02F55F beside `or [0x5382],8` and
+  @0x070D96, cleared @0x005826) — an event save, not the per-turn one — and slot **5**
+  @0x005BDB is the game-end save. So the old "slot 10 = the rolling autosave" gloss below
+  is corrected: the rolling autosave is slot 9 (8 on decades). What a present picker row
+  displays (`0x1a1f:0xd04` header reader) is TBD.
 - **HALLFAME.DAT format — BYTE_VERIFIED** (`func_03ADA6`, file `0x3ADA6`): the
   file is **5 records × 42 bytes (`0x2A`) = 210 bytes (`0xD2`)** — confirmed by the
   `fread` length `@0x3ADCF` (C runtime `fopen`/`fread`/`fclose` =

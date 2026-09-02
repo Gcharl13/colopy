@@ -50,7 +50,7 @@ landfall + the woodcut plates + the staying village screen + the
 row bound (ORDERS delegating to the key handlers, the @SAILPORT/
 @TRAVELPLACE Go To picker, DECLARE INDEPENDENCE, Retire, Exit to DOS,
 Save/Load through the shell SD pickers); the Hall of Fame written at
-retirement and persisted as HOF.DAT.
+retirement and persisted as HALLFAME.DAT — the DOS game's own file and layout (5 × 42-byte records, `func_03ADA6`), so a board and a DOS install share one table (C3.6, 2026-09-02).
 
 The Phase-9 follow-up list is now CLOSED except where noted.  Since
 shipped: the Colonizopedia browser and entry pages, the options
@@ -76,11 +76,15 @@ gameplay mechanics still missing and every flagged approximation, is
   decoded from those drivers (`formats/BIN.md`), and the board plays
   the cues whose call sites are byte-verified — the rest stay silent
   rather than guessed.
-- **Ending a turn with nothing active.**  Fortify or sentry every unit
-  and the cycle offers nobody.  Two ways out on the board: a long-press
-  anywhere on the map, or ORDERS -> "Wait for next unit", the one row
-  left live in that state.  The DOS `@ORDERS` menu has no End-of-Turn
-  row and none was invented.
+- **Ending a turn with nothing active** (byte-read 2026-09-02, C3.3).
+  The engine ends the turn BY ITSELF once no unit needs orders
+  (`func_021D32` @0x021E56) unless Game Options row 4 "End of Turn" is
+  on, in which case Enter, Space or a map click ends it — the port does
+  the same, and a loaded save's option word is honoured.  The board's
+  two extra exits — a long-press anywhere on the map, and ORDERS ->
+  "Wait for next unit" — are SHELL CHROME mapped onto that Space
+  semantics (RULINGS 2026-09-02n); the DOS `@ORDERS` menu has no
+  End-of-Turn row and none was invented.
 - **The Bluetooth pairing row is compiled out by default.**  It sits on
   the TITLE screen just below the menu plaque (y=155) and appears only
   when `COLOPY_BLE_MOUSE` is set to 1 at the top of `colopy_p4.ino`.
@@ -88,19 +92,26 @@ gameplay mechanics still missing and every flagged approximation, is
   against hardware** (`COLOPY_BLE_MOUSE`); it needs a core with hosted
   BT for the P4 and C6 firmware that exposes Bluetooth, neither of
   which can be verified from this repo.
-- **Sidecar-only state.**  A colony's unit build target and the trade
-  routes ride in a companion `.CPX` file, not the `.SAV` — the DOS
-  format has no field for either and the `.SAV` is written byte-exact.
+- ~~**Sidecar-only state.**~~ **Gone (C3.7, 2026-09-02).**  A colony's
+  unit build target (`+0x94 = 0x2A + (type − 0x0B)`, `func_00B5A8`) and
+  the trade routes (the `.SAV`'s trailing 12 × 0x4A block, `save.md`
+  block 55) are in the `.SAV` exactly as the DOS game writes them; the
+  `.CPX` companion file no longer exists.
 - Cosmetic TBDs remain: the colony dither/speckle pass, a handful of
   unresolved display strings, and no resource model on the map.
 - ~~Go To moves ONE square a turn.~~ **Fixed 2026-08-29**: Go To now
   runs the byte-read 16×16 pathfinder (func_061F02) and spends the
   unit's full movement allowance per turn — a ship reaches its lane at
   ship speed.
-- **No fence hit-rect.**  `@TUTORIAL4` puts the fence "near the water on
-  the colony picture", but no byte-read rectangle for it exists, so
-  leaving a colony rides the two exits that do: the jobs menu's "Return
-  to the fence" row and the drop-out-of-the-fields drag.  TBD.
-- **Taking the LAST colonist out of a colony is refused.**  What the
-  engine does there is unread, and abandonment already has its own
-  command (`@ABANDON`, shift-A), so no second path into it was invented.
+- ~~**No fence hit-rect.**~~ **Fixed 2026-09-02 (C3.2)**: the fence is the
+  Stockade plot of the buildings picture, (123, 106, 73, 18) — a tap
+  there with a colonist selected opens his OUTSIDE-jobs menu (Colonist /
+  Pioneer / Soldier / Scout / Dragoon / Missionary, `func_028D8C(1)`),
+  and the row takes him out with that job's equipment.  "Return to the
+  fence" in the jobs menu is the Colonist row of the same path.
+- ~~**Taking the LAST colonist out of a colony is refused.**~~ **Fixed
+  2026-09-02 (C3.1)**: the engine's own validator order is implemented —
+  `@KEEPSTOCKADE` (Stockade and size ≤ 3), `@SIEGE` (`func_025900`), then
+  the `@ABANDON`/`@ABANDON2` ask when the last colonist leaves; "Yes"
+  ejects him and the colony record is removed (`func_02EE34`).  There is
+  no separate abandon command in the EXE; the port's shift-A one is gone.

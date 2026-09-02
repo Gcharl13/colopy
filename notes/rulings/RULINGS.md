@@ -11289,3 +11289,346 @@ flag `[bp+0xc]` of the combat sounds is read as "a human power on either
 side" — the port has no rival-vs-rival battle the player watches. The
 default sound word is 0x0E (`mov [0x5386],0xE` @0x755EB), not the ports'
 former 0x07, and the P4 fallback gates on bit 0x08 (SFX), not 0x04 (Event).
+
+## 2026-09-02j — C3.7: the `.SAV` carries unit build targets AND trade routes; the `.CPX` sidecar was built on two false premises
+
+**Conflict**: `cport/core/colopy_extras.c` (and `docs/REMAINING_WORK.md` C3.7,
+`cport/README.md`, both board shells) held that "the DOS colony record's
+`building_in_production` byte only names buildings" and that "the .SAV has no
+field for trade routes", so the port carried a private `0xC0+u` unit marker
+(stripped to 0xFF on save) plus a companion `.CPX` file. The JS importer nulled
+any `+0x94 >= 42` as "unobserved".
+
+**Bytes** (research `core-c3` claims 25–28, independently re-read):
+
+- `func_00B5A8` (thunk `0x181F:0xCC2`) @0x00B5B1..@0x00B5E1 classifies
+  `ColonyRecord+0x94`: `< 0` none; `< 0x2A` building id; `id − 0x2A < 7` →
+  **unit type `0x0B + (id − 0x2A)`** (Artillery, Wagon Train, Caravel,
+  Merchantman, Galleon, Privateer, Frigate). The picker commit @0x02B710
+  stores `row − 2`; completion `func_02D0E4` class 2 @0x02D1AA spawns via
+  `0x181f:0x95c` and bumps the per-power type census `[0x924C + owner·0x13 +
+  type]` @0x02D240. **COLONY00.SAV and COLONY01.SAV ship with `0x2B` (Wagon
+  Train) targets in Fort Orange / Bahia** — the DOS game itself writes them.
+- The serializer does not stop at block 51. After `0x945E`/`0x85C8`
+  (@0x0739F0..@0x073A1D) it writes `ss:[bp-6]` 4 B (@0x073A2D..@0x073A3C,
+  the residue of an RNG reseed `0x181f:0x4ca` = `func_00C31C` → `func_00C2F8`:
+  timer `0xc0c:0x12 & 0x7FFF` → `srand 0xd1d:0xdf2`), `DGROUP 0x8D80` 4 B
+  (@0x073A45), `DGROUP 0x190` 2 B (@0x073A5C), then **`0x1B22:0000` for
+  `0x378` bytes = 12 × 0x4A route records** (@0x073A73..@0x073A83). The loader
+  mirrors it @0x0741DA..@0x07423D. Tail = 1502 bytes in all ten shipped saves.
+- Route record: name[32]; `+0x20` type (0 sea / 1 land @0x061282); `+0x21`
+  **stop count** (dec @0x06051A, loop bound @0x02EEED — the spec's "cursor"
+  gloss was a label error, corrected in `trade_routes.md`); 4 × 10-byte stops
+  at `+0x22`: dest word (colony record index / 0x3E7 Europe / 0x3E8 none),
+  count byte (`func_060382`: low nibble UNLOAD, high LOAD), LOAD goods
+  nibble-packed at `+3..+5`, UNLOAD at `+6..+8` (`addr_of_good_byte`
+  @0x060350, odd n = high nibble @0x0603F2). Count = `[0x53A0]` = globals
+  `g+0x20`. Unit binding: `UnitRecord+0x17` low nibble route
+  (`func_0075D4`/setter `func_0075E4`), high nibble current stop
+  (`func_0075FE`/`func_007610`), plus orders `+0x08 == 2`; a carrier is a type
+  whose @UNIT cargo column is non-zero (`byte [0x5237 + type·14]` @0x06136E).
+
+**Decision**:
+
+1. `colopy_extras.c`, the `.CPX` read/write in `cport/p4/colopy_p4.ino`,
+   `cport/teensy/colopy_teensy.ino` and the host test are **deleted**. The
+   `0xFF` strip in `colopy_save_sav` is gone.
+2. A unit target is stored as **`0x2A + (type − 0x0B)`** in both engines
+   (`build_target_unit_type` / `build_target_for_unit_type`,
+   `cport/core/colopy_turn.c`; JS `importSav` maps it to
+   `DATA.units[0x0B + id − 0x2A].name`).
+3. `colopy_sav.c` `routes_from_sav` / `routes_to_sav` decode and re-encode the
+   route block, `[0x53A0]`, and the bound carriers' `+0x17` nibbles; the JS
+   importer decodes the same block and restores orders 2. Stops are kept as
+   the ports' player-colony ordinals (converted from / to record indices on
+   the way through the file; a stop at a non-player colony is dropped —
+   FLAGGED, the DOS destination picker's owner filter was not read). A bound
+   carrier whose route index is past `[0x53A0]` is unbound on load in both
+   engines (the automation would find no route anyway).
+4. Verification: COLONY01.SAV's real DOS route ("New Amsterdam Cargo", land,
+   stops records 2,5,12,3 → ordinals 0,3,6,1) decodes identically in C and JS
+   and round-trips byte-exact through the C writer (`smoke --savfile`); a
+   C-written image with two routes, cargo lanes, a bound Merchantman and a
+   Caravel target reloads identically in both. All five input oracles, the
+   four sim oracles and the seven render oracles stay green (the fixtures
+   carry no routes; the 0x2B targets they DO carry now import as Wagon Train
+   rows in both engines identically).
+
+**Found on the way, not acted on**: `DGROUP 0x8D80` in COLONY00.SAV is
+**1410965** — exactly the value both engines pin as `plotSeedBase` on load,
+so that pin is now byte-backed. `DGROUP 0x190` in COLONY00.SAV is **19129**
+(low nibble 9, as the census measured) where the ports pin 1657: reading the
+full word from the tail is a follow-up (new ledger row C3.8) because it may
+move the map-detail placement the render census baselines were frozen on;
+not changed here.
+
+## 2026-09-02k — C3.5: route deletion renumbers and unbinds per `func_0612E6`; colony removal is `func_02EE34`; `UnitRecord+0x06` is a home-settlement index, not moves
+
+**Conflict**: both ports deleted a trade route by clearing only the units whose
+route index equalled the deleted one and leaving every higher index unshifted
+(`cport/game/colopy_input.c` "mirrored verbatim, FLAGGED quirk"; JS
+`t.mode === 'delete'`). Neither port ran any fixup when a colony left the map.
+
+**Bytes** (research `core-c3` claims 9, 20, 21; re-read here):
+
+- `func_0612E6` @0x0612E6..@0x0613E7: `@SUREDELETE` row 1 = yes (@0x061327); for every
+  unit 0..`[0x539C]−1` whose @UNIT cargo column is non-zero (`byte [0x5237+type·14]`
+  @0x06136E): route nibble == r → route 0 / stop 0 / orders 2→0
+  (@0x061388..@0x0613AD); > r → route − 1 (@0x06133C..@0x061345); splice
+  (@0x0613BC..@0x0613DA); `dec [0x53A0]` (@0x0613E7).
+- `func_06046E(j)` @0x06046E..@0x06051A: the current nation's carriers on the
+  active route with stop ≥ j → max(0, stop−1); stops shift; `dec +0x21`.
+- `func_02EE34(idx)` @0x02EE34..@0x02EF45: per-power count −1; improvement-plane
+  bit 0x02 cleared at the tile (`func_005D4E(x,y,2,0)`, plane `[0x160]` per
+  `func_005D1A` @0x005D24); record splice; every route's stops from last to
+  first: Europe skipped, == idx → `func_06046E`, > idx → dec; every unit with
+  owner < 4: `+0x06` == idx → 0xFF, > idx → −1.
+
+**Decision**:
+
+1. Both engines implement the three routines (`deleteRoute` / `deleteRouteStop` /
+   `colonyRemovedFixup` + `removePlayerColony`; `route_delete` / `route_stop_delete`
+   / `colony_removed_fixup`, wired into `colony_remove` and `colony_vanish_filter`).
+   The ports' stops are player-colony ordinals, so the fixup runs in that space; a
+   rival record's removal only clears its tile bit. The ports' "no route" stays
+   `undefined`/−1 (the engine has no sentinel: route nibble 0 + orders ≠ 2).
+2. The per-power colony census `[0x9298]` is not kept by either port (founding does
+   not maintain it either) — unchanged, noted in `colony.md` §7.
+3. **Not mirrored, recorded as a finding (ledger C3.9):** `UnitRecord+0x06` (0x314A)
+   is the engine's **home-settlement index** — spawn inits 0xFF @0x006DBA then stores
+   the `0x5eb:0xa76(x,y)` lookup @0x006DDA; natives index a `NativeSettlement`
+   (`imul 0x12`, `or [bx+0x54EF],1` @0x006ED2..@0x006EDA); Europeans get the
+   colony-at lookups (`0x181f:0x7be` @0x04226C→@0x042274; `0x181f:0x614`
+   @0x023A4F→@0x023A5B). The port's `moves_remaining` "in thirds" occupies that
+   byte (`colopy_records.h +0x06`) and the C writes it into the `.SAV`; the engine's
+   move credits SPENT are `+0x05` (`unit.md` 0x3149). Re-homing the port's moves
+   store is a lockstep unit-model change and is left to its own row.
+4. **Also found (ledger C3.10):** founding sets improvement bit **0x10**
+   (`func_005D4E(x,y,0x10,1)` @0x0222E6..@0x0222F0, @0x0224E9..@0x0224F3), removal
+   clears **0x02**. Neither port sets 0x10 on founding (the JS importer's `& 0x4E`
+   drops it). Not changed here.
+5. Oracles: all green (the fixtures carry no routes; the host test `routes:` pins
+   delete/renumber/stop-step/tile-bit on the 1653 game).
+
+## 2026-09-02l — C3.1: the last colonist out is not refused — it is the abandonment; the shift-A "Abandon colony" command was an invention
+
+**Conflict**: both ports refused to take the last colonist out of a colony
+("engine behaviour unread") and offered a separate abandon command instead (JS
+`abandonColony()` on shift-A, C `COLOPY_CMD_ABANDON_COLONY`), gated on
+`G.year >= 1600` for `@ABANDON2` and on "any stockade level refuses".
+
+**Bytes** (research `core-c3` claims 1–10, all re-read; T1 `func_025900` read
+here):
+
+- Job changes/ejects/joins go through `func_02883E(slot, job)` → validator
+  `func_025A1E` (thunk `0x191F:0x618`, trampoline @0x02887A) → code in
+  `[bp-0x62]`, dispatched through the 22-entry table @0x028AF0 (base 0x25900).
+- Eject branch (`classify_pair_bounds func_00929A` == 2: slot < size, job ≥
+  0x13) @0x025A63..@0x025AC2, in order: has building 0 (Stockade,
+  `0x181f:0x9fc`) AND size ≤ 3 → **21 @KEEPSTOCKADE**; job ∉ {0x15, 0x17} AND
+  `func_025900()` ≠ 0 → **20 @SIEGE**; size == 1 → **3** = the @ABANDON prompt.
+  **The last colonist is not refused.**
+- Code-3 handler @0x0288C8..@0x02892A: STRING0 = colony name; key "ABANDON" +
+  "2" when `[0x9298+owner] < 2` AND `[0x538A] > 0x627` (1575) — the GAME.TXT
+  text says "after 1600"; the byte gate is > 1575; answer 1 (row 1, "Yes, it
+  is God's will.") proceeds.
+- `func_025900` @0x025900..@0x025A1C (T1 resolved): strength =
+  `0x181f:0x8bc(unit, 0xA)` = `func_0073A8` case 0xA @0x007486..@0x0074B3 =
+  the COUNT of non-ship units (type ∉ 0x0D..0x12) in the stack with @UNIT
+  attack `[0x5236+type·14] > 1`. friendly = the colony tile's stack + adjacent
+  same-owner stacks; enemy = adjacent European (owner < 4) stacks of another
+  owner whose relation (`0x181f:0xa38(owner, unitOwner)`) lacks bit 0x40
+  (treaty); natives skipped. Result max(0, enemy − friendly).
+- Eject op `func_009318` mode 2 @0x009500..@0x009572: spawn
+  `func_008BC6(job)` = `byte [DS:0x2F5+job]` (file 0x1DC95: jobs 0x13..0x18 →
+  unit types 0, 2, 1, 5, 4, 3), profession `+0x17` := colony `+0x40+slot`,
+  Pioneer tools := min(100, stock[Tools]/20·20), `func_008FB4` slot removal
+  (incl. `+0xC6 −= 100` @0x009031); equipment loop @0x0095CE..@0x00960D over
+  `func_00903E(job)` (jump table @0x0090B6 base 0x82B0: Colonist none,
+  Pioneer [tools], Soldier [muskets], Scout [horses], Dragoon [muskets,
+  horses], Missionary none), 50 each for horses/muskets, floored at 0; a
+  failed spawn (@0x009529) still debits. Size 0 → `[0x348]=1` (@0x00961A);
+  the driver clears `[0x346]` (@0x028D69) so the colony screen exits, and the
+  exit runs `func_02EE34` (@0x02C94C).
+- `push 0xbee` (ABANDON) occurs exactly once in the EXE (@0x0288DB); no
+  MENU/NAMES row contains "Abandon".
+
+**Decision**:
+
+1. Both engines implement the validator order, the prompt (with the byte gate
+   `colonies < 2 && year > 1575`), the eject op with equipment banking, and
+   the immediate record removal when the colony empties (`colonistOut` /
+   `ejectColonist`; `colonist_out` / `colonist_eject` / `colonist_out_refusal`
+   / `colony_siege_excess`). "Return to the fence" is job 0x13.
+2. **The ejected unit's type comes from the job, not the specialty**: a Veteran
+   Soldier sent to the fence is a *Colonists* unit carrying the veteran
+   profession (the old ports armed him for free through `PROFESSION_UNIT`).
+3. `abandonColony()` / shift-A and `COLOPY_CMD_ABANDON_COLONY` are **deleted**.
+4. FLAGGED: REF units are not scanned by the ports' `func_025900` (their owner
+   nibble in the engine is unread; both ports keep them outside the European
+   unit lists). The `+0xC6 −= 100` divisor step lives only in the C record
+   (the JS sol model is a percentage with no divisor).
+5. Oracles all green; the host test `lastout:` pins codes 3/21, the Pioneer
+   tools rule (57 → 40) and the record removal.
+
+## 2026-09-02m — C3.2: the fence is a hit-rect — the Stockade plot (123,106,73,18) of the buildings picture; a drop or click there opens the OUTSIDE-jobs menu
+
+**Conflict**: both ports said "no byte-read rectangle for the fence exists"
+(`docs/REMAINING_WORK.md` C3.2, `cport/README.md`) and reached "out of the
+colony" only through the jobs menu's "Return to the fence" row / a drop out of
+the fields onto the plaza.
+
+**Bytes** (research `core-c3` claims 11–16, re-read; T4 resolved by the
+verifier):
+
+- Region table `func_0299A0` (order 1, 9, 0, 2, 3, 5, 4, 8, 10; default 0x14):
+  region 2 = (0, 8, 199, 120) the buildings picture @0x029A08; region 0 =
+  (0, 130, 120, 48) the plaza row @0x0299E8. Garrison figures are hit-tested
+  in region 0 by `func_029AC0` together with the members (count = size +
+  `[0x8D72]`, 4-px break after the last member) — **not** a fence.
+- Region-2 handler `func_029DD4`: 15 plots @0x029EAC..@0x029EFD, rect =
+  (`[0x266+4p]`, `[0x268+4p]+8`, `byte[0x230+cat]`, `byte[0x236+cat]`), cat =
+  `byte[0x8D62+p]`, def = `byte[0x8E82+p]`. Plot 13 = (123, 98) at file
+  0x1DC06+52; category 3 (`0x224=[7,4,2,1,1]`, `0x22A=[0,7,11,13,14]` — the
+  only plot of its category, so the shuffle is `random_int(0,0)+13`); w[3] =
+  73, h[3] = 18 (byte tables 0x230/0x236) ⇒ **(123, 106, 73, 18)**. The
+  placement pass writes def 0 to that plot **even without a Stockade**
+  (@0x025E64..@0x025E9F — the level-0 fence picture). `@BUILDING` parser
+  `func_074D18` @0x074D2F stores the row's 3rd number as the category and
+  Stockade's row reads `64, 0, 3, …` ⇒ category 3 (T4 closed).
+- Job per building `DS:0x2CA` (file 0x1DC6A, 42 bytes): defs 0..2 → 0x15; no
+  other def yields 0x15.
+- Drop path @0x029F61..@0x029F98: `[0x8D54]==6` (a figure drag), button
+  released, def ≥ 0, job == 0x15, dragged figure's job (`0x181f:0xc0e`) < 0x13
+  → `func_028D8C(1)` = the OUTSIDE-jobs menu (@0x028DF1..@0x028DF7: job range
+  0x13, count 6). Plain click path @0x02A07E..@0x02A08A: def ≥ 0, job == 0x15
+  → the same menu (no job test); any other job → `func_02883E(slot, job)`.
+
+**Decision**:
+
+1. Both ports add the fence rect (123, 106, 73, 18) inside the building
+   field: a click with a colonist selected, or a drop of a dragged member,
+   opens the OUTSIDE-jobs popup (JS `'outside'`, C `UI.colony_popup == 6`) —
+   @JOB rows 0x13..0x18 (Colonist, Pioneer, Soldier, Scout, Dragoon,
+   Missionary), titled like the jobs menu (`func_028D8C` builds both); a row
+   runs `colonistOut` / `colonist_out(slot, job)` (C3.1). Row notes are TBD
+   (what the engine prints beside a row is unread — bare labels).
+2. The popup kind is projected as 6 in both harnesses (`tools/sim_trace.py`
+   `cp`, C `UI.colony_popup`).
+3. Garrison figures stay in region 0 (already the case in both ports:
+   `plazaUnitAt` / `rm_plaza_unit_hit`).
+4. **Follow-up, not done (ledger C3.11):** on the click path the engine opens
+   the outside menu for a selected GARRISON figure too (no job test
+   @0x02A07E), and the op then runs `classify_pair_bounds` mode 1
+   (`func_009318` @0x009576: re-equip the unit in place — type :=
+   `byte[0x2F5+job]`, orders 0, Pioneer tools) — the "arm a unit inside the
+   colony" feature. The ports' garrison selection is the @UNITOPTIONS popup
+   and does not yet reach it.
+5. Oracles all green (no input script clicks the rect).
+
+## 2026-09-02n — C3.3: ending a turn with nothing active — auto-end is the default; Game Options row 4 "End of Turn" holds it for Enter / Space / a map click; the board's two exits are shell chrome on Space semantics
+
+**Conflict**: `docs/REMAINING_WORK.md` C3.3 / `cport/README.md` said the DOS
+`@ORDERS` menu has no end-of-turn row and the board invented two exits (a
+long-press on the map, ORDERS → "Wait for next unit"); the ports always ended
+the turn the moment no unit had moves.
+
+**Bytes** (research `core-c3` claims 17–19, re-read):
+
+- Orders pump `func_024A48` @0x024A4F..@0x024B0F: `[0x53C4]=1` (turn active),
+  `[0x5392]=−1`, `[0x97B0]=0`, `func_024B50(0)` (next unit), idle loop
+  0x1E ticks, keyboard `func_024B82` / mouse `func_024BDC`, loop while
+  `[0x53C2] && [0x53C4] && ![0x826]`.
+- `func_021D32` @0x021DCE..@0x021E5C: no unit needs orders → `[0x53C6]=1`,
+  `func_0217E2` (enables menu ids 0x301/0x330/0x302/0x304, no string), then if
+  the pump has idled (`[0x97B0]`, set @0x0246F2) and **`test byte [0x5383],8`
+  is clear → `[0x53C4]=0`: the turn ends by itself.** New-game init
+  `mov word [0x5382],0xC600` @0x0755E5 ⇒ bit 0x08 clear ⇒ auto-end is the
+  default. The bit is Game Options row 4 "End of Turn" (word 0x0800,
+  `spec/ui/options_dialogs.md` §6).
+- With the option ON the turn ends on: Enter with no colony under the cursor
+  (`func_024224` @0x02425E..@0x0242A4: colony-under-cursor `0x181f:0x7be`
+  opens if owner == `[0x5396]` or `[0x53A2]`, else `[0x53C6]` → `[0x53C4]=0`
+  @0x024241); Space (@0x02423A `[0x53C6]` → end; else `func_024B50(0)` and if
+  `[0x5390]==1` afterwards → end regardless, @0x024255..@0x02425C); a map
+  click (`func_024632` @0x02465C..@0x024663; preconditions
+  `[0x933E]==[0x9328]` and `[0x7F4]` unread). No GAME.TXT key is emitted; the
+  sidebar's content while waiting is TBD (T5).
+
+**Decision**:
+
+1. Both engines add the wait state (`G.turnWait` / `UI.turn_wait` = `[0x53C6]`
+   held): `advance()` with no unit needing orders ends the turn unless the
+   option bit 0x0800 is set, in which case it holds; Enter (no player colony
+   under the active unit — the port's "cursor" is the active unit's square,
+   FLAGGED), Space, or a map click then ends it (`endTurnNow` /
+   `end_turn_now`). The click is consumed.
+2. The option word is **restored from the save** in both importers
+   (`u16(g+2) & 0xFF80` → `G.gameOptions` / `CR.game_options`; Combat
+   Analysis synced from bit 0x0200). Every shipped fixture carries 0x0200, so
+   nothing the oracles pin changed. A new game keeps the ports' 0x0200 default
+   (the engine's 0xC600 is recorded, not adopted — separate row).
+3. **The board's long-press and ORDERS → "Wait for next unit" are shell chrome
+   mapped onto the Space semantics** (`cport/game/colopy_input.c`: the row
+   advances only when no unit is left, exactly what Space does at
+   @0x024255..@0x02425C; the P4 long-press sends Space). They are kept,
+   labelled as such; the DOS `@ORDERS` menu still has no end-turn row.
+4. FLAGGED: the sidebar/HUD wait indication (T5), the engine's map-cursor
+   words, and the two mouse preconditions.
+5. Oracles all green (the option is off in every fixture and script). A
+   headless check of the JS: option off → auto-end; option on → held, then
+   Space / Enter / click each end it.
+
+## 2026-09-02o — C3.6: DOS slots and HALLFAME.DAT are real (8 save rows, 10 load rows, autosave 9 / decade 8); the Part-C3 "deliberate non-fidelity" rows and A1/B4.7 as documented decisions
+
+**Conflict**: `docs/REMAINING_WORK.md` C3.6 called the board's ten fixed save
+slots and its `HOF.DAT` "port inventions (shell chrome)"; `spec/systems/save.md`
+glossed slot 10 as "the rolling autosave"; research claim 23 read the option
+autosave as "slot 9 every turn AND slot 8 on decades".
+
+**Bytes** (research claims 22–24 + the verifier's correction; re-read here):
+
+- `func_072C78(buf, n)`: `"COLONY"` (0x20E2) @0x072C7B, `0x181f:0xe9a(buf, n, 2)` =
+  `func_00C362` zero-padded width 2 @0x072C92, `".SAV"` (0x20E9) @0x072C97 ⇒
+  `COLONY%02d.SAV`.
+- Slot picker `func_072CC2(key, count)` (thunk `0x1A1F:0xCE8`): rows 0..count−1
+  (@0x072ED5..@0x072EDC), missing → `(EMPTY)` (0x20EE @0x072F0C), valid byte
+  `[0xA60C+n]` (@0x072D22 / @0x072F20). **SAVE `func_072F7A`: `(SAVEGAME, 8)`
+  @0x072F7E → 8 rows; LOAD `func_073158`: `(LOADGAME, 0xA)` @0x073161 → 10
+  rows**, an empty row refused @0x073190.
+- Autosave option `[0x5383]&4` (@0x0058D7, @0x005A29; `[0x829]==0` gate unread)
+  → `func_005642` @0x005642..@0x005667: `year % 10` (@0x005645..@0x00564D
+  `jne → push 9`), `[0x538C]==0` (@0x00564F `jne → push 9`), `turn > 2`
+  (@0x005655 `jle → push 9`), else `push 8`; one `0x181f:0x5b6` call. **One save
+  per turn: slot 8 on a decade boundary, otherwise slot 9 — either/or.** (Corrects
+  the report's "9 every turn and 8 on decades".) Slot 10 @0x005AF3 is `[0x104]`-
+  gated (an event save); slot 5 @0x005BDB is the game-end save.
+- `HALLFAME.DAT`: `fopen("rb")` @0x03ADB1..@0x03ADB7, `fread(…, 0xD2)` @0x03ADCC
+  in `func_03ADA6`; `fopen("wb")` @0x03B2B8. 5 × 42-byte records
+  (`save.md` §6.5 field roles, capture-pinned).
+
+**Decisions**:
+
+1. **C3.6 closed.** The P4 shell's SAVE picker shows 8 rows (COLONY00..07) and its
+   LOAD picker 10 rows (COLONY00..09) with `(EMPTY)` and refusal of empty rows;
+   both shells service the core's per-turn autosave request (`UI.request`
+   `'8'`/`'9'`, set in `end_turn_now` from the option bit 0x0400 per
+   `func_005642`); the P4 reads/writes **`HALLFAME.DAT`** in the DOS layout
+   (`HOF.DAT` is gone). The JS keeps its browser save (no slots) — shell chrome,
+   unchanged. TBD: the header reader `0x1a1f:0xd04` (what a present row prints),
+   the `[0x829]` gate.
+2. **C3.3 — documented decision**: the board's long-press and ORDERS → "Wait for
+   next unit" stay, as shell chrome on the engine's Space semantics (RULINGS
+   2026-09-02n).
+3. **C3.4 and B4.7 — documented decision**: drag-and-drop stays absent from the
+   board and the C input port. The engine's drag is `[0x8D54]` mode 6/7
+   (`func_029B84` @0x029BA8 / @0x029BE9); every drop target has a tap route (the
+   C3.2 fence rect included) and the harness projects the tap paths. A touch-shell
+   choice, not a sim-fidelity gap.
+4. **C3.7 — documented decision**: the `.CPX` sidecar is deleted, not kept as an
+   option (RULINGS 2026-09-02j).
+5. **A1 — documented decision**: the black screen on boot is the Arduino IDE
+   setting Tools ▸ PSRAM: Enabled (+ 16 MB flash, Huge-APP partition, USB CDC on
+   boot) per `cport/p4/README.md` ("Tools ▸ PSRAM must be Enabled") — the user's
+   to make on each fresh sketch folder; no code change closes it.
+6. Oracles all green (the harness ignores `UI.request`; nothing else moved).

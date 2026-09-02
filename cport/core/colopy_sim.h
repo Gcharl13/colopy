@@ -196,6 +196,9 @@ int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
  * runTradeRoute/advanceTradeRoutes (game.js:7715-7815) */
 void route_stop_name(int16_t stop, char *out, int cap);
 void route_auto_name(const int16_t *stops, int n, char *out, int cap);
+void route_delete(int r);              /* func_0612E6: unbind + renumber + splice */
+void route_stop_delete(int r, int j);  /* func_06046E */
+void colony_removed_fixup(int ci);     /* func_02EE34 minus the splice; call first */
 int  route_create(const int16_t *stops, int n, int sea, const char *name);
 void advance_trade_routes(void);
 void pick_music(void);           /* GAME "Pick Music" (func_023344) */
@@ -237,6 +240,10 @@ int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
 void colonist_remove_last(int ci);
 void colonist_remove_at(int ci, int k);  /* func_008FB4 (0x181F:0xA9C) */
 int  colonist_to_fence(int ci, int k);  /* colonistToFence; unit idx or -1 */
+int  colonist_out(int ci, int k, int job);      /* func_02883E eject path, job 0x13..0x18 */
+int  colonist_out_refusal(int ci, int job);     /* func_025A1E: 0 / 21 / 20 / 3 */
+int  colonist_eject(int ci, int k, int job);    /* func_009318 mode 2 */
+int  colony_siege_excess(int ci);               /* func_025900 */
 void colonist_add(ColonyRecord *c);   /* the record-slot push */
 void ev_emit(const char *key, int32_t p0, int32_t p1,
              const char *s0, const char *s1);
@@ -654,10 +661,11 @@ typedef struct {
     char ask_rows[18][26];
     int8_t n_ask_rows;
     /* trade routes (game.js:7713: MAX_ROUTES 12, MAX_STOPS 4, Europe
-     * stop id 999).  Session-runtime like the JS G.routes — never in
-     * the .SAV; stops are PLAYER-colony ordinals (G.colonies index). */
+     * stop id 999).  The decoded form of the .SAV's trailing 12 x 0x4A
+     * route block (colopy_sav.c routes_from_sav/routes_to_sav, C3.7);
+     * stops are PLAYER-colony ordinals (G.colonies index). */
     struct colopy_route {
-        char    name[26];
+        char    name[32];                /* record +0x00, 32 bytes */
         int8_t  sea;
         int8_t  n_stops;
         int16_t stops[4];
@@ -673,12 +681,10 @@ typedef struct {
     combat_panel combat;                        /* G.combat */
 } colopy_runtime;
 
-/* the .SAV sidecar (colopy_extras.c): the two things the port models
- * that the fixed DOS save has no room for — a colony's UNIT build
- * target and the trade-route table.  Shell-only; the parity harness
- * never calls these. */
-size_t colopy_extras_write(unsigned char *buf, size_t cap);
-int    colopy_extras_read(const unsigned char *buf, size_t len);
+/* ColonyRecord +0x94 unit-target encoding (func_00B5A8 @0x00B5CE):
+ * 0x2A + (type - 0x0B) for unit types 0x0B..0x11, else a @BUILDING id */
+int     build_target_unit_type(uint8_t bip);       /* -1 = not a unit */
+uint8_t build_target_for_unit_type(int type);
 
 #define COLOPY_MAX_ROUTES 12
 #define COLOPY_MAX_STOPS  4

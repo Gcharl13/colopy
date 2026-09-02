@@ -178,7 +178,7 @@ mask (`0x191f:0x26e`) → seed rows 1–8 → run (`lea bx,[0xa61]`
 | 1 | Show Indian Moves | 0x8000 | direct (@0x02307C) |
 | 2 | Show Foreign Moves | 0x4000 | direct |
 | 3 | Fast Piece Slide | 0x1000 | direct (consumer @0x004734: slide step 8 vs 10, shifted by zoom) |
-| 4 | End of Turn | 0x0800 | direct (@0x021E4F) |
+| 4 | End of Turn | 0x0800 | direct (@0x021E4F) — **Amendment 2026-09-02**: set = the turn is NOT auto-ended when nothing awaits orders; Enter / Space / a map click end it (`turn_dispatch.md` §7). Both ports honour it and restore the word from the save's `g+0x02` (C3.3). |
 | 5 | Autosave | 0x0400 | direct — turn-loop consumer @0x0058D7/@0x005A29 → helper @0x005642: rolling slot 9 each turn + slot 8 on decade boundaries |
 | 6 | Combat Analysis | 0x0200 | direct (@0x05D221) |
 | 7 | Water Color Cycling | 0x0100 | **INVERTED** (bit set = cycling OFF) @0x02303B/@0x0230E2 |

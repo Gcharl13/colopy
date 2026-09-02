@@ -167,3 +167,31 @@ context's centering math, **not a static constant** (overlay page 0x17).
 4. ~~Turn-counter → in-game-year conversion.~~ **Done 2026-06-20** — start 1492
    (`0x5D4`); 1 turn/year before 1600, 2 turns/year (seasons) from 1600; forced end
    1725 (`0x6BD`). **B** (§3).
+
+
+## 7. Amendment 2026-09-02 — ending a turn with nothing active (C3.3)
+
+**BYTE_VERIFIED.** The orders pump `func_024A48` (@0x024A4F `[0x53C4]=1`, @0x024A5B
+`[0x5392]=−1`, @0x024A63 `[0x97B0]=0`, @0x024A68 `func_024B50(0)`; idle loop 0x1E ticks
+@0x024AA6..@0x024ABF; keyboard `func_024B82` / mouse `func_024BDC` @0x024AF1/@0x024AF7;
+loops while `[0x53C2] && [0x53C4] && ![0x826]` @0x024AFA..@0x024B0F). When no unit needs
+orders, `func_021D32` @0x021DCE (`cmp [0x5392],0; jl`) → @0x021E3E `[0x53C6]=1` ("nothing
+awaits orders") → `func_0217E2` (`[0x5390]=1`, enables menu ids 0x301/0x330/0x302/0x304,
+no string) → @0x021E48 `cmp [0x97B0],0; je` (the pump has idled at least once —
+`[0x97B0]=1` @0x0246F2) → **@0x021E4F `test byte [0x5383],8; jne` → @0x021E56 `[0x53C4]=0`:
+the turn ends by itself unless Game Options row 4 "End of Turn" is set.** New-game init
+`mov word [0x5382],0xC600` @0x0755E5 leaves that bit clear ⇒ auto-end is the default.
+
+With the option ON the turn ends on: **Enter** (`func_024224` @0x024230 `sub ax,0xD`;
+@0x02425E colony-under-cursor `0x181f:0x7be`, opened if owner == `[0x5396]` or
+`[0x53A2]` @0x024266..@0x024291, else @0x02429A `cmp [0x53C6],0; jne` → @0x024241
+`[0x53C4]=0`); **Space** (@0x024235 `sub ax,0x13`; @0x02423A `[0x53C6]` set → end; else
+`func_024B50(0)` and, if `[0x5390]==1` afterwards, end regardless @0x024255..@0x02425C);
+a **map click** (`func_024632` @0x02465C `cmp [0x53C6],0; je`; @0x024663 `[0x53C4]=0`;
+preconditions `[0x933E]==[0x9328]` and `[0x7F4]!=0` unread). No GAME.TXT key is emitted
+(the only turn-related key is `@MULTINEXT`, hot-seat, @0x00597E). **TBD (T5):** what the
+sidebar shows while waiting — `func_0217E2` only enables menu ids; the idle redraw
+`0x181f:0x55e(1,0)` @0x024AE1 was not followed.
+
+Both ports implement it (`G.turnWait` / `UI.turn_wait`; RULINGS 2026-09-02n); the board's
+long-press and ORDERS → "Wait for next unit" are shell chrome on the Space semantics.

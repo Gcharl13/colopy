@@ -37,6 +37,9 @@ typedef struct {
     int8_t  show_hidden;             /* G.showHidden */
     int8_t  goto_arm;                /* Go to Place armed: next map click
                                       * is the destination (G.goTo) */
+    int8_t  turn_wait;               /* G.turnWait: [0x53C6] "nothing
+                                      * awaits orders" held open by the
+                                      * End-of-Turn option (C3.3) */
     int8_t  request;                 /* board-shell service request from a
                                       * menu row: 'S' save / 'L' load / 0.
                                       * The core never does I/O — the shell

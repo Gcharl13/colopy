@@ -649,6 +649,9 @@ const G = {
   // water cycling enabled (its bit is inverted, so clear = on).
   gameOptions: 0x0200, colonyOptions: 0, soundOptions: 0x0E,   // `mov [0x5386],0xE` @0x755EB: BG/Event/SFX all on
   options: null,
+  // [0x53C6] "nothing awaits orders" while Game Options row 4 "End of Turn"
+  // (word bit 0x0800 = byte [0x5383] & 0x08) holds the turn open; see advance().
+  turnWait: false,
   // [0x96], the current tune id. The rotation that would set it lives in the
   // external sound driver, which does not port; Pick Music still writes it.
   tune: 0,
@@ -2416,17 +2419,129 @@ function unitToColonist(u, c) {
 // Until now an unassigned man stayed in c.colonists, so he drew in the members
 // group and went on eating from a job he no longer had.
 //
-// Refuses to empty a colony: the engine's own behaviour when the LAST colonist
-// leaves is unread, and abandonment has its own explicit command (@ABANDON,
-// shift-A on the map), so this does not invent a second path to it. FLAGGED.
-function colonistToFence(c, i) {
+// Taking a colonist OUT (C3.1, byte model 2026-09-02). Driver
+// func_02883E(slot, job) -> validator func_025A1E (thunk 0x191F:0x618) ->
+// refusal code (jump table @0x028AF0); code 0 runs the colonist op
+// func_009318 (0x181F:0xC36). For an EJECT (classify_pair_bounds
+// func_00929A == 2: slot < size and job >= 0x13) the validator
+// @0x025A63..@0x025AC2 tests, in this order:
+//   1. has building 0 (Stockade) AND size <= 3 -> 21 @KEEPSTOCKADE (0xBBA)
+//   2. job not Soldier (0x15) / Dragoon (0x17) AND func_025900() != 0
+//                                               -> 20 @SIEGE (0xC7C)
+//   3. size == 1                                -> 3  the @ABANDON prompt
+// so the LAST colonist is NOT refused. The code-3 handler @0x0288C8..
+// @0x02892A builds "ABANDON" + "2" when the owner's colony count
+// [0x9298+owner] < 2 AND year > 1575 (@0x0288F3..@0x028902; the GAME.TXT
+// text says "after 1600", the byte gate is > 1575 -- bytes win), STRING0 =
+// colony name; the box returns 1-based and only row 1 ("Yes, it is God's
+// will.") proceeds (@0x02891F..@0x028925).
+const JOB_OUT_COLONIST = 19, JOB_OUT_PIONEER = 20, JOB_OUT_SOLDIER = 21,
+      JOB_OUT_SCOUT = 22, JOB_OUT_DRAGOON = 23, JOB_OUT_MISSIONARY = 24;
+// func_008BC6: byte [DS:0x2F5 + job] (file 0x1DC95) -- jobs 0x13..0x18 ->
+// @UNIT rows Colonists, Pioneers, Soldiers, Scouts, Dragoons, Missionaries
+const OUTSIDE_JOB_UNIT = { 19: 0, 20: 2, 21: 1, 22: 5, 23: 4, 24: 3 };
+// func_00903E(job): the goods list debited on the way out (jump table
+// @0x0090B6, base 0x82B0): Colonist none; Pioneer [tools]; Soldier
+// [muskets]; Scout [horses]; Dragoon [muskets, horses]; Missionary none.
+const OUTSIDE_JOB_GOODS = { 19: [], 20: [14], 21: [15], 22: [8], 23: [15, 8], 24: [] };
+// func_025900 -- the @SIEGE predicate @0x025900..@0x025A1C. "Strength" is
+// 0x181f:0x8bc(unit, 0xA) = func_0073A8 case 0xA @0x007486..@0x0074B3: the
+// COUNT of non-ship units (type outside 0x0D..0x12) in the stack whose
+// @UNIT attack byte [0x5236+type*14] > 1. friendly = the colony tile's
+// stack (@0x025912..@0x025929) + every adjacent tile whose top unit has the
+// colony's owner (@0x0259B0..@0x0259C1); enemy = adjacent European
+// (owner < 4) stacks of another owner WITHOUT the treaty bit (relation
+// 0x181f:0xa38(owner, unitOwner) & 0x40 clear, @0x02594F..@0x025959 ->
+// @0x0259C8); natives skipped (@0x02599B). Returns max(0, enemy -
+// friendly) (@0x0259E0..@0x0259EA). The port has no chain: a stack is "the
+// units on the tile". REF units are not scanned (their owner nibble in the
+// engine is unread -- FLAGGED, same in the C).
+function colonySiegeExcess(c) {
+  const combat = (list, x, y) => list.filter(u => u.x === x && u.y === y &&
+    !u.ship && Number((unit(u.type) || {}).attack) > 1).length;
+  let friendly = combat(G.units, c.x, c.y), enemy = 0;
+  for (const [dx, dy] of DIR8) {
+    const x = c.x + dx, y = c.y + dy;
+    if (G.units.some(u => u.x === x && u.y === y)) { friendly += combat(G.units, x, y); continue; }
+    for (const r of G.rivals) {
+      if (!r.units.some(u => u.x === x && u.y === y)) continue;
+      if (!haveTreaty(G.nation, r.nation)) enemy += combat(r.units, x, y);
+      break;
+    }
+  }
+  return Math.max(0, enemy - friendly);
+}
+// the validator's EJECT branch: null proceed, else the refusal key
+// ('ABANDON' = code 3, the prompt)
+function colonistOutRefusal(c, job) {
+  if (colonyLevel(c) > 0 && c.colonists.length <= 3) return 'KEEPSTOCKADE';
+  if (job !== JOB_OUT_SOLDIER && job !== JOB_OUT_DRAGOON && colonySiegeExcess(c) > 0) return 'SIEGE';
+  if (c.colonists.length === 1) return 'ABANDON';
+  return null;
+}
+// func_009318 mode 2 (eject) @0x009500..@0x009572 + the shared tail: spawn
+// func_008BC6(job) at the colony tile (0x427:0x6b4), profession +0x17 :=
+// colony +0x40+slot (@0x009548), a Pioneer's tools +0x15 := min(100,
+// stock[Tools]/20*20) (@0x0093D4..@0x0093EC, @0x009552), then func_008FB4
+// removes the slot (@0x00955D; +0xC6 -= 100 @0x009031 has no home in this
+// model's percentage sol -- the C keeps the record's divisor). The
+// equipment loop @0x0095CE..@0x00960D debits the job's goods: 50 each for
+// horses and muskets (@0x0093EF/@0x0093F4), the computed amount for tools,
+// floored at 0 (@0x009607). Size 0 afterwards sets the emptied flag
+// [0x348] (@0x009614) -- the colony screen closes ([0x346]=0 @0x028D69)
+// and its exit removes the record (func_02EE34 @0x02C94C).
+function ejectColonist(c, i, job) {
   const p = c.colonists[i];
-  if (!p || c.colonists.length <= 1) return null;
-  c.colonists.splice(i, 1);
-  const u = mkUnit(p.profession || p.type || 'Colonists', c.x, c.y);
+  if (!p) return null;
+  const toolsAmt = Math.min(100, Math.floor(c.stock[GOOD.TOOLS] / 20) * 20);
+  const u = mkUnit(DATA.units[OUTSIDE_JOB_UNIT[job]].name, c.x, c.y);
+  u.profession = p.profession || null;
+  if (job === JOB_OUT_PIONEER) u.tools = toolsAmt;
   G.units.push(u);
+  c.colonists.splice(i, 1);
+  for (const g of OUTSIDE_JOB_GOODS[job])
+    c.stock[g] = Math.max(0, c.stock[g] - (g === GOOD.TOOLS ? toolsAmt : 50));
+  if (c.colonists.length === 0) {
+    G.screen = 'map';
+    removePlayerColony(c);
+    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
+  }
   return u;
 }
+// The whole "take him out" path: validator, the refusal messages / the
+// @ABANDON ask (row 1 proceeds), then the op.
+function colonistOut(c, i, job) {
+  if (!c.colonists[i]) return;
+  const code = colonistOutRefusal(c, job);
+  if (code === 'KEEPSTOCKADE' || code === 'SIEGE') { showEvent(code); return; }
+  if (code === 'ABANDON') {
+    const key = (G.colonies.length < 2 && G.year > 1575) ? 'ABANDON2' : 'ABANDON';
+    askEvent(key, { STRING0: c.name }, (k) => { if (k === 0) ejectColonist(c, i, job); });
+    return;
+  }
+  ejectColonist(c, i, job);
+}
+// "Return to the fence" = out as a plain Colonist (job 0x13).
+function colonistToFence(c, i) { colonistOut(c, i, JOB_OUT_COLONIST); }
+// THE FENCE IS A HIT-RECT (C3.2, byte-read 2026-09-02): the buildings
+// picture's Stockade plot. Region-2 handler func_029DD4 walks the 15 plots
+// (@0x029EAC..@0x029EFD): rect = ([0x266+4p], [0x268+4p]+8, w[0x230+cat],
+// h[0x236+cat]), cat = byte[0x8D62+p], def = byte[0x8E82+p]. Plot 13 is
+// (123, 98) in DS:0x266 (file 0x1DC06+52), category 3 (the only plot of its
+// category: 0x224=[7,4,2,1,1], 0x22A=[0,7,11,13,14], so the shuffle is
+// random_int(0,0)+13), w[3]=73 h[3]=18 (byte tables DS:0x230/0x236) -> the
+// rect (123, 106, 73, 18). The placement pass writes def 0 (Stockade) there
+// EVEN WHEN NO STOCKADE STANDS (@0x025E64..@0x025E9F -- the level-0 fence
+// picture), and job-per-building DS:0x2CA (file 0x1DC6A) gives defs 0..2
+// (Stockade/Fort/Fortress) job 0x15 -- the only defs that do. A DROP
+// (@0x029F61..@0x029F98) of a figure whose job < 0x13 on a job-0x15 plot,
+// or a plain CLICK there with a figure selected (@0x02A07E..@0x02A08A),
+// opens the OUTSIDE-jobs menu func_028D8C(1) (@0x028DF1..@0x028DF7: job
+// range start 0x13, count 6) and the chosen row runs func_02883E(slot, job)
+// -- colonistOut above. Garrison figures are hit-tested in region 0 with
+// the colonists (func_029AC0), not here.
+const FENCE_RECT = { x: 123, y: 106, w: 73, h: 18 };
+const OUTSIDE_JOB_ROWS = [19, 20, 21, 22, 23, 24];
 function buildColony() {
   const u = G.units[G.sel];
   if (!u) return;
@@ -2601,32 +2716,11 @@ const STARTING_BUILDINGS = DATA.buildings
 const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
 
 // ------------------------------------------- colonial authority + orders
-// spec/ui/context_dialogs.md §7. @ABANDON carries `@default=2`, so the
-// highlighted row is "Never! That would be folly." -- the engine defends you
-// against a stray keypress, and the port keeps that default.
-function abandonColony() {
-  const c = G.colonies[G.colony];
-  if (!c) return;
-  // @KEEPSTOCKADE (@width=220): "We cannot voluntarily reduce below three the
-  // population of a colony that has a stockade, fort, or fortress."
-  // Abandoning always reduces below three, so any stockade level refuses.
-  if (colonyLevel(c) > 0) { showEvent('KEEPSTOCKADE'); return; }
-  askEvent(G.year >= 1600 ? 'ABANDON2' : 'ABANDON', { STRING0: c.name }, (choice) => {
-    // Row 0 abandons ("Yes, it is God's will."), row 1 refuses -- and row 1 is
-    // the @default.
-    if (choice !== 0) return;
-    // The colonists walk back out onto the map.
-    for (const p of c.colonists) {
-      const u = mkUnit('Colonists', c.x, c.y);
-      u.profession = p.profession || null;
-      G.units.push(u);
-    }
-    G.colonies.splice(G.colonies.indexOf(c), 1);
-    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
-    G.screen = 'map';
-    notice(`${c.name} is abandoned.`);
-  });
-}
+// (There is no "Abandon colony" command in the EXE: `push 0xbee` (ABANDON)
+// occurs once, @0x0288DB, inside the colonist-out driver; no MENU/NAMES row
+// says Abandon. The shift-A abandonColony() this port had was an invention
+// and is gone -- RULINGS 2026-09-02l. A colony is abandoned by taking its
+// last colonist out, colonistOut above.)
 function renameColony() {
   const c = G.colonies[G.colony];
   if (!c) return;
@@ -5133,6 +5227,14 @@ function colonyPopupRows() {
   if (G.colonyPopup === 'shipopts')
     return ((DATA.events.SHIPOPTIONS || { body: [] }).body)
       .map(l => ({ label: l, note: '' }));
+  // The OUTSIDE-jobs menu: func_028D8C(1) lists @JOB rows 0x13..0x18
+  // (@0x028DF1..@0x028DF7) -- Colonist, Pioneer, Soldier, Scout, Dragoon,
+  // Missionary; the equipment each takes is banked by the op (colonistOut).
+  // Titled like the jobs menu (the same function builds both). What the
+  // engine prints beside each row, if anything, is unread -- bare labels,
+  // FLAGGED.
+  if (G.colonyPopup === 'outside')
+    return OUTSIDE_JOB_ROWS.map(j => ({ label: DATA.jobs[j], note: '', outJob: j }));
   // Jobs: the colony's buildings are the workplaces, plus a way back to the
   // plaza. Working a FIELD is done by clicking a cell in the scene panel.
   // Only buildings that actually employ a colonist are offered, and each one
@@ -5308,6 +5410,13 @@ function colonyPopupCommit() {
   if (G.colonyPopup === 'unitopts') {
     unitOptionsCommit(G.colonyPopupRow);
     G.colonyPopup = null;
+    return;
+  }
+  if (G.colonyPopup === 'outside') {
+    G.colonyPopup = null;                  // close BEFORE the @ABANDON ask
+    colonistOut(c, G.colonistSel, r.outJob);
+    if (G.colonies[G.colony] === c)
+      G.colonistSel = Math.max(0, Math.min(G.colonistSel, c.colonists.length - 1));
     return;
   }
   if (G.colonyPopup === 'build') {
@@ -9637,6 +9746,7 @@ function newsTick() {
           showEvent('CAPTURED2', { STRING0: DATA.nations[winner.nation].country,
                                    STRING2: vc.name });
         } else {
+          colonyRemovedFixup(-1, vc.x, vc.y);   // func_02EE34: the tile bit
           showEvent('BURNED3', { STRING0: DATA.nations[winner.nation].country,
                                  STRING1: DATA.nations[victim.nation].adjective,
                                  STRING3: vc.name });
@@ -9728,7 +9838,7 @@ function rivalTurn() {
         // rival capture below is unconditional; the razing fallback runs
         // only at the port's own colony-array capacity, a capacity
         // artifact, not the engine's rule.
-        G.colonies.splice(G.colonies.indexOf(target), 1);
+        removePlayerColony(target);
         if (r.colonies.length < 48) {
           const plunder = Math.min(G.gold, 50 * Math.max(1, target.colonists.length));
           G.gold -= plunder;
@@ -9892,6 +10002,71 @@ function createRoute(stops, sea, name) {
               loads: stops.map(() => []), unloads: stops.map(() => []) };
   G.routes.push(r);
   return r;
+}
+// Route deletion -- the @TRADEDELETE handler func_0612E6 @0x0612E6..
+// @0x0613E7 (byte-read 2026-09-02, C3.5). For EVERY unit (no nation filter)
+// whose @UNIT cargo column is non-zero (@0x06136E): on the deleted route ->
+// route nibble 0, stop nibble 0 and, if the orders byte is 2, orders 0
+// (@0x061388..@0x0613AD); on a HIGHER route -> route - 1 (@0x06133C..
+// @0x061345). Then the records above shift down (rep movsw 0x25 words
+// @0x0613BC..@0x0613DA) and [0x53A0] decrements (@0x0613E7). The port's
+// "no route" is undefined (the engine's route nibble 0 + orders != 2).
+function deleteRoute(idx) {
+  for (const u of G.units) {
+    if (!(Number((unit(u.type) || {}).cargo) > 0)) continue;
+    if (u.route === undefined) continue;
+    if (u.route === idx) {
+      u.route = undefined; u.stopIndex = 0;
+      if (u.orders === ORDER_TRADE) u.orders = 0;
+    } else if (u.route > idx) u.route -= 1;
+  }
+  G.routes.splice(idx, 1);
+}
+// Stop deletion -- func_06046E @0x06046E..@0x06051A: the current nation's
+// carriers on the route with stop >= j step back one, floor 0
+// (@0x0604BF..@0x0604CD); the stops above j shift down 10 bytes each
+// (@0x0604EA..@0x060504); the count byte +0x21 decrements (@0x06051A).
+function deleteRouteStop(r, j) {
+  const rt = G.routes[r];
+  if (!rt || j < 0 || j >= rt.stops.length) return;
+  for (const u of G.units) {
+    if (!(Number((unit(u.type) || {}).cargo) > 0)) continue;
+    if (u.route !== r) continue;
+    if ((u.stopIndex || 0) >= j) u.stopIndex = Math.max(0, (u.stopIndex || 0) - 1);
+  }
+  rt.stops.splice(j, 1); rt.loads.splice(j, 1); rt.unloads.splice(j, 1);
+}
+// Colony removal -- func_02EE34 @0x02EE34..@0x02EF45 (byte-read 2026-09-02).
+// The engine: per-power colony count -1 (@0x02EE47, a census the port does
+// not keep -- it counts live), clears bit 0x02 of the IMPROVEMENT plane at
+// the tile (func_005D4E(x, y, 2, 0) @0x02EE4B..@0x02EE59; the plane is
+// [0x160] per func_005D1A @0x005D24), splices the record and decrements
+// [0x539E] (@0x02EE6A..@0x02EE8C -- the caller's splice here), then for
+// every route and every stop from the last down (@0x02EE90..@0x02EEF7):
+// Europe skipped, == idx -> the stop is deleted (func_06046E), > idx ->
+// renumbered. Finally every unit with owner < 4 has its +0x06 HOME-COLONY
+// index fixed (== idx -> 0xFF, > idx -> -1, @0x02EEFA..@0x02EF40) -- NOT
+// mirrored: the port keeps movesLeft in that byte (ledger C3.9). The port's
+// stops are G.colonies ordinals, so `ord` plays the record index; a rival
+// colony (ord -1) only clears its tile bit.
+function colonyRemovedFixup(ord, x, y) {
+  IMPROVE[y * MAP.w + x] &= ~0x02;
+  if (ord < 0) return;
+  for (let r = 0; r < G.routes.length; r++) {
+    const rt = G.routes[r];
+    for (let j = rt.stops.length - 1; j >= 0; j--) {
+      if (rt.stops[j] === STOP_EUROPE) continue;
+      if (rt.stops[j] === ord) deleteRouteStop(r, j);
+      else if (rt.stops[j] > ord) rt.stops[j] -= 1;
+    }
+  }
+}
+// One player colony leaves the list: the fixup, then the splice.
+function removePlayerColony(c) {
+  const ord = G.colonies.indexOf(c);
+  if (ord < 0) return;
+  colonyRemovedFixup(ord, c.x, c.y);
+  G.colonies.splice(ord, 1);
 }
 // One turn of automation for a unit running a route: sail or drive toward the
 // current stop, and on arrival unload, load, and advance the cursor.
@@ -10085,8 +10260,7 @@ function tradeCommit() {
       if (k !== 0) return;
       const idx = G.routes.indexOf(victim);
       if (idx < 0) return;
-      G.routes.splice(idx, 1);
-      for (const u of G.units) if (u.route === idx) { u.route = undefined; u.orders = 0; }
+      deleteRoute(idx);        // func_0612E6: unbind, renumber, splice
       G.msg = `Trade route "${victim.name}" deleted.`;
     });
     return;
@@ -11625,7 +11799,7 @@ function runWar() {
       // nothing does.
       const def = G.units.find(d => d.x === c.x && d.y === c.y && !d.ship);
       if (def) { resolveAttack(u, def); continue; }
-      G.colonies.splice(G.colonies.indexOf(c), 1);
+      removePlayerColony(c);
       G.razed += 1;
       // A burning colony plays WDCUT11 (byte-confirmed 2026-07-30: WDCUT11 is
       // fired @0x05DADC/@0x05DFCB in func_05CA7E; WDCUT12 has NO caller in the
@@ -12857,11 +13031,15 @@ function importSav(bytes) {
   // census baseline (nibble 9 = the unique sweep minimum); the full value
   // stays unknowable from one frame.
   G.mapSeed = 1657;
-  // [0x8D80] (the plot/skill seed base) is the BIOS launch tick, per-SESSION
-  // -- also not in the save. Loads pin it to the census session's measured
-  // clock (1410965; & 0x7FFF = 0x795) exactly as the C's cr_reset_from_load
-  // does, so the seeded picks (colony layouts, village teach skills) agree
-  // across both engines and with the census baselines.
+  // [0x8D80] (the plot/skill seed base) is the BIOS launch tick, per-SESSION.
+  // It IS in the save after all -- one of the four trailing writes after the
+  // planes (@0x073A45, save.md block 53; found 2026-09-02) -- and COLONY00.SAV
+  // carries exactly 1410965 (& 0x7FFF = 0x795), the census session's measured
+  // clock this pin was taken from. (The same tail holds [0x190] = 19129 for
+  // COLONY00; the 1657 pin above keeps its low nibble 9 -- reading the full
+  // word is a follow-up, RULINGS 2026-09-02j.) Both engines pin, so the
+  // seeded picks (colony layouts, village teach skills) agree across both
+  // and with the census baselines.
   G.plotSeedBase = 1410965;
   // The globals block (0x5380, 0x8E bytes -- the serializer's block 3,
   // func_0734F8 @0x073562, full 43-block order read 2026-08-07) carries the
@@ -12876,7 +13054,15 @@ function importSav(bytes) {
   // game-options word whose 0x80 (Tutorial Hints) gates every lesson --
   // the save's word IS the options word the dialog edits (2026-09-02).
   G.onceFlags = d[g];
+  // the Game Options word [0x5382]/[0x5383] (spec/ui/options_dialogs.md
+  // par.6: the checkboxes live in bits 0x8000..0x0080, 0x2000 the preserved
+  // cheat master; 0x80 = Tutorial Hints, the gate of every lesson). Restored
+  // whole so a save's "End of Turn" / Combat Analysis / Tutorial Hints
+  // settings are live (B4.2 + C3.3, 2026-09-02); every shipped fixture
+  // carries 0x0200 (Combat Analysis on), the port's old default.
   G.gameOptions = u16(g + 0x02);
+  G.combatAnalysis = !!(G.gameOptions & 0x0200);
+  G.turnWait = false;
   G.wcSeen = u16(g + 0x8A);
   // Block 34 = the single byte [0x336], the colony-strip NUMBERS toggle
   // (the badge gate, see drawCountRow): it sits 564 bytes past the tribe
@@ -13158,16 +13344,20 @@ function importSav(bytes) {
     const dividend = i32(b + 0xC2), divisor = i32(b + 0xC6);
     // Construction state: banked hammers u16 @+0x92, the target's @BUILDING
     // index @+0x94 (0xFF = none; Jamestown's 0x06 = Docks matches the
-    // census3 picker's highlighted row). An index past the 42 buildings
-    // would be a colony-built unit target -- unobserved, left null.
+    // census3 picker's highlighted row). A UNIT target is 0x2A + (type -
+    // 0x0B) -- classifier func_00B5A8 @0x00B5CE..@0x00B5E1: id - 0x2A < 7
+    // -> unit type 0x0B + (id - 0x2A), Artillery .. Frigate; the picker's
+    // commit @0x02B710 stores row - 2 (C3.7, 2026-09-02).
     const bip = d[b + 0x94];
+    const unitTarget = (bip >= 0x2A && bip <= 0x30) ? DATA.units[0x0B + bip - 0x2A] : null;
     const c = { name, x: d[b], y: d[b + 1], nation: owner, colonists,
                 stock: [], buildings, hammers: u16(b + 0x92),
                 // +0x1C flags byte, kept verbatim: the map's population-number
                 // ink reads bits 4/2 (func_004314 @0x00448B-@0x0044A4).
                 recFlags1c: d[b + 0x1C],
                 depletionCounter,
-                building: (DATA.buildings[bip] || {}).name || null,
+                building: unitTarget ? unitTarget.name
+                        : (DATA.buildings[bip] || {}).name || null,
                 // FLOOR, not round: the DOS colony screen prints 36% for
                 // Isabella (107/292 = 36.64) and 5% for Vlissingen
                 // (64/1082 = 5.92) -- the engine's integer division
@@ -13246,10 +13436,20 @@ function importSav(bytes) {
       // and 9 (Build Road) restore as of 2026-08-29: their only companion
       // state is the +0x16 work counter imported below, and the work
       // processors are byte-modeled -- a pioneer resumes mid-job. Values
-      // with unread companion state (trade route, goto, live-in-village,
-      // 7, the 11/12 internals) still reset to 0, FLAGGED.
+      // with unread companion state (goto, live-in-village, 7, the 11/12
+      // internals) still reset to 0, FLAGGED. 2 (Trade Route) restores as
+      // of 2026-09-02 (C3.7): the companion state is the +0x17 byte's two
+      // nibbles -- low = route index (func_0075D4), high = current stop
+      // (func_0075FE) -- and the route table itself is in the save's
+      // trailing block (read below, once the colonies are known). The
+      // engine tests the @UNIT cargo column for a carrier (@0x06136E).
       const ro = d[b + 0x08];
       if (ro === 1 || ro === 5 || ro === 6 || ro === 8 || ro === 9) u.orders = ro;
+      if (ro === 2 && Number(type.cargo) > 0) {
+        u.orders = ORDER_TRADE;
+        u.route = d[b + 0x17] & 0x0F;
+        u.stopIndex = d[b + 0x17] >> 4;
+      }
       // Go To (orders 3): the goal rides in +0x09/+0x0A -- the setter
       // @0x41B62/@0x41B69 writes them with orders 3 for the human
       // (@0x41B4B). Restored when the goal is on the map; a garbage goal
@@ -13297,6 +13497,58 @@ function importSav(bytes) {
       G.units.push(u);
     }
   }
+  // TRADE ROUTES -- the .SAV's trailing block (C3.7, 2026-09-02). After
+  // the four planes the serializer writes (@0x0739BC..@0x073A88; loader
+  // mirror @0x0741DA..@0x07423D): 0x86F6 0x10E + 0x85E8 0x10E (blocks
+  // 48-49), 0x945E 0x20 + 0x85C8 0x20 (50-51), a 4-byte stack local
+  // ([bp-6], the residue of the serializer's RNG reseed 0x181f:0x4ca),
+  // DGROUP 0x8D80 4 B, DGROUP 0x190 2 B, then segment 0x1B22:0000 for
+  // 0x378 bytes = 12 x 0x4A route records. Record (trade_routes.md par.2):
+  // name[32] +0x00; type byte +0x20 (0 = sea, 1 = land @0x061282); stop
+  // COUNT +0x21 (dec @0x06051A, loop bound @0x02EEED); 4 stops of 10 B at
+  // +0x22: dest word (colony record index, 0x3E7 Europe, 0x3E8 none),
+  // count byte +2 (low nibble UNLOAD, high LOAD -- func_060382), LOAD
+  // goods nibble-packed at +3..+5, UNLOAD at +6..+8 (addr_of_good_byte
+  // @0x060350; odd n = high nibble @0x0603F2). Count = globals [0x53A0]
+  // = g+0x20. Stops become G.colonies ordinals (the port's model); a
+  // stop at a colony that is not ours is dropped.
+  G.routes = [];
+  {
+    const tailBase = planeBase + 4 * plane;
+    const routeBase = tailBase + 2 * 0x10E + 2 * 0x20 + 4 + 4 + 2;
+    const nroutes = Math.min(MAX_ROUTES, u16(g + 0x20));
+    const ordOf = {};
+    { let k = 0; for (let i = 0; i < ncol; i++)
+        if ((d[colBase + i * 0xCA + 0x1A] & 3) === nation) ordOf[i] = k++; }
+    const nib = (o, k) => (k & 1) ? (d[o + (k >> 1)] >> 4) : (d[o + (k >> 1)] & 0x0F);
+    if (routeBase + nroutes * 0x4A <= d.length) {
+      for (let r = 0; r < nroutes; r++) {
+        const rb = routeBase + r * 0x4A;
+        const rt = { name: str(rb, 32), sea: d[rb + 0x20] === 0, stops: [], cursor: 0,
+                     loads: [], unloads: [] };
+        const ns = Math.min(MAX_STOPS, d[rb + 0x21]);
+        for (let k = 0; k < ns; k++) {
+          const sb = rb + 0x22 + k * 10;
+          const dest = u16(sb);
+          let stop;
+          if (dest === 0x3E7) stop = STOP_EUROPE;
+          else if (ordOf[dest] !== undefined) stop = ordOf[dest];
+          else continue;
+          const nl = Math.min(6, d[sb + 2] >> 4), nu = Math.min(6, d[sb + 2] & 0x0F);
+          const load = [], unload = [];
+          for (let j = 0; j < nl; j++) load.push(nib(sb + 3, j));
+          for (let j = 0; j < nu; j++) unload.push(nib(sb + 6, j));
+          rt.stops.push(stop); rt.loads.push(load); rt.unloads.push(unload);
+        }
+        G.routes.push(rt);
+      }
+    }
+    // A bound carrier whose route index is past the table: the engine's
+    // automation would find no route; unbind (mirrors the C loader).
+    for (const u of G.units)
+      if (u.orders === ORDER_TRADE && !(u.route < G.routes.length)) { u.orders = 0; u.route = undefined; }
+  }
+
   // A ship's MANIFEST is in CHAIN order, not record order.
   //
   // UnitRecord +0x18/+0x1A are the alias-confirmed chain links, and a ship is
@@ -13609,7 +13861,7 @@ function endTurn() {
   for (const c of G.colonies) colonyTurn(c);
   // @VANISH removals, deferred out of the loop above.
   if (G.colonies.some(c => c.vanished)) {
-    G.colonies = G.colonies.filter(c => !c.vanished);
+    for (const c of G.colonies.filter(c => c.vanished)) removePlayerColony(c);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
   }
   // Damaged-ship repair, map half -- BYTE_VERIFIED func_02F052
@@ -13650,7 +13902,7 @@ function endTurn() {
   nativeMoveAI();
   // Raid-razed colonies (@INDIANBURNCOLONY) leave here, like the starved.
   if (G.colonies.some(c => c.vanished)) {
-    G.colonies = G.colonies.filter(c => !c.vanished);
+    for (const c of G.colonies.filter(c => c.vanished)) removePlayerColony(c);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
   }
   rivalTurn();
@@ -13758,15 +14010,48 @@ function step(u, nx, ny) {
 // Once a unit has spent its moves the turn passes to the next one that still
 // has some; when none do, the turn is over and the new one starts on the first
 // unit again.
+// END OF TURN (C3.3, byte-read 2026-09-02). The orders pump func_024A48
+// polls func_024B50(0) for the next unit; when none needs orders
+// func_021D32 @0x021DCE..@0x021E5C sets [0x53C6] = 1 ("nothing awaits
+// orders"), enables the end-turn menu ids (func_0217E2), and then -- once
+// the pump has idled ([0x97B0], @0x021E48) -- ENDS THE TURN ([0x53C4] = 0
+// @0x021E56) UNLESS Game Options row 4 "End of Turn" is on (`test byte
+// [0x5383],8` @0x021E4F). New-game init writes [0x5382] = 0xC600
+// (@0x0755E5), bit 0x08 of the high byte clear, so auto-end is the default.
+// With the option ON the turn ends on Enter with no colony under the cursor
+// (func_024224 @0x02429A -> @0x024241), on Space (@0x02423A; and Space on
+// the LAST unit ends it regardless, @0x024255..@0x02425C) or on a map click
+// (func_024632 @0x02465C..@0x024663). No GAME.TXT key is emitted; what the
+// sidebar shows while waiting is TBD (T5).
+function endTurnNow() {
+  G.turnWait = false;
+  endTurn();
+  nextUnit();
+}
 function advance() {
-  if (!nextUnit()) { endTurn(); nextUnit(); }
+  if (nextUnit()) { G.turnWait = false; return; }
+  if ((G.gameOptions & 0x0800) && !G.turnWait) { G.turnWait = true; G.msg = ''; return; }
+  endTurnNow();
+}
+// Enter on the map -- func_024224 @0x02425E..@0x0242A4: a colony under the
+// cursor opens (owner == [0x5396], or [0x53A2] set); otherwise, while
+// [0x53C6] is set, the turn ends. The port's "cursor" is the active unit's
+// square (the engine's [0x853E]/[0x8540] cursor words are not modelled --
+// FLAGGED).
+function mapEnterKey() {
+  const u = G.units[G.sel];
+  const ci = u ? G.colonies.findIndex(c => c.x === u.x && c.y === u.y) : -1;
+  if (ci >= 0) { G.colony = ci; G.screen = 'colony'; return; }
+  if (G.turnWait) endTurnNow();
 }
 
 // Space passes on the active unit: it keeps its position, gives up the rest of
 // its moves for this turn, and play moves on.
 function skipUnit() {
   const u = G.units[G.sel];
-  if (!u) return;
+  // Space with nothing active while the End-of-Turn option holds the turn:
+  // func_024224 @0x02423A -> @0x024241, the turn ends.
+  if (!u) { if (G.turnWait) endTurnNow(); return; }
   u.movesLeft = 0;
   G.msg = '';
   advance();
@@ -14870,6 +15155,13 @@ function colonyDrop(d, target, mx, my) {
       return;
     }
     if (target === 2) {
+      // The fence plot: a member dropped there (his job is < 0x13 by being a
+      // member) gets the OUTSIDE-jobs menu, func_029DD4 @0x029F7B..@0x029F98.
+      if (hit(mx, my, FENCE_RECT)) {
+        G.colonistSel = c.colonists.indexOf(p);
+        G.colonyPopup = 'outside'; G.colonyPopupRow = 0;
+        return;
+      }
       // Dropped on the building field: if it landed on a building that employs
       // anyone, that is the new job. A drop on bare ground is a no-op rather
       // than a silent plaza return.
@@ -15199,6 +15491,12 @@ function onClickBody(mx, my) {
           else G.colonistSel = i;
           return;
         }
+        // The fence plot (FENCE_RECT): a click with a colonist selected opens
+        // his OUTSIDE-jobs menu (func_029DD4 @0x02A07E..@0x02A08A -> func_028D8C(1)).
+        if (hit(mx, my, FENCE_RECT) && c.colonists[G.colonistSel]) {
+          G.colonyPopup = 'outside'; G.colonyPopupRow = 0;
+          return;
+        }
       }
       // Dock: click a ship box to make it the one the hold row shows. Boxes
       // are the byte-cited 16x16 cells at x = 130 + 18k, y = 147 (see
@@ -15332,6 +15630,11 @@ function onClickBody(mx, my) {
         const ty = G.view.y + Math.floor((my - VP.y) / TILE_PX());
         // A pending "Go to Place" takes the next map click as its destination.
         if (G.goTo) { setGoTo(G.goTo, tx, ty); return; }
+        // A map click while "nothing awaits orders" ends the held turn
+        // (func_024632 @0x02465C..@0x024663; its two preconditions
+        // [0x933E]==[0x9328] and [0x7F4] are unread -- FLAGGED). The click
+        // is consumed.
+        if (G.turnWait) { endTurnNow(); return; }
         // Clicking your own colony opens its screen -- the COLONY WINS over
         // any unit stack standing on the square.  GAME_MANUAL.md p40 puts no
         // "unoccupied" condition on it, and a colony square nearly always
@@ -15541,10 +15844,9 @@ function onKeyBody(e) {
           });
       }
       if (k === 'Enter') { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
-      // Colonial authority: R renames, shift-A abandons (@ABANDON defaults to
-      // the refusal, so a stray press cannot lose you a colony).
+      // Colonial authority: R renames. (No abandon key: the EXE has no such
+      // command -- the last colonist out is the abandonment, colonistOut.)
       if (k === 'r' || k === 'R') renameColony();
-      if (k === 'A') abandonColony();
       if (k === 'Escape' || k === 'x') G.screen = 'map';
       break;
     }
@@ -15620,6 +15922,7 @@ function onKeyBody(e) {
       if (DIR[k]) { const [dx, dy] = DIR[k]; if (G.viewMode) centerOn(G.view.x + 7 + dx * 3, G.view.y + 6 + dy * 3); else moveSel(dx, dy); }
       switch (k) {
         case ' ': skipUnit(); break;
+        case 'Enter': mapEnterKey(); break;
         case 'Tab': nextUnit(); break;
         case 'a': case 'A': activateUnit(); break;
         case 'w': case 'W': nextUnit(); break;

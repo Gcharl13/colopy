@@ -119,19 +119,66 @@ static void end_turn(void) {
     if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
 }
 
+/* END OF TURN (C3.3, byte-read 2026-09-02).  When no unit needs orders
+ * func_021D32 @0x021DCE..@0x021E5C sets [0x53C6] = 1 and, once the
+ * orders pump has idled ([0x97B0] @0x021E48), ENDS THE TURN ([0x53C4] = 0
+ * @0x021E56) UNLESS Game Options row 4 "End of Turn" is on (`test byte
+ * [0x5383],8` @0x021E4F; new-game default 0xC600 @0x0755E5 = off).  With
+ * the option ON the turn ends on Enter with no colony under the cursor
+ * (func_024224 @0x02429A -> @0x024241), on Space (@0x02423A; on the LAST
+ * unit regardless @0x024255..@0x02425C) or on a map click (func_024632
+ * @0x02465C..@0x024663).  No GAME.TXT key; the sidebar's wait state is
+ * TBD (T5).  The board's long-press and "Wait for next unit" are shell
+ * chrome mapped onto this Space semantics (RULINGS 2026-09-02n). */
+static void end_turn_now(void) {
+    UI.turn_wait = 0;
+    end_turn();
+    /* AUTOSAVE (C3.6, byte-read 2026-09-02): Game Options row 5
+     * ([0x5383]&4 = word 0x0400).  The turn loop @0x0058D0..@0x0058DF
+     * (also @0x005A29; the [0x829]==0 gate there is unread — FLAGGED)
+     * calls func_005642 @0x005642..@0x005667, which saves ONE slot per
+     * turn through 0x181f:0x5b6 (func_072CA4 -> COLONY%02d.SAV): slot 8
+     * when year%10==0 AND season==0 AND turn>2 (the decade boundary),
+     * else slot 9.  The core never does I/O: the shell services '8'/'9'
+     * like the menu's 'S'/'L'. */
+    if ((CR.game_options & 0x0400) && !UI.request)
+        UI.request = (cs_year() % 10 == 0 && cs_season() == 0 && cs_turn() > 2)
+                         ? '8' : '9';
+    next_unit();
+    /* an askZoom answered 1 during the turn opened a colony
+     * (game.js:6378) — the input layer applies it */
+    if (CR.zoom_colony >= 0) {
+        UI.colony = (int8_t)CR.zoom_colony;
+        UI.screen = SCR_COLONY;
+        CR.zoom_colony = -1;
+    }
+}
 /* advance (game.js:10866) */
 static void advance(void) {
-    if (!next_unit()) {
-        end_turn();
-        next_unit();
-        /* an askZoom answered 1 during the turn opened a colony
-         * (game.js:6378) — the input layer applies it */
-        if (CR.zoom_colony >= 0) {
-            UI.colony = (int8_t)CR.zoom_colony;
-            UI.screen = SCR_COLONY;
-            CR.zoom_colony = -1;
+    if (next_unit()) { UI.turn_wait = 0; return; }
+    if ((CR.game_options & 0x0800) && !UI.turn_wait) { UI.turn_wait = 1; return; }
+    end_turn_now();
+}
+/* Enter on the map — func_024224 @0x02425E..@0x0242A4: a colony under
+ * the cursor opens, else while [0x53C6] is set the turn ends.  The
+ * port's cursor is the active unit's square (the engine's [0x853E]/
+ * [0x8540] cursor words are not modelled — FLAGGED). */
+static void map_enter_key(void) {
+    int ui = sel_unit();
+    if (ui >= 0) {
+        int ord = -1;
+        for (int k = 0; k < CS.n_colonies; k++) {
+            if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+            ord++;
+            if (CS.colonies[k].map_x == CS.units[ui].map_x &&
+                CS.colonies[k].map_y == CS.units[ui].map_y) {
+                UI.colony = (int8_t)ord;
+                UI.screen = SCR_COLONY;
+                return;
+            }
         }
     }
+    if (UI.turn_wait) end_turn_now();
 }
 
 /* openMenu (game.js:1874): first non-separator row selected */
@@ -1062,14 +1109,13 @@ int ui_build_rows_probe(int cci, const char **names) {
     return build_rows(cci, names);
 }
 
-/* the JS c.building NAME for the record's target byte. Units cannot be
- * expressed in the record's @BUILDING index, so a unit target committed
- * from the picker is held as 0xC0+u (input-layer encoding, outside the
- * sav's 0..41/0xFF vocabulary — a save-out with a unit under way would
- * need a real mirror; FLAGGED with the turn step's unit-build TBD). */
+/* the JS c.building NAME for the record's target byte: a @BUILDING index,
+ * or a unit target 0x2A + (type - 0x0B) — the engine's own encoding
+ * (func_00B5A8 @0x00B5CE; picker commit @0x02B710 stores row - 2). */
 static const char *build_target_name(const ColonyRecord *c) {
     int bip = c->building_in_production;
-    if (bip >= 0xC0 && bip < 0xC7) return BUILD_UNITS[bip - 0xC0];
+    int ut = build_target_unit_type((uint8_t)bip);
+    if (ut >= 0) return dat_units[ut].name;
     return bip < DAT_BUILDINGS_COUNT ? dat_buildings[bip].name : NULL;
 }
 /* test-only probe: the CURRENT colony's build-target name, exported so
@@ -1116,12 +1162,9 @@ static void rush_buy(void) {
         cost_h = dat_buildings[first].cost;
         tools10 = dat_buildings[first].tools_x10;
         nm = dat_buildings[first].name;
-    } else if (bip >= 0xC0 && bip < 0xC7) {
-        nm = BUILD_UNITS[bip - 0xC0];
-        int ur = -1;
-        for (int i = 0; i < DAT_UNITS_COUNT; i++)
-            if (strcmp(dat_units[i].name, nm) == 0) { ur = i; break; }
-        if (ur < 0) return;
+    } else if (build_target_unit_type((uint8_t)bip) >= 0) {
+        int ur = build_target_unit_type((uint8_t)bip);
+        nm = dat_units[ur].name;
         /* BYTE_VERIFIED func_00B65A: @UNIT hammers byte x32 (@0x0B6B7)
          * with the clamp ladder <40 -> 40, 40..51 -> 52 (@0x0B6BD) */
         cost_h = dat_units[ur].cost * 32;
@@ -1335,6 +1378,24 @@ int ui_colony_popup_model(char labels[][40], char notes[][40],
         }
         return n4;
     }
+    if (UI.colony_popup == 6) {
+        /* the OUTSIDE-jobs menu func_028D8C(1): @JOB rows 0x13..0x18
+         * (@0x028DF1..@0x028DF7), titled like the jobs menu (the same
+         * function builds both); what the engine prints beside a row is
+         * unread — bare labels, FLAGGED */
+        int k = UI.colonist_sel;
+        const char *who = k >= 0 && k < c->population &&
+                          c->profession[k] < DAT_JOBEXPERT_COUNT
+                              ? dat_jobexpert[c->profession[k]] : "";
+        snprintf(title, (size_t)tcap, "%s %s", dat_text_ctitle[8], who);
+        int n6 = 0;
+        for (int j = 0x13; j <= 0x18 && n6 < cap; j++) {
+            snprintf(labels[n6], 40, "%s", j < DAT_JOBS_COUNT ? dat_jobs[j] : "");
+            notes[n6][0] = 0;
+            n6++;
+        }
+        return n6;
+    }
     int n = UI.colony_popup == 2 ? build_rows(cci, names)
                                  : jobs_rows(cci, names);
     if (n > cap) n = cap;
@@ -1426,6 +1487,28 @@ static int occupation_bld_rows(int cci) {
 }
 static int occupation_row_count(int cci) { return 10 + occupation_bld_rows(cci); }
 
+/* the OUTSIDE-jobs menu's row: func_02883E(slot, 0x13 + row) — the
+ * validator, the refusals / the @ABANDON ask, then the eject op
+ * (colonist_out).  An emptied colony is gone when this returns: the
+ * engine closes the screen ([0x346]=0 @0x028D69) and removes the record
+ * at the exit (func_02EE34 @0x02C94C). */
+static void outside_commit(void) {
+    int cci = player_colony_rec(UI.colony);
+    int row = UI.colony_popup_row, k = UI.colonist_sel;
+    UI.colony_popup = 0;                     /* close BEFORE the ask */
+    if (cci < 0 || row < 0 || row > 5) return;
+    if (k < 0 || k >= CS.colonies[cci].population) return;
+    colonist_out(cci, k, 0x13 + row);
+    if (player_colony_rec(UI.colony) != cci ||
+        CS.colonies[cci].population == 0) {
+        UI.screen = SCR_MAP;
+        return;
+    }
+    if (UI.colonist_sel >= CS.colonies[cci].population)
+        UI.colonist_sel = (int8_t)(CS.colonies[cci].population
+                                       ? CS.colonies[cci].population - 1 : 0);
+}
+
 /* colonyPopupCommit 'occupation' (game.js:4003): a job row re-tasks the
  * worker on his cell (Teacher through the same guard); a BUILDING row
  * moves him indoors; the last row calls him back to the plaza */
@@ -1443,6 +1526,16 @@ static void occupation_commit(void) {
              * the plaza row draws him in the garrison group and the food
              * count no longer feeds him (colonist_to_fence). */
             colonist_to_fence(cci, k);
+            /* the last colonist out empties the colony: the engine closes
+             * the screen ([0x346]=0 @0x028D69) and removes the record at
+             * the exit (func_02EE34 @0x02C94C) — colonist_eject did the
+             * removal, so leave the screen */
+            if (player_colony_rec(UI.colony) != cci ||
+                CS.colonies[cci].population == 0) {
+                UI.colony_popup = 0;
+                UI.screen = SCR_MAP;
+                return;
+            }
             if (UI.colonist_sel >= c->population)
                 UI.colonist_sel = (int8_t)(c->population ? c->population - 1 : 0);
         } else if (row >= 9 && row < fence_row) {
@@ -1503,8 +1596,9 @@ static void build_picker_commit(void) {
                 for (int i = 0; i < DAT_BUILDINGS_COUNT && id < 0; i++)
                     if (strcmp(dat_buildings[i].name, nm) == 0) id = i;
                 if (id < 0)
-                    for (int u = 0; u < 7; u++)
-                        if (strcmp(BUILD_UNITS[u], nm) == 0) id = 0xC0 + u;
+                    for (int t = 0x0B; t <= 0x11; t++)
+                        if (strcmp(dat_units[t].name, nm) == 0)
+                            id = build_target_for_unit_type(t);
                 if (id >= 0) c->building_in_production = (uint8_t)id;
             }
         }
@@ -1770,16 +1864,9 @@ static void trade_commit(void) {
         UI.trade_mode = 0;
         ev_emit("SUREDELETE", 0, 0, CR.routes[row].name, 0);
         if (ask_choice() != 0) return;
-        for (int i = row; i + 1 < CR.n_routes; i++)
-            CR.routes[i] = CR.routes[i + 1];
-        CR.n_routes--;
-        /* the JS clears only route === idx — later indices stay
-         * UNSHIFTED (mirrored verbatim, FLAGGED quirk) */
-        for (int i = 0; i < CS.n_units; i++)
-            if (CR.unit_route[i] == row) {
-                CR.unit_route[i] = -1;
-                if (unit_on_map_player(i)) CS.units[i].orders = 0;
-            }
+        /* func_0612E6: unbind the carriers on it, renumber the ones
+         * above, splice (C3.5, 2026-09-02) */
+        route_delete(row);
         return;
     }
     /* assign (7878) */
@@ -2228,9 +2315,14 @@ static void in_key_inner(const char *k, int alt, int shift) {
             return;
         }
         int ui = sel_unit();
+        if (key_is(k, "Enter")) { map_enter_key(); return; }
         if (key_is(k, " ")) {
             if (ui >= 0) { cmd_skip(ui); advance(); }
-            else if (colopy_front_live) {
+            else if (UI.turn_wait) {
+                /* Space with nothing active while the End-of-Turn option
+                 * holds the turn: @0x02423A -> @0x024241, the turn ends */
+                end_turn_now();
+            } else if (colopy_front_live) {
                 /* NOTHING is active — every unit is spent, or the
                  * player has no map unit at all (all colonists inside
                  * colonies, the ship at sea).  skipUnit returns early
@@ -2445,6 +2537,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                   : UI.colony_popup == 3 ? occupation_row_count(cci)
                   : UI.colony_popup == 4 ? 5       /* @UNITOPTIONS */
                   : UI.colony_popup == 5 ? 6       /* @SHIPOPTIONS */
+                  : UI.colony_popup == 6 ? 6       /* outside jobs 0x13..0x18 */
                                          : jobs_rows(cci, names);
             if (key_is(k, "ArrowUp"))
                 UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
@@ -2455,6 +2548,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 else if (UI.colony_popup == 3) occupation_commit();
                 else if (UI.colony_popup == 4) unit_options_commit();
                 else if (UI.colony_popup == 5) ship_options_commit();
+                else if (UI.colony_popup == 6) outside_commit();
                 else jobs_popup_commit();
             }
             if (key_is(k, "Escape")) UI.colony_popup = 0;
@@ -2834,6 +2928,7 @@ static void in_click_inner(int mx, int my, int right) {
                 else if (UI.colony_popup == 3) occupation_commit();
                 else if (UI.colony_popup == 4) unit_options_commit();
                 else if (UI.colony_popup == 5) ship_options_commit();
+                else if (UI.colony_popup == 6) outside_commit();
                 else jobs_popup_commit();
                 return;
             }
@@ -2910,6 +3005,21 @@ static void in_click_inner(int mx, int my, int right) {
                     UI.colony_popup_row = 0;
                 } else
                     UI.colonist_sel = (int8_t)bw;
+                return;
+            }
+            /* THE FENCE IS A HIT-RECT (C3.2, 2026-09-02): the Stockade
+             * plot 13 of the buildings picture, (123, 98) in DS:0x266
+             * drawn at y+8, category 3 -> w 73 h 18 (DS:0x230/0x236), so
+             * (123,106,73,18); def 0 is written there even without a
+             * Stockade (@0x025E64..@0x025E9F) and defs 0..2 map to job
+             * 0x15 (DS:0x2CA).  A click there with a colonist selected
+             * opens his OUTSIDE-jobs menu (func_029DD4 @0x02A07E..
+             * @0x02A08A -> func_028D8C(1)); the board's tap is the
+             * drop's equivalent (@0x029F7B..@0x029F98). */
+            if (hit(mx, my, 123, 106, 73, 18) && UI.colonist_sel >= 0 &&
+                UI.colonist_sel < c->population) {
+                UI.colony_popup = 6;
+                UI.colony_popup_row = 0;
                 return;
             }
         }
@@ -3071,6 +3181,10 @@ static void in_click_inner(int mx, int my, int right) {
                 if (gu >= 0) cmd_goto(gu, tx, ty);
                 return;
             }
+            /* a map click while "nothing awaits orders" ends the held
+             * turn (func_024632 @0x02465C..@0x024663; preconditions
+             * [0x933E]==[0x9328] / [0x7F4] unread — FLAGGED); consumed */
+            if (UI.turn_wait) { end_turn_now(); return; }
             int ci = -1, ord = -1;
             for (int k = 0; k < CS.n_colonies; k++) {
                 if ((CS.colonies[k].owner_power & 3) != cs_nation())

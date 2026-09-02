@@ -77,7 +77,6 @@ typedef enum {
     COLOPY_CMD_RUSH_BUY,
     COLOPY_CMD_LOAD_CARGO,     /* a = unit, b = good, c = amount */
     COLOPY_CMD_UNLOAD_CARGO,
-    COLOPY_CMD_ABANDON_COLONY,
     /* Europe */
     COLOPY_CMD_SAIL_EUROPE,
     COLOPY_CMD_SAIL_NEWWORLD,

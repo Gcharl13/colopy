@@ -1461,6 +1461,92 @@ int route_create(const int16_t *stops, int n, int sea, const char *name) {
     return CR.n_routes++;
 }
 
+/* a route-carrying unit: the engine tests the @UNIT cargo column
+ * (byte [0x5237 + type*14] != 0 @0x06136E / @0x06049E) */
+static int carrier_type(int type) {
+    return type >= 0 && type < DAT_UNITS_COUNT && dat_units[type].cargo > 0;
+}
+
+/* Route deletion — the @TRADEDELETE handler func_0612E6 @0x0612E6..
+ * @0x0613E7 (byte-read 2026-09-02, C3.5).  For EVERY unit (no nation
+ * filter) that is a carrier: on the deleted route -> route nibble 0, stop
+ * nibble 0 and, if the orders byte is 2, orders 0 (@0x061388..@0x0613AD);
+ * on a HIGHER route -> route - 1 (@0x06133C..@0x061345).  Then the records
+ * above shift down (rep movsw 0x25 words @0x0613BC..@0x0613DA) and
+ * [0x53A0] decrements (@0x0613E7).  The port's "no route" is -1 (the
+ * engine's route nibble 0 + orders != 2 says the same thing). */
+void route_delete(int r) {
+    if (r < 0 || r >= CR.n_routes) return;
+    for (int i = 0; i < CS.n_units; i++) {
+        if (!carrier_type(CS.units[i].type)) continue;
+        if (CR.unit_route[i] == r) {
+            CR.unit_route[i] = -1;
+            CR.unit_stop_index[i] = 0;
+            if (CS.units[i].orders == 2) CS.units[i].orders = 0;
+        } else if (CR.unit_route[i] > r) {
+            CR.unit_route[i]--;
+        }
+    }
+    for (int i = r; i + 1 < CR.n_routes; i++) CR.routes[i] = CR.routes[i + 1];
+    CR.n_routes--;
+}
+
+/* Stop deletion — func_06046E @0x06046E..@0x06051A: the current nation's
+ * carriers on the route with stop >= j step back one, floor 0
+ * (@0x0604BF..@0x0604CD); the stops above j shift down 10 bytes each
+ * (@0x0604EA..@0x060504); the count byte +0x21 decrements (@0x06051A). */
+void route_stop_delete(int r, int j) {
+    if (r < 0 || r >= CR.n_routes) return;
+    struct colopy_route *rt = &CR.routes[r];
+    if (j < 0 || j >= rt->n_stops) return;
+    for (int i = 0; i < CS.n_units; i++) {
+        if ((CS.units[i].owner_flags & 0x0F) != cs_nation()) continue;
+        if (!carrier_type(CS.units[i].type) || CR.unit_route[i] != r) continue;
+        if (CR.unit_stop_index[i] >= j)
+            CR.unit_stop_index[i] = (uint8_t)(CR.unit_stop_index[i] ? CR.unit_stop_index[i] - 1 : 0);
+    }
+    for (int k = j; k + 1 < rt->n_stops; k++) {
+        rt->stops[k] = rt->stops[k + 1];
+        rt->n_load[k] = rt->n_load[k + 1];
+        rt->n_unload[k] = rt->n_unload[k + 1];
+        memcpy(rt->load[k], rt->load[k + 1], sizeof(rt->load[k]));
+        memcpy(rt->unload[k], rt->unload[k + 1], sizeof(rt->unload[k]));
+    }
+    rt->n_stops--;
+}
+
+/* Colony removal — func_02EE34 @0x02EE34..@0x02EF45 (byte-read
+ * 2026-09-02).  Called BEFORE the record splice.  The engine: per-power
+ * colony count -1 (@0x02EE47 — a census the port does not keep, it counts
+ * records live), clears bit 0x02 of the IMPROVEMENT plane at the tile
+ * (func_005D4E(x, y, 2, 0) @0x02EE4B..@0x02EE59; plane [0x160] per
+ * func_005D1A @0x005D24), splices the record and decrements [0x539E]
+ * (@0x02EE6A..@0x02EE8C — the caller's memmove), then for every route and
+ * every stop from the last down (@0x02EE90..@0x02EEF7): Europe (0x3E7)
+ * skipped, == idx -> the stop is deleted (func_06046E), > idx ->
+ * renumbered.  Finally every unit with owner < 4 has its +0x06 HOME-COLONY
+ * index fixed (== idx -> 0xFF, > idx -> -1, @0x02EEFA..@0x02EF40) — NOT
+ * mirrored: the port stores movesLeft in that byte (ledger C3.9).  The
+ * port's stops are player-colony ORDINALS, so only a player colony's
+ * removal touches them. */
+void colony_removed_fixup(int ci) {
+    if (ci < 0 || ci >= CS.n_colonies) return;
+    const ColonyRecord *c = &CS.colonies[ci];
+    CS.improve[c->map_y * COLOPY_MAP_W + c->map_x] &= (uint8_t)~0x02;
+    if ((c->owner_power & 3) != cs_nation()) return;
+    int ord = -1;
+    for (int i = 0; i <= ci; i++)
+        if ((CS.colonies[i].owner_power & 3) == cs_nation()) ord++;
+    for (int r = 0; r < CR.n_routes; r++) {
+        struct colopy_route *rt = &CR.routes[r];
+        for (int j = rt->n_stops - 1; j >= 0; j--) {
+            if (rt->stops[j] == COLOPY_STOP_EUROPE) continue;
+            if (rt->stops[j] == ord) route_stop_delete(r, j);
+            else if (rt->stops[j] > ord) rt->stops[j]--;
+        }
+    }
+}
+
 /* runTradeRoute (7739) */
 static void run_trade_route(int ui) {
     UnitRecord *u = &CS.units[ui];

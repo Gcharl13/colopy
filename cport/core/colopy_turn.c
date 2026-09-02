@@ -14,11 +14,13 @@
  * (A third limit used to be listed here -- "unit BUILD targets: the importer
  * nulls them (bip >= 42), so the completion path handles buildings only".
  * That was FIXED and the comment outlived it: the picker encodes a unit
- * target as 0xC0+u, advance_construction resolves it through
- * BUILD_UNIT_NAMES (see is_unit below), and the .CPX sidecar persists it
- * across a save.  Wagon Trains, Artillery and ships all complete.  Removed
- * 2026-08-19 in the staleness sweep -- it had been read as current by the
- * ledger and by a status overview.)
+ * target in the record's own +0x94 vocabulary (0x2A + (type - 0x0B),
+ * func_00B5A8 -- since 2026-09-02; before that a port-private 0xC0+u
+ * marker with a .CPX sidecar), advance_construction resolves it through
+ * build_target_unit_type, and the .SAV carries it.  Wagon Trains,
+ * Artillery and ships all complete.  Removed 2026-08-19 in the staleness
+ * sweep -- it had been read as current by the ledger and by a status
+ * overview.)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -276,9 +278,13 @@ void cr_reset_from_load(void) {
     CR.built_colony = 1;
     /* the game-options word is the save's own globals +2 ([0x5382]):
      * 0xC680 in every Discoverer fixture, 0xC600 at Explorer — the
-     * Tutorial-Hints bit 0x80 gates every lesson (colopy_tutorial.c);
-     * colopy_new_game seeds it the engine's way before this runs, and
-     * the options dialog writes both homes (importSav, game.js) */
+     * Tutorial-Hints bit 0x80 gates every lesson (colopy_tutorial.c),
+     * "End of Turn" 0x0800 holds the turn (C3.3) and Combat Analysis
+     * 0x0200 opens the panel; the option bits are 0x8000..0x0080
+     * (spec/ui/options_dialogs.md par.6, 0x2000 the preserved cheat
+     * master).  colopy_new_game seeds it the engine's way before this
+     * runs, and the options dialog writes both homes (importSav,
+     * game.js) */
     CR.game_options = (uint16_t)(CS.globals[2] | (CS.globals[3] << 8));
     CR.colony_options = 0;
     CR.sound_options = 0x0E;         /* new-game seed `mov [0x5386],0xE`
@@ -390,27 +396,7 @@ void colonist_add(ColonyRecord *c) {
     c->profession[c->population] = 28;
     c->population++;
 }
-static int unit_type_for_profession(uint8_t prof);
 
-/* colonistToFence (game.js, next to unitToColonist): a colonist LEAVES the
- * colony and waits at the fence — which is to say he becomes an ordinary
- * unit standing on the colony square.  Two GAME.TXT keys pin what "the
- * fence" is: @TUTORIAL4 ("To take a colonist OUT OF A COLONY, drag him to
- * the fence (near the water on the colony picture)") and @TUTORIAL15 (new
- * arrivals wait at the "fence" until dragged "to a field or building").
- * So the fence holds people who are ON the square but NOT members, which
- * is exactly the second group of the byte-verified plaza row: its count is
- * `colony+0x1F` (members) + `[0x8D72]` (units on the tile), separated by
- * the 4px break (spec/ui/colony_screen.md §3.3, func_0270D0).
- *
- * Leaving therefore drops the colony's population, and food is
- * `eaten = 2 * pop` over the MEMBERS (BYTE_VERIFIED @0xA5F2, restated by
- * @TUTORIAL16) — so the man at the fence stops eating, which is what the
- * user reported (2026-08-17).
- *
- * Refuses to empty a colony: the engine's behaviour when the LAST colonist
- * leaves is unread, and abandonment has its own command (@ABANDON), so
- * this does not invent a second path to it.  FLAGGED. */
 /* Remove colonist k from the record, closing the index-packed arrays.
  * BYTE_VERIFIED as the engine's own removal primitive func_008FB4 (thunk
  * 0x181F:0xA9C): shift occupation (+0x20) / profession (+0x40) and the
@@ -435,25 +421,159 @@ void colonist_remove_at(int ci, int k) {
         else if ((uint8_t)c->tiles[q] != 0xFF && (uint8_t)c->tiles[q] > (uint8_t)k)
             c->tiles[q] = (int8_t)((uint8_t)c->tiles[q] - 1);
     }
+    /* +0xC6 -= 100 (@0x009031 sub/sbb) — the record's SoL divisor; the
+     * runtime sol model (CR.col[].sol, mirrored in the JS) does not read
+     * it, so this is .SAV fidelity only (added 2026-09-02, C3.1) */
+    c->rebel_divisor -= 100;
 }
 
-int colonist_to_fence(int ci, int k) {
+/* ---- taking a colonist OUT of the colony (C3.1, byte model 2026-09-02) ----
+ * Driver func_02883E(slot, job) -> validator func_025A1E -> refusal code;
+ * code 0 runs the colonist op func_009318 (thunk 0x181F:0xC36).  For an
+ * EJECT (classify_pair_bounds func_00929A == 2: slot < size and
+ * job >= 0x13) the validator @0x025A63..@0x025AC2 tests, in this order:
+ *   1. has building 0 (Stockade) AND size <= 3  -> 21 @KEEPSTOCKADE
+ *   2. job not Soldier (0x15) / Dragoon (0x17) AND func_025900() != 0
+ *                                               -> 20 @SIEGE
+ *   3. size == 1                                -> 3  @ABANDON prompt
+ * The code-3 handler @0x0288C8..@0x02892A asks @ABANDON, or @ABANDON2
+ * when the owner's colony count [0x9298+owner] < 2 AND year > 1575
+ * (@0x0288F3..@0x028902), STRING0 = colony name; row 1 ("Yes, it is
+ * God's will.", 0x181f:0x652 returns 1-based) proceeds.  The last
+ * colonist is NOT refused. */
+static const uint8_t OUTSIDE_JOB_UNIT[6] = { 0, 2, 1, 5, 4, 3 };
+/* func_008BC6: byte [DS:0x2F5 + job] (file 0x1DC95) — jobs 0x13..0x18 ->
+ * Colonists, Pioneers, Soldiers, Scouts, Dragoons, Missionaries */
+static const int8_t OUTSIDE_JOB_GOODS[6][2] = {
+    { -1, -1 }, { 14, -1 }, { 15, -1 }, { 8, -1 }, { 15, 8 }, { -1, -1 },
+};
+/* func_00903E(job): the goods list debited on the way out (jump table
+ * @0x0090B6, base 0x82B0): Colonist none; Pioneer [tools]; Soldier
+ * [muskets]; Scout [horses]; Dragoon [muskets, horses]; Missionary none */
+
+/* func_025900 — the @SIEGE predicate @0x025900..@0x025A1C.  "Strength"
+ * is 0x181f:0x8bc(unit, 0xA) = func_0073A8 case 0xA @0x007486..
+ * @0x0074B3: the COUNT of non-ship units (type outside 0x0D..0x12) in
+ * the stack whose @UNIT attack byte [0x5236+type*14] > 1.  friendly =
+ * the colony tile's stack (@0x025912..@0x025929) + every adjacent tile
+ * whose top unit has the colony's owner (@0x0259B0..@0x0259C1); enemy =
+ * adjacent European (owner < 4) stacks of another owner WITHOUT the
+ * treaty bit (relation 0x181f:0xa38(owner, unitOwner) & 0x40 clear,
+ * @0x02594F..@0x025959 -> @0x0259C8); natives skipped (@0x02599B).
+ * Returns max(0, enemy - friendly) (@0x0259E0..@0x0259EA).  The port has
+ * no chain: a stack is "the units on the tile".  REF units are not
+ * scanned (their owner nibble in the engine is unread — FLAGGED; the JS
+ * keeps them in a separate list too). */
+static int stack_combat_count(int x, int y, int *owner_out) {
+    int n = 0;
+    *owner_out = -1;
+    for (int i = 0; i < CS.n_units; i++) {
+        const UnitRecord *u = &CS.units[i];
+        int own = u->owner_flags & 0x0F;
+        if (own >= 4 || u->type >= DAT_UNITS_COUNT) continue;
+        if (CR.unit_is_ref[i] || CR.unit_in_natives[i]) continue;
+        int ux, uy;
+        if (own == (int)cs_nation()) {
+            if (!unit_on_map_player(i)) continue;
+            ux = u->map_x; uy = u->map_y;
+        } else {
+            ux = CR.runit_x[i]; uy = CR.runit_y[i];
+        }
+        if (ux != x || uy != y) continue;
+        if (*owner_out < 0) *owner_out = own;
+        if (u->type >= 0x0D && u->type <= 0x12) continue;      /* ships */
+        if (dat_units[u->type].attack > 1) n++;
+    }
+    return n;
+}
+int colony_siege_excess(int ci) {
+    const ColonyRecord *c = &CS.colonies[ci];
+    int owner = c->owner_power & 3, top;
+    int friendly = stack_combat_count(c->map_x, c->map_y, &top);
+    int enemy = 0;
+    for (int d = 0; d < 8; d++) {
+        int n = stack_combat_count(c->map_x + colony_cell_dx[d],
+                                   c->map_y + colony_cell_dy[d], &top);
+        if (top < 0) continue;
+        if (top == owner) friendly += n;
+        else if (!(CR.treaty_matrix[owner][top] & REL_TREATY)) enemy += n;
+    }
+    return enemy - friendly > 0 ? enemy - friendly : 0;
+}
+
+/* the validator's EJECT branch: 0 proceed, 21 @KEEPSTOCKADE, 20 @SIEGE,
+ * 3 = ask @ABANDON (func_025A1E @0x025A63..@0x025AC2) */
+int colonist_out_refusal(int ci, int job) {
+    const ColonyRecord *c = &CS.colonies[ci];
+    if (has_bld(ci, 0) && c->population <= 3) return 21;
+    if (job != 0x15 && job != 0x17 && colony_siege_excess(ci) > 0) return 20;
+    if (c->population == 1) return 3;
+    return 0;
+}
+
+/* func_009318 mode 2 (eject) @0x009500..@0x009572 + the shared tail:
+ * spawn func_008BC6(job) at the colony tile (0x427:0x6b4), profession
+ * byte +0x17 := colony +0x40+slot (@0x009548), a Pioneer's tools +0x15 :=
+ * min(100, stock[Tools]/20*20) (@0x0093D4..@0x0093EC, @0x009552), then
+ * func_008FB4 removes the slot (@0x00955D).  The equipment loop
+ * @0x0095CE..@0x00960D debits the job's goods: 50 each for horses and
+ * muskets (@0x0093EF/@0x0093F4), the computed amount for tools, floored
+ * at 0 (@0x009607).  A failed spawn (no free unit slot, @0x009529)
+ * skips only the slot removal — the goods are still debited.  Size 0
+ * afterwards sets the emptied flag [0x348] (@0x009614..@0x00961A) —
+ * here that becomes the immediate record removal the colony-screen
+ * exit performs (func_02EE34 @0x02C94C), the screen having been closed
+ * by [0x346]=0 (@0x028D69).  Returns the unit index or -1. */
+int colonist_eject(int ci, int k, int job) {
     ColonyRecord *c = &CS.colonies[ci];
-    if (k < 0 || k >= c->population || c->population <= 1) return -1;
+    if (k < 0 || k >= c->population || job < 0x13 || job > 0x18) return -1;
     uint8_t prof = c->profession[k];
-    colonist_remove_at(ci, k);
-    /* mkUnit(p.profession || p.type || 'Colonists'): a specialty maps to its
-     * carrier unit type, a plain colonist to Colonists */
-    int type = unit_type_for_profession(prof);
-    int ui = unit_append(type, (int)cs_nation(), c->map_x, c->map_y);
-    /* only a REAL specialty rides along.  SAV_PROFESSION (game.js:10299)
-     * accepts 1..DAT_JOBEXPERT_COUNT-1 and reads everything else as null,
-     * and the record's "no specialty" value is out of that range — storing
-     * it verbatim would hand the unit a profession index nothing decodes. */
-    if (ui >= 0 && prof < DAT_JOBEXPERT_COUNT /* 0 = Expert Farmers; 28 = none */)
-        CS.units[ui].profession = prof;
+    int tools_amt = (c->stock[TOOLS] / 20) * 20;
+    if (tools_amt > 100) tools_amt = 100;
+    int ui = unit_append(OUTSIDE_JOB_UNIT[job - 0x13], (int)cs_nation(),
+                         c->map_x, c->map_y);
+    if (ui >= 0) {
+        /* only a REAL specialty rides along (the record's "none" is the
+         * out-of-range 28, which nothing decodes) */
+        if (prof < DAT_JOBEXPERT_COUNT) CS.units[ui].profession = prof;
+        if (job == 0x14) CS.units[ui].tools = (uint8_t)tools_amt;
+        colonist_remove_at(ci, k);
+    }
+    for (int g = 0; g < 2; g++) {
+        int good = OUTSIDE_JOB_GOODS[job - 0x13][g];
+        if (good < 0) continue;
+        int amt = good == TOOLS ? tools_amt : 50;
+        c->stock[good] = (uint16_t)(c->stock[good] > amt ? c->stock[good] - amt : 0);
+    }
+    if (c->population == 0) {
+        CR.screen_map = 1;               /* [0x346]=0: the screen closes */
+        colony_remove(ci);               /* [0x348]=1 -> func_02EE34 */
+    }
     return ui;
 }
+
+/* The whole "take him out" path for a HUMAN player: validator, the
+ * refusal messages / the @ABANDON ask (row 1 proceeds), then the op.
+ * Returns the unit index, -1 when refused or declined. */
+int colonist_out(int ci, int k, int job) {
+    ColonyRecord *c = &CS.colonies[ci];
+    if (k < 0 || k >= c->population) return -1;
+    int code = colonist_out_refusal(ci, job);
+    if (code == 21) { ev_emit("KEEPSTOCKADE", 0, 0, 0, 0); return -1; }
+    if (code == 20) { ev_emit("SIEGE", 0, 0, 0, 0); return -1; }
+    if (code == 3) {
+        int mine = 0;
+        for (int i = 0; i < CS.n_colonies; i++)
+            if ((CS.colonies[i].owner_power & 3) == cs_nation()) mine++;
+        ev_emit(mine < 2 && cs_year() > 1575 ? "ABANDON2" : "ABANDON",
+                0, 0, c->name, 0);
+        if (ask_choice() != 0) return -1;
+    }
+    return colonist_eject(ci, k, job);
+}
+
+/* "Return to the fence" = out as a plain Colonist (job 0x13) */
+int colonist_to_fence(int ci, int k) { return colonist_out(ci, k, 0x13); }
 
 void colonist_remove_last(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
@@ -562,41 +682,23 @@ static void sol_announce(int ci) {
 }
 
 /* ---- construction (advanceConstruction, game.js:3114) ------------------ */
-/* the colony-buildable UNITS (BUILDABLE_UNITS, game.js:2963) — the
- * record's @BUILDING index cannot express them, so the picker stores
- * 0xC0+u (colopy_input.c's encoding). */
-static const char *const BUILD_UNIT_NAMES[7] = {
-    "Wagon Train", "Artillery", "Caravel", "Merchantman", "Galleon",
-    "Privateer", "Frigate",
-};
+/* The record's +0x94 build target names a UNIT as 0x2A + (type - 0x0B):
+ * classifier func_00B5A8 (thunk 0x181F:0xCC2) @0x00B5B1..@0x00B5E1 —
+ * id < 0 -> none, id < 0x2A -> building id, id - 0x2A < 7 -> unit type
+ * 0x0B + (id - 0x2A) (Artillery, Wagon Train, Caravel, Merchantman,
+ * Galleon, Privateer, Frigate); the picker stores row - 2 @0x02B710.
+ * (Replaces the port's former 0xC0+u marker and its .CPX sidecar,
+ * C3.7 2026-09-02.) */
+int build_target_unit_type(uint8_t bip) {
+    return (bip >= 0x2A && bip <= 0x30) ? 0x0B + (bip - 0x2A) : -1;
+}
+uint8_t build_target_for_unit_type(int type) {
+    return (uint8_t)(0x2A + (type - 0x0B));
+}
 static int unit_row_named(const char *name) {
     for (int i = 0; i < DAT_UNITS_COUNT; i++)
         if (strcmp(dat_units[i].name, name) == 0) return i;
     return -1;
-}
-
-/* mkUnit's profession branch (game.js:645/650): a @JOB expert name that is
- * NOT itself a @UNIT row makes a plain Colonists unit CARRYING that
- * profession, except for the five armed/equipped trades, which map to the
- * @UNIT row that shares them (PROFESSION_UNIT).  0xFF = no specialty. */
-static int unit_type_for_profession(uint8_t prof) {
-    static const char *PU[][2] = {
-        { "Veteran Soldiers", "Soldiers" }, { "Veteran Dragoons", "Dragoons" },
-        { "Hardy Pioneers", "Pioneers" },   { "Seasoned Scouts", "Scouts" },
-        { "Jesuit Missionaries", "Missionaries" },
-    };
-    int fallback = unit_row_named("Colonists");
-    if (prof == 0xFF || prof < 1 || prof >= DAT_JOBEXPERT_COUNT)
-        return fallback < 0 ? 0 : fallback;
-    const char *name = dat_jobexpert[prof];
-    int u = unit_row_named(name);            /* SAV_PROFESSION -> unit(name) */
-    if (u >= 0) return u;
-    for (unsigned i = 0; i < sizeof(PU) / sizeof(PU[0]); i++)
-        if (strcmp(name, PU[i][0]) == 0) {
-            int t = unit_row_named(PU[i][1]);
-            if (t >= 0) return t;
-        }
-    return fallback < 0 ? 0 : fallback;
 }
 
 static void advance_construction(int ci, int hammers) {
@@ -612,11 +714,9 @@ static void advance_construction(int ci, int hammers) {
      * — it is what prices the Wagon Train's 1x32=32 at "(40 Hammers)").
      * Tools = the next byte x10 (@0x0B6E3, the same x10 a building's
      * tools byte gets @0x0B694). */
-    int is_unit = bip >= 0xC0 && bip < 0xC0 + 7;
-    if (is_unit) {
-        const char *un = BUILD_UNIT_NAMES[bip - 0xC0];
-        int urow = unit_row_named(un);
-        if (urow < 0) return;
+    int urow = build_target_unit_type((uint8_t)bip);
+    if (urow >= 0) {
+        const char *un = dat_units[urow].name;
         int cost = (int)dat_units[urow].cost * 32;
         if (cost < 40) cost = 40;
         else if (cost < 52) cost = 52;
@@ -1446,6 +1546,7 @@ void rival_colony_pass(int power) {
 void colony_vanish_filter(void) {
     for (int ci = CS.n_colonies - 1; ci >= 0; ci--) {
         if (!CR.col[ci].vanished) continue;
+        colony_removed_fixup(ci);        /* func_02EE34: tile bit + routes */
         memmove(&CS.colonies[ci], &CS.colonies[ci + 1],
                 (size_t)(CS.n_colonies - ci - 1) * sizeof(ColonyRecord));
         memmove(&CR.col[ci], &CR.col[ci + 1],
