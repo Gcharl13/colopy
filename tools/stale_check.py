@@ -135,9 +135,13 @@ def probe_b36_scaffold() -> bool:
 
 
 def probe_doi() -> bool:
-    """Declaration of Independence screen absent. Proxy: DECOIND painter is in
-    neither engine."""
-    return "DECOIND" not in _strip_comments(_js() + _c_text())
+    """Declaration of Independence page PORTED (REMAINING_WORK Part E note
+    E2, 2026-09-02): the DECOIND painter is in BOTH engines and its oracle
+    exists. Flipped from the earlier 'absent' proxy the day the screen
+    landed -- losing either painter, or the oracle, fails the record."""
+    return ("DECOIND" in _strip_comments(_js())
+            and "DECOIND" in _strip_comments(_c_text())
+            and (ROOT / "tools/render_declaration_compare.py").exists())
 
 
 def probe_census_exists() -> bool:
@@ -335,7 +339,8 @@ CLAIMS = [
     ("B3.6-scaffold", "cport/core/colopy_turn.c",
      "per-power scaffolding + father_owned reads the pass's power",
      probe_b36_scaffold),
-    ("E-DoI", "docs/REMAINING_WORK.md", "Declaration screen does not exist", probe_doi),
+    ("E-DoI", "docs/REMAINING_WORK.md",
+     "Declaration page ported in both engines (E2)", probe_doi),
     ("CENSUS", "tools/screen_census.py",
      "the DOS-vs-port census and its committed baseline exist",
      probe_census_exists),

@@ -84,6 +84,12 @@ typedef struct {
     int8_t  pedia_once;          /* the one-shot Founding Father page
                                   * (func_06AE08 @0x3BD26): its dismissal
                                   * returns to the game, not the index */
+    int16_t decl_step;           /* SCR_DECLARATION: stroke events on
+                                  * screen (func_03DA2A's per-frame
+                                  * present); the shell advances it one
+                                  * per 60.8766 Hz tick, a key/click
+                                  * jumps it to the total (the skip flag
+                                  * @0x3DD74/0x3DD88) */
 } colopy_ui;
 
 extern colopy_ui UI;

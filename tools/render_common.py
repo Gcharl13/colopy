@@ -59,6 +59,10 @@ PALETTE_CEILING = {
     # CCBKGD's palette except entries 251/255, neither used by the art, so
     # the page resolves identically through the atlas and the DAC.
     "congress sav1653 33554431": 0,
+    # the Declaration: the full signature and a mid-stroke step; the DEC
+    # sheets blit over DECOIND's DAC (baked through its merged table)
+    "declaration sav1653 Willem van Oranje 3 9999": 0,
+    "declaration sav1653 Willem van Oranje 3 37": 0,
 }
 
 

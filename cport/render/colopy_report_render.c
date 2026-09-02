@@ -781,3 +781,88 @@ void rm_draw_congress(int new_ff) {
         blit_anchored(nm, 0);
     }
 }
+
+/* ---- Part E: the Declaration of Independence signing ----
+ * func_03DA2A @0x03DA2A: DECOIND.PIK full-screen (@0x3DA47 load, @0x3DA6A
+ * its palette to the DAC, @0x3DA98 buffer->screen; DECLARAT.PIK has no
+ * loader in any EXE), then the leader name (0x540E + player*0x34
+ * @0x3DAB4) lower-cased (strlwr 0xD1D:0xD46 @0x3DACD, A..Z only) and
+ * word-initial capitalised (@0x3DB06..0x3DB3C: an alpha after a non-
+ * alpha, if lower, -= 0x20; ctype table file 0x2018D, MSC bits 0 upper /
+ * 1 lower / 2 digit / 3 space / 4 punct).  Pen seed x=0x7E (126)
+ * @0x3DC3C, y=0x94 (148) @0x3DC42 — x is the dx register of the top-left
+ * blit 0x181F:0x254 @0x3DD36, y its stack arg @0x3DD2C.  Per char
+ * (@0x3DC58..0x3DCFD): space|punct -> x+3, y-1, no sheet; not alpha ->
+ * DEC-SQIG 10 frames, y-4, then STOP; upper -> DEC-UPP<c> 10 frames,
+ * y-3; lower -> DEC-LOW<c> 7 frames, y-2.  Frames i=0..n-1 are engine
+ * frames i+2 = disk descriptors 1..n (@0x3DD30/0x3DD31), each drawn at
+ * the pen and presented; then x += the descriptor-0 width (es:[bx+0x4A]
+ * @0x3DD16, applied @0x3DDD9), y += the class delta (@0x3DDE0).  Loop
+ * head @0x3DDE8..0x3DE0F: stop on the end flag or NUL; x >= 0xDC (220)
+ * forces the SQIG-and-stop path (@0x3DE04).  Cadence @0x3DD51..0x3DDC3:
+ * one 0xC0C:6 tick per frame = the 60.8766 Hz counter [0x92E8]
+ * ([0x267A] @0xC857), the >= 5 ISR-tick floor (8.2 ms) being under one
+ * tick; a key/click sets the skip flag (@0x3DD74/0x3DD88); the finished
+ * page waits for a key/click @0x3DE17.  Its engine dispatch site is
+ * unreachable statically (TBD).  The JS twin is declEvents/drawDeclaration
+ * (game.js). */
+static int decl_class(unsigned char c) {   /* file 0x2018D class sets */
+    if (c >= 'A' && c <= 'Z') return 2;
+    if (c >= 'a' && c <= 'z') return 3;
+    if (c == ' ' || (c >= 9 && c <= 13)) return 1;
+    if (strchr("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", (int)c) && c) return 1;
+    return 0;                        /* digits, controls, >= 0x80 */
+}
+/* walks the signature in engine order, drawing the events below `step`
+ * when draw != 0; returns the total event count */
+static int decl_walk(const char *name, int step, int draw) {
+    char s[32];
+    size_t n = 0;
+    int word_start = 1;
+    for (const char *p = name; *p && n + 1 < sizeof(s); p++) {
+        unsigned char c = (unsigned char)*p;
+        if (decl_class(c) == 2) c = (unsigned char)(c + 0x20);   /* strlwr */
+        int cl = decl_class(c);
+        if (cl == 2 || cl == 3) {
+            if (word_start && cl == 3) c = (unsigned char)(c - 0x20);
+            word_start = 0;
+        } else word_start = 1;
+        s[n++] = (char)c;
+    }
+    s[n] = 0;
+    int x = 126, y = 148, ev = 0;
+    for (size_t i = 0; i < n; i++) {
+        unsigned char c = (unsigned char)s[i];
+        int cl = decl_class(c);
+        if (x >= 220) cl = 0;                     /* @0x3DE04 -> @0x3DC88 */
+        char nm[16] = "";
+        int frames = 0, adv = 3, dy = -1;
+        if (cl == 0) { snprintf(nm, sizeof(nm), "DEC-SQIG.SS"); frames = 10; dy = -4; }
+        else if (cl == 2) { snprintf(nm, sizeof(nm), "DEC-UPP%c.SS", c); frames = 10; dy = -3; }
+        else if (cl == 3) { snprintf(nm, sizeof(nm), "DEC-LOW%c.SS", c - 0x20); frames = 7; dy = -2; }
+        if (nm[0]) {
+            rd_entry e;
+            rd_frame f;
+            int have = rd_pak_find(&RD.pak, nm, &e) && rd_sheet_frame(&e, 0, &f);
+            adv = have ? f.w : 0;
+            for (int k = 0; k < frames; k++, ev++)
+                if (draw && have && ev < step) rd_blit(&e, k + 1, x, y);
+        }
+        x += adv;
+        y += dy;
+        if (cl == 0) break;                       /* the end flag [bp-0x56] */
+    }
+    return ev;
+}
+void rm_draw_declaration(const char *name, int step) {
+    rd_use_palette("DECOIND.PIK");
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    rd_pik("DECOIND.PIK");
+    decl_walk(name, step, 1);
+}
+int rm_declaration_total(const char *name) {
+    return decl_walk(name, 0, 0);
+}
+const char *rm_declaration_name(void) {
+    return CR.leader[0] ? CR.leader : dat_nations[cs_nation()].leader;
+}

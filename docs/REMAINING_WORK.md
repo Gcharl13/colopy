@@ -376,7 +376,7 @@ pack (67 sheet files packed + `PHYS0C` derived at runtime; 28 backgrounds).
 | Group | Count | Pairs with |
 |---|---|---|
 | Founding Father portraits `CC-00..CC-24` | 25 | ~~F3 draws names as text only~~ **SHIPPED 2026-09-02** (screens track, note E1 below) |
-| Declaration lettering `DEC-LOW/UPP A-Z`, `DEC-SQIG` | 53 | Declaration screen does not exist |
+| Declaration lettering `DEC-LOW/UPP A-Z`, `DEC-SQIG` | 53 | ~~Declaration screen does not exist~~ **SHIPPED 2026-09-02** (note E2 below) |
 | Score plates `SCORE01..24` | 24 | End-game score screen unimplemented |
 | Opening cinematic sheets | 14 | `OPENING.EXE` — separate program (Part H) |
 | Closing cinematic sheets | 7 | `CLOSING.EXE` — separate program (Part H) |
@@ -432,6 +432,32 @@ renderers draw nothing for a missing entry — see `cport/MEMORY_BUDGET.md`.
   latches `[0x346]`/`[0x9E38]` (@0x38060/@0x38067; both are 20-tick clock
   latches written beside `msg_append` @0x2C7C1 / @0x35B4E) — runtime clock
   state the ports do not model, so the page is unconditional.
+- **E2 — Declaration lettering `DEC-UPPA..Z` / `DEC-LOWA..Z` / `DEC-SQIG` +
+  `DECOIND.PIK` (SHIPPED).** The signing page is `func_03DA2A` @0x03DA2A
+  (thunk `0x191F:0x109A`): DECOIND.PIK full-screen (@0x3DA47/@0x3DA6A/
+  @0x3DA98; `DECLARAT.PIK` has no loader in any EXE — never packed), leader
+  name `0x540E + [0x5398]·0x34` (@0x3DAB4) → `strlwr` (@0x3DACD) → word-
+  initial capitals (@0x3DB06..0x3DB3C, ctype table file 0x2018D), sheets
+  loaded per letter present (@0x3DB8E..0x3DC20) + SQIG (@0x3DC22). Pen seed
+  **x=126 @0x3DC3C, y=148 @0x3DC42** (x = `dx` of the top-left blit
+  `0x181F:0x254` @0x3DD36, y = its stack arg @0x3DD2C — the spec had the
+  axes swapped, RULINGS 2026-09-02d); per char space/punct → x+3,y−1;
+  non-alpha → SQIG ×10, y−4, stop; upper → UPP ×10, y−3; lower → LOW ×7,
+  y−2 (@0x3DC58..0x3DCFD); frames = engine i+2 = disk descriptors 1..n
+  (@0x3DD30); x += descriptor-0 width (@0x3DD16/@0x3DDD9); wrap `x ≥ 220`
+  → SQIG-and-stop (@0x3DE04). Cadence: one frame per `0xC0C:6` tick =
+  `[0x267A]=0x92E8` (@0xC857) = the 60.8766 Hz counter, since the ≥5 ISR-
+  tick floor (@0x3DDB9) is 8.2 ms; key/click mid-run = skip (@0x3DD74/
+  @0x3DD88); a final `wait_keyOrClick` @0x3DE17 dismisses (the spec's "no
+  final key-wait" was wrong). Ports: JS `declEvents`/`drawDeclaration` +
+  `plateScreen('declaration')` after `@INDEPENDENCE`; C `rm_draw_declaration`
+  / `rm_declaration_total` + `CR.decl_show` (`colopy_woi.c`) + `SCR_DECLARATION`
+  with `UI.decl_step` advanced by both board loops at 60.8766 Hz. Oracle
+  `tools/render_declaration_compare.py` (full signature + a mid-stroke step,
+  both 0/0). Pak delta **+241,122 B** (3,392,356 → 3,633,478). **TBD**: the
+  caller — no `lcall`/`ljmp`/far pointer to `0x191F:0x109A` exists (the
+  tracker's "dispatch slot 4 @0x3EA0B" is `ljmp 0x191F:0x364` = `func_03C638`);
+  a live capture must pin where the page sits relative to `@INDEPENDENCE`.
 
 ---
 

@@ -1502,7 +1502,25 @@ static void front_pickup(void) {
         UI.ff_new = (int8_t)(CR.ff_show >= 0 ? CR.ff_show : -1);
         CR.ff_show = -1;
         UI.screen = SCR_CONGRESS;
+        return;
     }
+    /* the Declaration signing page (func_03DA2A) */
+    if (CR.decl_show && UI.screen != SCR_DECLARATION) {
+        CR.decl_show = 0;
+        UI.decl_step = 0;
+        UI.screen = SCR_DECLARATION;
+        return;
+    }
+}
+
+/* the signing page's key/click: mid-signature it is the skip flag
+ * (@0x3DD74/0x3DD88 — the rest draws at once), afterwards the final
+ * wait_keyOrClick @0x3DE17 dismisses to the game */
+static void declaration_key(void) {
+    int total = rm_declaration_total(rm_declaration_name());
+    if (UI.decl_step < total) { UI.decl_step = (int16_t)total; return; }
+    UI.screen = SCR_MAP;
+    front_pickup();
 }
 
 /* the portrait page's dismissal (wait_keyOrClick @0x3BC14): a reveal
@@ -2039,6 +2057,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
         break;
     case SCR_CONGRESS:
         congress_dismiss();              /* any key: func_004A80 */
+        break;
+    case SCR_DECLARATION:
+        declaration_key();
         break;
     case SCR_MAP: {
         /* an open pulldown owns the keyboard (game.js:12545) */
@@ -2703,6 +2724,9 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     case SCR_CONGRESS:
         congress_dismiss();
+        break;
+    case SCR_DECLARATION:
+        declaration_key();
         break;
     case SCR_OPTIONS: {
         int r = rm_options_row_hit(UI.options_which, mx, my);

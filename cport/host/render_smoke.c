@@ -321,6 +321,24 @@ int render_congress_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* --renderdeclaration SAVE PAK OUT.ppm NAME STEP: the Declaration
+ * signing page with the signer's name and the stroke step pinned. */
+int render_declaration_main(const char *save, const char *pak_path,
+                            const char *out_path, const char *name,
+                            int step) {
+    load_fixture(save);
+    snprintf(CR.leader, sizeof(CR.leader), "%s", name);
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_declaration(name, step);
+    if (!write_frame(out_path)) return 1;
+    printf("render declaration %s '%s' %d -> %s\n", save, name, step,
+           out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
 int render_boot_main(const char *kind, const char *pak_path,
                      const char *out_path, int arg) {

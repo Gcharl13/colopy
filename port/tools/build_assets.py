@@ -193,8 +193,12 @@ def data_uri(img, fmt="PNG"):
 # carries the same list and the per-board pak gate):
 #   CC-00..24 + CCBKGD   the Continental Congress portrait page,
 #                        func_03BB4A @0x03BB4A / func_03BAA6 @0x03BAA6
-PART_E_SS = [f"CC-{i:02d}" for i in range(25)]
-PART_E_PIK = ["CCBKGD"]
+#   DEC-UPPA..Z / DEC-LOWA..Z / DEC-SQIG + DECOIND   the Declaration signing,
+#                        func_03DA2A @0x03DA2A (DECLARAT.PIK is an orphan)
+DEC_SS = [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
+    [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"]
+PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS
+PART_E_PIK = ["CCBKGD", "DECOIND"]
 # Sheets whose pixels the running game resolves through a PIK's palette,
 # not their own embedded copy (the same VGA-is-global rule as
 # MASTER_PALETTE_SHEETS): the portrait page uploads CCBKGD's table
@@ -205,7 +209,10 @@ PART_E_PIK = ["CCBKGD"]
 # low-16 row from the master), which is exactly rd_use_palette's DAC.
 # CCBKGD's low-16 IS the EGA stub and its art uses indices 5 and 12.
 SHEET_PALETTE_FROM_PIK = {f"CC-{i:02d}": "CCBKGD" for i in range(25)}
-BAKE_MERGED_PIK = {"CCBKGD"}
+# the DEC sheets blit over DECOIND's DAC (func_03DA2A @0x3DA6A); their own
+# tables differ from it only at 252..255, which the art never uses
+SHEET_PALETTE_FROM_PIK.update({n: "DECOIND" for n in DEC_SS})
+BAKE_MERGED_PIK = {"CCBKGD", "DECOIND"}
 EGA_STUB = [0, 0, 0, 0, 0, 170, 0, 170, 0, 0, 170, 170, 170, 0, 0, 170, 0, 170,
             170, 85, 0, 170, 170, 170, 85, 85, 85, 85, 85, 255, 85, 255, 85,
             85, 255, 255, 255, 85, 85, 255, 85, 255, 255, 255, 85, 255, 255, 255]

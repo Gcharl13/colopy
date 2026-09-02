@@ -154,6 +154,14 @@ int  rm_pedia_row_of(int cat, int idx);
  * new_ff = the father lit up, -1 = the F3 gallery (drawn identically —
  * the reveal wipe is collapsed to its final frame) */
 void rm_draw_congress(int new_ff);
+/* the Declaration signing, func_03DA2A @0x03DA2A: DECOIND.PIK + the
+ * first `step` stroke events of the leader's signature (INT_MAX = all);
+ * rm_declaration_total = the event count for that name, rm_declaration_
+ * name = the signer (CR.leader, else the nation's default leader) */
+void rm_draw_declaration(const char *name, int step);
+int  rm_declaration_total(const char *name);
+const char *rm_declaration_name(void);
+#define RM_DECL_TICK_HZ 60.8766   /* one stroke frame per [0x92E8] tick */
 /* the options dialogs (drawOptions 7969): which 0 game / 1 colony
  * report / 2 sound; toggle = optionsCommit's XOR */
 void rm_draw_options(int which, int row);

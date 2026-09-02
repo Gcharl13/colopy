@@ -1448,6 +1448,108 @@ function pediaOnce(cat, idx) {
   G.screen = 'pedia';
 }
 
+// ---- the Declaration of Independence signing, func_03DA2A @0x03DA2A ----
+// DECOIND.PIK full-screen (@0x3DA47 load, @0x3DA6A its palette to the DAC,
+// @0x3DA98 buffer->screen 320x200; DECLARAT.PIK has no loader in any EXE),
+// then the leader name (0x540E + player*0x34 @0x3DAB4) is lower-cased
+// (strlwr 0xD1D:0xD46 @0x3DACD = file 0x10316, A..Z only) and word-initial
+// capitalised (@0x3DB06..0x3DB3C: an alpha char after a non-alpha, if lower,
+// -= 0x20; ctype table DG 0x27ED = file 0x2018D, MSC layout bit0 upper,
+// bit1 lower, bit2 digit, bit3 space, bit4 punct).  Only the letters that
+// occur load their sheets ("DEC-UPP"+c / "DEC-LOW"+c @0x3DB8E..0x3DC20;
+// DEC-SQIG always @0x3DC22).  Pen seed x=0x7E (126) @0x3DC3C, y=0x94 (148)
+// @0x3DC42 -- x is the dx register of the top-left blit 0x181F:0x254
+// @0x3DD36 and y its stack arg @0x3DD2C (the spec's swapped axes are
+// corrected in RULINGS 2026-09-02d).  Per char (@0x3DC58..0x3DCFD):
+//   space|punct  -> x advance 3, y -1, no sheet          (@0x3DC6B/0x3DC70)
+//   not alpha    -> DEC-SQIG, 10 frames, y -4, then STOP (@0x3DC88..0x3DCA1)
+//   upper        -> DEC-UPP<c>, 10 frames, y -3          (@0x3DCCB/0x3DCD1)
+//   lower        -> DEC-LOW<c>,  7 frames, y -2          (@0x3DCF2/0x3DCF8)
+// frames i=0..n-1 are engine frames i+2 = disk descriptors 1..n (@0x3DD30/
+// 0x3DD31; descriptor 0 is the empty stroke), each drawn top-left at the
+// pen and presented; then x += the glyph's descriptor-0 width (es:[bx+0x4A]
+// @0x3DD16, applied @0x3DDD9), y += the class delta (@0x3DDE0).  Loop head
+// @0x3DDE8..0x3DE0F: stop on the end flag or the NUL; x >= 0xDC (220)
+// forces the SQIG-and-stop path (@0x3DE04).
+// Cadence (@0x3DD51..0x3DDC3): after each frame the ISR tick word [0x8338]
+// is zeroed and the loop waits one 0xC0C:6 tick at a time until >= 5 ISR
+// ticks (608.766 Hz) have passed; 0xC0C:6 reads through [0x267A] = the
+// 60.8766 Hz counter [0x92E8] (timer_install @0xC857; PALETTE_AND_CYCLING.md)
+// and 5 ISR ticks are 8.2 ms < one tick, so every stroke frame lands on the
+// next 60.8766 Hz tick: period 16.43 ms (first-frame phase jitter up to 5
+// ISR ticks).  Any key or click sets the skip flag (@0x3DD74/0x3DD88) and
+// the rest draws at once; the finished page waits for a key/click
+// (0x181F:0x3C0 @0x3DE17) before the game palette returns (@0x3DE27).
+// No caller of func_03DA2A is reachable statically (no lcall/ljmp/far
+// pointer to 0x191F:0x109A -- TBD, a live capture pins the dispatch), so the
+// port shows the page right after @INDEPENDENCE.
+const DECL_FRAME_MS = 1000 / 60.8766;
+const DECL_PUNCT = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
+// the ctype classes the loop tests, from the table bytes at file 0x2018D
+function declClass(ch) {
+  const c = ch.charCodeAt(0);
+  if (c >= 0x41 && c <= 0x5A) return 'upper';
+  if (c >= 0x61 && c <= 0x7A) return 'lower';
+  if (c === 0x20 || (c >= 9 && c <= 13)) return 'space';
+  if (DECL_PUNCT.includes(ch)) return 'punct';
+  return 'other';                 // digits, controls, >= 0x80: the squiggle
+}
+function declTitleCase(name) {
+  let s = '', wordStart = true;
+  for (const raw of name) {
+    const ch = declClass(raw) === 'upper' ? raw.toLowerCase() : raw;   // strlwr
+    const cl = declClass(ch);
+    if (cl === 'upper' || cl === 'lower') {
+      s += wordStart && cl === 'lower' ? ch.toUpperCase() : ch;
+      wordStart = false;
+    } else { s += ch; wordStart = true; }
+  }
+  return s;
+}
+// The stroke events in engine order: {sheet, frame (disk descriptor), x, y}.
+function declEvents(name) {
+  const out = [];
+  const s = declTitleCase(name);
+  let x = 126, y = 148;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    let cl = declClass(ch);
+    if (x >= 220) cl = 'other';                       // @0x3DE04 -> @0x3DC88
+    let sheet = null, frames = 0, adv = 3, dy = -1;
+    if (cl === 'other') { sheet = 'DEC-SQIG'; frames = 10; dy = -4; }
+    else if (cl === 'upper') { sheet = 'DEC-UPP' + ch; frames = 10; dy = -3; }
+    else if (cl === 'lower') { sheet = 'DEC-LOW' + ch.toUpperCase(); frames = 7; dy = -2; }
+    if (sheet) {
+      adv = frameSize(sheet, 0)[0];
+      for (let f = 0; f < frames; f++) out.push({ sheet, frame: f + 1, x, y });
+    }
+    x += adv; y += dy;
+    if (cl === 'other') break;                        // the end flag [bp-0x56]
+  }
+  return out;
+}
+function declName() { return G.leader || DATA.nations[G.nation].leader; }
+// step = how many stroke events are on screen; undefined = the live plate's
+// own clock (one event per 60.8766 Hz tick from when the page opened, or all
+// of them once a key/click set the skip flag).
+function drawDeclaration(ctx, step) {
+  usePalette('DECOIND');
+  ctx.drawImage(IMG.DECOIND, 0, 0);
+  const ev = declEvents(declName());
+  const p = G.plate && G.plate.name === 'declaration' ? G.plate.params : null;
+  if (step === undefined) {
+    if (p) {
+      if (p.t0 === undefined) p.t0 = G.wallClock;
+      p.total = ev.length;
+      p.step = p.skip ? ev.length
+        : Math.min(ev.length, Math.floor((G.wallClock - p.t0) / DECL_FRAME_MS));
+      step = p.step;
+    } else step = ev.length;
+  }
+  const n = Math.min(step, ev.length);
+  for (let i = 0; i < n; i++) sheetFrame(ctx, ev[i].sheet, ev[i].frame, ev[i].x, ev[i].y);
+}
+
 function wrapText(font, s, width) {
   const out = [];
   let line = '';
@@ -11388,6 +11490,10 @@ function declareIndependence() {
     // 11/12 are COLONY BURNING / COLONY DESTROYED. So the declaration is the
     // popup alone.
     showEvent('INDEPENDENCE', { STRING0: G.leader || DATA.nations[G.nation].leader });
+    // The signing page (func_03DA2A, DECOIND + the DEC-* signature). Its
+    // engine dispatch site is unreachable statically (TBD); it follows the
+    // @INDEPENDENCE popup here.
+    plateScreen('declaration', { step: 0 });
     // @SEIZURE: every ship in the home port or on the crossing is seized
     // by the Royal Navy at the declaration (the wartime-seizure family).
     for (const e of G.europe)
@@ -14976,8 +15082,16 @@ function onClick(mx, my) {
       // state the port does not model, so the page is unconditional here).
       if (G.report === 'F3') plateScreen('congress', { newFF: -1 });
       break;
+    case 'declaration': {
+      // A key/click mid-signature is the skip flag (@0x3DD74/0x3DD88): the
+      // rest draws at once; the finished page's key/click dismisses
+      // (@0x3DE17).
+      const p = G.plate && G.plate.params;
+      if (p && !p.skip && p.step < p.total) { p.skip = true; break; }
+      plateDismiss();
+      break;
+    }
     case 'congress':
-    case 'declaration':
     case 'score':
     case 'endking':
       plateDismiss();
@@ -15647,7 +15761,8 @@ function frameBody() {
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage,
      trade: drawTrade, options: drawOptions,
-     congress: drawCongressPortraits }[G.screen] || drawMap)(ctx);
+     congress: drawCongressPortraits,
+     declaration: drawDeclaration }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

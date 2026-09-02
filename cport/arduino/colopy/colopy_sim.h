@@ -574,6 +574,10 @@ typedef struct {
                                       * father to light up (@0x3BD1D),
                                       * -2 the F3 gallery (@0x38073),
                                       * -1 none */
+    uint8_t decl_show;               /* LIVE FRONT: the Declaration
+                                      * signing page (func_03DA2A) is
+                                      * due — set after @INDEPENDENCE
+                                      * (its engine dispatch is TBD) */
     uint8_t land_ho;                 /* woodcut-1 latch (G.landHo;
                                       * loads import it true, 10240) */
     char leader[24];                 /* G.leader — the front sets it at

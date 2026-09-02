@@ -177,8 +177,12 @@ def build_sheet(path: Path, want_pal: bool):
 # Consumers (all VICEROY.EXE file offsets, re-read 2026-09-02):
 #   CC-00..24 + CCBKGD.PIK   Continental Congress portrait page,
 #                            func_03BB4A @0x03BB4A / func_03BAA6 @0x03BAA6
-PART_E_SHEETS = [f"CC-{i:02d}" for i in range(25)]
-PART_E_PIKS = ["CCBKGD"]
+#   DEC-UPP?/DEC-LOW?/DEC-SQIG + DECOIND.PIK   the Declaration signing,
+#                            func_03DA2A @0x03DA2A (DECLARAT.PIK: orphan)
+PART_E_SHEETS = [f"CC-{i:02d}" for i in range(25)] + \
+    [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
+    [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"]
+PART_E_PIKS = ["CCBKGD", "DECOIND"]
 # ====================== Part E (screens track) -- END =======================
 
 

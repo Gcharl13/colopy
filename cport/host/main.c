@@ -693,6 +693,14 @@ int main(int argc, char **argv) {
         return render_congress_main(argv[2], argv[3], argv[4],
                                     atol(argv[5]));
     }
+    /* --renderdeclaration SAVE PAK OUT.ppm NAME STEP */
+    if (argc > 6 && strcmp(argv[1], "--renderdeclaration") == 0) {
+        extern int render_declaration_main(const char *save, const char *pak,
+                                           const char *out, const char *name,
+                                           int step);
+        return render_declaration_main(argv[2], argv[3], argv[4], argv[5],
+                                       atoi(argv[6]));
+    }
     /* --renderwoodcut SAVE PAK OUT.ppm N */
     if (argc > 5 && strcmp(argv[1], "--renderwoodcut") == 0) {
         extern int render_woodcut_main(const char *save, const char *pak,

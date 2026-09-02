@@ -331,6 +331,22 @@ RENDERCONGRESS = """([save, mask]) => {
 }"""
 
 
+RENDERDECLARATION = """([save, name, step]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1657;
+  G.leader = name;                    // the signature's only runtime input
+  G.screen = 'declaration';
+  G.plate = null;                     // an explicit step, not the live clock
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawDeclaration(ctx, step);
+  return cv.toDataURL('image/png');
+}"""
+
+
 RENDERREPORT = """([save, fk]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
@@ -759,7 +775,8 @@ def main():
                     "newgame",
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
-                    "renderboot", "rendercongress", "input"):
+                    "renderboot", "rendercongress", "renderdeclaration",
+                    "input"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -813,6 +830,12 @@ def main():
             return
         elif mode == "rendercongress":
             out = page.evaluate(RENDERCONGRESS, [sys.argv[2], int(sys.argv[3])])
+            browser.close()
+            print(out)
+            return
+        elif mode == "renderdeclaration":
+            out = page.evaluate(RENDERDECLARATION,
+                                [sys.argv[2], sys.argv[3], int(sys.argv[4])])
             browser.close()
             print(out)
             return

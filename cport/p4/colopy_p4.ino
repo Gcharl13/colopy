@@ -933,6 +933,9 @@ static void draw_screen(void) {
     case SCR_CONGRESS:
         rm_draw_congress(UI.ff_new);
         break;
+    case SCR_DECLARATION:
+        rm_draw_declaration(rm_declaration_name(), UI.decl_step);
+        break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);
@@ -2054,6 +2057,25 @@ void loop() {
         /* animation: redraw the map when the unit blink flips; re-flush
          * (LUT only, no redraw) when the water cycle steps a phase */
         int bl = blink_now();
+        /* the Declaration signature: one stroke frame per 60.8766 Hz
+         * tick from the moment the page opened (func_03DA2A's per-frame
+         * wait on the [0x92E8] counter, @0x3DD51..0x3DDC3); a tap jumps
+         * it to the end (declaration_key) */
+        static int decl_open = 0;
+        static unsigned long decl_t0 = 0;
+        if (UI.screen == SCR_DECLARATION) {
+            if (!decl_open) { decl_open = 1; decl_t0 = millis(); }
+            int total = rm_declaration_total(rm_declaration_name());
+            if (UI.decl_step < total) {
+                long want = (long)((millis() - decl_t0) *
+                                   (RM_DECL_TICK_HZ / 1000.0));
+                if (want > total) want = total;
+                if ((int)want != UI.decl_step) {
+                    UI.decl_step = (int16_t)want;
+                    draw_screen();
+                }
+            }
+        } else decl_open = 0;
         /* zoom >= 2 composes 16-64 subwindows per frame — too dear for
          * the 3 Hz blink; the unit stays drawn (FLAGGED perf choice) */
         if (UI.screen == SCR_MAP && UI.zoom < 2 && bl != map_blink) {

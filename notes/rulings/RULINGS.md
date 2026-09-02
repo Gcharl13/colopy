@@ -10945,3 +10945,45 @@ blits each owned `CC-NN` at its sheet-baked anchor (`es:[bx+0x46]/[+0x48]`,
    oracles: it requires a ceiling entry per oracle, whatever their number.
 5. The Teensy SD path (`pakbuf` 3,500,000 B) cannot hold the Part E pak:
    `gen_sd_pack.py --board teensy` omits the group rather than truncating.
+
+## 2026-09-02d — screens track: the Declaration signing (E2), three corrections
+
+**Conflict**: `spec/ui/declaration_independence.md` §1/§2 gives the pen
+seed as "(x=0x94=148, y=0x7E=126)" with the glyph width advancing **y**;
+§4 says there is "no separate final-OK key-wait inside func_03DA2A";
+`docs/UI_AUDIT_TRACKER.md` row 16 names "dispatch slot 4 @0x3EA0B" as
+the caller; row 16 and the spec leave the per-glyph cadence TBD.
+
+**Bytes** (`func_03DA2A` @0x03DA2A, re-read; `func_00E76A` = `0x181F:0x254`
+@0xE76A..0xE84A): the blit verb takes **x in `dx`** (clipped against the
+surface width @0xE7E2..0xE7FC) and **y on the stack `[bp+6]`** (clipped
+against the height @0xE833..0xE848). The signing loop passes
+`dx = [bp-0x1FC]` @0x3DD36 and pushes `[bp-0x4FE]` @0x3DD2C, seeded
+`[bp-0x1FC] = 0x7E` @0x3DC3C and `[bp-0x4FE] = 0x94` @0x3DC42 — so the pen
+starts at **x = 126, y = 148**, the descriptor-0 width (`es:[bx+0x4A]`
+@0x3DD16) advances **x** (@0x3DDD9), the class delta {−1,−2,−3,−4} moves
+**y** (@0x3DDE0), and the wrap test `cmp [bp-0x1FC],0xDC` @0x3DE04 is on
+**x**. The exit block calls `0x181F:0x3C0` @0x3DE17 = `func_004A80` =
+`wait_keyOrClick` (spec/ui/input.md §193) — a final dismissal wait, which
+the spec itself lists among the "restore" calls. `0x3EA0B` is `ljmp
+0x191F:0x364` = `func_03C638`; a raw search for the far pointer
+`9A 10 1F 19` (`0x191F:0x109A`) finds nothing in VICEROY.EXE. The frame
+pacer @0x3DD51..0x3DDC3 waits one `0xC0C:6` tick at a time until ≥ 5 ISR
+ticks have passed; `0xC0C:6` (file 0xE4C6) reads through `[0x267A]`, which
+`timer_install` sets to `0x92E8` @0xC857 — the 60.8766 Hz counter
+(docs/PALETTE_AND_CYCLING.md; ISR ÷2 ÷5 of 608.766 Hz). Five ISR ticks are
+8.2 ms, under one 16.43 ms tick, so **each stroke frame lands on the next
+60.8766 Hz tick**.
+
+**Decisions**:
+1. Pen seed x=126 / y=148; x advances by the glyph width; y drifts up by
+   the class delta; wrap on x ≥ 220. The spec's swapped axes are struck
+   (its offsets were right, the register/stack roles were read backwards).
+2. There IS a final key/click wait (@0x3DE17). Both ports: a key mid-run
+   = the skip flag, a key afterwards = dismiss.
+3. The cadence is **resolved**: one stroke frame per 60.8766 Hz tick
+   (`DECL_FRAME_MS` / `RM_DECL_TICK_HZ`); only the first frame's phase
+   (up to 5 ISR ticks) is unmodelled.
+4. The caller stays **TBD**: the tracker's "slot 4 @0x3EA0B" is struck; the
+   ports show the page after `@INDEPENDENCE` and say so.
+5. DECLARAT.PIK is never packed (orphan, B-negative, unchanged).
