@@ -11568,6 +11568,12 @@ the turn the moment no unit had moves.
    Analysis synced from bit 0x0200). Every shipped fixture carries 0x0200, so
    nothing the oracles pin changed. A new game keeps the ports' 0x0200 default
    (the engine's 0xC600 is recorded, not adopted — separate row).
+   *Integration note (2026-09-02, merge of the boot and core-a tracks):* the
+   `& 0xFF80` mask was dropped — the word is restored WHOLE in both engines
+   (nothing in either port reads the low seven bits, and the B4.2 tutorial
+   gate reads bit 0x80), and a new game seeds the engine's own
+   `0xC600 | 0x80 iff Discoverer` (2026-09-02g) rather than 0x0200; C3.12 is
+   closed by that seeding.
 3. **The board's long-press and ORDERS → "Wait for next unit" are shell chrome
    mapped onto the Space semantics** (`cport/game/colopy_input.c`: the row
    advances only when no unit is left, exactly what Space does at
