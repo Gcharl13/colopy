@@ -301,6 +301,26 @@ def probe_asset_gate() -> bool:
             and "import subprocess" not in t)
 
 
+def probe_loader_citations() -> bool:
+    """G5: the three asset extractors carry byte-cited loaders in their
+    sidecars -- no `"loader_function": "TBD"` literal survives, and each names
+    the function the thunk resolves to (PAL func_0781DE, MP func_071106,
+    SS func_076642 / PIK func_076AEC+func_076B9E / FF func_076C70)."""
+    want = {
+        "tools/extract_pal.py": ["func_0781DE", "0x1A1F:0xE28"],
+        "tools/extract_mp.py": ["func_071106", "0x1A1F:0xC8E", "func_071246"],
+        "tools/extract_visuals.py": ["func_076642", "func_076AEC", "func_076B9E",
+                                     "func_076C70", "func_076E50", "func_077100"],
+    }
+    for rel, names in want.items():
+        t = (ROOT / rel).read_text()
+        if '"loader_function": "TBD"' in t or "'loader_function': 'TBD'" in t:
+            return False
+        if not all(n in t for n in names):
+            return False
+    return True
+
+
 def probe_vendor_pinned() -> bool:
     """G9/G10: the vendored Elecrow tree is pinned -- PROVENANCE names the
     upstream commit, and every vendored file still matches
@@ -356,6 +376,8 @@ CLAIMS = [
     ("G7", "tools/extract_visuals.py",
      "the asset gate decodes in-repo and cannot pass by not looking",
      probe_asset_gate),
+    ("G5", "tools/extract_*.py",
+     "asset extractors cite their byte-verified loaders", probe_loader_citations),
     ("G9/G10", "cport/p4/PROVENANCE.md",
      "the vendored Elecrow tree is pinned and unchanged", probe_vendor_pinned),
 ]

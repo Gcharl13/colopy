@@ -1,7 +1,25 @@
 {
-  "loader_function": "TBD",
-  "loader_offset": "TBD",
-  "called_with_args": [],
+  "loader_function": "func_071106",
+  "loader_offset": "0x071106",
+  "loader_thunk": "0x1A1F:0xC8E",
+  "called_from": [
+    "new_game_state_init @0x075733",
+    "func_0713D4 (map_load_default, 0x1A1F:0xC80, @0x07571C) reads the 4-byte w/h header only"
+  ],
+  "called_with_args": [
+    "name = [0x8554] (strcpy of [0x2166] \"AMER2.MP\" @0x755D1, or the MAPTOLOAD pick)",
+    "mode \"rb\" = DGROUP 0x208E @0x71124"
+  ],
+  "header_reads": [
+    "fread(0x853A,4,1) @0x7113E-0x71146 = width,height",
+    "fread(&ver,2,1) @0x7115C-0x71167; ver==4 required @0x71173-0x71182"
+  ],
+  "layer_reads": [
+    "terrain -> [0x15C] @0x711B1-0x711C6",
+    "feature -> [0x160] @0x711D8-0x711EE",
+    "continent -> [0x164] @0x71200-0x71216"
+  ],
+  "writer": "func_071246 @0x071246 (header @0x71286/@0x712AD, layers @0x712DD/@0x71304/@0x7132C)",
   "original_filename": "AMER2.MP",
   "sha256": "ea928f06e70564be997aa56575096c86cd7a985d41e584ba818c5c853b399dcc",
   "format_spec": "formats/MP_FORMAT.md",

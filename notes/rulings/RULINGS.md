@@ -10911,3 +10911,63 @@ were contradicted by the tree when re-measured.
 palette layout; whether the stale askmap comment in
 `cport/host/render_smoke.c:340` (it still says "INTERSECTION") is the C
 track's to fix — it is a comment, and it is noted here rather than edited.
+
+## 2026-09-02c — formats track (G5): the asset loaders, read from the bytes
+
+**Conflict**: `formats/PAL.md`, `PIK.md`, `FF.md`, `SS.md` and the three
+extractors (`tools/extract_pal.py`, `extract_visuals.py`, `extract_mp.py`)
+carried "loader TBD" fields, and four of their statements disagreed with
+the loaders once those were read (`tools/follow_thunk.py` +
+`data_extracted/disassembly/VICEROY_annotated.asm`; file offsets, DGROUP
+strings relative to file `0x1D9A0`).
+
+**Rulings** (bytes win; each is now in the format doc and the tool header):
+
+1. **`.PAL` loader = `func_0781DE`** (thunk `0x1A1F:0xE28`, sole caller boot
+   `func_075FB6` `@0x76039–0x76043`, name DGROUP `0x237D` = lowercase
+   `"viceroy.pal"` @file `0x1FD1D`). It `fread`s **`0x300`** bytes
+   `@0x781FA–0x78205` and far-copies them to `A000:FC00` `@0x78211–0x78220`.
+   The 256 trailing flag bytes are **never read by VICEROY**; consumer TBD
+   (MAPEDIT/COLONIZE also name the file, untraced). `docs/PALETTE_AND_CYCLING.md`
+   and `docs/UI_AUDIT_TRACKER.md` row 24 updated.
+2. **`.PIK` section order is header → PIXELS → PALETTE**, not header →
+   palette → pixels as `formats/PIK.md` said. `func_076AEC`/`func_076B9E`
+   read 8 bytes (`@0x76B3B`/`@0x76BF0`), then `hdr+2 × hdr+0` pixels
+   (`imul` `@0x76B7C–0x76B7F`, `@0x76B6E–0x76B82`), then — `func_076B9E`
+   only — `0x300` palette `@0x76C40–0x76C54`. **`hdr+0` is the HEIGHT,
+   `hdr+2` the WIDTH**; `hdr+4..+7` are unread (TBD). Shipped files agree
+   (`COLONY.PIK` has no palette section at all). The extension string is
+   `"PIK"` without a dot (DGROUP `0x23FA`/`0x2402`; the dot comes from
+   `func_00D72E`). `build_assets.load_pik` picks sections by size — unaffected.
+3. **`.FF` loader = `func_076C70`**, not "~0x6FC74" (`follow_thunk 0x1a1f 0xa86`).
+   Single-section container; allocation = directory entry 0's unpacked size
+   `@0x76CF7–0x76D05`; section 0 read whole `@0x76D27`.
+4. **`.SS`: the "MADSPACK-2 `mode=4`, NOT FAB" paragraph of `formats/SS.md` is
+   retired.** `func_077100` → `func_0772FA` selects FAB on type byte 1
+   (`@0x773CA`) and checks the size (`@0x77290`) — the working decoder was
+   right. The loader proper `func_076642` (`0x1A1F:0x372`) and every header
+   field it reads are now tabulated in `SS.md` (`+0x26` frame count, `+0x94`
+   pixel size, `+0x0C` non-zero gate `@0x7685C`, palette section read only
+   when `[0x23F2:0x23F4] != 0` `@0x76899–0x768A0`).
+5. **`.MP` header is SIX bytes** (`w, h, version`) — `func_071106` reads 4 + 2
+   `@0x7113E–0x71167` and then exactly three `w·h` layers; `tools/extract_mp.py`
+   had assumed 4 and was rewritten (codec in `tools/asset_codecs.py`).
+   **Finding, not fixed here**: the committed `data_extracted/map/AMER2_tiles.json`
+   (commit d87e9bb) is that old tool's output — its tiles begin `[4, 0, 25, 3, …]`,
+   i.e. the version word, and every tile sits at linear index +2. Both ports
+   build their new-game terrain plane from it (`port/tools/bundle.py:554`,
+   `tools/gen_c_data.py` → `dat_map_tiles`), compensated by
+   `TRIBE_SITE_DX = 2` in `game.js` and `cport/core/colopy_newgame.c:27`.
+   Fixing it moves every new-game coordinate by two columns and needs the
+   lockstep + re-baseline discipline — ledger row **G11**, sim track. Saves
+   are unaffected (terrain comes from the `.SAV`).
+6. **`WIN-FWRK.SS`** (the declared extractor failure): section 2 is 104 bytes,
+   header `+0x0C` = 0 (VICEROY's fatal case `@0x7686B`), and the name occurs in
+   none of VICEROY / OPENING / CLOSING / MAPEDIT / COLONIZE.EXE. Its loader is
+   TBD. **Hard rule 5's "BDARK.SS is the only orphan" is NOT amended here** —
+   that needs user sign-off; the census result is recorded so the question is
+   visible.
+
+**Not decided**: meaning of SS header `+0x02..+0x25`/`+0x90/+0x92` (in the
+sheet-record consumers, untraced); PIK header `+4..+7`; the PAL flag bytes'
+consumer; what writes `sheet+0x3E` after `func_076642` zeroes it `@0x76812`.

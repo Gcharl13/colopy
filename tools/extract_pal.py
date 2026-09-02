@@ -2,7 +2,33 @@
 """
 extract_pal.py — Extract VICEROY.PAL to JSON + PNG swatch.
 
-Format spec: formats/PAL.md.
+Format spec: formats/PAL.md.  Codec: tools/asset_codecs.py (pal_decode /
+pal_encode; the round trip is bit-exact and is run by tools/verify_assets.py).
+
+LOADER (byte-verified 2026-09-02, REMAINING_WORK.md G5; offsets are file
+offsets into VICEROY.EXE, DGROUP strings relative to file 0x1D9A0):
+
+  func_0781DE  = the .PAL loader, thunk 0x1A1F:0xE28, ONE caller: the boot
+                 asset loader func_075FB6 @0x76039-0x76043:
+                     push 0xa000 ; push 0xfc00 ; lea bx,[0x237d] ; lcall 0x1a1f,0xe28
+                 i.e. (dest far ptr A000:FC00, name BX -> DGROUP 0x237D =
+                 "viceroy.pal", lowercase, at file 0x1FD1D).  Failure sets
+                 [0x822] = 0x13 @0x7604C.
+  inside:        fopen(name, "rb") -- lea bx,[0x25f2] ("rb"); lcall 0x181f,0xe86
+                 @0x781EB-0x781EF (-> func_00C45A);
+                 fread(buf, 0x300, 1, fp) -- push si; push 1; push 0x300;
+                 lea ax,[bp-0x302]; lcall 0xd1d,0x528 @0x781FA-0x78205;
+                 far memcpy of 0x300 bytes to the destination -- push 0x300 ...
+                 lcall 0xd1d,0xfb2 @0x78211-0x78220; fclose @0x78232.
+  DAC upload:    push 0xa000; push 0xfc00; lcall 0x181f,0x3f4 @0x762FE-0x76304
+                 (-> func_00D1E4: out 0x3C8,0 then 0x300 x outsb 0x3C9).
+
+  CONSEQUENCE: VICEROY reads exactly 0x300 bytes.  The trailing 256 flag
+  bytes (0x300..0x3FF, values 0x05/0x00 in the shipped file) are NEVER read
+  by VICEROY.EXE.  Their consumer, if any, is TBD -- blocker: MAPEDIT.EXE and
+  COLONIZE.EXE also carry a "viceroy.pal" string (MAPEDIT @0x177E7,
+  COLONIZE @0x6C334) and neither loader has been traced.  They are still
+  content: the extract keeps them so the round trip stays byte-exact.
 """
 from __future__ import annotations
 
@@ -14,6 +40,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COLONIZE = ROOT / "raw" / "COLONIZE"
+sys.path.insert(0, str(ROOT / "tools"))
+import asset_codecs  # noqa: E402
+
+LOADER = {
+    "loader_function": "func_0781DE",
+    "loader_offset": "0x0781DE",
+    "loader_thunk": "0x1A1F:0xE28",
+    "called_from": ["func_075FB6 @0x076043 (boot asset loader)"],
+    "called_with_args": ["dest = A000:FC00 (push 0xa000; push 0xfc00 @0x76039-0x7603C)",
+                         "name = DGROUP 0x237D \"viceroy.pal\" (lea bx,[0x237d] @0x7603F)"],
+    "bytes_read": "0x300 (fread @0x781FA-0x78205); bytes 0x300..0x3FF never read by VICEROY",
+    "dac_upload": "func_00D1E4 via 0x181F:0x3F4 @0x762FE-0x76304 (out 0x3C8,0; 0x300 x outsb 0x3C9)",
+    "unread_tail_consumer": "TBD -- MAPEDIT/COLONIZE .pal loaders not traced",
+}
 
 
 def extract(pal_path: Path, out_dir: Path):
@@ -22,41 +62,14 @@ def extract(pal_path: Path, out_dir: Path):
     if len(data) < 768:
         print(f"WARN: expected >=768 palette bytes, got {len(data)}", file=sys.stderr)
 
-    entries = []
-    for i in range(256):
-        # VICEROY.PAL = 256 RGB triples (3 bytes/entry, 6-bit). The first 768 bytes are
-        # the palette; verified by rendering COLONY.PIK vs the live DOS capture (sky idx54 ->
-        # (104,136,192)). The old 4-byte stride produced wrong colours across every asset.
-        r = data[i * 3 + 0]
-        g = data[i * 3 + 1]
-        b = data[i * 3 + 2]
-        # Byte 768+i: one flag per palette index, NOT padding. It holds only 0 or 5
-        # in the shipped file (5 across indices 0..151 and 252..255, 0 between), so
-        # it is real content and the extract is lossy without it -- which is what
-        # broke the encode_pal round-trip from 2026-06-27 to 2026-08-05. Its
-        # meaning is TBD; the loader is unidentified (docs/PALETTE_AND_CYCLING.md).
-        flag = data[768 + i] if len(data) >= 1024 else 0
-        # Scale 6-bit -> 8-bit
-        r8 = (r * 255 + 31) // 63
-        g8 = (g * 255 + 31) // 63
-        b8 = (b * 255 + 31) // 63
-        entries.append({
-            "index": i,
-            "vga_6bit": [r, g, b],
-            "rgb_8bit": [r8, g8, b8],
-            # Kept under the old key so existing readers keep working; the value is
-            # now the real byte instead of a hardcoded 0.
-            "padding": flag,
-        })
-
+    decoded = asset_codecs.pal_decode(data)
+    entries = decoded["entries"]
     sha = hashlib.sha256(data).hexdigest()
     out_json = {
         "source_file": pal_path.name,
         "source_sha256": sha,
         "format_spec": "formats/PAL.md",
-        "layout": "768 bytes of RGB triples, then one flag byte per index (768+i)",
-        "trailing_bytes": len(data) - 768,
-        "entries": entries,
+        **decoded,
     }
     json_path = out_dir / "viceroy.pal.json"
     json_path.write_text(json.dumps(out_json, indent=2))
@@ -77,13 +90,10 @@ def extract(pal_path: Path, out_dir: Path):
         img.save(png_path)
         print(f"  wrote {png_path}")
     except ImportError:
-        print(f"  WARN: PIL/Pillow not installed; skipping PNG swatch")
+        print("  WARN: PIL/Pillow not installed; skipping PNG swatch")
 
-    # Sidecar loader info (filled in once the loader function is identified)
     sidecar = {
-        "loader_function": "TBD",
-        "loader_offset": "TBD",
-        "called_with_args": [],
+        **LOADER,
         "original_filename": pal_path.name,
         "sha256": sha,
         "format_spec": "formats/PAL.md",
@@ -95,7 +105,7 @@ def extract(pal_path: Path, out_dir: Path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--source", type=Path, default=COLONIZE / "VICEROY.PAL")
     ap.add_argument("--out", type=Path, default=ROOT / "assets" / "palettes")
     args = ap.parse_args()

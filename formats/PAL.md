@@ -32,7 +32,8 @@ The entire file is a flat array. No header. No compression.
   2026-08-05). In the shipped `VICEROY.PAL` they hold `0x05` across indices
   0..151 and 252..255 and `0x00` between — 156 non-zero bytes, only two distinct
   values, one byte per palette index. Their **meaning is TBD** (the .PAL loader
-  is still unidentified — `docs/PALETTE_AND_CYCLING.md`), but they are content:
+  `func_0781DE` — located 2026-09-02, below — reads only `0x300` bytes, so
+  VICEROY never touches them), but they are content:
   an extractor that drops them cannot round-trip the file. `extract_pal.py` did
   drop them, hardcoding `pad = 0`, so the Phase-B round-trip gate failed
   continuously from the 2026-06-27 stride correction until 2026-08-05 while
@@ -49,10 +50,37 @@ during blit.
 
 ---
 
-## Loader in VICEROY.EXE
+## Loader in VICEROY.EXE — LOCATED (2026-09-02, REMAINING_WORK.md G5)
 
-The loader reads VICEROY.PAL into a DGROUP buffer and writes it to
-the VGA palette registers via:
+**`func_0781DE`** (file `0x0781DE`, thunk `0x1A1F:0xE28`, exactly one caller).
+All offsets are file offsets into `VICEROY.EXE`; DGROUP strings are relative
+to file `0x1D9A0`.
+
+- **Call site** — boot asset loader `func_075FB6` `@0x76039–0x76043`:
+  `push 0xa000; push 0xfc00; lea bx,[0x237d]; lcall 0x1a1f,0xe28` — i.e.
+  `(dest = A000:FC00, name = DGROUP 0x237D)`. `0x237D` is
+  **`"viceroy.pal"` in lowercase** (file `0x1FD1D`), which is why an
+  uppercase `VICEROY.PAL` string search never found it. Failure sets
+  `[0x822] = 0x13` `@0x7604C`.
+- **Body** — `fopen(name, "rb")`: `lea bx,[0x25f2]` (`"rb"`) +
+  `lcall 0x181f,0xe86` `@0x781EB–0x781EF` (→ `func_00C45A`); then
+  **`fread(buf, 0x300, 1, fp)`**: `push si; push 1; push 0x300;
+  lea ax,[bp-0x302]; lcall 0xd1d,0x528` `@0x781FA–0x78205`; then a far copy of
+  `0x300` bytes to the destination: `push 0x300 … lcall 0xd1d,0xfb2`
+  `@0x78211–0x78220`; `fclose` `@0x78232`.
+- **DAC upload** — `push 0xa000; push 0xfc00; lcall 0x181f,0x3f4`
+  `@0x762FE–0x76304` (also `@0x75982`, `@0x759CD`, `@0x75B66`) → `func_00D1E4`:
+  `mov dx,0x3c8; xor al,al; out dx,al` `@0xD1FD–0xD202`, then `0x300` ×
+  `outsb 0x3C9` with a retrace wait (loop `@0xD21F`).
+
+**Consequence: VICEROY.EXE reads exactly 0x300 bytes. The trailing 256 flag
+bytes (`0x300..0x3FF`) are never read by VICEROY.** They remain content for
+round-trip purposes; their consumer is **TBD** — blocker: `MAPEDIT.EXE`
+(`"viceroy.pal"` @0x177E7) and `COLONIZE.EXE` (@0x6C334) also name the file
+and neither loader has been traced. `A000:FC00` is VGA memory past the
+64,000-byte mode-13h frame, used here as palette scratch (that the segment
+is free there is inferred from the address, not from a read instruction —
+flagged, not load-bearing).
 
 ```
 out 0x3C8, 0          ; tell VGA "start writing palette at index 0"
@@ -94,4 +122,7 @@ SHA-256 of original.
   `mcga_setpal_range` @ `0x00E702` (`out 0x3C8` then `outsb`). The
   read-back counterpart is `mcga_getpal` @ `0x078548` (`out 0x3C7` then
   `insb`). See `docs/VICEROY_NAMES_FROM_MAPEDIT.md` §4.
-- .PAL **loader**: still TBD — the cycling path does not depend on it.
+- .PAL **loader**: **BYTE_VERIFIED 2026-09-02** — `func_0781DE` @ file
+  `0x0781DE` (thunk `0x1A1F:0xE28`, caller `@0x76043`), `fread` of `0x300`
+  bytes `@0x781FA–0x78205`. The 256 trailing flag bytes are unread by VICEROY
+  (consumer TBD, see "Loader in VICEROY.EXE").

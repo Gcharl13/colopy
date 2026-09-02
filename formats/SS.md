@@ -84,6 +84,12 @@ blit are skipped.
 
 ## Reference implementation
 
+> **2026-09-02:** the paragraph below is history. The in-repo decoder is `tools/ssdec.py`
+> and the gate is `tools/extract_visuals.py` (rewritten 2026-09-02, REMAINING_WORK.md G7:
+> 204/206 sheets, 1,425 frames); `mpskit` never existed in this repo and is no longer
+> referenced by any tool. `.SS` files are decode-only (FAB re-encoding is not
+> byte-deterministic); `tools/verify_assets.py` checks the container decode.
+>
 > ⚠ **TOOLING ABSENT (verified 2026-06-20):** the `mpskit` decoder referenced below
 > (`tools/mpskit/ss.py`, `madspack.py`, `fab.py`) **is not present in this repo**, and
 > the **FAB (LZ-variant) bitstream is not documented** here. The MADSPACK container is
@@ -143,11 +149,46 @@ there is no `0xFDAA` xref to find. The whole MADSPACK stream subsystem is byte-v
   `[0x26CA..0x26E0]`); the actual **per-section decode transform** is one of those
   vtable handlers inside the `0x0D1D` library segment.
 
-**Remaining (bounded library RE, no dump needed):** read the exact byte/bit transform
-in the `0x0D1D` decode vtable handler to write the codec. The codec is the **MADSPACK-2
-`mode=4`** scheme (NOT standalone FAB). **Do not guess it** — a candidate decoder is
-valid only if it expands every section to exactly its directory `unpacked_len` across
-all 26 sheets. The loader/stream layer above is fully byte-verified.
+> ~~**Remaining (bounded library RE, no dump needed):** read the exact byte/bit transform
+> in the `0x0D1D` decode vtable handler to write the codec. The codec is the **MADSPACK-2
+> `mode=4`** scheme (NOT standalone FAB).~~ **Retired 2026-09-02 (G5):** this paragraph
+> contradicted both the working decoder (§"High-level structure": FAB, every section to its
+> exact size on all 206 sheets) and the bytes — the section reader `func_077100`
+> (`0x1A1F:0xE82`) decompresses via `lcall 0x1a1f,0xeba` `@0x771FE` → `func_0772FA`, which
+> selects the FAB handler when the entry's type byte is 1 (`[0x26CA]==1` `@0x773CA`) and
+> requires the result to equal the requested size (`cmp [bp-0x24],ax` `@0x77290`). The
+> `mode` byte is not a codec selector.
+
+### The .SS loader proper — `func_076642` (byte-verified 2026-09-02, G5)
+
+`func_076642` (file `0x076642`, thunk **`0x1A1F:0x372`**, 10 callers: boot `func_075FB6`
+`@0x7615A` cursor / `@0x761E7` woodtile / `@0x76226` parch / `@0x76264` opentile, plus
+`@0x72BD0`, `@0x45B02`, `@0x6F6F6`, `@0x6C043`, `@0x6C0DA`). `BX` = name, `AX` = flags
+(boot passes `0x4000`); returns `DX:AX` = far pointer to the sheet record. Name handling:
+`strcpy` `@0x76677`; if no `'.'` (`push 0x2e … lcall 0xd1d,0xc56` `@0x7667F–0x7668D`) then
+`strcat ".SS"` (`push 0x23e6` `@0x76691`; DGROUP `0x23E6` = `".SS"` at file `0x1FD86`);
+a leading `'*'` is skipped `@0x766C0–0x766C9`, a leading `"RM"` `@0x766D1–0x766DC`; mode
+`"rb"` = `0x23ED` `@0x766FF`. Container open = `func_076E50` `@0x76706` (`0x1A1F:0xE9E`).
+Error codes into `[0x23F0]`: `0xFFFF` open failed `@0x7670F`, `0xFFFE` header/frame-table
+read failed `@0x76718`/`@0x76852`, `0xFFFC` alloc failed `@0x767EC`.
+
+| Section | Read | Fields the engine uses |
+|---|---|---|
+| 0 — **0x98-byte sheet header** | `mov ax,0x98; lcall 0x1a1f,0xe82` `@0x76734–0x76738` into `[bp-0x114]` | `+0x00` u8 → `sheet+0x2C` `@0x76916–0x7691D`, and gates the pixel read (`cmp byte [bp-0x114],0` `@0x7677C`/`@0x76A0F`/`@0x76A43`); `+0x02`/`+0x04` u16 → `sheet+0 = (hdr+2 != 0 && hdr+4 < 4)` `@0x76921–0x7693E`, `sheet+2 = hdr+4` `@0x7693E–0x76945`; `+0x06..+0x25` sixteen u16 → `sheet+8..+0x27` (loop `@0x76961–0x76979`); **`+0x0C` must be non-zero** (`cmp word [bp-0x108],0; jne` `@0x7685C`) else fatal dialog `lcall 0x181f,0x772` code `0xFFF9` `@0x7686B–0x76874`; **`+0x26` u16 = frame count** → `sheet+4` `@0x76949–0x7694D` (frame-table alloc `n<<4` `@0x76744–0x7674B`, record `n·12+0x42` `@0x7674E–0x7675B`); `+0x90`/`+0x92` u16 → `sheet+0x28`/`+0x2A` `@0x76951–0x7695D`; **`+0x94` u32 = pixel-section size** (added to the allocation `@0x76783–0x7678D`, read length `@0x76A5C–0x76A62`). Meaning of `+0x02..+0x25`, `+0x90/+0x92` is in the consumers of `sheet+0..+0x2B` — **TBD**, blocker: no consumer read in this pass. |
+| 1 — **frame table, 16 B/frame** | `mov ax,[bp-2]` (= n·16) `; lcall 0x1a1f,0xe82` `@0x76845–0x76849` | per frame `i` (`di = i<<4`): `+8,+0xA,+0xC,+0xE` = x, y, w, h → the 12-byte sheet frame entry at `sheet+0x42+12i`, `+4..+0xA` (`mov ax,es:[di+8] … es:[bx+0x46]` … `es:[di+0xe] … es:[bx+0x4c]` `@0x769C9–0x76A04`); `+4` = size, summed into the running data pointer (`add ax,es:[di+4]; lcall 0x1a1f,0xe78` `@0x76A24–0x76A2C` → `func_00E454` far-pointer normalise); `+0` (offset) **not read**. Matches `ssdec.load_sheet` (`<I I h h H H`). |
+| 2 — **0x300 palette** | `mov ax,0x300; lcall 0x1a1f,0xe82` `@0x768C4–0x768C8` | read **only when the global palette sink `[0x23F2:0x23F4]` is non-zero** (`mov ax,[0x23f4]; or ax,[0x23f2]; je 0x768d4` `@0x76899–0x768A0`); otherwise skipped by `ftell` + `fseek(packed)` (`lcall 0xd1d,0x9a2` `@0x768DC` … `lcall 0xd1d,0xa3e` `@0x7690E`). |
+| 3 — **RLE pixels** | `@0x76A4A–0x76A62`, length `hdr+0x94` | read whole into the record tail when `hdr+0 == 0` and flag bit 2 is clear. RLE opcodes `0xFC..0xFF` are in `ssdec.rle_decode` (ported from the decompile, not re-derived here). |
+
+Shipped values (section 0 of TERRAIN/PHYS0/BUILDING): `00 01 00 00 03 00 …`, `+0x0C = 1`,
+`+0x26` = 12 / 154 / 48, `+0x94` = 3372 / 23481 / 35670 = exactly section 3's unpacked size.
+`es:[bx+0x3E]` in this loader is a **sheet-record word zeroed at init** (`mov es:[bx+0x3e],ax`,
+`ax=0`, `@0x76812`, among `+0x2E..+0x40` `@0x7680C–0x76832`), not a file field; what later
+writes it is TBD (blocker: the sheet-record consumers have not been traced from here).
+
+**`WIN-FWRK.SS`** (the declared failure of `tools/extract_visuals.py`): its section 2 is
+**104 bytes** (not a palette), its header `+0x0C` is **0** (the fatal-dialog case above),
+and the name occurs in **none** of VICEROY / OPENING / CLOSING / MAPEDIT / COLONIZE.EXE
+(string census 2026-09-02). Which program loads it, and what its section 2 is, are TBD.
 
 ---
 

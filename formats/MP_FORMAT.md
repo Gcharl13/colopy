@@ -151,10 +151,59 @@ menu paths in `_execute_menu_event` @0x2DE0 — SAVE id 0x1A @0x2F8E,
 SAVE AS id 0x13 @0x2EAC, LOAD id 0x1B @0x2FD4, NEW id 0x14 @0x2F24,
 EXIT id 0x1F @0x305E (with save-on-exit option).
 
-**VICEROY.EXE**: loads AMER2.MP at game start (the `AMER2.MP` string
-lives in the end-of-turn/setup cluster near `func_0755CC`); its .MP
-loader has not yet been per-line annotated — TODO; it must accept the
-same 6-byte header + 3 layers (AMER2.MP is this format).
+**VICEROY.EXE** — annotated 2026-09-02 (REMAINING_WORK.md G5; file
+offsets into `VICEROY.EXE`, DGROUP strings relative to file `0x1D9A0`;
+thunks resolved with `tools/follow_thunk.py`):
+
+- **`func_071106` = map_load_file** (thunk `0x1A1F:0xC8E`, caller
+  `new_game_state_init` `@0x75733`). Name: appends the default extension
+  `[0x154]` = `"mp"` when there is no `'.'` (`lcall 0x1a1f,0xcaa` `@0x7111B`
+  → `func_00D77C`), `fopen([0x8554], "rb")` (`lea bx,[0x208e]` `@0x71124`,
+  `lcall 0x181f,0xe86` `@0x71128`; error `[0x158]=1` `@0x71134`). `[0x8554]`
+  is `strcpy`'d from `[0x2166]` = `"AMER2.MP"` (file `0x1FB06`)
+  `@0x755D1–0x755D7`; the MAPTOLOAD picker (`push 0x2357 "*.MP"; push 0x235c
+  "MAPTOLOAD"; push 0x2366 "GAME"` `@0x75D0A–0x75D14`) overwrites it and sets
+  `[0x2174]=1` when the choice differs from `"AMER2.MP"` (`@0x75D2A–0x75D44`).
+- **Header**: `fread(0x853A, 4, 1)` `@0x7113E–0x71146` → `[0x853A]` width,
+  `[0x853C]` height (error 2 `@0x71152`); `fread(&ver, 2, 1)`
+  `@0x7115C–0x71167`; **`ver` must be 4** — `cmp [bp-4],4; jg 0x7117b; jge
+  0x7118c` `@0x71173–0x71179`: any other value reaches `@0x7117B`, which
+  errors with 3 (`@0x71182`) unless `[0x152] < 0` (`[0x152]` = last-loaded
+  version, initially 0 — so in practice ver ≠ 4 → error 3); then
+  `[0x152] = ver` `@0x7118F`; `w·h` → `[0x85A4:0x85A6]` `@0x71192–0x7119C`.
+- **Size gate** `func_0710C2` (`ljmp 0x1a1f:0xc64` `@0x7147C`):
+  `[0x15A] = (w·h > 0x2EE0)` `@0x710CB–0x710E4`; if set, error `0x270F` (9999)
+  `@0x710F1` — the same cap as MAPEDIT.
+- **Three layer reads of `w·h` bytes**, each `push seg; push off; push 0;
+  push 1; mov ax,[0x85a4]; mov dx,[0x85a6]; mov bx,fp; lcall 0x1a1f,0xcb4`
+  (→ `func_00D41E` fread): terrain → `[0x15C:0x15E]` `@0x711B1–0x711C6`
+  (error 4), feature → `[0x160:0x162]` `@0x711D8–0x711EE` (error 5),
+  continent → `[0x164:0x166]` `@0x71200–0x71216` (error 6). **Nothing else
+  is read**: `call 0x70fa0` `@0x71230` only publishes the plane pointers and
+  dims into the surface structs `[0x85A8..0x85C6]`; `fclose` `@0x7123C`.
+  Error codes `[0x158]`: 1 open, 2 header, 3 version, 4/5/6 layers,
+  9999 too big — the same table as MAPEDIT's.
+- **`func_071246` = map_save_file** (`"wb"` = `0x2091` `@0x71264`): `fwrite`
+  w,h (4 bytes, `0xd1d:0x60c` `@0x71286`), version `[0x152]` (2 bytes
+  `@0x712AD`), then the three layers via `lcall 0x1a1f,0xc9c` (→
+  `func_0775EC` chunked write) `@0x712DD` / `@0x71304` / `@0x7132C`.
+- **`func_071350` = map_create_blank(w,h)**: memset layer 1 to `0x19` Ocean,
+  layers 2/3 to 0 (`push 0x19 … lcall 0xd1d,0x11fa` `@0x71385–0x7138F`;
+  `push 0` `@0x7139B`/`@0x713B1`), `[0x152]=4` `@0x713C8` — mirrors MAPEDIT's
+  `_create_blank_map`.
+- **`func_0713D4` = map_load_default** (thunk `0x1A1F:0xC80`, called
+  `@0x7571C` for every new game): if `[0x18C]==0` (a file map — the
+  random-world path sets `[0x18C]=1` and 58×72 `@0x756FC–0x75708`) it opens
+  `[0x8554]` (`lea bx,[0x2094]` `"rb"` `@0x713FF`), presets **120×75**
+  (`0x78`, `0x4B`, `0x2328` tiles `@0x7140B–0x7141D`), reads **only the
+  4-byte w/h header** `@0x71427–0x7142F`, allocates the four runtime planes
+  via `func_070FF8` (`call 0x71481` → `ljmp 0x1a1f:0xc72`: terrain
+  `[0x15C]`, feature `[0x160]`, continent `[0x164]`, fog `[0x168]`
+  `@0x7104C–0x710A5`) and closes; the layers themselves are read afterwards
+  by `func_071106`.
+
+So VICEROY accepts exactly the writer's layout: 6-byte header + 3 layers,
+nothing after. The post-load normalisation is in §"VICEROY loader behavior".
 
 ---
 

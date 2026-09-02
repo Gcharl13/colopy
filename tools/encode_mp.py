@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
-"""encode_mp.py — Re-emit a byte-identical .MP file from the JSON."""
+"""encode_mp.py — Re-emit a byte-identical .MP file from the JSON.
+
+Writes what VICEROY's own writer func_071246 writes (@0x71286 w,h; @0x712AD
+version; @0x712DD/@0x71304/@0x7132C the three layers) -- see
+tools/extract_mp.py and formats/MP_FORMAT.md.  Codec: tools/asset_codecs.mp_encode.
+"""
 from __future__ import annotations
-import argparse, hashlib, json, struct, sys
+import argparse, hashlib, json, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import asset_codecs  # noqa: E402
 
 
 def encode(json_path: Path, out_path: Path) -> bytes:
     obj = json.loads(json_path.read_text())
-    width, height = obj["width"], obj["height"]
-    tiles = obj["tiles"]
-    trailer = bytes.fromhex(obj["trailer_hex"])
-    blob = bytearray()
-    blob += struct.pack("<HH", width, height)
-    blob += bytes(tiles)
-    blob += trailer
-    out_path.write_bytes(bytes(blob))
-    return bytes(blob)
+    blob = asset_codecs.mp_encode(obj)
+    out_path.write_bytes(blob)
+    return blob
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--source", type=Path,
                     default=ROOT / "assets" / "maps" / "amer2.json")
     ap.add_argument("--out", type=Path,

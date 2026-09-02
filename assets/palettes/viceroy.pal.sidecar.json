@@ -1,7 +1,17 @@
 {
-  "loader_function": "TBD",
-  "loader_offset": "TBD",
-  "called_with_args": [],
+  "loader_function": "func_0781DE",
+  "loader_offset": "0x0781DE",
+  "loader_thunk": "0x1A1F:0xE28",
+  "called_from": [
+    "func_075FB6 @0x076043 (boot asset loader)"
+  ],
+  "called_with_args": [
+    "dest = A000:FC00 (push 0xa000; push 0xfc00 @0x76039-0x7603C)",
+    "name = DGROUP 0x237D \"viceroy.pal\" (lea bx,[0x237d] @0x7603F)"
+  ],
+  "bytes_read": "0x300 (fread @0x781FA-0x78205); bytes 0x300..0x3FF never read by VICEROY",
+  "dac_upload": "func_00D1E4 via 0x181F:0x3F4 @0x762FE-0x76304 (out 0x3C8,0; 0x300 x outsb 0x3C9)",
+  "unread_tail_consumer": "TBD -- MAPEDIT/COLONIZE .pal loaders not traced",
   "original_filename": "VICEROY.PAL",
   "sha256": "8ea9b23a1c8510da7dba91d5f0ca5761d0d36cc99ad03831e9c2e96439430ec9",
   "format_spec": "formats/PAL.md",

@@ -25,13 +25,19 @@ BYTE_VERIFIED via `tools/extract_pal.py` + `tools/encode_pal.py`.
 
 ## Loader
 
-The .PAL loader is in VICEROY's startup code (called from the scenario
-loader `func_0749E0` chain — TBD). It reads VICEROY.PAL into a DGROUP
-buffer and writes it to the VGA hardware.
+**Located 2026-09-02 (REMAINING_WORK.md G5): `func_0781DE`** (file
+`0x0781DE`, thunk `0x1A1F:0xE28`), called once from the boot asset loader
+`func_075FB6` `@0x76039–0x76043` with `(dest = A000:FC00, name = DGROUP
+0x237D "viceroy.pal")` — the string is lowercase, which is why the
+uppercase search suggested below never found it. It `fopen`s `"rb"`
+`@0x781EB–0x781EF`, **`fread`s exactly `0x300` bytes** `@0x781FA–0x78205`
+and far-copies them to the destination `@0x78211–0x78220`; the DAC upload
+is `func_00D1E4` via `0x181F:0x3F4` `@0x762FE–0x76304`. The 256 trailing
+flag bytes of the file are never read by VICEROY. Full citation:
+`formats/PAL.md` §"Loader in VICEROY.EXE".
 
-Loader function: TBD (find via PUSH "VICEROY.PAL" or via writes to I/O
-port 0x3C8). The *cycling* path below no longer depends on this: it
-streams through `mcga_setpal_range`, which is identified.
+The *cycling* path below does not depend on the loader: it streams
+through `mcga_setpal_range`.
 
 ---
 

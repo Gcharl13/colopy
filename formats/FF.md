@@ -61,10 +61,19 @@ re-rendering the glyph atlas. *(Earlier hypotheses — interleaved `[w][h][bitma
 
 ## Loader in VICEROY.EXE — LOCATED (2026-06-21)
 
-- **Loader** = `lcall 0x1A1F:0xA86` (overlay; file **~0x6FC74**). Takes `BX` = far ptr to the
-  lowercase/uppercase name string, returns `DX:AX` = far ptr to the parsed font struct. Call
-  sites: FONTINTR @0x760C6 (`→[0x268A]`), FONTTINY @0x760E8 (`→[0x89E]`), FONTKING @0x754F6,
-  FONT-NP @0x6B7AF. The active-font global is `[0x1F9E]`.
+- **Loader** = `lcall 0x1A1F:0xA86` → **`func_076C70` (file `0x076C70`)** — *corrected
+  2026-09-02 (G5): the earlier "~0x6FC74" was an estimate; `tools/follow_thunk.py 0x1a1f 0xa86`
+  resolves the type-A thunk to `0x076C70`.* Takes `BX` = far ptr to the name string, returns
+  `DX:AX` = far ptr to the payload. Call sites: FONTINTR @0x760C6 (`→[0x268A]`), FONTTINY
+  @0x760E8 (`→[0x89E]`), FONTKING @0x754F6, FONT-NP @0x6B7AF. The active-font global is `[0x1F9E]`.
+  Body (byte-verified): `strcat ".FF"` when the name has no `'.'` (`push 0x2682` @0x76CAE;
+  DGROUP `0x2682` = `".FF"` at file `0x20022`); 8-char tag @0x76CC8–0x76CCF; MADSPACK open via
+  `func_076E50` (`lcall 0x1a1f,0xe9e` @0x76CE9, `ax=0xFFFF`); **allocation = directory entry
+  0's unpacked size** (`mov ax,[bp-0x112]; mov dx,[bp-0x110]` = `obj+0x2C/0x2E`;
+  `lcall 0x1a1f,0xe90` @0x76CF7–0x76D05 → `func_078872`, tagged far alloc); **section 0 read
+  whole** (`lcall 0x1a1f,0xe82` @0x76D27 = `func_077100`); the far pointer is returned. The
+  `.FF` is therefore a **single-section** MADSPACK container whose payload is the struct above,
+  parsed lazily by `func_00E51C`.
 - **Glyph blitter** = `0x181F:0x3FE` (and `0x181F:0x998` for popup body); 2-bpp unpack +
   palette map live there.
 - **Rasteriser core + ink→colour mapping (B, 2026-07-28)** = **`func_00E51C`** (resident, file

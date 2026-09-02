@@ -2,7 +2,7 @@
   "source_file": "VICEROY.PAL",
   "source_sha256": "8ea9b23a1c8510da7dba91d5f0ca5761d0d36cc99ad03831e9c2e96439430ec9",
   "format_spec": "formats/PAL.md",
-  "layout": "768 bytes of RGB triples, then one flag byte per index (768+i)",
+  "layout": "768 bytes of RGB triples (read by func_0781DE), then one flag byte per index (768+i) that VICEROY never reads",
   "trailing_bytes": 256,
   "entries": [
     {
@@ -3589,5 +3589,6 @@
       ],
       "padding": 5
     }
-  ]
+  ],
+  "extra_hex": ""
 }

@@ -2,7 +2,15 @@
 """
 encode_pal.py — Re-emit a byte-identical VICEROY.PAL from the JSON.
 
-Format spec: formats/PAL.md.
+Format spec: formats/PAL.md.  Codec: tools/asset_codecs.pal_encode.
+
+Layout: 768 bytes of RGB triples, then one flag byte per index.  NOT a
+4-byte interleave -- that reading was corrected on 2026-06-27
+(formats/PAL.md), but this encoder kept the old stride until 2026-08-05, so
+the round-trip gate had been failing silently while STATUS.md reported it
+green.  VICEROY's loader func_0781DE reads only the first 0x300 bytes
+(fread @0x781FA-0x78205); the tail is re-emitted verbatim so the file
+round-trips (tools/extract_pal.py header has the full citation).
 """
 from __future__ import annotations
 
@@ -13,31 +21,21 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
+import asset_codecs  # noqa: E402
 
 
 def encode(json_path: Path, out_path: Path) -> bytes:
     obj = json.loads(json_path.read_text())
-    entries = obj["entries"]
-    if len(entries) != 256:
-        print(f"WARN: expected 256 entries, got {len(entries)}", file=sys.stderr)
-    # 768 bytes of RGB triples, then one flag byte per index. NOT a 4-byte
-    # interleave -- that reading was corrected on 2026-06-27 (formats/PAL.md),
-    # but this encoder kept the old stride until 2026-08-05, so the round-trip
-    # gate had been failing silently while STATUS.md reported it green.
-    blob = bytearray(1024)
-    for e in entries:
-        i = e["index"]
-        r, g, b = e["vga_6bit"]
-        blob[i * 3 + 0] = r
-        blob[i * 3 + 1] = g
-        blob[i * 3 + 2] = b
-        blob[768 + i] = e["padding"]
-    out_path.write_bytes(bytes(blob))
-    return bytes(blob)
+    if len(obj["entries"]) != 256:
+        print(f"WARN: expected 256 entries, got {len(obj['entries'])}", file=sys.stderr)
+    blob = asset_codecs.pal_encode(obj)
+    out_path.write_bytes(blob)
+    return blob
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--source", type=Path,
                     default=ROOT / "assets" / "palettes" / "viceroy.pal.json")
     ap.add_argument("--out", type=Path,
