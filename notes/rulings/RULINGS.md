@@ -10911,3 +10911,21 @@ were contradicted by the tree when re-measured.
 palette layout; whether the stale askmap comment in
 `cport/host/render_smoke.c:340` (it still says "INTERSECTION") is the C
 track's to fix — it is a comment, and it is noted here rather than edited.
+
+## 2026-09-02c — render track (Europe / F9): C4.10 market cursor is 20 wide; the icon-row "one pixel left" was stale
+
+**Conflict**: ledger C4.10 said the Europe market icons sat one pixel right of the
+original and that the centring rule was unread; both ports drew the market selection
+cursor 19 px wide.
+
+**Bytes**: `func_0310B4` — icon x = `cell_x − (w>>1) + 9` with `cell_x = 1 + 19i`
+(@0x0310CA/@0x03124C/@0x031101–@0x031105) = `19i + 10 − (w>>1)`, the formula both ports
+already carried since C4.24; the per-cell census sweep fits all sixteen icons at shift 0.
+The cursor rect is `x0 = 19i`, `x1 = 19i + 19` (@0x031241, `cell_x + 0x12`), `y0 = 179`,
+`y1 = 199` (@0x031242–@0x031247) through `0x181F:0xCE`.
+
+**Ruling**: (1) the C4.10 "one pixel left" residual is retired — it predates C4.24; the
+icon row is byte-cited and pixel-exact. (2) `0x181F:0xCE`'s line endpoints are
+**inclusive**: the DOS frame paints column 19 in ink 14 on rows 179..199, so every
+hollow rect built from `(x0,y0)–(x1,y1)` pairs is `(x1−x0+1)` wide. Both ports draw the
+market cursor 20×21. Measured: census EUROPE 379 → 339 px.

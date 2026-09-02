@@ -188,18 +188,26 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     for (int i = 0; i < DAT_CARGO_COUNT; i++) {
         rd_frame f;
         rd_sheet_frame(&RD.icons, 0x16 + i, &f);
-        /* The market cell CENTRE is 19i + 10, byte-verified: the price
-         * drawer computes it as `imul ax, [bp+6], 0x13; add ax, 0xa`
-         * @0x030ED4-@0x030ED8, and stores the icon row's y in the same
-         * frame as 0xB5 = 181 @0x030ECF.  The port centred on 9 -- one
-         * pixel left, on every one of the sixteen icons.  Measured: that
-         * band 1,030 -> 59 px. */
+        /* The ICON blit, read from the bar's OWN drawer func_0310B4
+         * (C4.10, 2026-09-02): cell_x = 1 + 0x13*i (@0x0310CA, @0x03124C),
+         * frame 0x17 + i EXE = bundle 0x16 + i (@0x0310F2), width = the
+         * runtime record's +8 word of that frame (`es:[bx+si+0x152]`
+         * @0x0310FC), x = cell_x - (w >> 1) + 9 (@0x031101-@0x031105)
+         * = 19i + 10 - (w >> 1), y = 0xB5 (@0x0310CF), through
+         * 0x181F:0x254 = func_00E76A which adds no per-frame offset
+         * (@0x00E7E7).  The census EUROPE frame fits all sixteen icons at
+         * shift 0 (per-cell sweep 2026-09-02): delta 0 -> 0. */
         rd_blit(&RD.icons, 0x16 + i, 10 + 19 * i - (f.w >> 1), 181);
         char pr[16];
         snprintf(pr, sizeof(pr), "%d/%d", market_bid(i), market_ask(i));
         e_center(pr, 9 + 19 * i, 194, elut(0x2F));
+        /* The cursor is 0x181F:0xCE with x0 = cell_x - 1 = 19i (`dec ax`
+         * @0x031241), x1 = cell_x + 0x12 = 19i + 19, y0 = 179, y1 = 199
+         * (@0x031242-@0x031247): endpoint-INCLUSIVE -- the DOS frame paints
+         * column 19 in ink 14 on rows 179..199 -- so 20 wide, not 19.
+         * Measured: the 40 px of cells 0/1 (both edge columns). */
         if (i == market_sel)
-            rm_hollow_rect(19 * i, 179, 19, 21, 0x0E);
+            rm_hollow_rect(19 * i, 179, 20, 21, 0x0E);
     }
 
     /* THE THREE PANEL HEADINGS -- centred, ink 69, and the port had all

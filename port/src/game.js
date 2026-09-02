@@ -5868,11 +5868,27 @@ function drawEurope(ctx) {
 
   // Market bar: icons centred on 19i + 10 at y=181, bid/ask at y=194.
   //
-  // The cell CENTRE is 19i + 10, byte-verified in the price drawer:
-  // `imul ax, [bp+6], 0x13; add ax, 0xa` @0x030ED4-@0x030ED8, with the icon
-  // row's y stored in the same frame as 0xB5 = 181 @0x030ECF. The port centred
-  // on 9 -- one pixel left, on every one of the sixteen icons. Measured: that
-  // band 1,030 -> 59 px.
+  // The ICON blit is now read from the bar's OWN drawer, func_0310B4
+  // (C4.10, 2026-09-02): cell_x starts at 1 (@0x0310CA) and steps 0x13
+  // (@0x03124C); the frame is 0x17 + i in EXE numbering (@0x0310F2 = bundle
+  // 0x16 + i); the width is the runtime sheet record's +8 word for THAT
+  // frame (`mov cx, es:[bx+si+0x152]` @0x0310FC, 0x152 = 0x36 + 8 + 12*0x17),
+  // and x = cell_x - (w >> 1) + 9 (`sar cx,1; sub dx,cx; add dx,9`
+  // @0x031101-@0x031105) = 19i + 10 - (w >> 1), blitted through 0x181F:0x254
+  // = func_00E76A, which adds NO per-frame offset (@0x00E7E7 uses the
+  // passed x verbatim). y = 0xB5 = 181 @0x0310CF. That is the formula below;
+  // the census EUROPE frame fits every one of the sixteen icons at shift 0
+  // (per-cell sweep -2..+2, 2026-09-02), so the "one pixel left" note the
+  // ledger carried from before C4.24 is stale: measured delta 0 -> 0.
+  //
+  // The SELECTION CURSOR is the hollow rect 0x181F:0xCE with x0 = cell_x - 1
+  // = 19i (`dec ax` @0x031241), x1 = cell_x + 0x12 = 19i + 19, y0 = 179
+  // (`dec dx; dec dx` off 181 @0x031245), y1 = 199 (pushed 181 + 0x12): the
+  // line verbs are endpoint-INCLUSIVE -- the DOS frame paints column 19 in
+  // ink 14 on rows 179..199 while the port stopped at 18 -- so the cell is
+  // 20 wide, not 19. Measured: 40 px of cells 0/1 (the two edge columns).
+  // Ink 0xA normally, 0xE under the drag gates @0x0311EF-@0x03121A; the
+  // port keeps its 0xE (the census state matches).
   //
   // Scoped to EUROPE. The colony screen has its own market strip drawn by a
   // different function, and no census capture of that screen exists yet, so it
@@ -5881,7 +5897,7 @@ function drawEurope(ctx) {
     const [fw] = frameSize('ICONS', 0x16 + i);
     sheetFrame(ctx, 'ICONS', 0x16 + i, 10 + 19 * i - (fw >> 1), 181);
     FONT.tiny.center(ctx, `${bidPrice(i)}/${askPrice(i)}`, 9 + 19 * i, 194, lut(0x2F));
-    if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 19, 21, 0x0E);
+    if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 20, 21, 0x0E);
   });
 
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the

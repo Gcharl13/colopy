@@ -132,8 +132,13 @@ REPORTS = {
            "-1 -> +91 px, -2 -> +103 px). What is LEFT (~81 px beyond the "
            "pointer) is at glyph/edge scale, untriaged."),
     "EUROPE": ("EUROPE", ["--rendereurope", FIXTURE, str(PAK), "{out}", "0", "0", "-1", "0"],
-           "OPEN (0.6%, 379 px of which 82 is the pointer), down from 20.0%. "
-           "Thirteen fixes -- the latest: the crossing and harbour SHIPS "
+           "OPEN (0.5%, 339 px of which 82 is the pointer), down from 20.0%. "
+           "Fourteen fixes -- the latest (C4.10, 2026-09-02): the market "
+           "cursor is 20 wide, x0 = 19i .. x1 = 19i + 19 endpoint-inclusive "
+           "(func_0310B4 @0x031241; column 19 is ink 14 on the DOS frame), "
+           "379 -> 339; the icon row itself fits at shift 0 for all sixteen "
+           "icons (func_0310B4 @0x0310FC-@0x031105 = 19i + 10 - (w >> 1)). "
+           "Before that: the crossing and harbour SHIPS "
            "go through the full func_00386A composite (the baseline shows "
            "the class-1 plate at the hull's top-right; the old worse "
            "measurement predates the silhouette + x+2 decode), 421 -> 379. "

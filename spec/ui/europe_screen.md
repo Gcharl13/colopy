@@ -410,3 +410,22 @@ Measured-not-cited (R): wood-tile phase, caption ink 69, button bevel 57/48 unfi
 rounding rules, palette-cycle displayed values. The old `docs/screens/europe_render.png` attempt
 was graded: right on asset identity/fonts/icon mapping; wrong on registration (borders included),
 RGB-space matching, button geometry, and two price misreads — superseded by this pipeline.
+
+
+## Amendment 2026-09-02 — market-bar icon blit and selection cursor (C4.10, byte-read)
+
+`func_0310B4 @0x0310B4` (the market bar). Icon loop: `cell_x = 1` (@0x0310CA), `+= 0x13`
+(@0x03124C), 16 goods (@0x031253). Per good `i`: frame `ax = i + 0x17` (@0x0310F2, EXE
+numbering; the port bundle is `0x16 + i`), width `cx = es:[bx+si+0x152]` with `si = 12·i`
+and `bx = [0x83E]` (@0x0310E4–@0x0310FC — the runtime sheet record's `+8` word of frame
+`0x17 + i`, since `0x152 = 0x36 + 8 + 12·0x17`), then `x = cell_x − (w>>1) + 9`
+(`sar cx,1; sub dx,cx; add dx,9` @0x031101–@0x031105) = **`19i + 10 − (w>>1)`**, `y = 0xB5`
+(@0x0310CF), blit `0x181F:0x254` = `func_00E76A` (@0x03110F), which draws at the passed x
+with no per-frame offset (@0x00E7E7). Selection cursor `0x181F:0xCE` (@0x031247):
+`x0 = cell_x − 1 = 19i` (`dec ax` @0x031241), `x1 = cell_x + 0x12 = 19i + 19`,
+`y0 = 181 − 2 = 179` (@0x031245), `y1 = 181 + 0x12 = 199`; the census DOS frame paints
+column 19 in the cursor ink on rows 179..199, so the line verbs are **endpoint-inclusive**
+and the cell is 20×21. Ink `0xA`, or `0xE` under the drag gates @0x0311EF–@0x03121A.
+Boycott overlay: frame `0x38` at `(cell_x + 5, 181 + 3)` when `func_030B38(good) ≠ 0`
+(@0x0311B6–@0x0311E0) — not drawn by the ports (no fixture state), FLAGGED. Price text:
+`x = cell_x + 9 − ((tw+1)>>1)`, `y = 0xC2`, ink `0x2F` (@0x031188–@0x0311AE), as §3.
