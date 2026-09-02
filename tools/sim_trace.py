@@ -367,6 +367,21 @@ RENDERSCORE = """([save, panel, name]) => {
 }"""
 
 
+RENDERENDKING = """([save, win]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1657;
+  G.screen = 'endking';
+  G.plate = { name: 'endking', params: { win: !!win }, after: null };
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawEndKing(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
 RENDERREPORT = """([save, fk]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
@@ -801,7 +816,7 @@ def main():
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
                     "renderboot", "rendercongress", "renderdeclaration",
-                    "renderscore", "input"):
+                    "renderscore", "renderendking", "input"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -867,6 +882,11 @@ def main():
         elif mode == "renderscore":
             out = page.evaluate(RENDERSCORE,
                                 [sys.argv[2], int(sys.argv[3]), sys.argv[4]])
+            browser.close()
+            print(out)
+            return
+        elif mode == "renderendking":
+            out = page.evaluate(RENDERENDKING, [sys.argv[2], int(sys.argv[3])])
             browser.close()
             print(out)
             return

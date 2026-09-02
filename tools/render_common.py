@@ -68,6 +68,11 @@ PALETTE_CEILING = {
     # through the plate's palette on both sides
     "score sav1653 0 Willem van Oranje": 0,
     "score sav1653 23 Willem van Oranje": 0,
+    # the King's audience at the war's end: victory (KINGLSS1 + DUTCH1 +
+    # KINGLOSE) and defeat (KINGLSS2 + DUTCH2 + KINGWIN); the sheets are
+    # baked through KINGLSS1's merged table, which is the DAC
+    "endking sav1653 1": 0,
+    "endking sav1653 0": 0,
 }
 
 

@@ -581,6 +581,10 @@ typedef struct {
                                       * signing page (func_03DA2A) is
                                       * due — set after @INDEPENDENCE
                                       * (its engine dispatch is TBD) */
+    uint8_t king_show;               /* LIVE FRONT: the King's audience at
+                                      * the war's end (func_075352):
+                                      * 1 victory (KINGLOSE), 2 defeat
+                                      * (KINGWIN), 0 none */
     uint8_t f10_show;                /* LIVE FRONT: the end-game F10 page
                                       * (func_039EE2(1) @0x3B350) */
     int8_t  score_show;              /* LIVE FRONT: the SCORE<panel+1>

@@ -436,6 +436,9 @@ static void draw_screen(void) {
     case SCR_SCORE:
         rm_draw_score(UI.score_panel);
         break;
+    case SCR_ENDKING:
+        rm_draw_king_plate(UI.king_plate == 1);
+        break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
         rm_draw_village(UI.village_row);

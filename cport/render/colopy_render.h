@@ -139,6 +139,8 @@ void rm_draw_name(const char *leader);
  * drawCards 1147) */
 void rm_draw_briefing(int nation, int page);
 void rm_draw_king(int nation);
+/* the war's end: func_075352(1,2,"KINGLOSE") (win) / (2,1,"KINGWIN") */
+void rm_draw_king_plate(int win);
 void rm_draw_cards(int card, int nation, int difficulty,
                    const char *leader);
 void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */

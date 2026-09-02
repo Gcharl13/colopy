@@ -11032,3 +11032,30 @@ so, and the two ports disagreed by 16 on sav1653 (299 vs 315).
    again (and with the engine's gate).
 7. The name at `0x5426 + player·0x34` is read as the country (the port's
    existing `@EXPLOITS` model) — its identity is recorded as unread.
+
+## 2026-09-02f — screens track: the King's win/loss pages (E4/E5)
+
+**Conflict**: both ports popped `@KINGLOSE` and `@KINGWIN` up as ordinary
+bulletins; `docs/REMAINING_WORK.md` Part E listed five "King / win / lose
+plates" and four `*2` "banner frames" as unshipped.
+
+**Bytes**: `func_075352(N, sub, key)` @0x075352 composites `KINGLSS<N>.PIK`,
+the `<NATION><N>.SS` banner and one king sheet — `(1,1)` KING1, `(1,≠1)`
+KINGLOSE, `(2,*)` KINGWIN (@0x75430..0x75461) — into the PIK buffer with the
+anchored verb (@0x7542B/@0x7549D), then runs the key's `@`-text in FONTKING
+through `0x181F:0x3FE` @0x75540 — the text is ON the page. `func_02F3A2`
+calls it with `(1, 2, "KINGLOSE")` after `@WINNING` (@0x2F542..0x2F552) and
+`(2, 1, "KINGWIN")` after `@LOSING<n>` (@0x2F670..0x2F6A8). `KING2`, `WIN`
+and `WIN-FWRK` occur in no EXE (byte search, B-negative). The `*2` sheets are
+separate one-frame sheets named by `strcat_itoa(N)` @0x753F3.
+
+**Decisions**:
+1. `@KINGLOSE`/`@KINGWIN` are page text, not popups: both ports draw the
+   pages (`endking` plate / `SCR_ENDKING`) and drop the popup emits together
+   (no audio cue keyed on them — `colopy_audio_cues.c`).
+2. The audience page's runner (`drawKing` / `rm_draw_king`) is refactored
+   into a shared king-page painter so the three pages cannot drift.
+3. The `*2` banners ship with the defeat page; `KING2`/`WIN`/`WIN-FWRK` stay
+   out (rule-5 analogue).
+4. TBD, not guessed: the runner's text RGB (engine-resident); the identity
+   of the `[bx-0x72BE]` string `@KINGWIN` prints (read as the country).

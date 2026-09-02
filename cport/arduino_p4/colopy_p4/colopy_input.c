@@ -1512,6 +1512,14 @@ static void front_pickup(void) {
         UI.screen = SCR_DECLARATION;
         return;
     }
+    /* the King's audience at the war's end (func_075352, before the
+     * score when the war is lost @0x2F6B5) */
+    if (CR.king_show && UI.screen != SCR_ENDKING) {
+        UI.king_plate = (int8_t)CR.king_show;
+        CR.king_show = 0;
+        UI.screen = SCR_ENDKING;
+        return;
+    }
     /* the end game (func_03B2F8): the F10 page (func_039EE2(1), its own
      * key-wait @0x3A9B5), then the SCORE plate (func_03A9C0), then the
      * @SCORED ask (end_game_scored) once nothing is left to show */
@@ -2090,7 +2098,8 @@ static void in_key_inner(const char *k, int alt, int shift) {
         declaration_key();
         break;
     case SCR_SCORE:
-        score_dismiss();
+    case SCR_ENDKING:
+        score_dismiss();                 /* any key: the runner's wait */
         break;
     case SCR_MAP: {
         /* an open pulldown owns the keyboard (game.js:12545) */
@@ -2760,6 +2769,7 @@ static void in_click_inner(int mx, int my, int right) {
         declaration_key();
         break;
     case SCR_SCORE:
+    case SCR_ENDKING:
         score_dismiss();
         break;
     case SCR_OPTIONS: {

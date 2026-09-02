@@ -1351,18 +1351,15 @@ function firstTribeContact(v) {
 // its own directives @width=78 @x=232 @y=21: one 8px line per source line —
 // blank `^` lines consume a slot — with `^^` lines centred in the column and
 // the quoted body left-aligned at x=232.
-function drawKing(ctx) {
-  usePalette('KINGLSS1');
-  ctx.drawImage(IMG.KINGLSS1, 0, 0);
-  sheetAnchored(ctx, NATION_STEM[G.nation], 0);
-  sheetAnchored(ctx, 'KING1', 0);
-
-  const n = DATA.nations[G.nation];
-  const src = (DATA.viceroy[G.nation === 3 ? 1 : 0] || '')
-    .replace(/%COUNTRY/g, n.country).split('\n');
-  const X = 232, WIDTH = 78, CX = X + WIDTH / 2, INK = lut(36);
-  let y = 21;
-  for (const raw of src) {
+// The @-text runner of the king pages (0x181F:0x3FE with the key,
+// func_075352 @0x75540, FONTKING @0x754F6): one 8px line per source line
+// laid out by the key's own directives -- blank `^` lines consume a slot,
+// `^^` lines are centred in the column, body lines are left-aligned at x
+// and wrapped at @width.  (The runner's ink RGB is engine-resident -- lut(36)
+// is the audience page's measured stand-in, spec/ui/cinematics.md §3c: A.)
+function drawKingText(ctx, src, X, WIDTH, y) {
+  const CX = X + WIDTH / 2, INK = lut(36);
+  for (const raw of src.split('\n')) {
     const m = raw.match(/^\^*/)[0].length;
     const text = raw.slice(m).trim();
     if (text) {
@@ -1373,7 +1370,53 @@ function drawKing(ctx) {
       if (m >= 2) y += 8;
     } else y += 8;
   }
-  FONT.tiny.center(ctx, '(click to begin)', CX, 186, lut(0xFC), ink(0));
+  return y;
+}
+// func_075352(N, sub, key) @0x075352, the royal-audience page: KINGLSS<N>
+// (@0x7536E..0x753A9) with the <NATION><N> banner (@0x753BB..0x7542B) and
+// one king sheet composited INTO the PIK buffer (@0x75477..0x7549D), the
+// PIK's palette to the DAC (@0x754AD), buffer -> screen (@0x754DB), then
+// the key's text in FONTKING.  Sheet select @0x75430..0x75461: (1,1) ->
+// KING1 (the audience, tune 0x3E @0x7544D), (1,other) -> KINGLOSE, (2,*)
+// -> KINGWIN.  Every sheet lands at its own descriptor anchor.
+function drawKing(ctx) {
+  usePalette('KINGLSS1');
+  ctx.drawImage(IMG.KINGLSS1, 0, 0);
+  sheetAnchored(ctx, NATION_STEM[G.nation], 0);
+  sheetAnchored(ctx, 'KING1', 0);
+  const n = DATA.nations[G.nation];
+  const src = (DATA.viceroy[G.nation === 3 ? 1 : 0] || '')
+    .replace(/%COUNTRY/g, n.country);
+  drawKingText(ctx, src, 232, 78, 21);
+  FONT.tiny.center(ctx, '(click to begin)', 232 + 78 / 2, 186, lut(0xFC), ink(0));
+}
+// The war's end (func_02F3A2): victory @0x2F542..0x2F55F = @WINNING popup,
+// then func_075352(1, 2, "KINGLOSE") -> KINGLSS1 + <NATION>1 + KINGLOSE.SS
+// ((74,198) 149x179 -> (0,20)) with @KINGLOSE laid out by its own
+// directives @width=68 @x=232 @y=31 (GAME.TXT 3328-3331); defeat
+// @0x2F670..0x2F6B0 = @LOSING<n>, then func_075352(2, 1, "KINGWIN") ->
+// KINGLSS2 + <NATION>2 (ENGLND2 (139,132) 174x133 -> (52,0), FRANCE2 ->
+// (49,0), SPAIN2 -> (59,0), DUTCH2 -> (55,0)) + KINGWIN.SS ((134,198)
+// 214x198 -> (27,1)) with @KINGWIN (@width=90 @x=202 @y=125, %STRING0 =
+// the country, GAME.TXT 3338-3341), then the score.  The pen seeds the
+// painter stores (@0x75526/@0x7552C: 242/47) are register seeds the
+// runner re-lays-out from the directives (RULINGS 2026-07-31).  KING2.SS,
+// WIN.SS and WIN-FWRK.SS have no loader in any EXE -- never drawn.
+const NATION_STEM2 = ['ENGLND2', 'FRANCE2', 'SPAIN2', 'DUTCH2'];
+function drawEndKing(ctx) {
+  const win = !!(G.plate && G.plate.params.win);
+  const pik = win ? 'KINGLSS1' : 'KINGLSS2';
+  usePalette(pik);
+  ctx.drawImage(IMG[pik], 0, 0);
+  sheetAnchored(ctx, (win ? NATION_STEM : NATION_STEM2)[G.nation], 0);
+  sheetAnchored(ctx, win ? 'KINGLOSE' : 'KINGWIN', 0);
+  const key = win ? 'KINGLOSE' : 'KINGWIN';
+  const t = DATA.events[key];
+  if (!t) return;
+  const src = t.body.map(l => fillTemplate(l, { STRING0: DATA.nations[G.nation].country }))
+    .join('\n');
+  if (win) drawKingText(ctx, src, 232, 68, 31);
+  else drawKingText(ctx, src, 202, 90, 125);
 }
 
 // ---------------------------------------------------------------- plates
@@ -11775,16 +11818,20 @@ function runWar() {
   const landed = G.refUnits.filter(u => !u.ship).length;
   if (landed === 0 && afloat === 0) {
     G.flags |= WOI_WON;
-    showEvent('KINGLOSE', {});
-    // @WINNING: Parliament's declaration, with the General's name.
+    // @WINNING: Parliament's declaration, with the General's name -- then
+    // the King's audience with KINGLOSE.SS and @KINGLOSE on the page
+    // (func_02F3A2 @0x2F542..0x2F55F; no popup).
     showEvent('WINNING', { STRING0: G.leader || DATA.nations[G.nation].leader });
+    plateScreen('endking', { win: true });
   }
   // Defeat: the King holds every colony. @KINGWIN is the Crown's own gloat --
   // @KINGVICTORY belongs to the European-war tax cut, not to this.
   if (!G.colonies.length && !(G.flags & WOI_WON) && !G.lostWar) {
     G.lostWar = true;
     showEvent('LOSING2', { STRING0: DATA.nations[G.nation].country });
-    showEvent('KINGWIN', { STRING0: DATA.nations[G.nation].country });
+    // the King's audience with KINGWIN.SS and @KINGWIN on the page
+    // (func_02F3A2 @0x2F670..0x2F6B0), then the score (@0x2F6B5 -> 0x2F44C)
+    plateScreen('endking', { win: false });
     endGameSequence();
   }
 }
@@ -15872,7 +15919,7 @@ function frameBody() {
      trade: drawTrade, options: drawOptions,
      congress: drawCongressPortraits,
      declaration: drawDeclaration,
-     score: drawScoreScreen }[G.screen] || drawMap)(ctx);
+     score: drawScoreScreen, endking: drawEndKing }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

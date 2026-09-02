@@ -201,7 +201,12 @@ DEC_SS = [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
 #                        (over WOODPAN2.PIK, already packed, drawn through
 #                        the PLATE's palette -- @0x3AB46..0x3AB84)
 SCORE_SS = [f"SCORE{i:02d}" for i in range(1, 25)]
-PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS + SCORE_SS
+#   KINGLOSE / KINGWIN + ENGLND2/FRANCE2/SPAIN2/DUTCH2   the King's win/loss
+#                        audience, func_075352 @0x075352 (N=1 victory over
+#                        KINGLSS1 with the *1 banner; N=2 defeat over
+#                        KINGLSS2 with the *2 banner)
+KING_SS = ["KINGLOSE", "KINGWIN", "ENGLND2", "FRANCE2", "SPAIN2", "DUTCH2"]
+PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS + SCORE_SS + KING_SS
 PART_E_PIK = ["CCBKGD", "DECOIND"]
 # Sheets whose pixels the running game resolves through a PIK's palette,
 # not their own embedded copy (the same VGA-is-global rule as
@@ -216,7 +221,12 @@ SHEET_PALETTE_FROM_PIK = {f"CC-{i:02d}": "CCBKGD" for i in range(25)}
 # the DEC sheets blit over DECOIND's DAC (func_03DA2A @0x3DA6A); their own
 # tables differ from it only at 252..255, which the art never uses
 SHEET_PALETTE_FROM_PIK.update({n: "DECOIND" for n in DEC_SS})
-BAKE_MERGED_PIK = {"CCBKGD", "DECOIND"}
+# the king pages composite their sheets INTO the KINGLSS<N>.PIK buffer and
+# upload that PIK's palette (func_075352 @0x7542B/@0x7549D/@0x754AD); the
+# two KINGLSS tables are identical, the sheets' own differ only at 242/255
+SHEET_PALETTE_FROM_PIK.update({n: "KINGLSS1" for n in KING_SS +
+                               ["KING1", "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1"]})
+BAKE_MERGED_PIK = {"CCBKGD", "DECOIND", "KINGLSS1", "KINGLSS2"}
 EGA_STUB = [0, 0, 0, 0, 0, 170, 0, 170, 0, 0, 170, 170, 170, 0, 0, 170, 0, 170,
             170, 85, 0, 170, 170, 170, 85, 85, 85, 85, 85, 255, 85, 255, 85,
             85, 255, 255, 255, 85, 85, 255, 85, 255, 255, 255, 85, 255, 255, 255]

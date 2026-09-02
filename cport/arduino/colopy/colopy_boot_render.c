@@ -392,26 +392,22 @@ static int wrap_next(const rd_font *f, const char *p, int width,
  * nation canopy banner, the KING1 figure, and the GAME.TXT @VICEROY
  * scroll laid out by its own directives @width=78 @x=232 @y=21 in
  * FONTKING ink 36 — '^^' lines centred in the column, body wrapped. */
-void rm_draw_king(int nation) {
-    static const char *const STEM[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
-                                         "DUTCH1" };
-    static rd_font KINGF;
-    bresolve();
-    if (!KINGF.payload) rd_font_open(&RD.pak, "FONTKING.FF", &KINGF);
-    rd_use_palette("KINGLSS1.PIK");
-    rd_pik("KINGLSS1.PIK");
-    sheet_anchored(STEM[nation & 3]);
-    sheet_anchored("KING1");
-    const char *src = dat_viceroy[(nation & 3) == 3 ? 1 : 0];
-    const int X = 232, WIDTH = 78, CX = X + WIDTH / 2;
-    int y = 21;
+/* the @-text runner of the king pages (0x181F:0x3FE with the key,
+ * func_075352 @0x75540, FONTKING @0x754F6): one 8px line per source
+ * line laid out by the key's directives -- blank `^` lines consume a
+ * slot, `^^` lines are centred in the column, body lines left-aligned
+ * at X and wrapped at WIDTH (the JS drawKingText).  %COUNTRY is filled
+ * (1255); the ink 36 is the audience page's measured stand-in. */
+static rd_font KINGF;
+static void king_text(const char *src, int nation, int X, int WIDTH,
+                      int y) {
+    const int CX = X + WIDTH / 2;
     const char *p = src;
     while (*p) {
         const char *le = strchr(p, '\n');
         size_t len = le ? (size_t)(le - p) : strlen(p);
         char raw[192];
         size_t o = 0;
-        /* %COUNTRY substitution (1255) */
         for (size_t i = 0; i < len && o + 1 < sizeof(raw); i++) {
             if (p[i] == '%' && i + 8 <= len &&
                 strncmp(p + i, "%COUNTRY", 8) == 0) {
@@ -452,7 +448,66 @@ void rm_draw_king(int nation) {
         if (!le) break;
         p = le + 1;
     }
-    center_shadow(&B_TINY, "(click to begin)", CX, 186, blut(0xFC), 1);
+}
+/* func_075352(N, sub, key) @0x075352: KINGLSS<N>.PIK (@0x7536E..0x753A9)
+ * with the <NATION><N> banner (@0x753BB..0x7542B) and one king sheet
+ * composited INTO the PIK buffer (@0x75477..0x7549D), the PIK's palette
+ * to the DAC (@0x754AD), buffer -> screen (@0x754DB), then the key's
+ * text in FONTKING.  Sheet select @0x75430..0x75461: (1,1) -> KING1 (the
+ * audience), (1,other) -> KINGLOSE, (2,*) -> KINGWIN.  Every sheet lands
+ * at its own descriptor anchor. */
+static void king_page(const char *pik, const char *banner,
+                      const char *king) {
+    bresolve();
+    if (!KINGF.payload) rd_font_open(&RD.pak, "FONTKING.FF", &KINGF);
+    rd_use_palette(pik);
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    rd_pik(pik);
+    sheet_anchored(banner);
+    sheet_anchored(king);
+}
+void rm_draw_king(int nation) {
+    static const char *const STEM[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
+                                         "DUTCH1" };
+    king_page("KINGLSS1.PIK", STEM[nation & 3], "KING1");
+    king_text(dat_viceroy[(nation & 3) == 3 ? 1 : 0], nation, 232, 78, 21);
+    center_shadow(&B_TINY, "(click to begin)", 232 + 78 / 2, 186,
+                  blut(0xFC), 1);
+}
+/* the war's end (func_02F3A2): win = @WINNING then func_075352(1, 2,
+ * "KINGLOSE") @0x2F542..0x2F55F -> KINGLSS1 + <NATION>1 + KINGLOSE.SS
+ * with @KINGLOSE laid out by its directives @width=68 @x=232 @y=31
+ * (GAME.TXT 3328-3331); lose = @LOSING<n> then func_075352(2, 1,
+ * "KINGWIN") @0x2F670..0x2F6B0 -> KINGLSS2 + <NATION>2 + KINGWIN.SS with
+ * @KINGWIN (@width=90 @x=202 @y=125, %STRING0 = the country, GAME.TXT
+ * 3338-3341).  The pen seeds @0x75526/@0x7552C are register seeds the
+ * runner re-lays-out (RULINGS 2026-07-31).  KING2/WIN/WIN-FWRK have no
+ * loader -- never drawn. */
+void rm_draw_king_plate(int win) {
+    static const char *const STEM1[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
+                                          "DUTCH1" };
+    static const char *const STEM2[4] = { "ENGLND2", "FRANCE2", "SPAIN2",
+                                          "DUTCH2" };
+    int nation = cs_nation() & 3;
+    king_page(win ? "KINGLSS1.PIK" : "KINGLSS2.PIK",
+              (win ? STEM1 : STEM2)[nation], win ? "KINGLOSE" : "KINGWIN");
+    int nb = 0;
+    const char *const *body = rm_event_body(win ? "KINGLOSE" : "KINGWIN",
+                                            &nb);
+    rm_subs subs;
+    memset(&subs, 0, sizeof(subs));
+    subs.str[0] = dat_nations[nation].country;
+    char src[1024];
+    size_t o = 0;
+    for (int i = 0; i < nb && o + 2 < sizeof(src); i++) {
+        char line[256];
+        rm_fill_template(body[i], &subs, line, sizeof(line));
+        if (i) src[o++] = '\n';
+        for (const char *c = line; *c && o + 2 < sizeof(src);) src[o++] = *c++;
+    }
+    src[o] = 0;
+    if (win) king_text(src, nation, 232, 68, 31);
+    else king_text(src, nation, 202, 90, 125);
 }
 
 /* the Hall of Fame table (drawHof game.js:12358) — REBUILT from the

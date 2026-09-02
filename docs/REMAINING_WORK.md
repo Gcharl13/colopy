@@ -380,8 +380,8 @@ pack (67 sheet files packed + `PHYS0C` derived at runtime; 28 backgrounds).
 | Score plates `SCORE01..24` | 24 | ~~End-game score screen unimplemented~~ **SHIPPED 2026-09-02** (note E3 below) |
 | Opening cinematic sheets | 14 | `OPENING.EXE` — separate program (Part H) |
 | Closing cinematic sheets | 7 | `CLOSING.EXE` — separate program (Part H) |
-| King / win / lose plates | 5 | Endgame screens unimplemented |
-| Second banner frames `*2` | 4 | Only `*1` banners packed |
+| King / win / lose plates | 5 | ~~Endgame screens unimplemented~~ **KINGWIN + KINGLOSE SHIPPED 2026-09-02** (note E4); `KING2`, `WIN`, `WIN-FWRK` are **orphans** (no loader in any EXE) — never packed |
+| Second banner frames `*2` | 4 | ~~Only `*1` banners packed~~ **SHIPPED 2026-09-02** (note E5) |
 | MicroProse boot logo | 2 | Boot animation not implemented |
 | `CURSOR.SS`, `PARCH.SS` | 2 | **Why the BLE pointer is a hand-drawn arrow** |
 | Backgrounds | 7 | `CCBKGD CLOS-BKG CUSTOMIZ DECLARAT DECOIND OPENBORD OPENING` |
@@ -494,6 +494,38 @@ renderers draw nothing for a missing entry — see `cport/MEMORY_BUDGET.md`.
   `0x5426` string is read as the country (port model); F10's icon flow
   `func_039E98` (one ICONS icon per colonist, x+=8 from 16, wrap ≥292 to y+=8,
   stop y≥144) is not the ports' `min(value,12)` row — unchanged here.
+- **E4 — King win / lose plates `KINGLOSE.SS` / `KINGWIN.SS` (SHIPPED).** Painter
+  `func_075352(N, sub, key)` @0x075352 (thunk `0x191F:0xABA`): `"KINGLSS"+N`
+  (@0x7536E..0x75385) loaded to the PIK buffer (@0x753A9), `<NATION>+N` from
+  `[0x5398]` (ENGLND/FRANCE/SPAIN/DUTCH @0x753BB..0x753F3) blitted **into the
+  buffer** anchored at its descriptor (@0x7541A..0x7542B), the king sheet
+  selected @0x75430..0x75461 — (1,1) KING1 with tune 0x3E (@0x7544D), (1,≠1)
+  **KINGLOSE**, (2,*) **KINGWIN** — blitted the same way (@0x75477..0x7549D),
+  DAC ← the PIK palette (@0x754AD), buffer → screen (@0x754DB), FONTKING
+  (@0x754F6, FONTTINY fallback @0x7550A), the key's `@`-text run by
+  `0x181F:0x3FE` @0x75540 (its own directives: `@KINGLOSE @width=68 @x=232
+  @y=31`, `@KINGWIN @width=90 @x=202 @y=125`, GAME.TXT 3328–3341). Triggers
+  in `func_02F3A2`: **victory** @0x2F542..0x2F55F = `@WINNING` popup →
+  `func_075352(1, 2, "KINGLOSE")` → `[0x5382]|=8`; **defeat** @0x2F670..
+  0x2F6B0 = `@LOSING<n>` → `func_075352(2, 1, "KINGWIN")` (%STRING0 = the
+  per-player string `[bx-0x72BE]`, read as the country) → `0x191F:0xAAC` →
+  `jmp 0x2F44C` (the score). Rects (ssdec): KINGLOSE (74,198) 149×179 →
+  (0,20); KINGWIN (134,198) 214×198 → (27,1). Ports: JS `drawEndKing` over a
+  shared `drawKingText` runner (the audience's `drawKing` refactored onto it),
+  `plateScreen('endking')` replacing the `KINGLOSE`/`KINGWIN` **popups** in
+  `runWar`; C `rm_draw_king_plate` over `king_page`/`king_text`, `CR.king_show`
+  (`colopy_woi.c`, the two `ev_emit`s removed in lockstep), `SCR_ENDKING`.
+  Oracle `tools/render_endking_compare.py` (win / lose, 0/0). **TBD**: the
+  runner's text RGB (engine-resident, cinematics.md §3c — the audience's
+  measured ink 36 is the stand-in); the `[bx-0x72BE]` string's identity.
+- **E5 — second banners `ENGLND2` / `FRANCE2` / `SPAIN2` / `DUTCH2` (SHIPPED).**
+  Not a "frame 2": separate 1-frame sheets built by `func_075352` with N=2
+  (`<NATION>`+`strcat_itoa(2)` @0x753F3) — the **defeat** page only (the sole
+  N=2 caller @0x2F6A6); the `*1` sheets serve both the boot audience
+  (@0x7555C3) and the victory page (@0x2F550). Rects (ssdec): ENGLND2
+  (139,132) 174×133 → (52,0), FRANCE2 (137,130) 176×131 → (49,0), SPAIN2
+  (144,127) 170×128 → (59,0), DUTCH2 (140,130) 170×131 → (55,0). Packed and
+  drawn by E4's page. E4+E5 pak delta **+164,131 B** (3,989,832 → 4,153,963).
 
 ---
 

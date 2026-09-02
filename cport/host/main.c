@@ -709,6 +709,12 @@ int main(int argc, char **argv) {
         return render_score_main(argv[2], argv[3], argv[4], atoi(argv[5]),
                                  argv[6]);
     }
+    /* --renderendking SAVE PAK OUT.ppm WIN */
+    if (argc > 5 && strcmp(argv[1], "--renderendking") == 0) {
+        extern int render_endking_main(const char *save, const char *pak,
+                                       const char *out, int win);
+        return render_endking_main(argv[2], argv[3], argv[4], atoi(argv[5]));
+    }
     /* --renderwoodcut SAVE PAK OUT.ppm N */
     if (argc > 5 && strcmp(argv[1], "--renderwoodcut") == 0) {
         extern int render_woodcut_main(const char *save, const char *pak,

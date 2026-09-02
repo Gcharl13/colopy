@@ -85,6 +85,7 @@ typedef struct {
                                   * (func_06AE08 @0x3BD26): its dismissal
                                   * returns to the game, not the index */
     int8_t  score_panel;         /* SCR_SCORE: the SCORE<panel+1> plate */
+    int8_t  king_plate;          /* SCR_ENDKING: 1 victory / 2 defeat */
     int16_t decl_step;           /* SCR_DECLARATION: stroke events on
                                   * screen (func_03DA2A's per-frame
                                   * present); the shell advances it one

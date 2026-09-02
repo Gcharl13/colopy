@@ -132,6 +132,40 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 - **Tier:** painter + argument matrix + FONTKING context + name builder **B**; text body + GAME.TXT
   geometry **B**; text RGB **A** (glyph→palette mapping).
 
+### 3e. Amendment 2026-09-02 — composition byte-complete, triggers re-read, ported (screens track)
+
+Re-read of `func_075352` @0x075352..0x75593 and the two call sites (RULINGS 2026-09-02f), all **B**:
+
+- **Composition.** `"KINGLSS"+N` (@0x7536E..0x75385) is loaded into the PIK buffer `[0x839E..]`
+  with its palette at `[bp-0x320]` (@0x753A9). The banner `<NATION>+N` (@0x753BB..0x753F3) is
+  loaded (@0x75405) and blitted **into the PIK buffer** with the anchored verb `0x181F:0x2F8`
+  at its own frame-1 descriptor (`dx = es:[si+0x46]`, `y = es:[si+0x48]`, scale 0x64,
+  `bx = [0x839E]` @0x7541A..0x7542B); the king sheet is selected @0x75430..0x75461 and blitted
+  the same way (@0x75477..0x7549D); DAC ← the PIK palette (@0x754AD); buffer → screen 320×200
+  (@0x754DB); present (@0x754ED). Every placement is therefore the sheet's own anchor —
+  top-left = (hx − (w>>1), hy − h + 1): KING1 (94,198) 189×187 → **(0,12)**; KINGLOSE (74,198)
+  149×179 → **(0,20)**; KINGWIN (134,198) 214×198 → **(27,1)**; ENGLND1/FRANCE1/SPAIN1/DUTCH1 →
+  (32,0)/(30,0)/(35,0)/(34,0); ENGLND2 (139,132) 174×133 → **(52,0)**, FRANCE2 (137,130)
+  176×131 → (49,0), SPAIN2 (144,127) 170×128 → (59,0), DUTCH2 (140,130) 170×131 → (55,0). The
+  `*2` sheets are separate one-frame sheets (N=2 only — the defeat page); the old "portrait
+  x=100" reading (row 13 of the tracker) was a pen-seed misread and is withdrawn.
+- **Text.** FONTKING (@0x754F6; FONTTINY fallback @0x7550A..0x75514); `[0x1F4A]=0xF2`,
+  `[0x1F50]=0x2F` @0x75526/@0x7552C are register seeds the runner `0x181F:0x3FE` @0x75540
+  re-lays-out from the key's own directives (RULINGS 2026-07-31): `@KINGLOSE @width=68 @x=232
+  @y=31`, `@KINGWIN @width=90 @x=202 @y=125` (GAME.TXT 3328–3341). The text is drawn ON the
+  page — it is not a popup. Text RGB remains **A** (engine-resident).
+- **Triggers** (`func_02F3A2`): victory @0x2F542..0x2F55F — `@WINNING` (`lea bx,[0xF18]`;
+  `0x181F:0x3FE`) then `push 0xF20 "KINGLOSE"; push 2; push 1; lcall 0x191F:0xABA` =
+  `func_075352(1, 2, "KINGLOSE")`, then `or [0x5382],8`; defeat @0x2F670..0x2F6B0 —
+  `@LOSING<n>` (`"LOSING0"` + digit `[bp-0x5C]`) then `%STRING0 ← [bx-0x72BE]` (per-player,
+  read by the ports as the country — identity TBD) and `push 0xF31 "KINGWIN"; push 1; push 2;
+  lcall 0x191F:0xABA` = `func_075352(2, 1, "KINGWIN")`, `0x191F:0xAAC`, `jmp 0x2F44C` (the
+  score). The boot audience is `func_075352(1, 1, @VICEROY)` @0x7555C3 (tune 0x3E @0x7544D).
+- **Orphans (B-negative).** `KING2.SS`, `WIN.SS`, `WIN-FWRK.SS`: none of `KING2`, `\0WIN\0`,
+  `WIN-`, `FWRK` occurs in VICEROY/COLONIZE/OPENING/CLOSING.EXE — never loaded, never packed.
+- **Ports.** JS `drawKingText` (the runner), `drawKing`, `drawEndKing`; C `king_page`/`king_text`,
+  `rm_draw_king`, `rm_draw_king_plate`; oracle `tools/render_endking_compare.py` (win / lose).
+
 ## 4. Score screen (SCORE01–24.SS / WOODPAN2) — VICEROY.EXE — **B**
 
 - **Purpose:** end-of-game score + honor-rating screen, one illustrated plate per **rating tier**.

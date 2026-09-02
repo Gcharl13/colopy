@@ -356,6 +356,21 @@ int render_score_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* --renderendking SAVE PAK OUT.ppm WIN: the King's audience at the
+ * war's end (1 = victory / KINGLOSE, 0 = defeat / KINGWIN). */
+int render_endking_main(const char *save, const char *pak_path,
+                        const char *out_path, int win) {
+    load_fixture(save);
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_king_plate(win);
+    if (!write_frame(out_path)) return 1;
+    printf("render endking %s %d -> %s\n", save, win, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
 int render_boot_main(const char *kind, const char *pak_path,
                      const char *out_path, int arg) {
