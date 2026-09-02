@@ -244,6 +244,61 @@ function sheetSilhouette(ctx, sheet, idx, x, y, colourIdx) {
   }
   ctx.drawImage(c, Math.round(x), Math.round(y));
 }
+// 0x181F:0x2F8 / 0xC56:4 = func_00E964 @0x00E964, the SCALED blit. One mask
+// table per call (@0x00EA00-@0x00EA36): an accumulator starts at 0x32 and
+// adds pct per index; reaching 0x64 KEEPS that index (acc -= 0x64), else it
+// is dropped. w' / h' count the kept indices below w / h (@0x00EA1A-
+// @0x00EA25). The passed x is the CENTRE (x_left = x - (w' >> 1),
+// @0x00EA38-@0x00EA3D) and the passed y the BOTTOM row (y_top = y - h' + 1,
+// @0x00EA41-@0x00EA48). Rows are kept/dropped by the same mask (@0x00EB1E),
+// columns likewise (@0x00EB73), the destination advancing only on kept
+// pixels (@0x00EB91): 50% keeps even indices, 25% keeps 1, 5, 9, ... The
+// mirror flag (a negative frame) is not modelled -- no caller here uses it.
+const scaleMask = (n, pct) => {
+  const m = new Array(n);
+  let acc = 0x32;
+  for (let i = 0; i < n; i++) {
+    acc += pct;
+    if (acc >= 0x64) { m[i] = true; acc -= 0x64; } else m[i] = false;
+  }
+  return m;
+};
+const _scaledCache = new Map();
+function sheetFrameScaled(ctx, sheet, idx, xc, yb, pct) {
+  const sh = DATA.sheets[sheet];
+  if (!sh) return;
+  const f = sh.frames[idx];
+  if (!f) return;
+  const key = `${sheet}:${idx}:${pct}`;
+  let c = _scaledCache.get(key);
+  if (!c) {
+    const atlas = cycAtlas(sheet, 0);
+    if (!atlas) return;
+    const mask = scaleMask(Math.max(f.w, f.h), pct);
+    const cols = [], rows = [];
+    for (let i = 0; i < f.w; i++) if (mask[i]) cols.push(i);
+    for (let i = 0; i < f.h; i++) if (mask[i]) rows.push(i);
+    c = document.createElement('canvas');
+    c.width = Math.max(1, cols.length); c.height = Math.max(1, rows.length);
+    c.__w = cols.length; c.__h = rows.length;
+    const src = document.createElement('canvas');
+    src.width = f.w; src.height = f.h;
+    const sg = src.getContext('2d');
+    sg.drawImage(atlas, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+    const id = sg.getImageData(0, 0, f.w, f.h);
+    const g = c.getContext('2d');
+    const od = g.createImageData(c.width, c.height);
+    rows.forEach((r, j) => cols.forEach((cx, i) => {
+      const s = (r * f.w + cx) * 4, d = (j * c.width + i) * 4;
+      od.data[d] = id.data[s]; od.data[d + 1] = id.data[s + 1];
+      od.data[d + 2] = id.data[s + 2]; od.data[d + 3] = id.data[s + 3];
+    }));
+    g.putImageData(od, 0, 0);
+    _scaledCache.set(key, c);
+  }
+  if (!c.__w || !c.__h) return;
+  ctx.drawImage(c, xc - (c.__w >> 1), yb - c.__h + 1);
+}
 
 // ------------------------------------------------- count strips (engine verbs)
 // Three shared primitives the colony screen (and the reports) are built out of.
@@ -1885,7 +1940,34 @@ function panelClass(type, flags) {
     default:                                    return 0;
   }
 }
-function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame) {
+function unitPanel(ctx, x, y, W, type, flags, orders, colourIdx, frame, mode = 0x64) {
+  if (mode !== 0x64) {
+    // The mode dispatch @0x003B32-@0x003B44: mode - 0x19 == 0 -> the 0x19
+    // path, - 0x19 again == 0 -> the 0x32 path, anything else -> a 2x2
+    // owner box at (x, y) (@0x003B46-@0x003B5B). None of these draws the
+    // silhouette, the plate or the letter.
+    if (mode === 0x32) {
+      // @0x003AF8-@0x003B11: 0xC83:2 = func_00EC32 scales the record --
+      // w' = (w*pct + 50) / 100, h' likewise (@0x00EC4D-@0x00EC72) -- and
+      // [bp-8] = w', so the shared centring @0x003B23 is against w' alone:
+      // x_c = x + ((W - w') >> 1) when W > w'. Then @0x003B6C-@0x003BAB: a
+      // 2x2 box at (x+5, y+5) in the owner colour ([bp-0xF] = the
+      // [0x848+power] byte @0x003A0A) and the half-size sprite through
+      // 0xC56:4 = func_00E964 at CENTRE x_c + (w' >> 1), BOTTOM y + h' - 1
+      // (@0x003B94-@0x003BA2), pct = mode.
+      const [sw, sh] = frameSize('ICONS', frame);
+      const w2 = Math.floor((sw * mode + 50) / 100);
+      const h2 = Math.floor((sh * mode + 50) / 100);
+      const xc = x + (W > w2 ? ((W - w2) >> 1) : 0);
+      sheetFrameScaled(ctx, 'ICONS', frame, xc + (w2 >> 1), y + h2 - 1, mode);
+      ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 5, y + 5, 2, 2);
+    } else if (mode === 0x19) {
+      ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 1, y + 1, 2, 2); // @0x003B5E
+    } else {
+      ctx.fillStyle = ink(colourIdx); ctx.fillRect(x, y, 2, 2);         // @0x003B46
+    }
+    return;
+  }
   const key = (DATA.orders[orders] || DATA.orders[0]).key;
   const pw = FONT.tiny.width(key) + 3, ph = FONT.tiny.height + 3;
   const [sw, sh] = frameSize('ICONS', frame);
@@ -5903,55 +5985,93 @@ function drawEurope(ctx) {
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
   // ones outbound, "Loading" the ship at the dock and its hold.
   //
-  // A crossing renders as the SHIP + ITS MANIFEST, CAPTURE-PINNED 2026-08-07
-  // (docs/screens/live_2026-08-07/europe_1653_boundfor.png -- the 1653 Dutch
-  // game's outbound Galleon): the ship sprite at the band's left, then each
-  // PASSENGER standing on a black-outlined plate filled with the NATION
-  // COLOUR (palette 13 = the Dutch colour in that frame), drawn as his
-  // PROFESSION FIGURE (matched 1.0: Expert Farmer 81 / Master Distiller 90 /
-  // Master Gunsmith 96), at pitch ~17-18 (one capture; 17 here). Ship anchor
-  // measured (75,146) = the engine's state-3 band; the per-state bands
-  // y=146/137/132 (func_031298) index by SLOT here, a flagged approximation
-  // of the state layout. No hollow cell, no progress bar (the green cell is
-  // the selection cursor; the bar belongs to the band layout proper).
-  const CROSS_BANDS = [146, 137, 132];
-  const crossingCell = (e, x, k) => {
-    const y = CROSS_BANDS[Math.min(k, 2)];
-    // Every unit here draws through func_00380C's two layers: the black
-    // SILHOUETTE of the frame 2 px left of the sprite (see unitPanel).
-    // Measured on the census fixture: crossing band 486 -> 421 px with the
-    // silhouettes (ship's alone worth 35), while shifting the sprites
-    // instead (silhouette at the pinned x, sprite +2) scores 529 -- the
-    // capture-pinned x's are the SPRITE positions.
-    // The crossing SHIP is the full func_00386A composite -- the DOS
-    // baseline shows the class-1 plate at the hull's top-right. (The old
-    // attempt that measured worse predates the silhouette + x+2 decode.)
-    unitPanel(ctx, x + 1, y, 0, e.type, 0, 0,
-              DATA.nations[G.nation].color, e.icon);
-    (e.passengers || []).slice(0, 3).forEach((p, i) => {
-      const px = x + 20 + i * 17;
-      // Each passenger = his profession figure + the nation sack at his
-      // side (fig2 (110,146) / sack (115,153) in the capture -> +5/+7;
-      // the sack draws first so the figure overlaps it, as observed).
-      drawSack(ctx, px + 5, y + 7);
+  // func_031298 @0x031298 -- the column layout by RUNNING ORDINAL (C4.11,
+  // 2026-09-02). Bins ordinal n into a band and returns the cell:
+  //   n < 4        band 0, k = n      (@0x0312AC `cmp ax,4; jge`)
+  //   n < 12       band 1, k = n - 4  (@0x0312BB-@0x0312C3)
+  //   n - 12 < cap band 2, k = n - 12 (@0x0312CF-@0x0312D9)
+  //   else         band 3, undrawn (func_031366 tests band < 3)
+  // step = 0x10 >> band (@0x0312E5) is both the cell h and the pitch; band 0
+  // adds `arg` to the pitch (@0x0312F0-@0x0312F8), band 2 adds 1 (`inc
+  // [bp-4]` @0x031300: pitch 5, not 4); w = h = step; x = k * pitch + base
+  // (@0x031310-@0x03131C); then per band (@0x03135A): 0 -> y 0x92 (146);
+  // 1 -> x += 2, w -= 2, y 0x89 (137); 2 -> x += 1, w -= 1, y 0x84 (132).
+  const crossLayout = (n, baseX, cap, arg) => {
+    let band = 0, k = 0;
+    if (n < 4) k = n;
+    else if (n - 4 < 8) { band = 1; k = n - 4; }
+    else if (n - 12 < cap) { band = 2; k = n - 12; }
+    else band = 3;
+    const step = 0x10 >> band;
+    const pitch = step + (band === 0 ? arg : band === 2 ? 1 : 0);
+    const c = { band, x: k * pitch + baseX, y: 0, w: step, h: step };
+    if (band === 0) c.y = 0x92;
+    else if (band === 1) { c.x += 2; c.w -= 2; c.y = 0x89; }
+    else if (band === 2) { c.x += 1; c.w -= 1; c.y = 0x84; }
+    return c;
+  };
+  // func_031366 @0x031366 -- draw ONE unit at the ordinal and advance it
+  // (`inc word ptr [bx]` @0x0314A9, unconditional): a ship and its riders
+  // share one sequence, in the sentinel tile's occupancy-chain order.
+  //   band 0/1 (@0x031393): the func_00386A composite (0x181F:0x2BC
+  //     @0x0313C2) with mode 0x64 >> band (@0x0313A1-@0x0313A9: full for
+  //     band 0, 0x32 half-size for band 1), W = 0x10 (@0x03139F),
+  //     x - (band == 1 ? 4 : 0) (@0x0313AA-@0x0313BB), flags 0. Then a SHIP
+  //     (type 0x0D..0x12 @0x0313CB/@0x0313D5) in band 0 with arg < 2
+  //     (@0x0313E8) and a non-empty hold (+0x0C @0x0313EE) wears its hold-0
+  //     good's icon 0x17 + get_nth_cargo(unit, 0) (0x181F:0xBE6 = func_00B2A2,
+  //     the +0x0D low nibble) at (x, y) @0x0313F5-@0x031417. Crossings pass
+  //     arg 1, the harbour 2 -- only a crossing ship shows its cargo.
+  //   band 2 (@0x031420): the scaled blit 0x181F:0x2F8 = func_00E964 of the
+  //     @UNIT icon byte [0x5232 + 14*type] at centre x + (w >> 1) - 1, bottom
+  //     y + h - 1, pct 0x64 >> 2 = 25 (@0x031426-@0x031468).
+  //   cursor: colour >= 0 and band < 3 (@0x03146D-@0x031477) -> hollow rect
+  //     (x-1, y-1)-(x+w, y+h) via 0x181F:0xCE (@0x0314A1), endpoint-inclusive
+  //     (RULINGS 2026-09-02c): w+2 by h+2.
+  const crossUnit = (type, frame, colourIdx, cargoGood, baseX, cap, arg,
+                     ord, cursorColour) => {
+    const c = crossLayout(ord.n++, baseX, cap, arg);
+    const row = DATA.units.findIndex(r => r.name === type);
+    if (c.band < 2) {
+      unitPanel(ctx, c.x - (c.band === 1 ? 4 : 0), c.y, 0x10, type, 0, 0,
+                colourIdx, frame, 0x64 >> c.band);
+      if (row >= 0x0D && row <= 0x12 && c.band === 0 && arg < 2 &&
+          cargoGood >= 0)
+        sheetFrame(ctx, 'ICONS', 0x16 + cargoGood, c.x, c.y);
+    } else if (c.band < 3) {
+      sheetFrameScaled(ctx, 'ICONS', (unit(type) || {}).icon,
+                       c.x + (c.w >> 1) - 1, c.y + c.h - 1, 0x64 >> 2);
+    }
+    if (cursorColour >= 0 && c.band < 3)
+      hollowRect(ctx, c.x - 1, c.y - 1, c.w + 2, c.h + 2, cursorColour);
+  };
+  // One crossing panel: func_0318D2 ("Expected Soon", base 2 @0x031915) and
+  // func_0317CC ("Bound For", base 0x49 = 73 @0x031841). Each resets the
+  // ordinal once (@0x03191A / @0x031846) and walks TWO sentinel-tile
+  // occupancy chains through 0x181F:0x7E0 = func_0066CC (the head of the
+  // first record at (p-0x10, p-0x10) then (p-0xC, ..) for Expected Soon
+  // @0x03191F/@0x031954; (p-0x1C) then (p-0x18) for Bound For @0x03184B/
+  // @0x031880), stepping the +0x1A link (0x181F:0x2E4 = func_0066BA), and
+  // calls func_031366 for EVERY unit on them (cap 0xD, arg 1, colour -1).
+  // The port's crossing is {ship, passengers in chain order} (the importer's
+  // __ridx pass), so ship-then-riders IS the chain the fixture carries
+  // (Galleon #56 heads 87 -> 86 -> 85). FLAGGED: two ships on one sentinel
+  // interleave by the tile chain, and neither the cross-ship link nor which
+  // of the pair's bases (0xE4/0xE8, 0xF0/0xF4) a ship sat on is kept -- save
+  // state the ports do not carry (research TBD 4).
+  const drawCrossingPanel = (state, baseX) => {
+    const ord = { n: 0 };
+    const colour = DATA.nations[G.nation].color;
+    G.europe.filter(e => e.state === state).forEach(e => {
+      const hold = e.hold || [];
+      crossUnit(e.type, e.icon, colour, hold.length ? hold[0].good : -1,
+                baseX, 0xD, 1, ord, -1);
       // A professioned entry is {name, type}: name is what the man IS, type
-      // what he is EQUIPPED as. The port only looked the profession up for a
-      // plain STRING entry, so every professioned passenger drew as the
-      // generic Colonists sprite -- three identical grey figures where the
-      // original draws three different ones. The comment eight lines up had
-      // already identified them (Expert Farmer 81 / Master Distiller 90 /
-      // Master Gunsmith 96, matched 1.0) and the code never used it.
-      //
-      // FLAGGED: an entry equipped as something other than a plain colonist
-      // (Soldiers, Dragoons, Pioneers) draws its UNIT sprite here. No frame
-      // available shows an armed crossing passenger, so which of the two the
-      // original picks in that case is untested.
-      // func_003710 settles the old FLAG: an armed passenger resolves
-      // like any unit -- veteran art with the matching profession, the
-      // plain gray variant without (entryIcon routes through it).
-      const fi = entryIcon(p);
-      sheetSilhouette(ctx, 'ICONS', fi, px - 2, y, 0);
-      sheetFrame(ctx, 'ICONS', fi, px, y);
+      // what he is EQUIPPED as; entryIcon routes through func_003710 (the
+      // veteran art with the matching profession, else the plain variant).
+      (e.passengers || []).forEach(p =>
+        crossUnit(entryType(p), entryIcon(p), colour, -1, baseX, 0xD, 1,
+                  ord, -1));
     });
   };
   // THE THREE PANEL HEADINGS -- centred, ink 69, and the port had all three
@@ -5981,8 +6101,7 @@ function drawEurope(ctx) {
   // indistinguishable from a fixed x = 12 on every frame available.
   const EU_PANEL_INK = 69;
   FONT.tiny.center(ctx, 'Expected Soon', 36, 120, lut(EU_PANEL_INK));
-  G.europe.filter(e => e.state === 'toEurope').slice(0, 2).forEach((e, k) =>
-    crossingCell(e, 13, k));
+  drawCrossingPanel('toEurope', 2);       // base 2 @0x031915 (the old 13 had no byte)
   // While a ship is being dragged, the Bound For panel lights up as the drop
   // target (engine region 2, rect @0x32094; the highlight itself is port UI).
   if (G.drag && G.drag.kind === 'ship' &&
@@ -5990,8 +6109,7 @@ function drawEurope(ctx) {
     hollowRect(ctx, 72, 118, 70, 51, 0x0F);
   FONT.tiny.center(ctx, 'Bound For', 107, 120, lut(EU_PANEL_INK));
   FONT.tiny.center(ctx, DATA.regionname[G.nation], 107, 127, lut(EU_PANEL_INK));
-  G.europe.filter(e => e.state === 'toNewWorld').slice(0, 2).forEach((e, k) =>
-    crossingCell(e, 72, k));
+  drawCrossingPanel('toNewWorld', 0x49);  // 73 @0x031841
 
   const ship = activeShip();
   FONT.tiny.center(ctx, ship ? 'Loading:' : 'No Ships In Port', 183, 120,
@@ -6037,18 +6155,24 @@ function drawEurope(ctx) {
     if (k === G.euroDockSel)
       hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
   });
-  shipsInPort().forEach((e, k) => {
-    if (k >= 6) return;
-    const x = EURO_SHIP.x + k * EURO_SHIP.pitch;
-    // Nation sack at cell+(1,1), ship sprite at cell+(4,1) -- both from
-    // europe_port_2ships.png (Merchantman (149,146), Caravel (167,146)).
-    drawSack(ctx, x + 1, EURO_SHIP.y + 1);
-    unitPanel(ctx, x + 2, EURO_SHIP.y + 1, 0, e.type, 0, 0,
-              DATA.nations[G.nation].color, e.icon);
-    // Only the SELECTED ship wears the green cell (the two-ship frame boxes
-    // exactly the "Loading:" ship; [0x9E12]-driven).
-    if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);
-  });
+  // Ships in port: the same func_031366 verb from the dock painter
+  // func_0314DC -- base 0x92 = 146 (@0x031631), cap 5, arg 2 (@0x0316AD-
+  // @0x0316B1), ordinal reset once (@0x031638), iterating the ship LIST
+  // 0..[0xFA2] (@0x031642-@0x0316C7, not a tile chain), cursor 0xA for the
+  // selected index [0x9E1C] (@0x03166C; the 0xF drag states @0x031686/
+  // @0x0316A1 are pointer states the harness pins off). So ordinal k sits at
+  // x = 146 + 18k, y = 146, composite W = 16 -- the capture-pinned "sack at
+  // cell+(1,1), sprite at cell+(4,1)" (europe_port_2ships.png: Merchantman
+  // (149,146)) IS this composite's class-3 plate at x_c and its sprite at
+  // x_c + LW - max(0, LW+SW-14) + 2 = 149 for a 13-wide hull; the separate
+  // sack the port drew over the plate is gone. Cursor (x-1, y-1)-(x+16,
+  // y+16) inclusive = the old (145+18k, 145, 18, 18). arg 2: no cargo icon.
+  {
+    const ord = { n: 0 };
+    shipsInPort().forEach((e, k) =>
+      crossUnit(e.type, e.icon, DATA.nations[G.nation].color, -1, 0x92, 5, 2,
+                ord, k === G.euroShip ? 0x0A : -1));
+  }
 
   // The active ship's CARGO ROW -- six slots at x = 147 + 12k, y = 165. That
   // geometry was already right (frame 122 template-matches the live row at

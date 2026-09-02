@@ -396,7 +396,40 @@ void rm_unit_panel(int x, int y, int W, int type, int flags148,
                    int orders, int colour, int frame);
 void rm_unit_panel(int x, int y, int W, int type, int flags148,
                    int orders, int colour, int frame) {
+    rm_unit_panel_mode(x, y, W, type, flags148, orders, colour, frame, 0x64);
+}
+void rm_unit_panel_mode(int x, int y, int W, int type, int flags148,
+                        int orders, int colour, int frame, int mode) {
     if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
+    if (mode != 0x64) {
+        /* The mode dispatch @0x003B32-@0x003B44: `mode - 0x19 == 0` ->
+         * the 0x19 path, `- 0x19` again == 0 -> the 0x32 path, anything
+         * else -> a 2x2 owner box at (x, y) (@0x003B46-@0x003B5B).  None
+         * of these draws the silhouette, the plate or the letter. */
+        if (mode == 0x32) {
+            /* @0x003AF8-@0x003B11: 0xC83:2 = func_00EC32 scales the record
+             * -- w' = (w*pct + 50) / 100, h' likewise (@0x00EC4D-@0x00EC72,
+             * unsigned div) -- and [bp-8] = w', so the shared centring
+             * @0x003B23 is against w' alone: x_c = x + ((W - w') >> 1)
+             * when W > w'.  Then @0x003B6C-@0x003BAB: the 2x2 box at
+             * (x + 5, y + 5) in the owner colour ([bp-0xF], the
+             * [0x848+power] byte @0x003A0A) and the half-size sprite
+             * through 0xC56:4 = func_00E964 at CENTRE x_c + (w' >> 1),
+             * BOTTOM y + h' - 1 (@0x003B94-@0x003BA2), pct = mode. */
+            rd_frame f;
+            if (!rd_sheet_frame(&RD.icons, frame, &f)) return;
+            int w2 = (f.w * mode + 50) / 100, h2 = (f.h * mode + 50) / 100;
+            int xc = x + (W > w2 ? (W - w2) >> 1 : 0);
+            rd_blit_scaled(&RD.icons, frame, xc + (w2 >> 1), y + h2 - 1,
+                           mode);
+            rd_fill(x + 5, y + 5, 2, 2, (uint8_t)colour);
+        } else if (mode == 0x19) {
+            rd_fill(x + 1, y + 1, 2, 2, (uint8_t)colour);   /* @0x003B5E */
+        } else {
+            rd_fill(x, y, 2, 2, (uint8_t)colour);           /* @0x003B46 */
+        }
+        return;
+    }
     const char *key = dat_orders[orders >= 0 && orders < DAT_ORDERS_COUNT
                                  ? orders : 0].key;
     int pw = rd_text_width(&TINY, key) + 3;

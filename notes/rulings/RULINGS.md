@@ -10929,3 +10929,24 @@ icon row is byte-cited and pixel-exact. (2) `0x181F:0xCE`'s line endpoints are
 **inclusive**: the DOS frame paints column 19 in ink 14 on rows 179..199, so every
 hollow rect built from `(x0,y0)–(x1,y1)` pairs is `(x1−x0+1)` wide. Both ports draw the
 market cursor 20×21. Measured: census EUROPE 379 → 339 px.
+
+## 2026-09-02d — render track: Europe columns are laid out by running ordinal (C4.11); three corrections
+
+**Bytes**: `func_031298 @0x031298` / `func_031366 @0x031366` and the callers
+`func_0318D2` / `func_0317CC` / `func_0314DC` (spec/ui/europe_screen.md amendment
+2026-09-02).
+
+**Corrections recorded**:
+1. Band 2's pitch is **5**, not 4 (`inc word ptr [bp-4]` @0x031300 after `step = 0x10 >> 2`);
+   the ledger's "step 4 with x += 1" conflated the 4-px cell with the pitch.
+2. "Expected Soon" starts at **x = 2** (`mov [bp-0x54], 2` @0x031915); both ports used 13,
+   which had no byte behind it.
+3. The harbour ship's "nation sack at cell+(1,1)" was the `func_00386A` composite's own
+   class-3 plate (`x_c`, `y`) — the ports drew a sack AND the plate. The composite is the
+   only draw (`func_0314DC` → `func_031366` band 0, `W = 0x10`, `arg = 2`).
+Also retired: §3's reading of `func_031298` as a "sail-state → band" binning — the
+argument is a running ordinal, and `func_031366` increments it per unit drawn.
+
+**Not decided**: chain interleaving of two ships on one sentinel tile and which of the
+0xE4/0xE8 (0xF0/0xF4) bases a ship occupies — save state the ports' crossing record does
+not carry; FLAGGED in the ledger row.

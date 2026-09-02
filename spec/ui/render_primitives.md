@@ -155,3 +155,33 @@ sprite-strip") and `docs/ADVISOR_REPORTS_VICEROY_DECODE.md:246`; those refer to 
 - `0x181F:0x510` is a genuine blit primitive; the open question is *which call site* draws the
   popup frame vs the colony scene (both currently cite site `0x0263D6`) — resolved separately in
   the dialog-framework decode / `popups.md`.
+
+
+## Amendment 2026-09-02 — `func_00386A` modes 0x32 / 0x19 and the scaled blit `func_00E964` (C4.11)
+
+§1b covers `mode = 0x64`. The mode dispatch @0x003B32–@0x003B44: `mode == 0x64` → the
+full panel; `mode − 0x19 == 0` → the 0x19 path; `− 0x19` again `== 0` → the 0x32 path;
+anything else → a 2×2 owner-colour box at `(x, y)` (@0x003B46–@0x003B5B → @0x003BB0).
+Before the dispatch, for `mode ≠ 0x64`, `0xC83:2` = `func_00EC32` (@0x003B0C) scales the
+frame record: `w' = (w·pct + 50) / 100`, `h' = (h·pct + 50) / 100` (unsigned, @0x00EC4D–
+@0x00EC72) and `[bp−8] = w'` (@0x003B11), so the shared centring @0x003B23 becomes
+`x_c = x + ((W − w') >> 1)` when `W > w'`.
+
+- **0x32** (@0x003B6C–@0x003BD7): box `(x + 5, y + 5)` 2×2 in `[bp−0xF]` = the owner colour
+  byte `[0x848 + power]` (@0x003A0A), through `0xB9E:0xA` (@0x003BCF); the sprite through
+  `0xC56:4` = `func_00E964` at CENTRE `x_c + (w' >> 1)`, BOTTOM `y + h' − 1`, pct = mode
+  (@0x003B94–@0x003BAB). No silhouette, plate or letter. Returns `retf 6` @0x003BD7.
+- **0x19** (@0x003B5E): the 2×2 box alone at `(x + 1, y + 1)`.
+
+**`func_00E964 @0x00E964`** (`0x181F:0x2F8`, `0xC56:4`) — args: sheet far ptr, y (bottom),
+pct pushed; `ax` frame (negative = mirror, `[bp−0x10] = −1` @0x00E97C–@0x00E98A), `dx` x
+(centre), `bx` clip rect. One mask table (@0x00EA00–@0x00EA36): `acc = 0x32; for i < max(w,h):
+acc += pct; if acc ≥ 0x64 → keep (0xFF), acc −= 0x64; else drop (0)`, counting `w'` = kept
+indices `< w` and `h'` = kept `< h` (@0x00EA1A–@0x00EA25). `x_left = x − (w' >> 1)`
+(@0x00EA38–@0x00EA3D), `y_top = y − h' + 1` (@0x00EA41–@0x00EA48). Rows are kept/skipped by
+`mask[row]` (@0x00EB1E; a dropped row's RLE is skipped to its 0xFF terminator @0x00EC1B–
+@0x00EC26); within a row `mask[col]` (@0x00EB73/@0x00EBB8/@0x00EBE4) selects the source
+pixels, the destination advancing only on kept ones (@0x00EB91); 0xFD is transparent
+(@0x00EB8A). So 50 % keeps even indices, 25 % keeps 1, 5, 9, …; nearest-neighbour
+decimation from a fixed phase. Ports: `rd_blit_scaled` / `sheetFrameScaled` (mirror flag not
+modelled — no caller passes one).

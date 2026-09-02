@@ -169,6 +169,13 @@ void rd_blit_silhouette(const rd_entry *sheet, int idx, int x, int y,
                         uint8_t colour);
 void rm_unit_panel(int x, int y, int W, int type, int flags148,
                    int orders, int colour, int frame);
+/* the same composite with func_00386A's MODE argument: 0x64 = the full
+ * panel above, 0x32 = half-size sprite + 2x2 owner box at (x+5, y+5),
+ * 0x19 = the 2x2 box alone at (x+1, y+1) (@0x003B3A-@0x003B6C) */
+void rm_unit_panel_mode(int x, int y, int W, int type, int flags148,
+                        int orders, int colour, int frame, int mode);
+/* func_00E964 (0x181F:0x2F8): scaled blit, x = CENTRE, y = BOTTOM row */
+void rd_blit_scaled(const rd_entry *sheet, int idx, int x, int y, int pct);
 /* the dialog framework (drawEvent game.js:6403 / drawDialog 909):
  * subs = up to 4 STRING + 4 NUMBER substitutions (NULL/unused = empty) */
 typedef struct {

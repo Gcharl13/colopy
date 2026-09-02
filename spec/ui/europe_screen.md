@@ -429,3 +429,45 @@ and the cell is 20×21. Ink `0xA`, or `0xE` under the drag gates @0x0311EF–@0x
 Boycott overlay: frame `0x38` at `(cell_x + 5, 181 + 3)` when `func_030B38(good) ≠ 0`
 (@0x0311B6–@0x0311E0) — not drawn by the ports (no fixture state), FLAGGED. Price text:
 `x = cell_x + 9 − ((tw+1)>>1)`, `y = 0xC2`, ink `0x2F` (@0x031188–@0x0311AE), as §3.
+
+
+## Amendment 2026-09-02 — crossing / harbour columns by running ORDINAL (C4.11, byte-read)
+
+Supersedes §3's "per-ship sail-state → status-band Y" reading and §4's "Ship status row"
+row: `func_031298 @0x031298` is not a sail-state binning, it is a **column layout by a
+running ordinal** `n = [bp+6]` with `base_x = [bp+8]`, `cap = [bp+0xA]`, `arg = [bp+0xC]`
+and out-pointers band/x/y/w/h (`[bp+0xE..0x16]`):
+
+| ordinal | band | k | pitch | x | y | w×h | sites |
+|---|---|---|---|---|---|---|---|
+| 0–3 | 0 | n | `16 + arg` | `base + k·pitch` | 0x92 = 146 | 16×16 | @0x0312AC, @0x0312F5, @0x031329 |
+| 4–11 | 1 | n−4 | 8 | `base + k·8 + 2` | 0x89 = 137 | 6×8 | @0x0312BB–@0x0312C3, @0x031330–@0x03133F |
+| 12..12+cap−1 | 2 | n−12 | **5** (`inc [bp-4]` @0x031300) | `base + k·5 + 1` | 0x84 = 132 | 3×4 | @0x0312CF–@0x0312D9, @0x031346–@0x031353 |
+| beyond | 3 | — | — | — | — | undrawn | @0x0312DE |
+
+`func_031366 @0x031366 (unit, base_x, cap, arg, &ordinal, cursor_colour)` draws ONE unit at
+the ordinal and increments it unconditionally (@0x0314A9). Band 0/1: the `func_00386A`
+composite (`0x181F:0x2BC` @0x0313C2) with `W = 0x10` (@0x03139F), `mode = 0x64 >> band`
+(@0x0313A1–@0x0313A9; band 1 = half-size mode 0x32, see `render_primitives.md` §1b
+amendment), `x − 4` for band 1 (@0x0313B0–@0x0313BB), flags 0; then a SHIP (type
+0x0D..0x12 @0x0313CB/@0x0313D5) in band 0 with `arg < 2` (@0x0313E8) and `+0x0C ≠ 0`
+(@0x0313EE) wears ICONS `0x17 + get_nth_cargo(unit,0)` (`0x181F:0xBE6` = `func_00B2A2`) at
+`(x, y)` (@0x0313F5–@0x031417). Band 2: `0x181F:0x2F8` = `func_00E964` scaled blit of the
+`@UNIT` icon byte `[0x5232 + 14·type]` at centre `x + (w>>1) − 1`, bottom `y + h − 1`,
+pct `0x64 >> 2` (@0x031426–@0x031468). Cursor: colour ≥ 0 and band < 3 → hollow rect
+`(x−1, y−1)–(x+w, y+h)` via `0x181F:0xCE` (@0x03146D–@0x0314A1), endpoint-inclusive.
+
+Callers (island `0x03692B` → `0x191F:0xDF0`): **"Expected Soon" `func_0318D2`** — fill
+`(1,118,70,51)` @0x0318D6, caption `[0x2DCC]` = @MISC 9, `base_x = 2` @0x031915, ordinal
+reset @0x03191A, walks the sentinel tiles `(p−0x10, p−0x10)` then `(p−0xC, p−0xC)` through
+`0x181F:0x7E0` = `func_0066CC` (head of the first record at that x,y) stepping `0x181F:0x2E4`
+= `func_0066BA` (the `+0x1A` link), calling the verb for EVERY unit (@0x03193F, @0x031975)
+with cap 0xD, arg 1, colour −1. **"Bound For" `func_0317CC`** — fill `(72,118,70,51)`
+@0x0317D0, caption `[0x2DCE]` = @MISC 10 + the region name, `base_x = 0x49` @0x031841,
+reset @0x031846, sentinels `p−0x1C` then `p−0x18` (@0x03184B, @0x031880), same args.
+**Harbour `func_0314DC`** — `base_x = 0x92` @0x031631, reset @0x031638, iterates the ship
+LIST `0..[0xFA2]` via `call 0x36903` (@0x031642–@0x0316C7), cap 5, **arg 2** (@0x0316AD–
+@0x0316B1 — no cargo icon), colour 0xA for `[0x9E1C]` (@0x03166C), 0xF under the drag
+gates (@0x031686, @0x0316A1). (`[0x2DCC..0x2DD2]` ↔ @MISC 9/10/11/12 by the LABELS loader
+`@0x075226–@0x07523C`, slot O → `(O − 0x2DBA)/2`; the older "338 = Bound For" gloss in §4 is
+a heap-index reading.)
