@@ -589,6 +589,17 @@ static void print_projection(int job_convert) {
             printf("%s\"%s\"", first ? "" : ",", e.key);
             first = 0;
         }
+        /* the ACTION sound cues fired this turn (sim_trace's `sx`): verb
+         * letter + hex arg — p play, q queue-tune, o class one-shot, r
+         * class request, s class set, t pick, w switches */
+        printf("],\"sx\":[");
+        colopy_sound snd;
+        first = 1;
+        while (colopy_next_sound(&snd)) {
+            printf("%s\"%c%X\"", first ? "" : ",", "pqorstw"[snd.verb % 7],
+                   snd.arg);
+            first = 0;
+        }
         printf("]}\n");
     }
 }

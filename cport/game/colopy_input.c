@@ -763,6 +763,8 @@ static void euro_context_commit(void) {
     case 3: {                            /* bless as Missionaries */
         int r2 = unit_row_by_name("Missionaries");
         if (r2 >= 0) e->type_ov = (uint8_t)(r2 + 1);
+        snd_play(0x8024);                /* @ARMOPTIONS row 10 @0x34185,
+                                          * after type := 3 @0x34180 */
         break;
     }
     case 4: {                            /* unbless */
@@ -1190,6 +1192,16 @@ static void jobs_popup_commit(void) {
                     UI.colony_popup = 0;
                     return;
                 }
+                /* fanfare 0x8024 — func_02883E @0x28CE1..0x28CF8: the new
+                 * job is 0x18 (Missionary) or 0x10 (Preacher) AND the
+                 * occupation read before the write (0x181F:0xC54 ->
+                 * func_009102(slot) @0x2885A, held in [bp-0x6a]) equals
+                 * it.  The mechanism is byte-read; why a re-assignment
+                 * to the same job is the trigger (or whether the outside-
+                 * unit branch of func_009102 — the +0x17 class byte — is
+                 * the one meant) is TBD (report TBD 2). */
+                if ((job == 0x18 || job == 0x10) && c->occupation[k] == job)
+                    snd_play(0x8024);
                 c->occupation[k] = (uint8_t)job;
                 cell_clear(c, k);                    /* p.cell = null */
             }
@@ -1786,13 +1798,28 @@ static int music_row(int id) {
     if (id == 0x32 || id == 0x33 || id == 0x35 || id == 0x36) return 14;
     return 0;                    /* 0x34 / 0x37 / unset: no row */
 }
+/* Sound Options leaving the dialog (func_0232AE): the three rows are
+ * mirrored into [0x5386] bits 0x02/0x04/0x08 @0x23301..0x23322 (the row
+ * toggles already keep CR.sound_options), then driver command 1 (stop)
+ * is sent @0x2333B if ANY switch is off @0x23327..0x23339.  The shell's
+ * audio backend applies the word and the stop from this one cue. */
+static void options_closed(void) {
+    if (UI.options_which == 2)
+        snd_emit(SND_SWITCHES, (uint16_t)(CR.sound_options & 0x0E));
+}
+
 void pick_music(void) {
     CR.ask_sel = (int8_t)music_row(CR.tune);   /* G.dialog.sel */
     ev_emit("PICKMUSIC", 0, 0, 0, 0);
     int choice = ask_choice();
     CR.ask_sel = 0;
     if (choice < 0) return;
-    if (choice < 12) { CR.tune = MUSIC_ROW_ID[choice]; return; }
+    if (choice < 12) {
+        CR.tune = MUSIC_ROW_ID[choice];
+        snd_emit(SND_PICK, CR.tune);           /* [0x96] = id @0x23561, then
+                                                * the gated play @0x23564 */
+        return;
+    }
     if (choice >= 15) return;
     int sub = choice - 12;
     ev_emit(MUSIC_SUBMENU[sub].key, 0, 0, 0, 0);
@@ -1802,6 +1829,7 @@ void pick_music(void) {
     if (MUSIC_SUBMENU[sub].skip_after && row > MUSIC_SUBMENU[sub].skip_after)
         row++;
     CR.tune = (uint8_t)(row + MUSIC_SUBMENU[sub].bias);
+    snd_emit(SND_PICK, CR.tune);
 }
 
 /* "Unload all cargo" (@SHIPOPTIONS row 4, unloadAllCargo in game.js): the
@@ -1847,7 +1875,10 @@ static void ship_options_commit(void) {
         UI.sel = 0;
         break;
     case 1: CS.units[ui].orders = 0; break;
-    case 2: CS.units[ui].orders = 1; break;
+    case 2: CS.units[ui].orders = 1; break;     /* the @SHIPOPTIONS handler
+                                                 * (key @0x2ABD1) has no
+                                                 * play site: anchoring is
+                                                 * silent, unlike Fortify */
     case 3: CS.units[ui].orders = 5; break;
     case 4: {
         int ci = colony_rec_at_xy(CS.units[ui].map_x, CS.units[ui].map_y);
@@ -1874,7 +1905,13 @@ static void unit_options_commit(void) {
         break;
     case 1: CS.units[ui].orders = 0; break;
     case 2: CS.units[ui].orders = 1; break;
-    case 3: CS.units[ui].orders = 5; break;
+    case 3:                                      /* func_02B046 row 4 @0x2B26A:
+                                                  * orders = 5, then 0x58
+                                                  * @0x2B273 — rows 2/3 are
+                                                  * silent @0x2B252/@0x2B25E */
+        CS.units[ui].orders = 5;
+        snd_play(0x58);
+        break;
     default: break;                              /* "No changes." */
     }
     UI.colony_popup = 0;
@@ -2430,7 +2467,10 @@ static void in_key_inner(const char *k, int alt, int shift) {
             UI.options_row = (int8_t)((UI.options_row + 1) % n);
         if (key_is(k, "Enter") || key_is(k, " "))
             rm_options_toggle(UI.options_which, UI.options_row);
-        if (key_is(k, "Escape") || key_is(k, "x")) UI.screen = SCR_MAP;
+        if (key_is(k, "Escape") || key_is(k, "x")) {
+            UI.screen = SCR_MAP;
+            options_closed();
+        }
         break;
     }
     case SCR_PEDIA: {
@@ -2657,8 +2697,10 @@ static void in_click_inner(int mx, int my, int right) {
         if (r >= 0) {
             UI.options_row = (int8_t)r;
             rm_options_toggle(UI.options_which, r);
-        } else if (r == -1)
+        } else if (r == -1) {
             UI.screen = SCR_MAP;         /* off the box = leave */
+            options_closed();
+        }
         break;
     }
     case SCR_PEDIA: {

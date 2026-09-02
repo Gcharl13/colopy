@@ -57,3 +57,30 @@ int colopy_next_event(colopy_event *out) {
     evq_len--;
     return 1;
 }
+
+/* The sound-cue ring (colopy_core.h): the same overflow policy as the
+ * notices — the oldest cue is dropped, since a play the shell never saw
+ * is a missed sound, not a missed outcome.  Sixteen is more than one
+ * command ever fires (the deepest chain is a raid's pair + a tune). */
+#define SNDQ_CAP 16
+static colopy_sound sndq[SNDQ_CAP];
+static int sndq_head, sndq_len;
+
+void snd_emit(int verb, uint16_t arg) {
+    if (sndq_len == SNDQ_CAP) {
+        sndq_head = (sndq_head + 1) % SNDQ_CAP;
+        sndq_len--;
+    }
+    colopy_sound *s = &sndq[(sndq_head + sndq_len) % SNDQ_CAP];
+    s->verb = (uint8_t)verb;
+    s->arg = arg;
+    sndq_len++;
+}
+
+int colopy_next_sound(colopy_sound *out) {
+    if (!sndq_len) return 0;
+    *out = sndq[sndq_head];
+    sndq_head = (sndq_head + 1) % SNDQ_CAP;
+    sndq_len--;
+    return 1;
+}

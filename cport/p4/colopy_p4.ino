@@ -523,6 +523,7 @@ static int audio_pack_init(void) {
         return 0;
     }
     au_seed((uint32_t)esp_random());
+    au_set_tick_source(audio_ticks);
     pinMode(AUDIO_GPIO_CTRL, OUTPUT);
     digitalWrite(AUDIO_GPIO_CTRL, LOW);      /* amp power on (Lesson12) */
     i2s_spk.setPins(AUDIO_GPIO_BCLK, AUDIO_GPIO_LRCLK, AUDIO_GPIO_SDATA);
@@ -540,18 +541,29 @@ static int audio_pack_init(void) {
     return 1;
 }
 
-/* scheduler tick: the war flag + the func_004EE6 pump */
+/* the BIOS tick word for the scheduler's two srand() points (@0x4F28/
+ * @0x5040): 18.2 Hz from millis(), masked like func_00C2F8 does */
+static uint16_t audio_ticks(void) {
+    return (uint16_t)((millis() * 182u / 10000u) & 0x7FFF);
+}
+/* scheduler tick: the war flag + the switches + the func_004EE6 pump */
 static void audio_tick(void) {
     /* [0x5382]&1.  The audio branch read a `declared` field off
      * PowerRecord that no version of the records carries; the WoI
      * flag lives in CR.woi_flags (colopy_sim.h). */
     au_set_war((CR.woi_flags & WOI_DECLARED) != 0);
+    /* [0xA2]/[0xA0]/[0xA4] re-expanded from the [0x5386] bits, as the
+     * loader does @0x074249 */
+    au_load_switches((uint8_t)(CR.sound_options & 0x0E));
     au_pump();
 }
 /* shell-side cue edges (the core/game layers stay untouched): new game =
- * the BRIEFING->MAP transition; woodcut = a new plate on screen */
+ * the BRIEFING->MAP transition; woodcut = a new plate on screen; the
+ * title screen = the composer's raw tune 0x33 @0x75C2A */
 static void audio_screen_edges(void) {
-    static int last_screen = SCR_TITLE, last_wc = -1;
+    static int last_screen = -1, last_wc = -1;
+    if (last_screen != SCR_TITLE && UI.screen == SCR_TITLE)
+        au_on_title();
     if (last_screen == SCR_BRIEFING && UI.screen == SCR_MAP)
         au_on_new_game();
     if (UI.screen == SCR_WOODCUT) {
@@ -572,12 +584,14 @@ static void audio_screen_edges(void) {
  * driver bytes.  The bank is 8-bit UNSIGNED mono: (b - 128) << 8 makes
  * signed 16-bit, written twice for the stereo slot pair.  Blocking —
  * the longest sample is under 6 s and the DOS game blocked here too.
- * Silent when SOUND EFFECTS is off in @SOUNDOPTIONS ([0xA4], the bit
- * the C core keeps in CR.sound_options). */
+ * Silent when SOUND EFFECTS is off in @SOUNDOPTIONS ([0xA4] — the
+ * [0x5386] bit is 0x08 per the mirror @0x023301..0x023322: 0x02 BG,
+ * 0x04 Event Music, 0x08 SFX; the 0x04 this read until 2026-09-02 was
+ * the Event Music bit). */
 static void sfx_play(int id) {
     int idx = colopy_sfx_index(id);
     if (idx < 0 || !audio_ready || !sd_ready) return;
-    if (!(CR.sound_options & 0x04)) return;
+    if (!(CR.sound_options & 0x08)) return;
     const colopy_sfx_rec *r = &colopy_sfx[idx];
     FILE *f = fopen("/sdcard/COLDIG.BIN", "rb");
     if (!f) return;
@@ -613,7 +627,7 @@ static void sfx_play(int id) {
  * short cues only; SOUND EFFECTS off in @SOUNDOPTIONS silences it. */
 static void audio_play_wav(const char *name) {
     if (!audio_ready || !sd_ready) return;
-    if (!(CR.sound_options & 0x04)) return;   /* Sound Effects switch */
+    if (!(CR.sound_options & 0x08)) return;   /* Sound Effects switch */
     char path[64];
     snprintf(path, sizeof(path), "/sdcard/%s", name);
     FILE *f = fopen(path, "rb");
@@ -795,28 +809,31 @@ static void dlg_subs(rm_subs *subs) {
 
 /* ---- the byte-verified sound cues -----------------------------------
  * VICEROY.EXE plays a sound by `mov ax,<id>` + `lcall 0x181F:0x4C0`
- * (the gated play thunk).  Every one of those 40 call sites is
- * inventoried by tools/decode_coldig.py into
- * data_extracted/coldig_index.json; where the cue belongs to a message
- * emit, the key string is pushed within the same block, so the EXE
- * names the event itself.  The table below is exactly those named
- * sites whose id is a digital effect (0x40..0x5D) — no inference:
+ * (the gated play thunk).  All 40 call sites are read and inventoried
+ * in spec/ui/options_dialogs.md §10 (2026-09-02).  Two kinds reach this
+ * fallback player:
  *
- *   0x54 REFIT       @0x2F1CD   0x56 TEAPARTY    @0x346F6
- *   0x53 HERESY1     @0x48EE6   0x55 CHIEFKILL   @0x4AB9E
- *   0x4F RAIDSTORES  @0x5C3C2   0x53 RAIDBURN    @0x5C501
- *   0x4B RAIDSHIP    @0x5C569   0x4D RAIDSHIP    @0x5C571 (a PAIR:
- *        the ship branch fires both, in that order)
- *   0x4E RAIDGOLD    @0x5C5ED   0x5B RAIDNOTHING @0x5C62D
+ *  - MESSAGE cues: the key string is pushed in the same emit block, so
+ *    the EXE names the event itself.  The table below is those sites
+ *    whose id is a digital effect (0x40..0x5D):
+ *      0x54 REFIT       @0x2F1CD   0x56 TEAPARTY    @0x346F6
+ *      0x53 HERESY1     @0x48EE6   0x55 CHIEFKILL   @0x4AB9E
+ *      0x57 SHIPSUNK    @0x5BCCF   0x45 INDIANWINCOLONY (@0x5D83A, the
+ *           native-won-versus-colony block that precedes the @0x5E01F push)
+ *      0x4F RAIDSTORES  @0x5C3C2   0x53 RAIDBURN    @0x5C501
+ *      0x4B RAIDSHIP    @0x5C569   0x4D RAIDSHIP    @0x5C571 (a PAIR:
+ *           the ship branch fires both, in that order)
+ *      0x4E RAIDGOLD    @0x5C5ED   0x5B RAIDNOTHING @0x5C62D
+ *      0x53 INDIANBURNCOLONY @0x5DFB7 (+ tune 0x32, pack path only)
+ *  - ACTION cues (Fortify 0x58, arming 0x58/0x5C, founding 0x54, the
+ *    Wagon Train's 0x52, the combat set 0x40..0x4D/0x48/0x49/0x4A/0x4B,
+ *    village hits): the C core emits them at the action's own site
+ *    through colopy_next_sound() (see audio_take_sounds below).
  *
- * Plus two cues this project traced earlier, cited to their own sites
- * rather than to a pushed key: sfx 0x54 when the first colony is built
- * (@0x040DF6, woodcut 2) and sfx 0x53 when a colony burns (@0x05DFB7,
- * woodcut 11 — the same site also pushes INDIANBURNCOLONY).
- *
- * The other 24 call sites are real cues whose event is still TBD (four
- * of them compute the id at runtime).  They stay SILENT: nothing here
- * guesses an id or an event (CLAUDE.md prime directive).
+ * The fanfares (0x8020+) and tunes have no COLDIG sample: this path
+ * ignores them; the pack path plays them.  Woodcut plates carry no
+ * sample cue any more — 0x54 belongs to the founding (every colony,
+ * func_040C1E @0x40DF6) and 0x53 to the INDIANBURNCOLONY emit.
  *
  * A cue is queued rather than played inline so the frame reaches the
  * panel first; sfx_play() blocks for the length of the sample. */
@@ -826,6 +843,8 @@ EVENT_SFX[] = {
     { "TEAPARTY",         0x56, 0 },
     { "HERESY1",          0x53, 0 },
     { "CHIEFKILL",        0x55, 0 },
+    { "SHIPSUNK",         0x57, 0 },
+    { "INDIANWINCOLONY",  0x45, 0 },
     { "RAIDSTORES",       0x4F, 0 },
     { "RAIDBURN",         0x53, 0 },
     { "RAIDSHIP",         0x4B, 0x4D },
@@ -833,20 +852,35 @@ EVENT_SFX[] = {
     { "RAIDNOTHING",      0x5B, 0 },
     { "INDIANBURNCOLONY", 0x53, 0 },
 };
-static const struct { uint8_t woodcut; uint8_t id; } WOODCUT_SFX[] = {
-    { 2, 0x54 }, { 11, 0x53 },
-};
-static int sfx_pending = -1, sfx_pending2 = -1;
-static int sfx_last_woodcut = -1;
+/* the pending fallback plays: a raid pair + a combat pair fit in four */
+#define SFX_PEND 4
+static int sfx_pending[SFX_PEND];
+static int sfx_npending = 0;
+static void sfx_queue(int id) {
+    if (id >= 0 && sfx_npending < SFX_PEND) sfx_pending[sfx_npending++] = id;
+}
 
-static int event_sfx(const char *key, int *second) {
-    *second = -1;
+static void event_sfx(const char *key) {
     for (unsigned i = 0; i < sizeof(EVENT_SFX) / sizeof(EVENT_SFX[0]); i++)
         if (strcmp(key, EVENT_SFX[i].key) == 0) {
-            if (EVENT_SFX[i].id2) *second = EVENT_SFX[i].id2;
-            return EVENT_SFX[i].id;
+            sfx_queue(EVENT_SFX[i].id);
+            if (EVENT_SFX[i].id2) sfx_queue(EVENT_SFX[i].id2);
+            return;
         }
-    return -1;
+}
+
+/* the core's action cues: whichever audio path owns the port takes them
+ * — the pack engine maps every verb (au_on_sound), the COLDIG fallback
+ * plays the SND_PLAY ids it has a sample for (colopy_sfx_index >= 0) */
+static void audio_take_sounds(void) {
+    colopy_sound snd;
+    while (colopy_next_sound(&snd)) {
+#if COLOPY_AUDIO
+        if (audio_pack_live) { au_on_sound(snd.verb, snd.arg); continue; }
+#endif
+        if (snd.verb == SND_PLAY && (CR.sound_options & 0x08))
+            sfx_queue((int)snd.arg);
+    }
 }
 
 static void draw_screen(void) {
@@ -912,13 +946,6 @@ static void draw_screen(void) {
         break;
     case SCR_WOODCUT:
         rm_draw_woodcut(UI.woodcut);
-        if (UI.woodcut != sfx_last_woodcut) {
-            sfx_last_woodcut = UI.woodcut;
-            for (unsigned i = 0;
-                 i < sizeof(WOODCUT_SFX) / sizeof(WOODCUT_SFX[0]); i++)
-                if (WOODCUT_SFX[i].woodcut == UI.woodcut)
-                    sfx_pending = WOODCUT_SFX[i].id;
-        }
         break;
     case SCR_BRIEFING:
         rm_draw_briefing(UI.nation, UI.brief_page);
@@ -961,6 +988,7 @@ static void draw_screen(void) {
 #if COLOPY_AUDIO
     audio_screen_edges();
 #endif
+    audio_take_sounds();                 /* the core's action cues */
     if (!have_pending && colopy_next_event(&pending_ev)) {
         have_pending = 1;
         /* whichever audio path owns the port takes the cue: the pack
@@ -968,9 +996,9 @@ static void draw_screen(void) {
          * plays it straight (see the audio block above). */
 #if COLOPY_AUDIO
         if (audio_pack_live) au_on_event(pending_ev.key, pending_ev.p[0]);
-        else sfx_pending = event_sfx(pending_ev.key, &sfx_pending2);
+        else event_sfx(pending_ev.key);
 #else
-        sfx_pending = event_sfx(pending_ev.key, &sfx_pending2);
+        event_sfx(pending_ev.key);
 #endif
     }
     /* the Combat Analysis panel sits over whatever screen is up, read
@@ -1002,13 +1030,12 @@ static void draw_screen(void) {
         else draw_kpad();
     }
     if (bt_mode) bt_ui_draw();
-    if (UI.screen != SCR_WOODCUT) sfx_last_woodcut = -1;
     flush_fb();
-    if (sfx_pending >= 0) {
-        int id = sfx_pending, id2 = sfx_pending2;
-        sfx_pending = sfx_pending2 = -1;
-        sfx_play(id);
-        if (id2 >= 0) sfx_play(id2);     /* RAIDSHIP fires a pair */
+    if (sfx_npending) {                  /* the COLDIG fallback, in order */
+        int n = sfx_npending, ids[SFX_PEND];
+        memcpy(ids, sfx_pending, sizeof(ids));
+        sfx_npending = 0;
+        for (int i = 0; i < n; i++) sfx_play(ids[i]);
     }
 }
 
@@ -1407,9 +1434,13 @@ static int board_ask(void) {
     colopy_event q[8];
     int n = 0;
     colopy_event e2;
+    audio_take_sounds();                 /* cues fired before the ask */
     while (colopy_next_event(&e2)) {
 #if COLOPY_AUDIO
-        au_on_event(e2.key, e2.p[0]);
+        if (audio_pack_live) au_on_event(e2.key, e2.p[0]);
+        else event_sfx(e2.key);
+#else
+        event_sfx(e2.key);
 #endif
         if (n < 8) q[n++] = e2;
     }

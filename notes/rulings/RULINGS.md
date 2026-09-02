@@ -10972,3 +10972,61 @@ readers (ANCHOR); neither port sets it (no `/D` switch, no abort-key path).
 run (digital samples are suppressed while it is not 0xFF — needs a DOSBox
 trace); which key codes 0x12D/0x110 are; the FM-fallback-on-busy path of
 the digital ring.
+
+## 2026-09-02d — audio track: the cue table re-cut from the 40 play sites
+
+All forty `lcall 0x181F:0x4C0` sites were read (`spec/ui/options_dialogs.md`
+§10). Rows of `cport/audio/colopy_audio_cues.c` (2026-08-17) that the bytes
+contradict, and what replaced them:
+
+1. **`CANCELPEACE → 0x58` withdrawn.** The cited site @0x220F9 is the
+   Fortify command `func_021FF2` (writes `orders = 5` @0x22105 after the
+   play; ships jump straight there @0x22031), not the treaty break: the
+   map-move resolver pushes `CANCELPEACE` @0x3F22F with no play site in
+   reach. **Ruling: 0x58 is the Fortify sound** — `cmd_set_order(5)` /
+   `setOrder(5)` and the `@UNITOPTIONS` row 4 (@0x2B26A/@0x2B273); the
+   `@SHIPOPTIONS` handler has no play site, so "Anchor in harbor" is silent.
+2. **`CHIEFHOWDY → 0x8024` withdrawn.** The site @0x48C41 is the establish-
+   mission path under the `MISSION0` push (@0x48B53's block). `MISSION0`
+   takes the row.
+3. **`BURNED/BURNED2/BURNED3 → 0x53` withdrawn.** Those keys are pushed
+   @0x5DAE6/@0x5DB0B/@0x5DB12 with no play site nearby; the 0x53 @0x5DFB7 is
+   the `INDIANBURNCOLONY` arm (human owner) and carries `push 0x32; lcall
+   0x181f:0x48e` @0x5DFBF with it — the row now queues tune 0x32 too, and
+   woodcut 11 no longer doubles it.
+4. **`INDIANBURNCOLONY2`, `INDIANWINCOLONY2 → 0x53` withdrawn**: both are the
+   rival-colony arms (@0x5DFEE/@0x5E026) on the far side of the human gate.
+5. **`INDIANWINCOLONY → 0x53` replaced by `0x45` + queue `0x32`.** The queue
+   is byte-adjacent (@0x5E013 before the push @0x5E01F). The 0x45 (@0x5D83A;
+   0x44 for a ship attacker, which natives lack) is the "native won versus a
+   colony" block @0x5D7B4..0x5D842 of the same function; that the block
+   precedes the `INDIANWINCOLONY` arm is the function's outcome structure,
+   not a traced jump chain — recorded as ANCHOR in the row.
+6. **`INTERVENTION → 0x3F + class request 3` corrected to `INTERVENE` with
+   class SET 3**: the key pushed @0x3D7BB is `INTERVENE`, and @0x3D790 is
+   `push 3; lcall 0x181f:0x498` (`func_0050F0`, the setter), not `0x4AC`.
+7. **Woodcut 2 → 0x54 moved to the founding.** `func_040C1E` plays 0x54
+   @0x40DF6 on every human founding, before the once-only plate @0x40E00; the
+   plate row would have silenced every colony after the first.
+8. **The colony-open 0x54 (@0x2C660) is NOT unconditional**: the second draw
+   pass that plays it runs only when `[0x34A] ≥ 0` (`jl` @0x2C640), and
+   `[0x34A]` is written @0x2D2F7 by the `BUILT` report helper when the
+   answer is 1 (zoom) and the building is not 0x10/0x1F — i.e. the sound is
+   the "new building" flourish on zooming to a colony from its BUILT card.
+   Neither port's BUILT notice has a zoom arm: TBD, not wired.
+9. **The undefended rival-colony capture takes 0x4B** (@0x5D5BE: European
+   attacker, colony on the tile, no defending unit, shown). The engine's
+   own European capture is not on that path (the 0x4B arm ends @0x5D5CC
+   without a capture; the `0x7E0 → 0x5e72d` path @0x5D5D0 is the NATIVE
+   arm, size ≤ 1), so where the engine plays 0x4A for a European capture is
+   untraced — the port's capture is itself a flagged stand-in.
+
+**Engine-side decisions**: sounds are queued by the core at the action's
+site (`snd_emit`, `colopy_next_sound`) and drained by the shell, so the
+audio module still never touches core state; the JS logs the same cues
+(`sfx()`) and both projections compare them as `sx` — cue-for-cue parity is
+now an oracle, not a hope (72 of 100 sav1653 turns carry cues). The "show"
+flag `[bp+0xc]` of the combat sounds is read as "a human power on either
+side" — the port has no rival-vs-rival battle the player watches. The
+default sound word is 0x0E (`mov [0x5386],0xE` @0x755EB), not the ports'
+former 0x07, and the P4 fallback gates on bit 0x08 (SFX), not 0x04 (Event).

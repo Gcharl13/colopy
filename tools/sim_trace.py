@@ -230,6 +230,9 @@ INPUT = """([save, events]) => {
       // the Combat Analysis latch: a modal the next key dismisses (a latch
       // only one engine holds swallows a key the other acts on)
       cb: G.combat ? 1 : 0,
+      // the action sound cues since the last event (verb letter + hex arg;
+      // the C prints colopy_next_sound() the same way)
+      sx: sfxDrain(),
       ut: u ? u.type : '',
       askmap: Object.assign({}, _askBy),
       // the rivals' unit and colony positions -- the input scripts step
@@ -436,7 +439,8 @@ PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
         greeted: r.greeted ? 1 : 0,
         lock: G.parleyLock[r.nation] || 0 })),
       maphash: fnv(),
-      events: evs.splice(0) }"""
+      events: evs.splice(0),
+      sx: sfxDrain() }"""
 
 # A FRESH game: the LCG replaces Math.random BEFORE beginGame, so every
 # boot draw (plotSeedBase, the eight tensions, mapSeed, the sixteen

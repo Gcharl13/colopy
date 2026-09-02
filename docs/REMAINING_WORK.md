@@ -519,10 +519,40 @@ scheduler's rotation matches, or that `0x34`'s loop point is right. The human A/
 listen pass in F3 is the gate for all of that and remains open. Nothing in this
 repo can close it.
 
-**F4. On the fallback COLDIG cue path** (used when no `COLAUDIO.PAK` is on the card): 24 of the 40 `lcall 0x181F:0x4C0` play sites
+**F4.** ~~On the fallback COLDIG cue path (used when no `COLAUDIO.PAK` is on the card): 24 of the 40 `lcall 0x181F:0x4C0` play sites
 stay silent because their event is TBD (four compute the id at runtime); only 12
-cues are wired. `sfx_play()` blocks for the sample's length — one voice, no
-mixing.
+cues are wired.~~ **CLOSED 2026-09-02 — all 40 sites read, 36 wired on both
+paths** (`spec/ui/options_dialogs.md` §10 is the inventory; RULINGS
+2026-09-02d the corrections). The core now queues a cue at the ACTION that
+fires it (`snd_emit` → `colopy_next_sound`, `cport/core/colopy_events.c`) and
+the JS logs the same cues (`sfx()`), so the sim and input oracles compare them
+cue for cue (`sx`; 72 of 100 sav1653 turns carry cues, 0 disagreements). Wired
+this way: Fortify 0x58 (`func_021FF2` @0x220F9, `@UNITOPTIONS` row 4 @0x2B273),
+arming 0x58/0x5C and blessing 0x8024 (`@ARMOPTIONS` handler @0x3405A/@0x34129/
+@0x34185), founding 0x54 (@0x40DF6, every colony), the Wagon Train's 0x52
+(@0x3F5E0), the king's 0x3E / class one-shot 2 (@0x34572/@0x34649/@0x34566),
+the score tune 0x24/0x25/0x21 (@0x3AD51..0x3AD6D with the rank loop
+@0x3AA41), Pick Music (@0x23561/@0x23564), Sound Options' stop (@0x2333B), the
+church fanfare (@0x28CE1..0x28CF8, gloss TBD), and **the combat set** — attack
+sound 0x42/0x4C/0x40/0x41 (@0x5D2A4..0x5D317), win 0x43/0x49/0x40 (@0x5D4EB..
+0x5D50F), ship-vs-ship 0x4D (@0x5B775), village hit 0x48 / razed 0x4A
+(@0x5D683/@0x5D6BC), undefended capture 0x4B (@0x5D5BE). By message key (both
+the pack table and the P4 `EVENT_SFX`): `SHIPSUNK` 0x57, `TRAINPROFESSION`/
+`TRAINFAIL` 0x8025, `MISSION0`/`HERESY0` 0x8024, `HERESY1` 0x53, `CHIEFKILL`
+0x55, `REFIT` 0x54, `TEAPARTY` 0x56, `INTERVENE` 0x3F + class set 3, the five
+raid rows (the `RAIDSHIP` pair in order), `INDIANBURNCOLONY` 0x53 + tune 0x32,
+`INDIANWINCOLONY` 0x45 + tune 0x32. **The European first-contact fanfare
+`0x8020 + power`** (@0x58040..0x58097) fires in the JS `checkContact`; the C
+`check_contact` is still a stub (B-track), so the C emits none — no scripted
+scenario meets a rival, which is why the oracle does not see the gap.
+**Still TBD, with the blocker named:** #6 colony-open 0x54 (gated on `[0x34A]`,
+which only the BUILT report's zoom arm sets @0x2D2F7 — neither port has that
+arm); #32 the native-attacker sound `0x3B + type` (no native unit attacks
+through either port's resolver); #3 the Sound Test (needs the `@CUP` cheat
+menu and DEBUG.TXT in the bundles — the engine entry is `au_cmd(n)`, §11);
+the cooldown re-parley of #23; #4's meaning. The fallback `sfx_play()` still
+blocks for the sample's length — one voice — and its gate now reads the SFX
+bit (0x08, per the mirror @0x023301), not the Event Music bit it read before.
 
 ---
 

@@ -84,17 +84,23 @@ bit-identity.
 7. ~~Driver commands other than 1/8 not ported.~~ Ported per the handler
    bodies (0/1/3/4/5/8 exact in effect; 2/6/7 approximated as above).
 8. ~~`[0x828]` unexposed.~~ `au_set_demo()`; writers byte-read (spec §9).
-9. **Cue-table rows tagged `[inferred]`** in `colopy_audio_cues.c`: key↔cue
-   pairing by GAME.TXT text, not a traced call site. European first-contact
-   fanfare `0x8020+power` and all combat SFX ids: **TBD, not wired** (no
-   byte-cited row names them).
+9. ~~Cue-table rows tagged `[inferred]`.~~ Re-cut 2026-09-02 from all 40
+   play sites (spec §10, RULINGS 2026-09-02d): every row cites its emit
+   block; action cues come from the core (`colopy_next_sound`). Still
+   glossed: `INDIANWINCOLONY`'s 0x45 (function outcome, not a traced jump
+   chain), the church fanfare's meaning, the raid rows' `RAIDSHIP` pair
+   order (byte-adjacent, so not really).  Unwired with the blocker named
+   in the ledger F4: the colony-open 0x54 (`[0x34A]`), the native-attacker
+   `0x3B + type`, the Sound Test, the contact re-parley.
 10. **Fanfare bank**: all 8 ids (0x8020–0x8027) captured and shipped as
-    renders; the per-power CUE (0x8020+power on European first contact)
-    remains unwired in cport (row 9).
+    renders; `0x8020+power` fires from the JS `checkContact`; the C
+    `check_contact` is a stub, so the C board emits none until it lands.
 11. **PC-speaker / MT-32 driver variants**: not reproduced (SB stack only).
 12. **OPENING.EXE / CLOSING.EXE cinematic audio**: out of scope.
-13. **Sound Test dialog** and the Pick-Music/Sound-Options UI screens are
-    not in cport's input layer yet; `au_*` exposes everything they need.
+13. **Sound Test dialog** is in neither port (no `@CUP` cheat menu, no
+    DEBUG.TXT in the bundles); Pick Music and Sound Options ARE in both
+    input layers and now reach the engine through `SND_PICK` /
+    `SND_SWITCHES` (`au_on_sound`).
 14. **Command 8 timing**: the original polls the driver each idle tick;
     the port answers from the voice flags at the moment of the call —
     the same answer, minus the ISR granularity.

@@ -613,10 +613,17 @@ static void attack_village(int vi, int ui) {
     int lvl = tribe_level(tr);                   /* v.level = tribe level */
     int D = combat_total(&dp) * (4 + lvl) / 4;
     int win = 1 + R(A + D) <= A;
+    /* the land decider's attack sound @0x5D317 (defender = the Braves
+     * row the port synthesises; the player is always the attacker here) */
+    snd_play(combat_attack_sound(CS.units[ui].type, dp.type));
     if (!win) { unit_remove(ui); return; }       /* msg only in JS */
     CS.units[ui].moves_remaining = 0;
     CR.unit_moves_undef[ui] = 0;
-    if (v->population > 1) { v->population--; return; }
+    /* the village branch of func_05CA7E @0x5D666: population > 1 ->
+     * `dec [bx+4]` @0x5D67A then 0x48 @0x5D683; otherwise the settlement
+     * is destroyed (0x191F:0x248 @0x5D6A9) and 0x4A plays @0x5D6BC */
+    if (v->population > 1) { v->population--; snd_play(0x48); return; }
+    snd_play(0x4A);
     /* raze: the byte-verified payout, credited straight to gold */
     int sum = 0;
     for (int i = 0; i < 3; i++) sum += R(11 - cs_difficulty());

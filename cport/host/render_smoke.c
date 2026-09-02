@@ -345,6 +345,19 @@ static void in_project(void) {
      * dismisses — a latch only one engine holds swallows a key the other
      * acts on (2026-09-02) */
     printf("\"cb\":%d,", CR.combat.active ? 1 : 0);
+    /* the action sound cues since the last event (sim_trace's `sx`; the
+     * same verb-letter + hex encoding as the turn projection) */
+    printf("\"sx\":[");
+    {
+        colopy_sound snd;
+        int fs = 1;
+        while (colopy_next_sound(&snd)) {
+            printf("%s\"%c%X\"", fs ? "" : ",", "pqorstw"[snd.verb % 7],
+                   snd.arg);
+            fs = 0;
+        }
+    }
+    printf("],");
     /* the selected unit's TYPE (sim_trace `ut`): two engines can agree on
      * a unit's position and moves and still hold different units there */
     printf("\"ut\":\"%s\",", su >= 0 ? dat_units[CS.units[su].type].name : "");

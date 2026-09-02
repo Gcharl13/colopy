@@ -39,7 +39,7 @@ slice, sha256-checked against the committed slice table.
 | Command-id space (<0x10 driver cmds; 0x20–0x3F tunes; 0x40–0x5F SFX; 0x8020+ fanfares), gates, switches | **byte-verified** (`spec/ui/options_dialogs.md` §5) |
 | Tune-id ↔ name table | **byte-verified** (§24.1 tech ref) |
 | Background scheduler algorithm (`func_004EE6`) | **byte-verified** (spec §4; remaining tail pinned in Phase A) |
-| Event → cue map | **byte-verified** (§24.4 tech ref) — the cport wiring notes per-row confidence |
+| Event → cue map | **byte-verified** — all 40 `lcall 0x181F:0x4C0` sites (spec/ui/options_dialogs.md §10); action cues queued by the core, key cues by table |
 | Tune audio (renders), tune lengths, loop behaviour | **empirical capture** |
 | SFX id → COLDIG.BIN (offset,len) map | **byte-verified** (`data_extracted/coldig_index.json` — the drivers' own sample table; `sfx_id_to_index` + `rate_rule` at ASOUND `0x00F19`). Superseded the empirical `data/coldig_slices.json` on 2026-08-17. |
 | SFX payload bytes | **bit-clean** (verbatim COLDIG.BIN slices) |
@@ -158,8 +158,9 @@ driver (DOSBox 0.74, sb16 at 220/7/1) and recorded:
 - Scheduler PRNG: the RTL MS-C `rand` with both tick re-seeds — on a
   PRIVATE state by decision (RULINGS 2026-09-02c), not the sim's shared
   LCG the original actually re-seeds.
-- Cue rows tagged `[inferred]`; European first-contact fanfare
-  (0x8020+power) and combat SFX ids: not wired (no byte-cited row).
+- Cue rows: all 40 play sites read and wired where a port site exists
+  (spec/ui/options_dialogs.md §10, 2026-09-02); the C `check_contact` stub
+  keeps the C board from firing the first-contact fanfare the JS fires.
 - PC-speaker and MT-32 driver variants: not reproduced.
 - OPENING.EXE / CLOSING.EXE cinematic audio: out of scope.
 

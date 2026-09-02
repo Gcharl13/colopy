@@ -83,8 +83,11 @@ uint8_t au_switches(void);         /* save encoding: bit1 BG, bit2 Event,
                                       bit3 SFX (mask 0x0E, @0x023301) */
 void    au_load_switches(uint8_t sav_bits); /* from save [0x5386] & 0x0E */
 
-/* ---- presentation cues (spec §24.4 event->cue map) -------------------- */
-void au_on_event(const char *key, int32_t p0);
+/* ---- presentation cues (spec/ui/options_dialogs.md §10 site inventory) - */
+void au_on_event(const char *key, int32_t p0);   /* message-key cues */
+void au_on_sound(int verb, uint16_t arg);       /* the core's action cues:
+                                                   drain colopy_next_sound()
+                                                   into this (verbs SND_*) */
 void au_on_woodcut(int plate);
 void au_on_new_game(void);
 

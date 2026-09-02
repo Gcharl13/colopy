@@ -324,3 +324,74 @@ corrections to §5 recorded in `notes/rulings/RULINGS.md` 2026-09-02c.
   boot flow @0x7598D..@0x75C37; the exit filename @0x56A9. The gloss
   "auto-play / demo mode" is from those consumers (ANCHOR); the two
   key codes' keyboard meaning is TBD.
+
+## 10. The 40 play sites (`lcall 0x181F:0x4C0`) and where the ports fire them (B) — 2026-09-02
+
+Raw scan for `9A C0 04 1F 18` = 40 sites (the annotated listing shows 37;
+the three in the `@ARMOPTIONS` handler sit in a page gap and were read with
+capstone). Id = the `mov ax,imm16` feeding the call unless marked runtime.
+"Port" names the site in both engines (`snd_play`/`sfx` at the action, or the
+message KEY row of `cport/audio/colopy_audio_cues.c` when the key is pushed
+in the same emit block). Unit table rows are 14 bytes at DGROUP `0x5230`;
+`+0x5236` is the ATTACK column (`@UNIT` col 3, `spec/systems/combat.md`).
+
+| # | site | function / condition (byte-read) | id | port |
+|---|---|---|---|---|
+| 1 | `0x220FC` | `func_021FF2` = the **Fortify command**: current unit `[0x5392]`; ships (`type` 0xD..0x12 @0x22023) jump straight to the play @0x22031; land units scan the 8 neighbours (@0x2204F..0x2209F) and ask `@HAVETREATY` (0x932 @0x220CE) when one holds a treaty partner (`0xA38` & 0x40 @0x22048); answer 2 clears the treaty + sets war; then play, then `orders = 5` @0x22105 | `0x58` | `cmd_set_order(5)` / `setOrder(5)` |
+| 2 | `0x23564` | Pick Music `func_023344`: `[0x96] = [bp-8]` @0x23561 then play | runtime (the picked tune) | `SND_PICK` / `playTune` |
+| 3 | `0x23DA0` | cheat cmd 0x69 Sound Test (`func_0235D6` table @0x23DE8 → @0x23D86): DEBUG `@SOUND` numeric dialog `0x191F:0x436` → `[0x9CC8]` | runtime | TBD — no cheat menu in either port (§11) |
+| 4 | `0x28CF8` | `func_02883E(slot, job)` colony job write via `0x181F:0xC36` @0x28CD6; then `job ∈ {0x18, 0x10}` @0x28CE1/@0x28CE7 **and** `[bp-0x6a] == job` @0x28CF0, where `[bp-0x6a]` = `0x181F:0xC54 → func_009102(slot)` read at entry @0x2885A (occupation byte for a colonist, `+0x17` class for an outside unit) | `0x8024` | `jobs_popup_commit` / `churchFanfare` (colonist branch; gloss TBD) |
+| 5 | `0x2B276` | `@UNITOPTIONS` `func_02B046` row 4: `orders = 5` @0x2B26A then play; rows 2/3 (@0x2B252/@0x2B25E) silent | `0x58` | `unit_options_commit` / `unitOptionsCommit` row 3 |
+| 6 | `0x2C660` | colony screen `func_02C5D4`: the second draw pass runs only when `[0x34A] ≥ 0` (`jl 0x2c66f` @0x2C640); `[0x34A]` is written @0x2D2F7 by the colony-report helper after the `BUILT` (0xD6F) report when its answer `[bp-2] == 1` and the building `[bp-8] ∉ {0x10, 0x1F}`, and reset to −1 @0x2EAB2 | `0x54` | **TBD** — neither port's `BUILT` notice has the zoom arm that sets `[0x34A]` |
+| 7 | `0x2D09E` | report helper `func_02CFD0` sound param `[bp+0x12]` (`jle` skip @0x2D099); nonzero at 3 of 28 callers: `TRAINPROFESSION` @0x2DF93/@0x2E0E4, `TRAINFAIL` @0x2DFF3, all under `[0x5384] & 0x80` | `0x8025` | key rows |
+| 8 | `0x2F1D0` | `REFIT` pushed @0x2F1D7 | `0x54` | key row |
+| 9 | `0x3405D` | `@ARMOPTIONS` handler (fn @0x33C96, table @0x341AA) row 4 Arm with Muskets: play, type 5→4 else →1, price, buy 50 | `0x58` | `euro_arm_dock` / `euroContextCommit` (muskets buy) |
+| 10 | `0x3412C` | row 8 Equip with Horses: type 1→4 else →5, play, buy 50 | `0x5C` | same (horses buy) |
+| 11 | `0x34188` | row 10 Bless as Missionaries: type → 3 @0x34180, play | `0x8024` | `euro_context_commit` case 3 / `'bless'` |
+| 12 | `0x34575` | `func_034318` tax change, delta `[bp+8]`: `jge` @0x34564 → play (raise) else `push 2; lcall 0x4B6` @0x34566 (cut → class one-shot 2); then the section `[bp+6]` @0x34583 | `0x3E` | `king_tax_demand` / `kingTaxDemand` |
+| 13 | `0x3464C` | same, with a boycott-able good: play right before `@TAXOPTIONS` | `0x3E` | same |
+| 14 | `0x346F9` | `TEAPARTY` pushed @0x34700 | `0x56` | key row |
+| 15 | `0x3AD6D` | score screen `func_03A9C0`: rank `[bp-0xc0]` (init −1 @0x3A9C4; loop @0x3AA41..0x3AA68: `n−1` for each `n ≤ 24` with `n²/3 < base·mult/100`; clamp ≤ 0x17 @0x3AA71); ≥ 0x17 → 0x24, > 6 → 0x25, else 0x21 | `0x24/0x25/0x21` | `end_game_sequence` / `endGameSequence` |
+| 16 | `0x3D7B4` | `push 3; lcall 0x498` (class SET) @0x3D790, play, `INTERVENE` @0x3D7BB | `0x3F` | key row (`cls_set` 3) |
+| 17 | `0x3F5E3` | `func_03ECF0`: (`0x88A(unit)` ≠ 0 or type 0xC @0x3F59E) and `func_008D26(x,y) ≥ 0` @0x3F5AE; type 0xC, owner nibble < 4, controller 0 @0x3F5C4..0x3F5DE | `0x52` | the move step (Wagon Train onto a colony tile) |
+| 18 | `0x40DF9` | build colony `func_040C1E`: `[0x5394] < 4`, controller 0 @0x40DE3..0x40DF4; then woodcut 2 @0x40E00 | `0x54` | `cmd_found_colony` / `buildColony` (every founding) |
+| 19 | `0x48C44` | establish mission: `[bp+8] < 4`, controller 0 @0x48C30..0x48C3F; `MISSION0` follows | `0x8024` | key row (the C emits no `MISSION0` yet — G2b) |
+| 20 | `0x48EBA` | mission fate `random_int(1, a+b) ≤ b` @0x48EAA..0x48EB5 → play + `HERESY0` @0x48EC1 | `0x8024` | key row |
+| 21 | `0x48EE9` | else play + `HERESY1` @0x48EF0 | `0x53` | key row |
+| 22 | `0x4ABA1` | `CHIEFKILL` @0x4ABAA, human power @0x4AB93 | `0x55` | key row |
+| 23 | `0x58043` | `func_057F4E` European contact: `[bp-0xba]` set on a first meeting (relation bit 0x20 clear @0x57FD3 → woodcut 10 @0x57DDF) or the 16-turn cooldown (`[0x53C8+2·B] + 0x10 ≤ turn` @0x57FEC); dispatch on the other power @0x5802E → `0x8020` @0x58040 / `0x8021` @0x58088 / `0x8022` @0x5808E / `0x8023` @0x58094 | `0x8020 + power` | `checkContact` (JS, first meeting); C `check_contact` is a stub — TBD; the cooldown re-parley has no port site |
+| 24 | `0x5B778` | consequence applier `func_05B2C2`: both types 0xD..0x12 @0x5B754..0x5B76D and `[bp+0xa]` show | `0x4D` | `naval_attack` / `navalAttack` |
+| 25 | `0x5BCD2` | show @0x5BCC9; `SHIPSUNK` @0x5BD0F | `0x57` | key row |
+| 26–31 | `0x5C3C5 0x5C504 0x5C56C 0x5C574 0x5C5F0 0x5C630` | raids `func_05BE30`: `RAIDSTORES` 0x4F, `RAIDBURN` 0x53, `RAIDSHIP` 0x4B then 0x4D, `RAIDGOLD` 0x4E, `RAIDNOTHING` 0x5B | as listed | key rows (the pair in order) |
+| 32 | `0x5D205` | land decider `func_05CA7E`: attacker owner ≥ 4 (`[bp-0x86]`), defender human (`[bp-0x76]` < 4, controller 0), show → `[bp-0x9a] + 0x3B` (native types 0x13..0x16 → 0x4E..0x51), then woodcut 13 | runtime | **TBD** — no native unit attacks through either port's resolver |
+| 33 | `0x5D317` | attack sound (skipped when `[bp-2]` ≠ 0 = woodcut 13 just shown): ship attacker `[bp-0x84]` or type 0xB either side → 0x42; attacker ∈ {4,5,8,7} → 0x4C; both ATTACK ≤ 1 → 0x40 else 0x41 (@0x5D2A4..0x5D314) | `0x42/0x4C/0x40/0x41` | `combat_attack_sound` / `combatAttackSound` in `resolve_attack`, `naval_attack`, `attack_village` |
+| 34 | `0x5D50F` | attacker won (`[bp-0x9c]`), defender existed (`[bp-0x6e]==0`), show: ship or 0xB attacker → 0x43; `[bp-0xd4] ≥ 0` (settlement at the tile, `0x181F:0x6BE` @0x5CBC3) → 0x49; else 0x40 | `0x43/0x49/0x40` | `resolve_attack` / `resolveAttack`; `naval_attack` (0x43) |
+| 35 | `0x5D5C7` | no defender (`[bp-0x6e]` ≠ 0), colony at tile: colony size > 1 or a native attacker → `[bp-0xd8]` (European attacker, @0x5D4D8) ? 0x4B : 0x4A; also entered from @0x5D683 = village population decremented (`dec [bx+4]` @0x5D67A) | `0x4B/0x4A/0x48` | 0x4B at the undefended-colony capture; 0x48 in `attack_village` |
+| 36 | `0x5D600` | the capture/destroy path @0x5D5D0 (`0x7E0` → `call 0x5e72d`), show | `0x4A` | — (the port's capture takes #35's 0x4B; see RULINGS 2026-09-02d) |
+| 37 | `0x5D6BF` | village destroyed (`0x191F:0x248` @0x5D6A9), show | `0x4A` | `attack_village` |
+| 38 | `0x5D83D` | block @0x5D7B4 entered when the attacker lost or `[bp-4]` (native won versus a colony: set @0x5D4B6 with unit flag 0x10); play only when won + show: ship attacker → 0x44 else 0x45 | `0x44/0x45` | `INDIANWINCOLONY` key row (0x45; the pairing is by the function's outcome, not a traced flow) |
+| 39 | `0x5DFBA` | colony burned (`[bp-0xa]`), owner human: play, `push 0x32; lcall 0x48E` @0x5DFBF, woodcut 11 @0x5DFC9, `INDIANBURNCOLONY` @0x5DFE6 (`INDIANBURNCOLONY2` @0x5DFEE for a rival's colony, no sound) | `0x53` | key row (+ queue 0x32) |
+| 40 | `0x756E7` | new game after `0x181F:0x4F2`; `push 0x25; lcall 0x48E` @0x759A0 later | `0x39` | `au_on_new_game` |
+
+Ids sent by no site: `0x46 0x47 0x59 0x5A 0x5D` (they are also the drivers'
+`sfx_ids_not_samples`). Message keys pushed with **no** play site nearby —
+so the earlier `[inferred]` rows for them are withdrawn: `CANCELPEACE`
+(@0x3F22F), `BURNED/BURNED2/BURNED3` (@0x5DAE6/@0x5DB0B/@0x5DB12),
+`CHIEFHOWDY`, `INDIANBURNCOLONY2`, `INDIANWINCOLONY2`. The `@SHIPOPTIONS`
+handler (key @0x2ABD1) has no play site, and no caller of the Fortify
+command's thunk (`0x181F:0xF0C`) was found by byte scan, so "Anchor in
+harbor" is silent.
+
+## 11. Sound Test (cheat `@CUP` row → cmd 0x69) — B, unported
+
+`func_0235D6` @0x23DD5 `sub ax,0x1b; cmp ax,0x5c; jbe; jmp cs:[bx+0x2f08]`,
+entry 0x4E @0x23E84 → @0x23D86: `lea bx,[0xb85]` ("DEBUG"), `lea ax,[0xb7f]`
+("SOUND"), `dx = 1`, `lcall 0x191F:0x436` → `func_06F698` (the shared
+numeric-entry dialog of the `@HOWMUCH` family, mode 5 core `call 0x6F7F4`,
+`atoi` of the entry buffer `0x9820` → `[0x9CC8]` @0x6F6CF, returns 0 =
+accepted) → `mov ax,[0x9cc8]; lcall 0x181f,0x4c0` @0x23D9D. Text: DEBUG.TXT
+`@SOUND` = "Play what sound #?\n\nSound:". Any 16-bit integer goes through
+the gate (so `< 0x10` acts as a driver command, `≥ 0x8000` passes ungated).
+Neither port carries the cheat menu (`@CUP`) or DEBUG.TXT in its data
+bundle; the engine entry point is `au_cmd(n)` — see `docs/REMAINING_WORK.md`
+F4.

@@ -14,10 +14,16 @@
  * oracles cannot move. Shells guard all calls with #ifdef COLOPY_AUDIO.
  *
  * Original id namespace (byte-cited):
- *   id < 0x10           driver commands: 1 = stop, 8 = query-playing
+ *   id < 0x10           driver commands (ASOUND dispatcher file 0x1C35):
+ *                       0 reset, 1 stop music + FM sfx, 2/3 stop music,
+ *                       4/5 stop sfx, 6/7 mute/unmute, 8 = query-playing
  *   0x20..0x3F          tunes    — gated on the Event Music switch [0xA0]
  *   0x40..0x5F          SFX      — gated on the SFX switch [0xA4]
- *   0x8020+power/0x8024 fanfares (bit 0x20 set -> tune gate applies)
+ *   0x8020+power/0x8024/0x8025 fanfares — UNGATED: the gate's compare is
+ *                       signed (func_00518E @0x5197, `7D` = JGE), so every
+ *                       id >= 0x8000 takes the "command" branch straight to
+ *                       the driver (2026-09-02; the earlier "tune gate
+ *                       applies" reading was wrong)
  */
 #ifndef COLOPY_AUDIO_H
 #define COLOPY_AUDIO_H
@@ -36,9 +42,20 @@ int  au_init_buffer(const uint8_t *pak, uint32_t len);      /* pak in RAM  */
 int  au_init_stream(au_read_fn rd, void *ctx, uint32_t len);/* SD stream   */
 
 /* ---- original caller API --------------------------------------------- */
-void au_seed(uint32_t seed);       /* scheduler PRNG (original seeds from
-                                      the wall-clock tick words) */
+/* Scheduler PRNG: the RTL MS-C rand (state*0x343FD+0x269EC3, high 15
+ * bits) on a PRIVATE state (RULINGS 2026-09-02 — the original shares
+ * [0x28EE] with the whole game and re-seeds it from the BIOS tick word
+ * at @0x4F28/@0x5040; the port keeps the seed points but not the shared
+ * state).  au_seed sets the state directly; a tick source, when given,
+ * re-seeds `ticks & 0x7FFF` at both points exactly as func_00C2F8 does —
+ * leave it NULL for a deterministic scheduler (the host tests). */
+typedef uint16_t (*au_tick_fn)(void);
+void au_seed(uint32_t seed);
+void au_set_tick_source(au_tick_fn fn);
 void au_set_war(int at_war);       /* [0x5382]&1 input to the scheduler */
+void au_set_demo(int on);          /* [0x828]: the '/D' switch (@0x70D00) or
+                                      the abort keys (@0x4DA6); widens the
+                                      rotation window to (1,24) @0x4F82 */
 
 void     au_cmd(uint16_t id);      /* the gate (func_00518E semantics) */
 int      au_playing(void);         /* driver command 8 */
@@ -51,6 +68,11 @@ void     au_class_request(uint8_t cls);    /* func_005108 (0x4ac): + stop */
 void     au_class_oneshot(uint8_t cls);    /* func_00513C (0x4b6): only
                                               when BG off + Event on */
 uint16_t au_current_tune(void);    /* [0x96] mirror */
+void     au_set_current(uint16_t id);      /* [0x96] writer (Pick Music
+                                              @0x23561 before its play) */
+void     au_on_title(void);        /* title composer @0x75C2A: tune 0x33
+                                      through the RAW driver entry
+                                      (0x181f:0x4de) — no gate, no switch */
 
 /* ---- Sound Options switches ------------------------------------------ */
 /* which: 0 = Background Music [0xA2], 1 = Event Music [0xA0],
@@ -61,8 +83,11 @@ uint8_t au_switches(void);         /* save encoding: bit1 BG, bit2 Event,
                                       bit3 SFX (mask 0x0E, @0x023301) */
 void    au_load_switches(uint8_t sav_bits); /* from save [0x5386] & 0x0E */
 
-/* ---- presentation cues (spec §24.4 event->cue map) -------------------- */
-void au_on_event(const char *key, int32_t p0);
+/* ---- presentation cues (spec/ui/options_dialogs.md §10 site inventory) - */
+void au_on_event(const char *key, int32_t p0);   /* message-key cues */
+void au_on_sound(int verb, uint16_t arg);       /* the core's action cues:
+                                                   drain colopy_next_sound()
+                                                   into this (verbs SND_*) */
 void au_on_woodcut(int plate);
 void au_on_new_game(void);
 
