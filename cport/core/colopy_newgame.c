@@ -132,6 +132,11 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
     put16(g + 0x14, nation);
     g[0x26] = difficulty;
     put16(g + 0x06, 0x0E);
+    /* the game-options word [0x5382]: 0xC600 (@0x0755E5), then
+     * func_07431E turns Tutorial Hints (0x80) ON iff Discoverer
+     * (@0x074341..0x074348); cr_reset_from_load mirrors it into
+     * CR.game_options (beginGame, game.js) */
+    put16(g + 0x02, (uint16_t)(0xC600 | (difficulty == 0 ? 0x80 : 0)));
     int d = difficulty;
     put16(g + 0x5A, (uint16_t)(8 * d + 15));   /* Regulars */
     put16(g + 0x5C, (uint16_t)(5 * d + 5));    /* Cavalry */
@@ -289,10 +294,10 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
      * one ship, sight radius 1 (sightRadius 8576) */
     reveal(sx, sy, 1, (uint8_t)(1u << (nation + 4)));
 
-    /* tutOnce(1) (730): the fleet-on-the-high-seas opener.  TUTORIAL*
-     * keys are excluded from the parity diff (tutorial bindings note,
-     * colopy_turn.c) — the live board shows it as the first popup. */
-    ev_emit("TUTORIAL1", 0, 0, dat_units[ship_type].name, 0);
+    /* tutOnce(1) (730): the fleet-on-the-high-seas opener — the focus
+     * dispatcher's turn-0 arm (func_020F50 @0x020FB5..0x020FFB: turn 0,
+     * difficulty 0, [0x5386]&0x10 clear; %STRING0 = @UNIT name) */
+    tut_once(1, 0, 0, dat_units[ship_type].name, 0);
 
     /* G.mapSeed = 1 + random(0x7FFF) (742) */
     uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);

@@ -1556,6 +1556,10 @@ static void wc_dismiss(void) {
          * "Land Ho!  What shall we call this new land?" — an entry
          * dialog, so live-front only (openDialog is inert here) */
         if (plate == 1 && colopy_front_live) {
+            /* TUTORIAL2 (askLandName, game.js): the land-sighting
+             * handler's tail, func_020EFE @0x020F3A..0x020F46 — the
+             * Tutorial-Hints test alone, NO once-flag */
+            tut_once(2, 0, 0, 0, 0);
             UI.dlg = 6;
             snprintf(UI.dlg_entry, sizeof(UI.dlg_entry), "%s",
                      rm_event_default("LANDHO"));
@@ -1945,7 +1949,37 @@ static void custom_house_menu(void) {
 }
 
 static void in_key_inner(const char *k, int alt, int shift);
+/* The screen-open tutorials (colopy_tutorial.c): TUTORIAL4 at the first
+ * colony-screen visit (func_02C5D4 @0x02C67E..0x02C74A; bytes: the
+ * alternative-yield scan of colonist 0's plot — the Food/Lumber pair is
+ * the JS's flagged stand-in) and TUTORIAL17 at the first Europe screen
+ * (@0x035BDC..0x035C2B; %STRING1 is a 0x191f:0xac8 string, unread —
+ * the JS passes the country).  Both engines fire them on the screen
+ * EDGE of a key/click (the JS onClick/onKey wrappers), so the harnesses
+ * see the same events; a screen change from outside a key/click (a
+ * pointer drag) fires at the next one. */
+static void in_key_body(const char *k, int alt, int shift);
+static void in_click_body(int mx, int my, int right);
+static void screen_edge(int prev) {
+    if (UI.screen == prev) return;
+    if (UI.screen == SCR_COLONY)
+        tut_once(4, 0, 0, dat_cargo[FOOD].name, dat_cargo[LUMBER].name);
+    else if (UI.screen == SCR_EUROPE)
+        tut_once(17, 0, 0, dat_nations[cs_nation()].homeport,
+                 dat_nations[cs_nation()].country);
+}
 void in_key(const char *k, int alt, int shift) {
+    int prev = UI.screen;
+    in_key_body(k, alt, shift);
+    screen_edge(prev);
+}
+void in_click(int mx, int my, int right) {
+    int prev = UI.screen;
+    in_click_body(mx, my, right);
+    screen_edge(prev);
+}
+
+static void in_key_body(const char *k, int alt, int shift) {
     in_key_inner(k, alt, shift);
     front_pickup();
 }
@@ -2568,8 +2602,21 @@ static void in_key_inner(const char *k, int alt, int shift) {
                     if (CR.europe[q].state != 0) continue;
                     if (++ord == UI.euro_ship) { port = q; break; }
                 }
-                if (port >= 0)
-                    euro_buy_to_ship(port, UI.market_sel, qty);
+                /* TUTORIAL18 (europeDrop, game.js): the can't-afford
+                 * branch of the Europe buy — BYTE: price*qty > gold
+                 * (@0x032685..0x0326AC) -> status line + @TUTORIAL18
+                 * via the GAME wrapper @0x032760, ungated, no once-flag;
+                 * %STRING0 goods, %NUMBER0 the ask, %NUMBER1 gold.  The
+                 * JS bounds the ask by gold, so both fire when a single
+                 * lot is unaffordable (flagged approximation). */
+                if (port >= 0) {
+                    int32_t ask = market_ask(UI.market_sel);
+                    if (CS.powers[cs_nation()].gold < ask)
+                        tut_once(18, ask, CS.powers[cs_nation()].gold,
+                                 dat_cargo[UI.market_sel].name, 0);
+                    else
+                        euro_buy_to_ship(port, UI.market_sel, qty);
+                }
             }
         }
         if (key_is(k, "s") || key_is(k, "S")) {
@@ -2618,7 +2665,7 @@ static int hit(int mx, int my, int x, int y, int w, int h) {
 }
 
 static void in_click_inner(int mx, int my, int right);
-void in_click(int mx, int my, int right) {
+static void in_click_body(int mx, int my, int right) {
     in_click_inner(mx, my, right);
     front_pickup();
 }

@@ -138,13 +138,10 @@ def compare_turns(save, n, extra=()):
     cc = [json.loads(l) for l in subprocess.run(
         ["./smoke", "--turns", save, str(n)] + extra, cwd=ROOT / "cport/host",
         capture_output=True, text=True, check=True).stdout.splitlines()]
-    # SCOPE-REASON: B4.2 -- the C has no tutorial bindings (tutOnce), so the
-    # TUTORIAL* events exist on the JS side only; dropped from both lists.
-    tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
+    # The TUTORIAL* events are compared like every other key: the C carries
+    # the bindings (colopy_tutorial.c) since 2026-09-02 (B4.2 closed).
     bad = 0
     for i, (j, c) in enumerate(zip(js, cc)):
-        j["events"] = tut(j["events"])
-        c["events"] = tut(c["events"])
         if j == c:
             continue
         for f in j:
@@ -240,9 +237,7 @@ def main():
         # full endTurn()s — across all four nations at two difficulties
         n = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 10
         subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
-        # SCOPE-REASON: B4.2 -- tutorial bindings unported in the C; the
-        # TUTORIAL* events are JS-only and dropped from both lists.
-        tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
+        # TUTORIAL* events compared whole (B4.2 closed 2026-09-02)
         bad = 0
         for nation in range(4):
             for diff in (0, 2):
@@ -256,8 +251,6 @@ def main():
                     capture_output=True, text=True, check=True).stdout.splitlines()]
                 nbad = 0
                 for i, (j, c) in enumerate(zip(js, cc)):
-                    j["events"] = tut(j["events"])
-                    c["events"] = tut(c["events"])
                     if j == c:
                         continue
                     for f in j:

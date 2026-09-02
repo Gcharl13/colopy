@@ -195,7 +195,12 @@ INPUT = """([save, events]) => {
     const c = ((_askBy[k] = (_askBy[k] || 0) + 1) - 1) % 2;
     if (cb) cb(c);
   };
-  showEvent = () => {};
+  // record-only popups -- except the TUTORIAL lessons, which the `tut`
+  // field projects per event (the C drains its ring the same way), so the
+  // option gate, the once-flags and the mirrored sites sit under the
+  // oracle (B4.2, 2026-09-02)
+  const tutq = [];
+  showEvent = (k) => { if (String(k).startsWith('TUTORIAL')) tutq.push(k); };
   openDialog = () => {};
   const _wc = woodcutOnce;
   woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
@@ -204,6 +209,7 @@ INPUT = """([save, events]) => {
   const proj = () => {
     const u = G.units[G.sel];
     return { s: SCR[G.screen] !== undefined ? SCR[G.screen] : -1,
+      tut: tutq.splice(0),
       mr: G.menuRow, d: G.difficulty, n: G.nation, ldr: G.leader,
       bp: G.briefPage || 0, rep: G.report || '', sel: G.sel,
       vx: G.view.x, vy: G.view.y, om: G.openMenu, ms: G.menuSel,
@@ -405,6 +411,10 @@ RENDEREVENT = """([save, key, mode, sel, speaker]) => {
 
 PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
       rng: G.rngState >>> 0,
+      // the tutorial's three flag homes: the [0x5386/7] shown word, the
+      // [0x5380] once byte, the [0x5382] options word whose 0x80 gates
+      // the lessons (B4.2, 2026-09-02)
+      tutm: G.tutMask, once: G.onceFlags, gopt: G.gameOptions,
       ...(STEPRNG ? { steps: G._steps.slice() } : {}),
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
       unpaid: G.upkeepUnpaid ? 1 : 0,

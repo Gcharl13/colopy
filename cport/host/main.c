@@ -352,6 +352,11 @@ static void print_projection(int job_convert) {
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,",
                cs_turn(), cs_year(), cs_season(), CS.rng, p->gold,
                p->kings_fund, p->tax_rate, CR.upkeep_unpaid);
+        /* the tutorial's three flag homes (sim_trace tutm/once/gopt):
+         * the [0x5386/7] shown word, the [0x5380] once byte, the
+         * [0x5382] options word whose 0x80 gates the lessons */
+        printf("\"tutm\":%u,\"once\":%u,\"gopt\":%u,",
+               cs_tut_mask(), CS.globals[0], CR.game_options);
         /* every power's market row + pool, and the rivals' gold (the JS
          * mkt/acc/rmkt/racc/rgold) — per-power market parity (B3.6) */
         printf("\"mkt\":[");

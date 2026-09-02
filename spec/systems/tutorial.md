@@ -139,3 +139,50 @@ input, computed by `func_06C850`/`func_06D316`), not a static rectangle. **B**
    new-game init `[0x5386]=0x0E` `@0x755EB` (§2). **B.**
 3. ~~Sequential or event-gated?~~ **Resolved 2026-06-20 — event-driven & idempotent**
    (fire once per event when the step's bit is clear), not a sequential script (§3). **B.**
+
+## Amendment 2026-09-02 — the gate is the Tutorial-Hints option; the once-flag table completed (B4.2; RULINGS 2026-09-02d)
+
+- **Gate (B).** Every emit site tests the **game-options bit `[0x5382]&0x80`** (Tutorial
+  Hints, `spec/ui/options_dialogs.md` §6): `@0x020F3A` (T2), `@0x021E63` and `@0x024AC6`
+  (the two callers of the focus dispatcher `func_020F50` — end-of-move, and the map idle
+  loop after a 0x1E-tick wait), `@0x0286DA` (T16), `@0x028CFD` (T7), `@0x02C67E` (T4),
+  `@0x02C74F` (T12), `@0x02E9D5` (T6), `@0x035BDC` (T17), `@0x036504` (T5). New game writes
+  `[0x5382]=0xC600` (`func_0755CC @0x0755E5`, hints OFF) and `func_07431E` sets the bit
+  **iff difficulty == 0** (`@0x074341 cmp byte [0x53a6],0 / jne / @0x074348 or byte
+  [0x5382],0x80`); the @GAMEOPTIONS commit ladder sets it from row 8 (`@0x0230F3`); a save
+  carries it (globals +2: every Discoverer fixture `0xC680`, the Explorer ones `0xC600`).
+  So "Discoverer only" (the live COLONY02/COLONY04 observation) is byte-true as the
+  DEFAULT, but the mechanism is the option — toggled on at any difficulty, the lessons
+  fire. The §3 table's "T1: turn==0 AND difficulty==0" is the dispatcher's OWN extra test
+  (`@0x020FBC`), on top of the option gate at its callers.
+- **Once-flags (B), completing §3:** T16 `[0x5380]|=0x10` (`@0x0286FF`), T17 `[0x5380]|=0x20`
+  (`@0x035C2B`) — both through the plain GAME wrapper `0x181f:0x3fe` (no advisor), T16
+  when the colony screen's red-X corn counters `[0x8E32]`/`[0x8E5A]` are nonzero
+  (`@0x0286E8..0x0286F4`), T17 at Europe-screen entry with `%STRING0` = home port,
+  `%STRING1` = a `0x191f:0xac8(1,0,player)` string (unread), `%STRING2` = nation name.
+  **T2 has no once-flag** — `func_020EFE @0x020F3A..0x020F46` is the option test and the
+  emit; the earlier "`[0x5382]|=0x80` (its own dispatcher)" in §3 mis-read the option bit
+  as a flag store (no `or [0x5382]` exists there). **T18 has neither gate nor flag**: the
+  Europe buy's can't-afford branch (`price·qty > gold`, `@0x032685..0x0326AC`; status line,
+  then `lea bx,[0xfdb] ; lcall 0x181f,0x3fe` `@0x032760` when `[bp+0xC]==0`, arg role TBD)
+  with `%STRING0` = goods, `%NUMBER0` = ask (`call 0x36890`), `%NUMBER1` = gold. The seed
+  `0x0E` marks the three **sound switches** (@SOUNDOPTIONS `@0x02330D/0x023319/0x023322`),
+  not steps; bit 0 of `[0x5386]` is a combat-aftermath once-flag (`@0x05DC49`); bit 5 has
+  no writer.
+- **T5's site (B):** `@0x036514`, immediately after `@UNREST` for a human power
+  (`[0x543F+p·0x34]==0 @0x0364BE`), advisor 0, `%STRING0` = home port, `%STRING1` = the
+  recruit's name — not on the Brewster @RECRUITCHOOSE branch.
+- **§4 correction:** "no `@TUTORIALn` key carries `@width/@x/@y`" holds for the JSON
+  extract only — the raw GAME.TXT carries `@width=190 @x=10 @y=40` (T1), `@width=190
+  @x=10` (T4), `@width=220 @y=5` (T12), `@width=220 @y=10 @x=5` (T16), `@width=300 @y=10
+  @smallfont` (T17, T18); the rest are default-centred (`spec/ui/tutorial.md` §1 has it right).
+- **Port (both engines, lockstep):** `cport/core/colopy_tutorial.c` `tut_once` /
+  `game.js` `tutOnce` — gate on the option bit (T18 ungated), the word bits for 1, 3..12,
+  the byte bits for 13/14/15/16/17/19, no flag for 2/18; `G.gameOptions` / `CR.game_options`
+  IS the save's globals +2, seeded `0xC600 | (difficulty==0 ? 0x80 : 0)` at new game, so
+  the Game Options checkbox is live. The emit SITES remain the JS's flagged approximations
+  of the §3 predicates (named beside each site in the C); the oracles compare the
+  TUTORIAL keys whole and project the three flag homes (`tutm`/`once`/`gopt`) and the
+  per-input `tut` list. **Open:** the §3 predicates themselves are not yet ported
+  condition-for-condition (T3's site scan, T4's alternative-yield scan `func_0098F6`,
+  T8's `0xA38` flags, T9/T10's adjacency, T6's hundred-boundary + record +0x1A bit 0x40).

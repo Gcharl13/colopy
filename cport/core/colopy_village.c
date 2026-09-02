@@ -96,6 +96,13 @@ void village_enter(int vi, int ui) {
         ev_emit(CR.tension[tr] < 40 ? "INDIANHELLO1" : "INDIANHELLO2",
                 0, 0, dat_tribes[tr].name, 0);
     }
+    /* TUTORIAL8 (enterVillage, game.js): an unskilled COLONIST at a
+     * village can learn (bytes: the focus dispatcher's profession
+     * 0x19/0x1C arm with a k=4..11 0xA38 flag, @0x0213DE..0x0213E9 —
+     * the JS's "plain colonist" is its flagged reading) */
+    if (strcmp(dat_units[CS.units[ui].type].name, "Colonists") == 0 &&
+        CS.units[ui].profession >= DAT_JOBEXPERT_COUNT)
+        tut_once(8, 0, 0, dat_units[CS.units[ui].type].name, 0);
     CR.cur_village = (int8_t)vi;
     CR.cur_visitor = (int16_t)ui;
     /* the screen outcome (enterVillage tail, game.js:6459) under the

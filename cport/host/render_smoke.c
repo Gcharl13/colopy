@@ -349,6 +349,22 @@ static void in_project(void) {
      * dismisses — a latch only one engine holds swallows a key the other
      * acts on (2026-09-02) */
     printf("\"cb\":%d,", CR.combat.active ? 1 : 0);
+    /* the TUTORIAL lessons this event fired (sim_trace `tut`): the
+     * event ring is drained here — the input harness reads nothing
+     * else from it — and only the lesson keys are projected, so the
+     * option gate, the once-flags and the JS-mirrored sites are all
+     * under the oracle (B4.2, 2026-09-02) */
+    printf("\"tut\":[");
+    {
+        colopy_event e;
+        int fr = 1;
+        while (colopy_next_event(&e)) {
+            if (strncmp(e.key, "TUTORIAL", 8) != 0) continue;
+            printf("%s\"%s\"", fr ? "" : ",", e.key);
+            fr = 0;
+        }
+    }
+    printf("],");
     /* the selected unit's TYPE (sim_trace `ut`): two engines can agree on
      * a unit's position and moves and still hold different units there */
     printf("\"ut\":\"%s\",", su >= 0 ? dat_units[CS.units[su].type].name : "");

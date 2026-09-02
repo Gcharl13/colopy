@@ -8,9 +8,6 @@
  * runtime object state lives here in CR.col[] beside the record pools.
  *
  * Deliberate prefix limits (the parity trace excludes these, loudly):
- *   - tutorial bindings (tutOnce): not ported yet; TUTORIAL* keys are
- *     filtered from the event comparison and the tut/once masks are not
- *     projected.  TODO with the tutorial subsystem.
  *   - colonyBesieged: rival wars counted (game.js:2995); the REF-unit
  *     term joins with the WoI slice.
  *
@@ -277,7 +274,12 @@ void cr_reset_from_load(void) {
     CR.land_ho = 1;                  /* the importer latches these true
                                       * (game.js:10240) */
     CR.built_colony = 1;
-    CR.game_options = 0x0200;        /* G defaults (game.js:580) */
+    /* the game-options word is the save's own globals +2 ([0x5382]):
+     * 0xC680 in every Discoverer fixture, 0xC600 at Explorer — the
+     * Tutorial-Hints bit 0x80 gates every lesson (colopy_tutorial.c);
+     * colopy_new_game seeds it the engine's way before this runs, and
+     * the options dialog writes both homes (importSav, game.js) */
+    CR.game_options = (uint16_t)(CS.globals[2] | (CS.globals[3] << 8));
     CR.colony_options = 0;
     CR.sound_options = 0x07;
     CR.rumour_floor = 1;             /* G defaults (game.js:588) */
@@ -1258,7 +1260,29 @@ void colony_turn(int ci) {
             cev("FOODLOW", c->stock[FOOD], 0, c->name, 0);
     }
     resolve();
-    /* tutorial bindings: NOT ported (see header) */
+    /* Tutorial bindings (colonyTurn, game.js): TUTORIAL6 when a sellable
+     * cargo has built up — the largest non-food stock >= 50, lowest
+     * good on a tie (the JS's stable sort); 7 when the colony could use
+     * a stockade (size >= 3); 16 on a food deficit.  The JS thresholds
+     * are its flagged approximations of the bytes: T6 = a hundred-
+     * boundary crossed this turn per good, colony-report option
+     * [0x5384]&4 clear, record +0x1A bit 0x40 (func_02D658 @0x02E919..
+     * 0x02EA4C, fires after @CARGOREADY0); T7 = size >= 3 AND no
+     * Stockade at colony-screen entry (func_02883E @0x028CFD..0x028D41);
+     * T16 = the red-X corn counters [0x8E32]/[0x8E5A] nonzero at
+     * colony-screen entry (@0x0286DA..0x0286FF).  %STRING2 (the home
+     * port) is not carried — the event holds two strings. */
+    {
+        int best = -1;
+        for (int g = 0; g < N_GOODS; g++) {
+            if (g == FOOD || c->stock[g] < 50) continue;
+            if (best < 0 || c->stock[g] > c->stock[best]) best = g;
+        }
+        if (best >= 0)
+            tut_once(6, c->stock[best], 0, dat_cargo[best].name, c->name);
+        if (c->population >= 3) tut_once(7, 0, 0, c->name, 0);
+        if (o.net_food < 0) tut_once(16, 0, 0, 0, 0);
+    }
     /* MINE DEPLETION — the full byte model (2026-08-28), replacing the
      * old flagged 1/50-per-silver-cell stand-in:
      *   colony_produce accrued o.depletion_pts ([0xA896]) off the worked
@@ -1900,11 +1924,17 @@ static void check_immigration(void) {
         return;
     }
     int slot = (int)((rng_next() * 3u) >> 15);
+    immigrant rec = CR.dock[slot];
     if (CR.n_dock_units < sizeof(CR.dock_units) / sizeof(CR.dock_units[0]))
-        CR.dock_units[CR.n_dock_units++] = CR.dock[slot];
+        CR.dock_units[CR.n_dock_units++] = rec;
     roll_immigrant(&CR.dock[slot]);
     ev_emit("UNREST", 0, 0, dat_nations[cs_nation()].homeport,
             immigrant_name(&CR.dock[0]));
+    /* TUTORIAL5 — BYTE: immediately after @UNREST for a human power
+     * (@0x0364BE .. @0x036514; gate @0x036504, once @0x03651F), NOT on
+     * the Brewster @RECRUITCHOOSE branch; %STRING0 = home port, %STRING1
+     * = the recruit (the JS moved to the same order 2026-09-02) */
+    tut_once(5, 0, 0, dat_nations[cs_nation()].homeport, immigrant_name(&rec));
 }
 
 
