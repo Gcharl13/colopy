@@ -95,6 +95,40 @@ here — but it is an exception with a reason, not a licence. The UI is
 single-threaded and non-reentrant, which is what makes it safe; anything
 that could be entered twice must not do this.
 
+## The globals ceiling, and the gate that now guards it (2026-09-03)
+
+A real IDE build came back over the line:
+
+```
+Global variables use 335996 bytes (102%) of dynamic memory,
+leaving -8316 bytes for local variables.  Maximum is 327680 bytes.
+data section exceeds available space in board
+```
+
+**Cause**: three separate `static pedia_row rows[PEDIA_MAX]` scratch
+buffers in `cport/render/colopy_boot_render.c` — one apiece in
+`rm_pedia_row_of`, `rm_pedia_count` and `rm_draw_pedia`. At 200 rows of
+`{const char *, char[40], int, int}` that is 11,200 B each on the host and
+10,400 B each on a 32-bit board: **~31 KB of DRAM for one list**. None of
+the three nests inside another (the two helpers are called only from the
+input layer; `rm_draw_pedia` calls only `pedia_build`), so they now share
+one `g_pedia_rows` — about **20.8 KB back on the board**. The parity
+harness's per-turn attack log (`COLOPY_ATT_LOG`, 1,280 B) is now behind
+`#if COLOPY_ORACLE`, which only `cport/host`'s CFLAGS define, so
+debug-only state cannot reach a sketch again.
+
+**Why nothing caught it**: the `.ino` gate is `-fsyntax-only`
+(`tools/ino_mock/check.sh`) and never produces an object to measure, so a
+static that overflows the board was invisible to `make test`.
+`tools/ram_budget.py` now sums `.data + .bss` across the object set the
+sketches compile and fails against a frozen ceiling; it runs as the `ram`
+target of `make test`. It is a PROXY — host objects are 64-bit, so it
+overstates pointer-heavy structs (the safe direction), and it excludes the
+`.ino`'s own statics and the Arduino core's — so treat it as a regression
+gate on the shared core, which is where this growth came from, not as a
+prediction of the board's number. Raise its `CEILING` deliberately, in the
+same commit as the change that needs it, with the reason written down.
+
 **Measure, do not quote.** How much internal SRAM is actually free after the
 IDF, the DPI driver and the Arduino runtime have taken their share is a
 hardware fact, so the sketch reads it out rather than asserting it:

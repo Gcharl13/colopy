@@ -15,8 +15,10 @@ CC      ?= gcc
 # point.  The build-colony crash (2026-08-19) got past this gate at
 # 3,488 bytes — under the per-frame bar, on top of the whole command
 # chain.
+# COLOPY_ORACLE: the parity harness only. Guards debug-only state that must
+# NOT reach a board build (the boards' internal SRAM is the binding limit).
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Werror -Wframe-larger-than=4096 \
-           -I../core -I../data
+           -DCOLOPY_ORACLE=1 -I../core -I../data
 OBJ      = ../data/colopy_data.o ../data/colopy_text.o ../data/colopy_ui.o ../core/colopy_sav.o ../core/colopy_map.o ../core/colopy_colony.o ../core/colopy_market.o ../core/colopy_events.o ../core/colopy_move.o ../core/colopy_combat.o ../core/colopy_turn.o ../core/colopy_natives.o ../core/colopy_rivals.o ../core/colopy_resolve.o ../core/colopy_cmd.o ../core/colopy_europe.o ../core/colopy_village.o ../core/colopy_woi.o ../core/colopy_newgame.o ../core/colopy_tutorial.o ../render/colopy_render.o ../render/colopy_map_render.o ../render/colopy_dialog.o ../render/colopy_colony_render.o ../render/colopy_europe_render.o ../render/colopy_report_render.o ../render/colopy_boot_render.o ../game/colopy_input.o ../audio/colopy_audio.o ../audio/colopy_audio_mix.o ../audio/colopy_audio_pak.o ../audio/colopy_audio_cues.o pak_check.o render_smoke.o audio_pak_check.o audio_smoke.o main.o
 HDRS = ../core/colopy_core.h ../core/colopy_sim.h ../core/colopy_state.h \
        ../core/colopy_records.h ../data/colopy_data.h ../data/colopy_pak.h \
@@ -28,11 +30,19 @@ smoke: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 %.o: %.c $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@
-test: smoke budget records mock assets
+test: smoke budget ram records mock assets
 	./smoke
 # The depth gate.  Self-locating, so the cwd here does not matter.
 budget:
 	python3 ../../tools/stack_budget.py --limit 4096
+# The RAM gate: the writable footprint of the object set the SKETCHES
+# compile, against a frozen ceiling.  The board's internal DRAM is 320 KB
+# and the sketch's globals sit near it; the mock gate below is
+# -fsyntax-only and so cannot see a static that overflows a real IDE build
+# (which is exactly how 2026-09-03's "data section exceeds available space
+# in board" got through).
+ram:
+	python3 ../../tools/ram_budget.py
 # The staleness gate: the ledger's load-bearing claims, as probes that run.
 records:
 	python3 ../../tools/stale_check.py
@@ -57,4 +67,4 @@ census-capture:
 	python3 ../../tools/screen_census.py --capture
 clean:
 	rm -f smoke $(OBJ)
-.PHONY: test budget records mock assets census census-capture clean
+.PHONY: test budget ram records mock assets census census-capture clean

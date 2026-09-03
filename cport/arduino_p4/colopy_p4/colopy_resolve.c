@@ -416,7 +416,9 @@ static int settlement_at(int x, int y) {
 /* the attacks of the current turn, for the turns projection (`att`):
  * [attacker type, owner, x, y, defender type, owner, x, y, A, D] -- a
  * rival-side piece reports its LIVE position (CR.runit_x/y), the JS
- * object's, not the record's stale import bytes */
+ * object's, not the record's stale import bytes.  ORACLE-ONLY: 1,280 B of
+ * BSS that must not reach a board build (2026-09-03). */
+#if COLOPY_ORACLE
 static int16_t g_att_log[COLOPY_ATT_LOG][10];
 static int g_att_n;
 int colopy_att_log(int i, int16_t out[10]) {
@@ -425,6 +427,7 @@ int colopy_att_log(int i, int16_t out[10]) {
     return 1;
 }
 void colopy_att_log_clear(void) { g_att_n = 0; }
+#endif
 
 int resolve_attack(int att_ui, int def_ui) {
     combat_params pa, pd;
@@ -435,6 +438,7 @@ int resolve_attack(int att_ui, int def_ui) {
 
     int roll = 1 + R(A + D);
     int win = roll <= A;
+#if COLOPY_ORACLE
     if (g_att_n < COLOPY_ATT_LOG) {
         int16_t *o = g_att_log[g_att_n++];
         const UnitRecord *au = &CS.units[att_ui], *du = &CS.units[def_ui];
@@ -447,6 +451,7 @@ int resolve_attack(int att_ui, int def_ui) {
         o[7] = dr ? CR.runit_y[def_ui] : du->map_y;
         o[8] = (int16_t)A; o[9] = (int16_t)D;
     }
+#endif
     /* the sounds: attack @0x5D317 (after the roll @0x5D188, before the
      * consequences), then the attacker-won sound @0x5D50F when a defender
      * existed ([bp-0x6e]==0): ship or Artillery attacker -> 0x43, a

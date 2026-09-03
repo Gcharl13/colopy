@@ -713,6 +713,14 @@ static void pedia_cat_row(int cat, int i, pedia_row *r) {
 /* the browse list: one category alphabetised, or 7 = Complete (every
  * category merged, alphabetised) — max 165ish rows */
 #define PEDIA_MAX 200
+/* ONE scratch list for every pedia entry point (2026-09-03): each of
+ * rm_pedia_row_of / rm_pedia_count / rm_draw_pedia used to hold its own
+ * `static pedia_row rows[PEDIA_MAX]` -- 11,200 B apiece, 33,600 B of
+ * internal SRAM on the P4, which pushed the sketch's globals past the
+ * 320 KB DRAM limit.  None of the three nests inside another (the two
+ * helpers are called only from the input layer, and rm_draw_pedia calls
+ * only pedia_build), so the buffer is pure scratch and can be shared. */
+static pedia_row g_pedia_rows[PEDIA_MAX];
 static int pedia_build(int cat, pedia_row *rows) {
     int n = 0;
     if (cat == 7) {
@@ -745,14 +753,14 @@ static int pedia_build(int cat, pedia_row *rows) {
 }
 
 int rm_pedia_row_of(int cat, int idx) {
-    static pedia_row rows[PEDIA_MAX];
+    pedia_row *rows = g_pedia_rows;
     int n = pedia_build(cat, rows);
     for (int i = 0; i < n; i++)
         if (rows[i].cat == cat && rows[i].idx == idx) return i;
     return -1;
 }
 int rm_pedia_count(int cat) {
-    static pedia_row rows[PEDIA_MAX];
+    pedia_row *rows = g_pedia_rows;
     return pedia_build(cat, rows);
 }
 
@@ -819,7 +827,7 @@ void rm_draw_pedia(int cat, int sel, int mode) {
     bresolve();
     rd_use_palette("WOODPANL.PIK");
     rd_pik("WOODPANL.PIK");
-    static pedia_row rows[PEDIA_MAX];
+    pedia_row *rows = g_pedia_rows;
     int n = pedia_build(cat, rows);
     center_shadow(&B_TINY, dat_text_misc[108], 160, 5, blut(15), 0);
     if (sel < 0) sel = 0;

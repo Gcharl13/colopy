@@ -335,9 +335,14 @@ int  score_panel(const score_parts_t *s);   /* func_03A9C0's band, -1 none */
 void colony_screen_open(void);        /* the BUILT-zoom cue (F4) */
 void colony_screen_close(void);       /* [0x34A] = -1 */
 void sav_tail_init(void);             /* a new game's zero tail (colopy_sav.c) */
+#ifndef COLOPY_ORACLE
+#define COLOPY_ORACLE 0          /* board builds: no parity-debug state */
+#endif
+#if COLOPY_ORACLE
 #define COLOPY_ATT_LOG 64
 int  colopy_att_log(int i, int16_t out[10]);   /* this turn's attacks */
 void colopy_att_log_clear(void);
+#endif
 int  end_game_scored(void);           /* the @SCORED ask after the plates;
                                        * returns the row (0 = leave) */
 int  rel_have_treaty(int a, int b);
