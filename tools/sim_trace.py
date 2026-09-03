@@ -61,6 +61,50 @@ MARKET = """() => {
 }"""
 
 
+# The raid-ladder parity probe (CORE-B 2026-09-03): the turns oracles never
+# reach a raid (no brave ends beside an ungarrisoned colony), so forty raids
+# by village k % nv on player colony k % nc run straight into nativeRaid
+# from the shared seed; the C mirror is `smoke --raid`.
+RAID = """() => {
+  importSav(b64bytes(DATA.sav1653));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1657;
+  let _s = 1653 >>> 0;
+  Math.random = () => {
+    const lo = (_s & 0xFFFF) * 214013;
+    const hi = ((_s >>> 16) * 214013) & 0xFFFF;
+    _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+    G.rngState = _s;
+    return ((_s >>> 16) & 0x7FFF) / 32768;
+  };
+  G.rngState = _s;
+  const evs = [];
+  const _show = showEvent;
+  showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
+  const bldIndex = (n) => DATA.buildings.findIndex(b => b.name === n);
+  const out = [];
+  for (let k = 0; k < 40; k++) {
+    const v = G.villages[k % G.villages.length], c = G.colonies[k % G.colonies.length];
+    v.alarm = 0x90;
+    // adversarial seeding (mirrored in C): the fort tiers come down so the
+    // gate and the building gates let every outcome through
+    for (const f of ['Stockade', 'Fort', 'Fortress'])
+      if (c.buildings.includes(f)) c.buildings.splice(c.buildings.indexOf(f), 1);
+    nativeRaid(v, c);
+    out.push({ step: 'raid' + k, rng: G.rngState >>> 0, gold: G.gold,
+      stock: c.stock.slice(),
+      bld: [...new Set(c.buildings.map(bldIndex))].sort((a, b) => a - b),
+      jobs: c.colonists.map(p => DATA.jobs.indexOf(p.job)),
+      tension: G.tribes.map(t => t.tension),
+      alarm: G.villages.map(w => w.alarm || 0),
+      tribes: G.tribes.map(t => [t.musketsKnown | 0, t.horsesKnown | 0, t.herd | 0]),
+      damaged: G.units.filter(u => u.damaged).length,
+      events: evs.splice(0) });
+  }
+  return out;
+}"""
+
+
 MOVECOST = """(cases) => {
   importSav(b64bytes(DATA.sav1653));
   return cases.map(([ship, fx, fy, tx, ty]) =>
@@ -869,7 +913,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
-    if mode not in ("produce", "market", "movecost", "combat", "turns",
+    if mode not in ("produce", "market", "raid", "movecost", "combat", "turns",
                     "newgame",
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
@@ -906,6 +950,8 @@ def main():
             data = page.evaluate(PRODUCE)
         elif mode == "market":
             data = page.evaluate(MARKET)
+        elif mode == "raid":
+            data = page.evaluate(RAID)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
         elif mode == "input":

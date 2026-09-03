@@ -72,6 +72,31 @@ def compare_market():
     sys.exit(1 if bad else 0)
 
 
+# The raid-ladder probe (CORE-B 2026-09-03): forty scripted raids on
+# sav1653 from the shared seed — every field of each step must agree.
+def compare_raid():
+    out = subprocess.run([sys.executable, ROOT / "tools/sim_trace.py",
+                          "raid"], capture_output=True, text=True,
+                         check=True).stdout
+    js = {r["step"]: r for r in json.loads(out)}
+    subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+    out = subprocess.run(["./smoke", "--raid"], cwd=ROOT / "cport/host",
+                         capture_output=True, text=True, check=True).stdout
+    cc = {json.loads(l)["step"]: json.loads(l) for l in out.splitlines()}
+    bad = 0
+    for step in js:
+        for f in js[step]:
+            if js[step][f] != cc.get(step, {}).get(f):
+                print("%s .%s:\n  JS %s\n  C  %s"
+                      % (step, f, js[step][f], cc.get(step, {}).get(f)))
+                bad += 1
+        if bad > 12:
+            print("...")
+            break
+    print("%d raids compared, %d disagreement(s)" % (len(js), bad))
+    sys.exit(1 if bad else 0)
+
+
 import random
 import tempfile
 
@@ -274,6 +299,8 @@ def main():
         sys.exit(1 if bad else 0)
     if sys.argv[1:2] == ["market"]:
         compare_market()
+    if sys.argv[1:2] == ["raid"]:
+        compare_raid()
     if sys.argv[1:2] in (["movecost"], ["combat"]):
         compare_sweep(sys.argv[1])
     js, cc = run_js(), run_c()

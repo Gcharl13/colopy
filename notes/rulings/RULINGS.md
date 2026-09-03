@@ -12105,3 +12105,73 @@ population); the tribal-win massacre placements (`INDIANWINCOLONY` /
 `INDIANBURNCOLONY`) that rode the old case 4 are gone from the ladder —
 they belong to `func_05CA7E`'s aftermath (`@0x5D59A..@0x5D67A`), which
 the port's raid model never enters (open leaf, natives.md).
+
+## 2026-09-03d — CORE-B: the brave mover's leftover terms (C1.19 closed), and a lockstep bug the new draw order exposed
+
+`func_046FFA` slices read this session: `@0x47057..@0x4706E` and
+`@0x4741A..@0x47431` (the four flag setters: `0x181F:0x754 & 0xA` road/
+river-improve of the unit tile / candidate, `0x181F:0x72C & 0x40` the
+terrain river bit of each), `@0x47AB4..@0x47AC6` and `@0x47BB8..@0x47BD3`
+(the +4 pair: both improved → +4, else an EVEN candidate index
+(`test [bp-0x34],1`) with the river bit on both → +4 — the ring is
+DS:0xB4/0xBE at file 0x1DA54/0x1DA5E = N,E,S,W,NW,NE,SE,SW, so "even" is
+N/S/NW/SE, not "orthogonal"), `@0x47C9A..@0x47CAA` (the +5 for an
+UNCLAIMED candidate, `0x181F:0x6DC` → −1, in the PEACE branch only),
+`@0x4731A..@0x47365` (`[bp-0x86]` = the number of European powers with
+tension ≥ 0x4B or the home settlement's alarm word ≥ 0x80 — the war
+footing), `@0x471F5..@0x47309` (the BESIEGER `[bp-0x4C]`: ring tiles of the
+home settlement claimed by a European power holding ≥ 2 armed units in
+total, minus colony size >> 2), `@0x4744F..@0x474DF` (the hostility pair
+vs the claim owner; the `owner >= 4` arm leaves `[bp-0x14]` from the
+previous candidate — ported as the quirk), `@0x47D48..@0x47E7E` (the war
+block: +5, +10 with a prime resource (`0x181F:0x718 != -1`), +500 for a
+colony on the candidate (`0x181F:0x7BE`), else the stack contest whose
+type table at cs:0x1044 = file 0x47E24 decodes to Colonists +4, Soldiers
+−2, Pioneers/Missionaries/Scouts +8, Dragoons −1, types 6..9 +0,
+Treasure/Artillery/Wagon +0x10, then `score += enemy <= own ? own − enemy
++ 30 : 2·(own − enemy)`), `@0x47E78` (a non-hostile candidate holding a
+settlement is rejected), `@0x4737E` (a rumour tile, `0x181F:0x75E`, is
+skipped), `@0x479F1..@0x47A20` (an own-tribe stack of ≥ 2 with no
+settlement rejects, one costs −40). `func_00624E` (the class getter
+behind `0x181F:0x78C`): bit 0x20 → 0x1B Mountains / 0x1C Hills, else the
+id — so the candidate reject `@0x473C6` is Ocean/Sea Lane only and the
+hoard writer's `== 0x1B` (2026-09-03e) is Mountains.
+
+**Corrections.** The port's candidate ring (E,W,S,N,SE,NE,SW,NW) was its
+own; the engine's order is the tie-break order, both engines now walk
+N,E,S,W,NW,NE,SE,SW. The "war braves ride the raid mission" stand-in
+(a straight-line march to the raid scorer's colony) is withdrawn: a brave
+on a war footing scores its nine candidates through the same function
+with the war block, and the raid fires when the +500 colony candidate
+wins.
+
+**Not ported, flagged.** The foreign-STACK branch (`@0x4765A..@0x47A00`)
+and the contest — a brave-vs-unit attack is not modeled, an occupied
+candidate stays rejected; tension/alarm toward rival powers (the engine's
+four-power loop is the player only); the region gate of the colony-drift
+term; the own-tribe −40.
+
+**Lockstep bug found.** `news_tick`'s rival-vs-rival colony fall looked
+the ColonyRecord up by (x,y) alone: a ship-planted stub can stand on
+ANOTHER power's record-backed colony (the planting checks the planter's
+own list only), so burning the stub vanished the other power's record in
+the C while the JS dropped only the stub. The lookup now requires the
+stub's `full` flag and the victim's ownership (`colopy_rivals.c`).
+
+**Also corrected (same pass).** The leash `@0x47ACA..@0x47B39`: the
+distance is the `0x181F:0x370` metric (`func_004900`: max + (min >> 1)),
+not Chebyshev; `> 2` costs `3*d`, **halved on a war footing**
+(`[bp-0x86] != 0`, `@0x47B05..@0x47B0E`) before the armed (`0x902`) and
+mounted (`0x8D0`) halvings; and it applies only while the home settlement
+shares the unit tile's region nibble (`[bp-0x78]` is cleared `@0x47198`
+when `0x181F:0x6B4` differs). Both engines carry all three.
+
+**Oracle coverage.** No fixture turn - even under the `agitate` seeding -
+ever reaches the raid ladder (no war brave ends beside an ungarrisoned
+colony), so a dedicated `raid` oracle now exists (`tools/sim_compare.py
+raid` <-> `tools/sim_trace.py RAID` / `smoke --raid`): forty scripted raids
+on sav1653 with the fort tiers stripped, projecting gold, stock, the
+building set, every colonist's occupation, tensions, alarms, the tribe
+counters, damaged ships and the events; it covers RAIDSTORES, RAIDBURN
+(incl. the occupation quirk), RAIDGOLD and RAIDNOTHING (no ship stands in
+those colonies, so RAIDSHIP is exercised by inspection only).

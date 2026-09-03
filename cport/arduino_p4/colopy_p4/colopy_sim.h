@@ -267,6 +267,7 @@ int  combat_attack_sound(int att_type, int def_type);
 int  unit_append(int type, int owner, int x, int y);  /* record idx or -1 */
 void unit_remove(int ui);        /* compact records + parallel CR arrays */
 void natives_push(int ui);       /* JS G.natives.push (order matters) */
+void natives_raid_probe(int vi, int ci); /* the raid-ladder parity probe */
 void units_push(int ui);         /* JS G.units.push */
 void units_order_drop(int ui);   /* JS G.units.splice (record kept) */
 void runits_push(int rn, int ui);      /* JS r.units.push */

@@ -910,10 +910,23 @@ static void news_tick(void) {
                      * used to move only the stub, so the record kept
                      * running under the victim (found 2026-09-02 by the
                      * rival-colony projection). */
+                    /* only a RECORD-BACKED stub (JS: the object with a
+                     * colonists array) carries a record, and only the
+                     * victim's own — a ship-planted stub can sit on
+                     * another power's colony tile (the planting checks
+                     * the planter's own list only), and burning that
+                     * stub must not vanish the other power's record
+                     * (found 2026-09-03 when the brave mover's new draw
+                     * order moved the simulation onto such a stub) */
                     int rci = -1;
-                    for (int q = 0; q < CS.n_colonies; q++)
-                        if (CS.colonies[q].map_x == vc.x &&
-                            CS.colonies[q].map_y == vc.y) { rci = q; break; }
+                    if (vc.full)
+                        for (int q = 0; q < CS.n_colonies; q++)
+                            if (CS.colonies[q].map_x == vc.x &&
+                                CS.colonies[q].map_y == vc.y &&
+                                (CS.colonies[q].owner_power & 3) == victim) {
+                                rci = q;
+                                break;
+                            }
                     if ((int)rng_next() <= 16383 && wr->n_col < 6) {
                         if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
                             wr->col[wr->n_col++] = vc;

@@ -8373,38 +8373,155 @@ function nativeRaid(v, c) {
 // straight-line step stands in for the goto executor's own path scoring
 // (func_04E2D6 step 5, unported) -- and func_05BE84's raid dispatch fires on
 // arrival.
+// The engine's 8-neighbour ring, DS:0xB4 (dx) / DS:0xBE (dy) at file
+// 0x1DA54 / 0x1DA5E: N, E, S, W, NW, NE, SE, SW; entries 8/9 are 0,0 (the
+// "stay" candidate 8 reads them). Candidate order is the tie-break order
+// (strict max @0x47F6E), so both engines walk it exactly.
+const HS_DX = [0, 1, 0, -1, -1, 1, 1, -1];
+const HS_DY = [-1, 0, 1, 0, -1, -1, 1, 1];
+// func_004900 (0x181F:0x370): the engine's distance metric --
+// max(|dx|,|dy|) + (min(|dx|,|dy|) >> 1) (@0x4904..@0x493A).
+function engineDist(dx, dy) {
+  const a = Math.abs(dx), b = Math.abs(dy);
+  return b < a ? (b >> 1) + a : (a >> 1) + b;
+}
+// func_00624E (0x181F:0x78C tail): the terrain CLASS -- 0x1B Mountains /
+// 0x1C Hills for a relief tile, else the id & 0x1F.
+function terrainClass(v) {
+  if (v & 0x20) return (v & 0x80) ? 0x1B : 0x1C;
+  return v & 0x1F;
+}
+// Amendment 2026-09-03 (CORE-B, C1.19): the leftover terms are byte-read
+// and ported --
+//   * the +4 PAIR @0x47AB4..@0x47AC6 / @0x47BB8..@0x47BD3: candidate AND
+//     unit tile both road/river-improved (0x181F:0x754 & 0xA) -> +4; else
+//     an EVEN candidate index (ring 0/2/4/6 = N/S/NW/SE, `test [bp-0x34],1`)
+//     with the terrain river bit 0x40 (0x181F:0x72C) on both -> +4;
+//   * the +5 @0x47CA4: an UNCLAIMED candidate (0x181F:0x6DC = territory
+//     nibble 0xF -> -1), peace mode only;
+//   * the WAR MODE @0x47C9A: [bp-0x86] = the number of European powers p
+//     with tension(tribe, p) >= 75 or the HOME settlement's alarm word
+//     toward p >= 0x80 (@0x4731A..@0x47365); nonzero routes every
+//     candidate through the war block @0x47D48..@0x47E7E instead of the
+//     peace terms: when the claim owner is hostile ([bp-0x14] alarmed /
+//     [bp-0x6E] tense, @0x4744F..@0x474DF) -> +5, +10 with a prime
+//     resource, +500 for a COLONY on the candidate (the attack), else the
+//     strength contest against a foreign stack; a NON-hostile candidate
+//     holding a settlement is rejected (@0x47E78);
+//   * the BESIEGER [bp-0x4C] @0x471F5..@0x47309: the European owner of
+//     ring tiles around the home settlement holding >= 2 armed units
+//     (attack > 1, non-ship, minus colony size >> 2) -- its claims count
+//     as hostile;
+//   * the rumour-tile skip 0x181F:0x75E @0x4737E.
+// Still flagged: the engine's four-power loop is the player only (tension
+// and alarm toward rivals are unmodeled); the foreign-STACK branch
+// (@0x4765A..@0x47A00: a second hostility pair vs the stack owner, the
+// moves-based terms and the @0x47D95 strength contest) has no port site
+// because a brave-vs-unit attack is not modeled -- an occupied candidate
+// stays rejected, and a rival colony too; the engine's own-tribe stack
+// rule (@0x479F1: >= 2 of ours with no settlement rejects, one costs
+// -40) is approximated by the reject.
 function headingScore(u, home) {
-  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-  const occupied = (x, y) =>
+  const t = G.tribes[u.tribe] || {};
+  const own = u.tribe + 4;                                   // [bp-0x94]
+  const occupiedByUnit = (x, y) =>
     G.natives.some(q => q !== u && q.x === x && q.y === y) ||
     G.units.some(q => q.x === x && q.y === y) ||
-    G.rivals.some(r => r.units.some(q => q.x === x && q.y === y)) ||
-    G.villages.some(w => w.x === x && w.y === y) ||
-    G.colonies.some(c => c.x === x && c.y === y);
-  let best = 8, bestScore = -1;
+    G.rivals.some(r => r.units.some(q => q.x === x && q.y === y));
+  const settlementOwner = (x, y) => {
+    const c = colonyAt(x, y);
+    if (c) return G.nation;
+    for (const r of G.rivals) if (r.colonies.some(rc => rc.x === x && rc.y === y)) return r.nation;
+    const w = G.villages.find(w => w.x === x && w.y === y);
+    return w ? w.tribe + 4 : -1;
+  };
+  const unitAttack = (q) => Number((unit(q.type) || {}).attack) || 0;
+  // [bp-0x86]: the war footing (player power only)
+  const warMode = (t.tension || 0) >= 75 || !!(home && (home.alarm || 0) >= 0x80);
+  // [bp-0x4C]: the besieger of the home settlement
+  let besieger = -1;
+  if (home) {
+    let total = 0;
+    for (let i = 0; i < 8; i++) {
+      const x = home.x + HS_DX[i], y = home.y + HS_DY[i];
+      if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
+      const owner = RESOURCE[y * MAP.w + x];
+      if (owner === 0x0F || owner >= 4) continue;
+      if (tileWater(at(x, y))) continue;
+      let n = 0;
+      for (const q of G.units) if (q.x === x && q.y === y && !q.ship && unitAttack(q) > 1) n++;
+      for (const r of G.rivals)
+        for (const q of r.units) if (q.x === x && q.y === y && !q.ship && unitAttack(q) > 1) n++;
+      if (n <= 0) continue;
+      const c = colonyAt(x, y) ||
+        G.rivals.flatMap(r => r.colonies).find(rc => rc.x === x && rc.y === y);
+      if (c) n -= (c.colonists ? c.colonists.length : (c.pop || 0)) >> 2;
+      if (n > 0) { total += n; besieger = owner; }
+    }
+    if (total < 2) besieger = -1;
+  }
+  const unitRoad = IMPROVE[u.y * MAP.w + u.x] & 0x0A;         // [bp-0x2A]
+  const unitRiver = at(u.x, u.y) & 0x40;                     // [bp-0x3E]
+  // [bp-0x78]: the home settlement counts for the leash only on the unit
+  // tile's landmass (region nibble 0x181F:0x6B4 @0x4718B..@0x47198)
+  const leashHome = home && REGION[home.y * MAP.w + home.x] === REGION[u.y * MAP.w + u.x];
+  let best = 8, bestScore = -1, bestColony = null;
+  let alarmed = 0;   // [bp-0x14] survives an owner >= 4 candidate (@0x47495)
   for (let cand = 0; cand <= 8; cand++) {
-    const x = cand === 8 ? u.x : u.x + DIRS[cand][0];
-    const y = cand === 8 ? u.y : u.y + DIRS[cand][1];
+    const x = cand === 8 ? u.x : u.x + HS_DX[cand];
+    const y = cand === 8 ? u.y : u.y + HS_DY[cand];
     if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
-    const t = tileTerrain(at(x, y));
-    if (t === TERR.OCEAN || t === TERR.SEALANE || t === 24) continue;  // 24 = Arctic
-    if (cand !== 8 && occupied(x, y)) continue;
+    const tv = at(x, y), tc = terrainClass(tv);
+    if (tc === 0x19 || tc === 0x1A) continue;                // @0x473C6
+    if (rumourAt(x, y)) continue;                            // @0x4737E
+    if (tc === 0x18) continue;                               // @0x473D2
+    const idx = y * MAP.w + x;
+    const owner = RESOURCE[idx] === 0x0F ? -1 : RESOURCE[idx];   // [bp-6]
+    const sOwner = settlementOwner(x, y);                    // [bp-0x5C]
+    const prime = detailId(x, y, tv) >= 0;                   // [bp-0x52]
+    // hostility vs the claim owner @0x4744F..@0x474DF
+    let tense = 0;
+    if (owner < 0 || owner === own) { tense = 0; alarmed = 0; }
+    else if (owner >= 4) { tense = 0; }
+    else {
+      const al = owner === G.nation && home ? (home.alarm || 0) : 0;
+      alarmed = al >= 0x80 ? 1 : 0;
+      tense = owner === G.nation && (t.tension || 0) >= 75 ? 1 : 0;
+      if (tense) alarmed = 1;
+      if (owner === besieger) alarmed = 1;
+    }
+    const hostile = alarmed || tense;
+    const pc = colonyAt(x, y);
+    let colonyPick = null;
+    if (cand !== 8) {
+      if (occupiedByUnit(x, y)) continue;
+      if (sOwner >= 4 || (sOwner >= 0 && sOwner !== G.nation)) continue;
+      if (pc && !(warMode && hostile)) continue;
+      if (pc) colonyPick = pc;
+    }
     let s = 200;
     if (cand !== 8 && u.heading !== undefined && u.heading < 8) {
       if (cand === u.heading) s += 4;
       else if (((u.heading + 1) & 7) === cand || ((u.heading + 7) & 7) === cand) s += 3;
       else if ((u.heading ^ 4) === cand) s -= 6;
     }
-    if (home) {
-      const d = Math.max(Math.abs(x - home.x), Math.abs(y - home.y));
+    // the +4 pair
+    if ((IMPROVE[idx] & 0x0A) && unitRoad) s += 4;
+    else if (!(cand & 1) && (tv & 0x40) && unitRiver) s += 4;
+    if (leashHome) {
+      // the HOME-SETTLEMENT LEASH @0x47ACA..@0x47B39 (re-read 2026-09-03):
+      // d = the engine metric 0x181F:0x370 = max + (min >> 1) from the
+      // candidate to the settlement (the old Chebyshev was wrong); d > 2
+      // costs 3*d, HALVED on a war footing ([bp-0x86] @0x47B05), halved
+      // again for an armed unit (func_00765C @0x47B14: Armed Braves /
+      // Mtd. Warriors) and quartered for a mounted one (func_007630
+      // @0x47B26: Mtd. Braves / Mtd. Warriors). The leash only applies
+      // while the settlement shares the unit tile's region nibble
+      // (@0x4718B..@0x47198, [bp-0x78] else -1).
+      const d = engineDist(x - home.x, y - home.y);
       if (d > 2) {
-        // the leash penalty 3*d, HALVED for an armed unit (func_00765C:
-        // types 1/4/0xB/0x14/0x16 -- Armed Braves, Mtd. Warriors here,
-        // @0x47B14) and QUARTERED for a mounted one (func_007630: types
-        // 4/5/0x15/0x16 -- Mtd. Braves, Mtd. Warriors, @0x47B26); both
-        // stack to an eighth. (The war-party halving @0x47B05 never
-        // applies here -- war-footing braves ride the raid mission.)
         let pen = 3 * d;
+        if (warMode) pen >>= 1;
         const armed = u.type === 'Armed Braves' || u.type === 'Mtd. Warriors';
         const mounted = u.type === 'Mtd. Braves' || u.type === 'Mtd. Warriors';
         if (armed) pen >>= 1;
@@ -8422,10 +8539,9 @@ function headingScore(u, home) {
     //   (tension - 50) >> 2 (@0x47B5F..@0x47BB2). The port scans the
     //   player's pieces only (rival tension is unmodeled, B3.6-adjacent).
     {
-      const t = G.tribes[u.tribe] || {};
       let foreignTribe = false, euro = false;
-      for (const [ddx, ddy] of DIRS) {
-        const nx = x + ddx, ny = y + ddy;
+      for (let nd = 0; nd < 8; nd++) {
+        const nx = x + HS_DX[nd], ny = y + HS_DY[nd];
         if (G.natives.some(q => q !== u && q.tribe !== u.tribe &&
                                 q.x === nx && q.y === ny)) foreignTribe = true;
         if (G.units.some(q => q.x === nx && q.y === ny) ||
@@ -8436,30 +8552,38 @@ function headingScore(u, home) {
         if (attBand(t.tension || 0) > 0) s += ((t.tension || 0) - 50) >> 2;
       } else if (foreignTribe) s -= 25;
     }
-    // the COLONY-DRIFT term (@0x47C9A..@0x47D45): the nearest player
-    // colony within distance 12 pulls by (attitude band + 1)*(12-d)/4 --
-    // idle braves loiter nearer colonies the worse relations get. (The
-    // engine gates on same-region (0x181f:0x6b4) and a preselected
-    // colony index from the function head; the port takes the nearest
-    // player colony and skips the region check, flagged. The +5 term on
-    // the unknown [bp-6] flag @0x47CA4 is omitted, not invented.)
-    {
-      const t = G.tribes[u.tribe] || {};
+    if (!warMode) {
+      if (owner < 0) s += 5;                                 // @0x47CA4
+      // the COLONY-DRIFT term (@0x47CAE..@0x47D45): the nearest player
+      // colony within distance 12 pulls by (attitude band + 1)*(12-d)/4.
+      // (The engine gates on same-region (0x181f:0x6b4) and a preselected
+      // colony index from the function head; the port takes the nearest
+      // player colony and skips the region check, flagged.)
       let bestD = 99;
       for (const c of G.colonies) {
         const d2 = Math.max(Math.abs(x - c.x), Math.abs(y - c.y));
         if (d2 < bestD) bestD = d2;
       }
-      if (bestD < 12)
-        s += ((attBand(t.tension || 0) + 1) * (12 - bestD)) >> 2;
-    }
-    s += 1 + Math.floor(Math.random() * 5);
-    if (s < 0) s = 0;
-    if (s > bestScore) { bestScore = s; best = cand; }
+      if (bestD < 12) s += ((attBand(t.tension || 0) + 1) * (12 - bestD)) >> 2;
+    } else if (hostile) {
+      s += 5;                                                // @0x47D57
+      if (prime) s += 10;                                    // @0x47D61
+      if (colonyPick) s += 500;                              // @0x47D84
+    } else if (sOwner >= 0) continue;                        // @0x47E78
+    s += 1 + Math.floor(Math.random() * 5);                  // jitter @0x47F44
+    if (s < 0) s = 0;                                        // clamp @0x47F4E
+    if (s > bestScore) { bestScore = s; best = cand; bestColony = colonyPick; }
   }
   if (best < 8) {
-    u.x += DIRS[best][0];
-    u.y += DIRS[best][1];
+    if (bestColony) {
+      // the attack on the colony: the port's raid fires in place of the
+      // combat resolution (flagged); the brave holds its tile
+      nativeRaid(home, bestColony);
+      u.heading = best;
+      return;
+    }
+    u.x += HS_DX[best];
+    u.y += HS_DY[best];
     u.heading = best;
   }
 }
@@ -8467,34 +8591,9 @@ function nativeMoveAI() {
   for (const n of G.natives) {
     const v = n.home;
     if (!v) continue;
-    const hostile = (v.alarm || 0) >= ALARM_RAID && G.colonies.length;
-    if (hostile) {
-      const c = raidTargetScore(v).colony || G.colonies.slice().sort((a, b) =>
-        (Math.abs(a.x - n.x) + Math.abs(a.y - n.y)) -
-        (Math.abs(b.x - n.x) + Math.abs(b.y - n.y)))[0];
-      if (Math.max(Math.abs(c.x - n.x), Math.abs(c.y - n.y)) <= 1) {
-        // At the palisade: the raid fires, and the party turns for home.
-        nativeRaid(v, c);
-        n.x = v.x; n.y = v.y + 1;
-        if (tileWater(at(n.x, n.y))) { n.x = v.x + 1; n.y = v.y; }
-        n.heading = undefined;
-        continue;
-      }
-      const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-      const step = DIRS
-        .map(([dx, dy]) => [n.x + dx, n.y + dy])
-        .filter(([x, y]) => x >= 0 && y >= 0 && x < MAP.w && y < MAP.h &&
-                !tileWater(at(x, y)) &&
-                !G.villages.some(w => w.x === x && w.y === y) &&
-                !G.natives.some(q => q !== n && q.x === x && q.y === y) &&
-                !G.units.some(q => q.x === x && q.y === y) &&
-                !G.colonies.some(q => q.x === x && q.y === y))
-        .sort((a, b) => (Math.abs(c.x - a[0]) + Math.abs(c.y - a[1])) -
-                        (Math.abs(c.x - b[0]) + Math.abs(c.y - b[1])))[0];
-      if (step) { n.x = step[0]; n.y = step[1]; }
-      continue;
-    }
-    // At peace: the func_046FFA scorer decides, including the stay candidate.
+    // func_046FFA decides every brave's step, war footing included (the
+    // straight-line raid march the port used to run is gone with the
+    // war-block port above).
     headingScore(n, v);
   }
 }
