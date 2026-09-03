@@ -135,9 +135,13 @@ def probe_b36_scaffold() -> bool:
 
 
 def probe_doi() -> bool:
-    """Declaration of Independence screen absent. Proxy: DECOIND painter is in
-    neither engine."""
-    return "DECOIND" not in _strip_comments(_js() + _c_text())
+    """Declaration of Independence page PORTED (REMAINING_WORK Part E note
+    E2, 2026-09-02): the DECOIND painter is in BOTH engines and its oracle
+    exists. Flipped from the earlier 'absent' proxy the day the screen
+    landed -- losing either painter, or the oracle, fails the record."""
+    return ("DECOIND" in _strip_comments(_js())
+            and "DECOIND" in _strip_comments(_c_text())
+            and (ROOT / "tools/render_declaration_compare.py").exists())
 
 
 def probe_census_exists() -> bool:
@@ -258,11 +262,14 @@ def probe_scope_reasons() -> bool:
 
 def probe_render_ceilings() -> bool:
     """G2: every render oracle bounds its palette-model acceptances through
-    render_common.verdict(), and the ceiling table covers all seven."""
+    render_common.verdict(), and the ceiling table carries at least one
+    frozen scene per oracle (seven at the row's close; the Part E screens
+    track adds one per plate page, each with its own ceiling)."""
     sys.path.insert(0, str(ROOT / "tools"))
     import render_common
     tools = sorted((ROOT / "tools").glob("render_*_compare.py"))
-    return (len(tools) == 7 and len(render_common.PALETTE_CEILING) >= 7
+    return (len(tools) >= 7
+            and len(render_common.PALETTE_CEILING) >= len(tools)
             and all("verdict(" in t.read_text() for t in tools))
 
 
@@ -384,7 +391,8 @@ CLAIMS = [
     ("B3.6-scaffold", "cport/core/colopy_turn.c",
      "per-power scaffolding + father_owned reads the pass's power",
      probe_b36_scaffold),
-    ("E-DoI", "docs/REMAINING_WORK.md", "Declaration screen does not exist", probe_doi),
+    ("E-DoI", "docs/REMAINING_WORK.md",
+     "Declaration page ported in both engines (E2)", probe_doi),
     ("CENSUS", "tools/screen_census.py",
      "the DOS-vs-port census and its committed baseline exist",
      probe_census_exists),

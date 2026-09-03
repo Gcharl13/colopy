@@ -411,26 +411,22 @@ static int wrap_next(const rd_font *f, const char *p, int width,
  * FONTKING (@0x0754F2) and the @VICEROY scroll through the popup engine
  * (@0x075540) from the section's own directives @width=78 @x=232 @y=21
  * — '^^' lines centred in the column, body wrapped. */
-void rm_draw_king(int nation) {
-    static const char *const STEM[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
-                                         "DUTCH1" };
-    static rd_font KINGF;
-    bresolve();
-    if (!KINGF.payload) rd_font_open(&RD.pak, "FONTKING.FF", &KINGF);
-    rd_use_palette("KINGLSS1.PIK");
-    rd_pik("KINGLSS1.PIK");
-    sheet_anchored(STEM[nation & 3]);
-    sheet_anchored("KING1");
-    const char *src = dat_viceroy[(nation & 3) == 3 ? 1 : 0];
-    const int X = 232, WIDTH = 78, CX = X + WIDTH / 2;
-    int y = 21;
+/* the @-text runner of the king pages (0x181F:0x3FE with the key,
+ * func_075352 @0x75540, FONTKING @0x754F6): one 8px line per source
+ * line laid out by the key's directives -- blank `^` lines consume a
+ * slot, `^^` lines are centred in the column, body lines left-aligned
+ * at X and wrapped at WIDTH (the JS drawKingText).  %COUNTRY is filled
+ * (1255); the ink 36 is the audience page's measured stand-in. */
+static rd_font KINGF;
+static void king_text(const char *src, int nation, int X, int WIDTH,
+                      int y) {
+    const int CX = X + WIDTH / 2;
     const char *p = src;
     while (*p) {
         const char *le = strchr(p, '\n');
         size_t len = le ? (size_t)(le - p) : strlen(p);
         char raw[192];
         size_t o = 0;
-        /* %COUNTRY substitution (1255) */
         for (size_t i = 0; i < len && o + 1 < sizeof(raw); i++) {
             if (p[i] == '%' && i + 8 <= len &&
                 strncmp(p + i, "%COUNTRY", 8) == 0) {
@@ -471,14 +467,110 @@ void rm_draw_king(int nation) {
         if (!le) break;
         p = le + 1;
     }
+}
+/* func_075352(N, sub, key) @0x075352: KINGLSS<N>.PIK (@0x7536E..0x753A9)
+ * with the <NATION><N> banner (@0x753BB..0x7542B) and one king sheet
+ * composited INTO the PIK buffer (@0x75477..0x7549D), the PIK's palette
+ * to the DAC (@0x754AD), buffer -> screen (@0x754DB), then the key's
+ * text in FONTKING.  Sheet select @0x75430..0x75461: (1,1) -> KING1 (the
+ * audience), (1,other) -> KINGLOSE, (2,*) -> KINGWIN.  Every sheet lands
+ * at its own descriptor anchor. */
+static void king_page(const char *pik, const char *banner,
+                      const char *king) {
+    bresolve();
+    if (!KINGF.payload) rd_font_open(&RD.pak, "FONTKING.FF", &KINGF);
+    rd_use_palette(pik);
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    rd_pik(pik);
+    sheet_anchored(banner);
+    sheet_anchored(king);
+}
+void rm_draw_king(int nation) {
+    static const char *const STEM[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
+                                         "DUTCH1" };
+    king_page("KINGLSS1.PIK", STEM[nation & 3], "KING1");
+    king_text(dat_viceroy[(nation & 3) == 3 ? 1 : 0], nation, 232, 78, 21);
     /* no caption: neither func_075352 (read whole, 0x075352..0x075593)
      * nor the DOS capture docs/screens/07_king_audience.png carries one;
      * the wait is the popup engine's modal wait on the scroll
      * (@0x075540).  The scroll's own inks are the popup slots
      * [0x1F4A]=0xF2 / [0x1F50]=0x2F / [0x1F52]=0 (@0x075526..0x075532,
-     * under KINGLSS1's palette); the single ink 36 above is the
+     * under KINGLSS1's palette); the single ink 36 in king_text is the
      * pixel-measured stand-in (RULINGS 2026-07-31 batch 3) until the
      * 2bpp glyph level -> slot mapping is read (TBD). */
+}
+/* the war's end (func_02F3A2): win = @WINNING then func_075352(1, 2,
+ * "KINGLOSE") @0x2F542..0x2F55F -> KINGLSS1 + <NATION>1 + KINGLOSE.SS
+ * with @KINGLOSE laid out by its directives @width=68 @x=232 @y=31
+ * (GAME.TXT 3328-3331); lose = @LOSING<n> then func_075352(2, 1,
+ * "KINGWIN") @0x2F670..0x2F6B0 -> KINGLSS2 + <NATION>2 + KINGWIN.SS with
+ * @KINGWIN (@width=90 @x=202 @y=125, %STRING0 = the country, GAME.TXT
+ * 3338-3341).  The pen seeds @0x75526/@0x7552C are register seeds the
+ * runner re-lays-out (RULINGS 2026-07-31).  KING2/WIN/WIN-FWRK have no
+ * loader -- never drawn. */
+void rm_draw_king_plate(int win) {
+    static const char *const STEM1[4] = { "ENGLND1", "FRANCE1", "SPAIN1",
+                                          "DUTCH1" };
+    static const char *const STEM2[4] = { "ENGLND2", "FRANCE2", "SPAIN2",
+                                          "DUTCH2" };
+    int nation = cs_nation() & 3;
+    king_page(win ? "KINGLSS1.PIK" : "KINGLSS2.PIK",
+              (win ? STEM1 : STEM2)[nation], win ? "KINGLOSE" : "KINGWIN");
+    int nb = 0;
+    const char *const *body = rm_event_body(win ? "KINGLOSE" : "KINGWIN",
+                                            &nb);
+    rm_subs subs;
+    memset(&subs, 0, sizeof(subs));
+    subs.str[0] = dat_nations[nation].country;
+    char src[1024];
+    size_t o = 0;
+    for (int i = 0; i < nb && o + 2 < sizeof(src); i++) {
+        char line[256];
+        rm_fill_template(body[i], &subs, line, sizeof(line));
+        if (i) src[o++] = '\n';
+        for (const char *c = line; *c && o + 2 < sizeof(src);) src[o++] = *c++;
+    }
+    src[o] = 0;
+    if (win) king_text(src, nation, 232, 68, 31);
+    else king_text(src, nation, 202, 90, 125);
+}
+
+/* ---- the MicroProse boot logo, OPENING.EXE _do_logo @0x1700 / pacer
+ * @0x1916 (VICEROY.EXE never references the sheets).  The pacer steps
+ * once per [0x50] = 6 ticks of the 60.8766 Hz clock [0x5CB6] (ISR /2 /5
+ * of 608.766 Hz @0x3E0D/@0x3E5D..0x3EA9; timer_install @0x3FC5..0x3FD9):
+ * tick [0xD2]++ then _do_logo, which places a frame at top-left
+ * (xa - (w>>1), ya - h + 0x17) from its own descriptor (@0x170D..0x1742
+ * / @0x1796..0x17AE) -- the logo, all 16 frames (163,118) 155x119, at
+ * (86,22) -- draws the NAME frame [0xD6] first (@0x1836) and the logo
+ * frame [0xD4] over it (@0x1850), then [0xD4]++ wrapping to 1 past
+ * nframes (@0x18F2..0x1903) and, in the name phase (tick >= 0x5C = 92
+ * @0x175C), [0xD6]++ (@0x190F) clamped at nframes = 29 (@0x176F..
+ * 0x177C).  Both counters start at 1 (DGROUP 0xD4/0xD6), so tick t shows
+ * logo disk frame (t-1) mod 16 and, for t >= 92, name disk frame
+ * min(t-92, 28).  The phase ends past tick 0xE4 = 228 (@0x196E..0x1976).
+ * TBD: the DAC reload from [0x4AE8] at tick 0xC4 = 196 (@0x194B..0x196B)
+ * -- the sheets' own palette is kept; the backdrop under the frames --
+ * black here.  Any key ends the phase (func_001522, cinematics.md §9). */
+static void logo_frame_at(const char *sheet, int idx) {
+    rd_entry e;
+    rd_frame f;
+    if (!rd_pak_find(&RD.pak, sheet, &e) || !rd_sheet_frame(&e, idx, &f))
+        return;
+    rd_blit(&e, idx, f.x - (f.w >> 1), f.y - f.h + 0x17);
+}
+void rm_draw_mpslogo(int tick) {
+    rd_use_palette("MPSLOGO.SS");
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    if (tick < 1) return;
+    rd_entry e;
+    if (tick >= 92 && rd_pak_find(&RD.pak, "MPSNAME.SS", &e) && e.frames) {
+        int k = tick - 92;
+        if (k > e.frames - 1) k = e.frames - 1;
+        logo_frame_at("MPSNAME.SS", k);
+    }
+    if (rd_pak_find(&RD.pak, "MPSLOGO.SS", &e) && e.frames)
+        logo_frame_at("MPSLOGO.SS", (tick - 1) % e.frames);
 }
 
 /* the Hall of Fame table (drawHof game.js:12358) — REBUILT from the
@@ -652,6 +744,13 @@ static int pedia_build(int cat, pedia_row *rows) {
     return n;
 }
 
+int rm_pedia_row_of(int cat, int idx) {
+    static pedia_row rows[PEDIA_MAX];
+    int n = pedia_build(cat, rows);
+    for (int i = 0; i < n; i++)
+        if (rows[i].cat == cat && rows[i].idx == idx) return i;
+    return -1;
+}
 int rm_pedia_count(int cat) {
     static pedia_row rows[PEDIA_MAX];
     return pedia_build(cat, rows);

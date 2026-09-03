@@ -89,19 +89,35 @@ static int icon_h(int frame) {
 }
 
 /* groundSpeckle (game.js:3856): deterministic positional hash, TBD */
-static void ground_speckle(int x, int y, int w, int h) {
-    rd_fill(x, y, w, h, 0x63);
-    for (int j = 0; j < h; j++)
-        for (int i = 0; i < w; i++) {
-            uint32_t n = ((uint32_t)i * 73856093u) ^ ((uint32_t)j * 19349663u);
-            uint32_t r = (n >> 8) % 100u;
-            uint8_t c;
-            if (r < 30) c = 0x62;
-            else if (r < 47) c = 0x64;
-            else continue;
-            if (x + i < RD_W && y + j < RD_H)
-                RD.fb[(y + j) * RD_W + (x + i)] = c;
-        }
+/* the engine's tiled-rect fill (func_0051D2 @0x0051D2 -> 0xBF5:0 = file
+ * 0xE350): frame 0 of a tile sheet over (x,y,w,h), each axis phased by
+ * the rect origin modulo the tile size (@0xE371..0xE3A2: x mod w, y mod
+ * h against the SCREEN origin; the surface record is (h, w, ptr) --
+ * allocator file 0x787A2), every tile clipped to the rect
+ * (@0xE3F7..0xE417).  The building field (0,8,199,120) is laid with the
+ * PARCH tile this way @0x02705F (args x=0 y=8 w=0xC7 h=0x78, fallback
+ * colour 7); the former positional-hash speckle imitated exactly this
+ * tile's 98/99/100 ramp from a capture.  A Teensy pak without PARCH
+ * (--board teensy) leaves the field unfilled: rd_pak_find fails. */
+static void tile_fill(const char *sheet, int x, int y, int w, int h) {
+    rd_entry e;
+    rd_frame t;
+    if (!rd_pak_find(&RD.pak, sheet, &e) || !rd_sheet_frame(&e, 0, &t) ||
+        !t.w || !t.h)
+        return;
+    for (int ty = y - (y % t.h); ty < y + h; ty += t.h)
+        for (int tx = x - (x % t.w); tx < x + w; tx += t.w)
+            for (int r = 0; r < t.h; r++) {
+                int dy = ty + r;
+                if (dy < y || dy >= y + h || dy < 0 || dy >= RD_H) continue;
+                for (int c = 0; c < t.w; c++) {
+                    int dx = tx + c;
+                    if (dx < x || dx >= x + w || dx < 0 || dx >= RD_W)
+                        continue;
+                    uint8_t v = t.pix[r * t.w + c];
+                    if (v != RD_TRANSPARENT) RD.fb[dy * RD_W + dx] = v;
+                }
+            }
 }
 
 /* ---- placement (func_025D34, RULINGS 2026-08-06b) ---- */
@@ -573,8 +589,8 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
         for (int x = 0; x < RD_W; x += wt.w)
             rd_blit(&RD.woodtile, 0, x, y);
 
-    /* building field */
-    ground_speckle(0, 8, 199, 120);
+    /* building field: the PARCH parchment tile (@0x02705F) */
+    tile_fill("PARCH.SS", 0, 8, 199, 120);
     int8_t present[15];
     colony_placement(ci, plot_seed_base, present);
     rd_entry bld;

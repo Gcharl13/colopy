@@ -132,6 +132,40 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 - **Tier:** painter + argument matrix + FONTKING context + name builder **B**; text body + GAME.TXT
   geometry **B**; text RGB **A** (glyph→palette mapping).
 
+### 3e. Amendment 2026-09-02 — composition byte-complete, triggers re-read, ported (screens track)
+
+Re-read of `func_075352` @0x075352..0x75593 and the two call sites (RULINGS 2026-09-02y), all **B**:
+
+- **Composition.** `"KINGLSS"+N` (@0x7536E..0x75385) is loaded into the PIK buffer `[0x839E..]`
+  with its palette at `[bp-0x320]` (@0x753A9). The banner `<NATION>+N` (@0x753BB..0x753F3) is
+  loaded (@0x75405) and blitted **into the PIK buffer** with the anchored verb `0x181F:0x2F8`
+  at its own frame-1 descriptor (`dx = es:[si+0x46]`, `y = es:[si+0x48]`, scale 0x64,
+  `bx = [0x839E]` @0x7541A..0x7542B); the king sheet is selected @0x75430..0x75461 and blitted
+  the same way (@0x75477..0x7549D); DAC ← the PIK palette (@0x754AD); buffer → screen 320×200
+  (@0x754DB); present (@0x754ED). Every placement is therefore the sheet's own anchor —
+  top-left = (hx − (w>>1), hy − h + 1): KING1 (94,198) 189×187 → **(0,12)**; KINGLOSE (74,198)
+  149×179 → **(0,20)**; KINGWIN (134,198) 214×198 → **(27,1)**; ENGLND1/FRANCE1/SPAIN1/DUTCH1 →
+  (32,0)/(30,0)/(35,0)/(34,0); ENGLND2 (139,132) 174×133 → **(52,0)**, FRANCE2 (137,130)
+  176×131 → (49,0), SPAIN2 (144,127) 170×128 → (59,0), DUTCH2 (140,130) 170×131 → (55,0). The
+  `*2` sheets are separate one-frame sheets (N=2 only — the defeat page); the old "portrait
+  x=100" reading (row 13 of the tracker) was a pen-seed misread and is withdrawn.
+- **Text.** FONTKING (@0x754F6; FONTTINY fallback @0x7550A..0x75514); `[0x1F4A]=0xF2`,
+  `[0x1F50]=0x2F` @0x75526/@0x7552C are register seeds the runner `0x181F:0x3FE` @0x75540
+  re-lays-out from the key's own directives (RULINGS 2026-07-31): `@KINGLOSE @width=68 @x=232
+  @y=31`, `@KINGWIN @width=90 @x=202 @y=125` (GAME.TXT 3328–3341). The text is drawn ON the
+  page — it is not a popup. Text RGB remains **A** (engine-resident).
+- **Triggers** (`func_02F3A2`): victory @0x2F542..0x2F55F — `@WINNING` (`lea bx,[0xF18]`;
+  `0x181F:0x3FE`) then `push 0xF20 "KINGLOSE"; push 2; push 1; lcall 0x191F:0xABA` =
+  `func_075352(1, 2, "KINGLOSE")`, then `or [0x5382],8`; defeat @0x2F670..0x2F6B0 —
+  `@LOSING<n>` (`"LOSING0"` + digit `[bp-0x5C]`) then `%STRING0 ← [bx-0x72BE]` (per-player,
+  read by the ports as the country — identity TBD) and `push 0xF31 "KINGWIN"; push 1; push 2;
+  lcall 0x191F:0xABA` = `func_075352(2, 1, "KINGWIN")`, `0x191F:0xAAC`, `jmp 0x2F44C` (the
+  score). The boot audience is `func_075352(1, 1, @VICEROY)` @0x7555C3 (tune 0x3E @0x7544D).
+- **Orphans (B-negative).** `KING2.SS`, `WIN.SS`, `WIN-FWRK.SS`: none of `KING2`, `\0WIN\0`,
+  `WIN-`, `FWRK` occurs in VICEROY/COLONIZE/OPENING/CLOSING.EXE — never loaded, never packed.
+- **Ports.** JS `drawKingText` (the runner), `drawKing`, `drawEndKing`; C `king_page`/`king_text`,
+  `rm_draw_king`, `rm_draw_king_plate`; oracle `tools/render_endking_compare.py` (win / lose).
+
 ## 4. Score screen (SCORE01–24.SS / WOODPAN2) — VICEROY.EXE — **B**
 
 - **Purpose:** end-of-game score + honor-rating screen, one illustrated plate per **rating tier**.
@@ -161,6 +195,45 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
   game is now complete…") — all verified in `data_extracted/text/GAME_sections.json`. **B.**
 - **Tier:** painter + plate selector + component sum + fonts + text **B**; plate-art *identification*
   **A**.
+
+### 4a. Amendment 2026-09-02 — the page byte-complete, the selector corrected, ported (screens track)
+
+Re-read of `func_03A9C0` @0x03A9C0..0x3ADA2 (RULINGS 2026-09-02x). **Supersedes the selector
+sentence above:** the band loop runs on the **un-halved** `mult·base/100` (`[bp-2]` @0x3AA3E;
+`cmp ax,[bp-2]; jge` @0x3AA55/0x3AA58 — panel = i−1 for every i whose `i·i/3` is **below** it),
+and `sar [bp-2],1` @0x3AA6A halves it **after** the loop for the printed `%NUMBER0`. No screen
+when base ≤ 0 (@0x3AA00), panel < 0, display = 0, or the scored latch `[0x5382]&0x10`
+(@0x3AA88..0x3AAA0). `[0x372]` @0x3A9E5/@0x3A9EC/@0x3AD9F is the palette-cycling enable
+(saved/cleared/restored as on every PIK page), not a score accumulator.
+
+**Composition** (all **B**): WOODPAN2.PIK is loaded straight into the screen surface (@0x3AAFF;
+layer-fill 0 on failure @0x3AB20); the SCORE sheet then loads with the palette-receive pointer
+`[0x23F2:0x23F4]` aimed at the PIK's palette buffer (@0x3AB46..0x3AB68), so the DAC upload
+@0x3AB84 is the **plate's** table — WOODPAN2 shows through it (all 24 tables differ). Text is
+FONTTINY (`[0x89E]` @0x3ABF4, H = 6) through the centred verb `0x181F:0x100(str, x, w, y,
+colour)`: the three `@EXPLOITS` lines (`%STRING0` = the string at `0x5426 + [0x5398]·0x34`,
+`%NUMBER0` = the halved rating; @0x3AB9D..0x3ABB9) at x=0 w=0x140, y = 5, 5+(H+1), 5+2(H+1),
+colour 0xFC (@0x3ABC7..0x3AC0B); the `@SCORE` rows i = 0..panel (@0x3AC1A..0x3ACA8) at
+y = 0xC3 − (H+1)(i+1), each line split at its comma (`0x191F:0xFC4` = file 0x6FA3E; the second
+field left-trimmed by `0x1A1F:0xB44` = file 0xD972), field 1 centred in x=0xA0 w=0xA0
+(@0x3AC89/0x3AC8C), colour 0xFE, or 0xFC on the achieved row i == panel (@0x3AC3E..0x3AC4E);
+the caption = the last row's field 2 with `%STRING0` = `strrchr(name, ' ')` (`0xD1D:0xD1A` = file
+0x102EA, the pointer AT the last space — the surname keeps its leading space) or the whole name
+(@0x3ACB2..0x3ACE2), centred in x=0x22 w=0x8C at y=0x8E, colour 0xFC (@0x3ACF6..0x3AD0B);
+present; the plate's frame 1 anchored at its own descriptor at 100 % (@0x3AD2F..0x3AD4C; SCORE01
+(104,136) 140×97 → (34,40), SCORE02..24 (104,138) 142×99 → (33,40)); tune 0x24 (panel ≥ 23) /
+0x25 (panel > 6) / 0x21 via `0x181F:0x4C0` (@0x3AD51..0x3AD6D); staged present; key/click wait
+@0x3AD86; DAC restore @0x3AD96. The `@SCORE` row is therefore **deterministic** (the band), not
+random. `%%` in `@EXPLOITS` is one "%" (format verb `0x191F:0x910`, @0x6F0CE).
+
+**Trigger** (`func_03B2F8` @0x3B2F8, thunk `0x181F:0x574`): snapshot → `func_039EE2(0)` @0x3B340
+→ `func_03A9C0(1, &panel)` @0x3B350 — which first draws the **F10 body with its own key-wait**
+(`func_039EE2(1)`, present + `0x181F:0x3C0` @0x3A998..0x3A9B5) — → `func_03ADA6(name)` @0x3B364
+(HoF insert). `@SCORED` follows in the callers (@0x580A, @0x2FAC9).
+
+**Ports.** JS `scorePanel`/`drawScoreScreen` (`port/src/game.js`), C `score_panel`/`rm_draw_score`
+(`cport/core/colopy_rivals.c`, `cport/render/colopy_report_render.c`); oracle
+`tools/render_score_compare.py` (bands 0 and 23).
 
 ## 5. Declaration of Independence (cross-reference) — VICEROY.EXE
 
@@ -243,6 +316,40 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
   (decodable now); only the per-frame **Y** is runtime — derived from the sprite-sheet frame bbox
   `-(rec[+0x40]−rec[+0x3c])+1` @`0x10EB` (a `.SS` asset value, **A**, not in the table). Ship X/Y
   likewise reads PATH.DAT waypoints `_ship[]` @`0x4f0c` (func_001522 not involved; `_load_anims` @0xDD2). Residual: per-frame Y (sprite-bbox, **A**) + PATH.DAT waypoint stream (external).
+
+### 6a. Amendment 2026-09-02 — the MicroProse logo phase, byte-complete and ported (screens track)
+
+Re-read with capstone over `raw/COLONIZE/OPENING.EXE` (RULINGS 2026-09-02z), all **B**:
+
+- **Assets.** `MPSLOGO.SS` (16 frames, all (163,118) 155×119) and `MPSNAME.SS` (29 frames,
+  (161,93) 24×25 growing to (161,148) 302×25) are loaded right after `#SOUND.COL` (`lea bx,
+  [0x126]` @0x1BEC / `[0x12E]` @0x1C06, `lcall 0x3B1,0xA`; DGROUP base 0xBF10) into the handles
+  `[0xCA:0xCC]` / `[0xCE:0xD0]`. VICEROY.EXE never references either name. The two sheets share
+  one palette (its low-16 row authored, 252..255 black).
+- **Painter `_do_logo` @0x1700.** Record N at `handle + 12N` (+0x3A xa, +0x3C ya, +0x3E w,
+  +0x40 h): X = `−((w>>1) − xa)` (@0x1722..0x1734), Y = `−(h − ya) + 0x17` (@0x1737..0x1742) —
+  the logo at **(86,22)**; the name frame's rect by the same math (@0x1796..0x17AE). It restores
+  the saved backgrounds (X−8, 0x16, w+0x10, h+0x10 @0x17E7/@0x1816), blits the name frame
+  `[0xD6]` (@0x1836, only in the name phase) then the logo frame `[0xD4]` (@0x1850) onto the
+  surface `[0x3910]`, presents (@0x1872/@0x18ED), then `[0xD4]++` wrapping to 1 past nframes
+  (@0x18F2..0x1903) and, in the name phase, `[0xD6]++` (@0x190F). The name phase starts at tick
+  `[0xD2] ≥ 0x5C` = 92 (@0x175C); `[0xD6]` clamps at nframes = 29 (@0x176F..0x177C).
+- **Pacer @0x1916.** Steps when `clock − latch ≥ [0x50]` (= 6, DGROUP 0xBF60): `[0xD2]++`, call
+  `_do_logo`; `[0xD2] == [0x86]` (32) → `[0x84] = 0`; `[0xD2] == 0xC4` (196) → `[0x84] = 0` and a
+  DAC reload of 0x300 bytes from `[0x4AE8]` (`0x452:0xC46` @0x1966); `[0xD2] > 0xE4` (228) →
+  `[0x8A] = 0` (phase over); latch = clock. The clock `[0x4ADE:0x4AE0]` is read through
+  `[0x596:0x598]` = `0xB31:0x5CB6` (installer @0x3FD0..0x3FD9, PIT 0x7A8 @0x3FC5 = 608.766 Hz);
+  the ISR gates odd ticks (@0x3E0D) and a reload-5 counter (@0x3E5D/@0x3E73) before
+  `add [0x5CB6],1` @0x3EA9 → **60.8766 Hz**. Step = 98.6 ms; the name starts at ≈1.51 s and is
+  complete by tick 121 (≈1.99 s); the phase ends at ≈3.75 s. Both frame counters start at 1
+  (DGROUP 0xD4/0xD6 = 1), so tick t shows logo disk frame `(t−1) mod 16` and, for t ≥ 92, name
+  disk frame `min(t−92, 28)`.
+- **TBD.** The palette loaded at tick 196 (`[0x4AE8]`, filled @0x198C from `0x452:0xA94` —
+  source unread); the backdrop under the frames (the ports use black); the `[0x84]/[0x86]`
+  sound-related latches; the input verb that ends the phase early (§9 `func_001522`).
+- **Ports.** JS `drawMpsLogo` + the `mpslogo` screen before the title; C `rm_draw_mpslogo(tick)`
+  + `SCR_MPSLOGO` (the P4 boots into it when the pak carries the sheets); oracle
+  `tools/render_logo_compare.py` (ticks 1/100/130).
 
 ## 7. Closing cinematic (CLOS-BKG.PIK / CLOS-*.SS) — CLOSING.EXE — **B** (deep decode 2026-06-26)
 

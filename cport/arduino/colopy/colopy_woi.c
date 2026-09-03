@@ -169,6 +169,10 @@ void declare_independence(void) {
         if (!CR.tribe_dead[tr] && CR.tension[tr] >= 75)
             ev_emit("INDIANGRUDGE", 0, 0, dat_tribes[tr].name, 0);
     ev_emit("INDEPENDENCE", 0, 0, 0, 0);
+    /* the signing page func_03DA2A (DECOIND + the DEC-* signature): a
+     * live-front plate; its engine dispatch site is unreachable
+     * statically (TBD), so it follows @INDEPENDENCE like the JS */
+    CR.decl_show = 1;
     /* @SEIZURE: the whole Europe fleet is taken at the declaration */
     for (int k = 0; k < CR.n_europe; k++)
         ev_emit("SEIZURE", 0, 0, dat_units[CR.europe[k].type].name, 0);
@@ -318,13 +322,18 @@ void run_war(void) {
         if (dat_units[CS.units[CR.refs_order[i]].type].hull <= 0) landed++;
     if (landed == 0 && afloat == 0) {
         CR.woi_flags |= WOI_WON;
-        ev_emit("KINGLOSE", 0, 0, 0, 0);
+        /* @WINNING popup, then the King's audience with KINGLOSE.SS and
+         * @KINGLOSE ON the page (func_02F3A2 @0x2F542..0x2F55F) -- a
+         * live-front plate, no popup */
         ev_emit("WINNING", 0, 0, 0, 0);
+        CR.king_show = 1;
     }
     if (!n_player_colonies() && !(CR.woi_flags & WOI_WON) && !CR.lost_war) {
         CR.lost_war = 1;
         ev_emit("LOSING2", 0, 0, 0, 0);
-        ev_emit("KINGWIN", 0, 0, 0, 0);
+        /* the audience with KINGWIN.SS + @KINGWIN (@0x2F670..0x2F6B0),
+         * then the score (@0x2F6B5 -> 0x2F44C) */
+        CR.king_show = 2;
         end_game_sequence();
     }
 }

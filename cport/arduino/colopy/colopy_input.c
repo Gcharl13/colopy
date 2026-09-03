@@ -43,6 +43,9 @@ void ui_init(void) {
     CR.wc_show = -1;                 /* the live-front channels idle
                                       * (a zeroed CR would read plate 0) */
     CR.ui_select = -1;
+    CR.ff_show = -1;
+    CR.score_show = -1;
+    UI.ff_new = -1;
 }
 
 /* centerOn (game.js:758) */
@@ -1638,6 +1641,94 @@ static void front_pickup(void) {
         UI.woodcut = CR.wc_show;
         UI.screen = SCR_WOODCUT;
     }
+    /* the Continental Congress portrait page (func_03BB4A): the
+     * @FREEDOM reveal (@0x3BD1D) or the F3 gallery (@0x38073) */
+    if (CR.ff_show != -1 && UI.screen != SCR_CONGRESS) {
+        UI.ff_new = (int8_t)(CR.ff_show >= 0 ? CR.ff_show : -1);
+        CR.ff_show = -1;
+        UI.screen = SCR_CONGRESS;
+        return;
+    }
+    /* the Declaration signing page (func_03DA2A) */
+    if (CR.decl_show && UI.screen != SCR_DECLARATION) {
+        CR.decl_show = 0;
+        UI.decl_step = 0;
+        UI.screen = SCR_DECLARATION;
+        return;
+    }
+    /* the King's audience at the war's end (func_075352, before the
+     * score when the war is lost @0x2F6B5) */
+    if (CR.king_show && UI.screen != SCR_ENDKING) {
+        UI.king_plate = (int8_t)CR.king_show;
+        CR.king_show = 0;
+        UI.screen = SCR_ENDKING;
+        return;
+    }
+    /* the end game (func_03B2F8): the F10 page (func_039EE2(1), its own
+     * key-wait @0x3A9B5), then the SCORE plate (func_03A9C0), then the
+     * @SCORED ask (end_game_scored) once nothing is left to show */
+    if (CR.f10_show && UI.screen != SCR_REPORT) {
+        CR.f10_show = 0;
+        snprintf(UI.report, sizeof(UI.report), "F10");
+        UI.screen = SCR_REPORT;
+        return;
+    }
+    if (CR.score_show >= 0 && UI.screen != SCR_SCORE) {
+        UI.score_panel = CR.score_show;
+        CR.score_show = -1;
+        UI.screen = SCR_SCORE;
+        return;
+    }
+    if (CR.scored_pending) {
+        CR.scored_pending = 0;
+        if (end_game_scored() == 0) {    /* "That's all." -> the title */
+            UI.screen = SCR_TITLE;
+            UI.menu_row = 0;
+        }
+    }
+}
+/* the score plate's key/click (wait_keyOrClick @0x3AD86) */
+static void score_dismiss(void) {
+    UI.screen = SCR_MAP;
+    front_pickup();
+}
+
+/* the signing page's key/click: mid-signature it is the skip flag
+ * (@0x3DD74/0x3DD88 — the rest draws at once), afterwards the final
+ * wait_keyOrClick @0x3DE17 dismisses to the game */
+static void declaration_key(void) {
+    int total = rm_declaration_total(rm_declaration_name());
+    if (UI.decl_step < total) { UI.decl_step = (int16_t)total; return; }
+    UI.screen = SCR_MAP;
+    front_pickup();
+}
+
+/* the portrait page's dismissal (wait_keyOrClick @0x3BC14): a reveal
+ * goes on to the father's Colonizopedia page (func_06AE08 @0x3BD26,
+ * one-shot — its dismissal returns to the game), the gallery straight
+ * back to the map; either way the next queued plate is picked up */
+static void congress_dismiss(void) {
+    int ff = UI.ff_new;
+    UI.ff_new = -1;
+    UI.screen = SCR_MAP;
+    if (ff >= 0) {
+        int row = rm_pedia_row_of(5, ff);
+        UI.pedia_cat = 5;
+        UI.pedia_sel = (int16_t)(row >= 0 ? row : 0);
+        UI.pedia_mode = 1;
+        UI.pedia_once = 1;
+        UI.screen = SCR_PEDIA;
+        return;
+    }
+    front_pickup();
+}
+/* the one-shot pedia page's exit: back to the game (and the next plate) */
+static int pedia_once_exit(void) {
+    if (!UI.pedia_once) return 0;
+    UI.pedia_once = 0;
+    UI.screen = SCR_MAP;
+    front_pickup();
+    return 1;
 }
 
 /* the plate dismissal (onClick woodcut case, game.js:12086): plates 1
@@ -2182,9 +2273,28 @@ static void in_key_inner(const char *k, int alt, int shift) {
     case SCR_REPORT:
         {
             int fn;
-            if (key_is(k, "Escape") || key_is(k, "x") || is_fkey(k, &fn))
+            if (key_is(k, "Escape") || key_is(k, "x") || is_fkey(k, &fn)) {
                 UI.screen = SCR_MAP;
+                /* func_037A20 @0x38073: F3's dismissal shows the CCBKGD
+                 * gallery (func_03BB4A(power, -1)); the [0x346]/[0x9E38]
+                 * timed-message latches it tests @0x38060/@0x38067 are
+                 * runtime clock state the port does not model (TBD) */
+                if (strcmp(UI.report, "F3") == 0) CR.ff_show = -2;
+            }
         }
+        break;
+    case SCR_CONGRESS:
+        congress_dismiss();              /* any key: func_004A80 */
+        break;
+    case SCR_DECLARATION:
+        declaration_key();
+        break;
+    case SCR_SCORE:
+    case SCR_ENDKING:
+        score_dismiss();                 /* any key: the runner's wait */
+        break;
+    case SCR_MPSLOGO:
+        UI.screen = SCR_TITLE;           /* any key ends the logo phase */
         break;
     case SCR_MAP: {
         /* an open pulldown owns the keyboard (game.js:12545) */
@@ -2658,7 +2768,9 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 UI.pedia_sel = (int16_t)((UI.pedia_sel + n - 1) % n);
             if (key_is(k, "ArrowRight") || key_is(k, "ArrowDown"))
                 UI.pedia_sel = (int16_t)((UI.pedia_sel + 1) % n);
-            if (key_is(k, "Escape") || key_is(k, "x")) UI.pedia_mode = 0;
+            if (key_is(k, "Escape") || key_is(k, "x")) {
+                if (!pedia_once_exit()) UI.pedia_mode = 0;
+            }
         }
         break;
     }
@@ -2861,9 +2973,23 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     case SCR_REPORT:
         UI.screen = SCR_MAP;
+        if (strcmp(UI.report, "F3") == 0) CR.ff_show = -2;   /* @0x38073 */
         break;
     case SCR_WOODCUT:
         wc_dismiss();
+        break;
+    case SCR_CONGRESS:
+        congress_dismiss();
+        break;
+    case SCR_DECLARATION:
+        declaration_key();
+        break;
+    case SCR_SCORE:
+    case SCR_ENDKING:
+        score_dismiss();
+        break;
+    case SCR_MPSLOGO:
+        UI.screen = SCR_TITLE;
         break;
     case SCR_OPTIONS: {
         int r = rm_options_row_hit(UI.options_which, mx, my);
@@ -2877,7 +3003,11 @@ static void in_click_inner(int mx, int my, int right) {
         break;
     }
     case SCR_PEDIA: {
-        if (UI.pedia_mode != 0) { UI.pedia_mode = 0; break; }
+        if (UI.pedia_mode != 0) {
+            if (pedia_once_exit()) break;
+            UI.pedia_mode = 0;
+            break;
+        }
         int n = rm_pedia_count(UI.pedia_cat);
         int r = (my - 24) / 7;
         int i = (mx >= 160 ? 22 : 0) + r;

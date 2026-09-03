@@ -323,6 +323,9 @@ static void audio_screen_edges(void) {
     } else {
         last_wc = -1;
     }
+    /* the score plate's tune (func_03A9C0 @0x3AD51..0x3AD6D) */
+    if (UI.screen == SCR_SCORE && last_screen != SCR_SCORE)
+        au_cmd((uint16_t)RM_SCORE_TUNE(UI.score_panel));
     last_screen = UI.screen;
 }
 #endif
@@ -409,6 +412,27 @@ static void draw_screen(void) {
         break;
     case SCR_CARDS:
         rm_draw_cards(UI.card, UI.nation, UI.difficulty, UI.leader);
+        break;
+    /* the Part E plate pages: a pak built with `--board teensy` lacks
+     * their assets (pakbuf is 3.5 MB), so these draw their background
+     * colour and nothing else there — see tools/gen_sd_pack.py PART_E */
+    case SCR_CONGRESS:
+        rm_draw_congress(UI.ff_new);
+        break;
+    case SCR_DECLARATION:
+        rm_draw_declaration(rm_declaration_name(), UI.decl_step);
+        break;
+    case SCR_SCORE:
+        rm_draw_score(UI.score_panel);
+        break;
+    case SCR_ENDKING:
+        rm_draw_king_plate(UI.king_plate == 1);
+        break;
+    case SCR_MPSLOGO:                /* the Teensy boots straight into a
+                                      * loaded save ('g'); the phase is
+                                      * drawn at its first tick only if
+                                      * a shell ever enters it */
+        rm_draw_mpslogo(1);
         break;
     case SCR_VILLAGE:
         rm_draw_map(UI.view_x, UI.view_y, UI.sel, 1);
@@ -759,6 +783,24 @@ void loop() {
          * card, or the game beginning, redraws */
         if (in_tick(millis())) draw_screen();
         int bl = blink_now();
+        /* the Declaration signature: one stroke frame per 60.8766 Hz
+         * tick from the moment the page opened (func_03DA2A @0x3DD51..
+         * 0x3DDC3); a key jumps it to the end (declaration_key) */
+        static int decl_open = 0;
+        static unsigned long decl_t0 = 0;
+        if (UI.screen == SCR_DECLARATION) {
+            if (!decl_open) { decl_open = 1; decl_t0 = millis(); }
+            int total = rm_declaration_total(rm_declaration_name());
+            if (UI.decl_step < total) {
+                long want = (long)((millis() - decl_t0) *
+                                   (RM_DECL_TICK_HZ / 1000.0));
+                if (want > total) want = total;
+                if ((int)want != UI.decl_step) {
+                    UI.decl_step = (int16_t)want;
+                    draw_screen();
+                }
+            }
+        } else decl_open = 0;
         /* zoom >= 2 composes 16-64 subwindows per frame — too dear for
          * the 3 Hz blink; the unit stays drawn (FLAGGED perf choice) */
         if (UI.screen == SCR_MAP && UI.zoom < 2 && bl != map_blink) {

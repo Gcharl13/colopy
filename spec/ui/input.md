@@ -130,6 +130,23 @@ applies the mickey shift (`shr ax, [0x598]`), updates cached pos `0x92FC`/`0x92F
 | `0x598`/`0x599` | per-axis mickey→pixel shift |
 | `0x590`/`0x592` | cursor hotspot (set by `set_bounds` @`0xCB59`, masks args `&0xF`) |
 
+#### 3a. Amendment 2026-09-02 — the cursor image and its hotspot (screens track)
+
+`CURSOR.SS` (2 frames, 17×17, a mandatory boot asset — exit code 0x17 @0x076153) is installed
+by `func_00D9E0(sheet, frame)` @0x00D9E0 (`0x191F:0x468`): a 17×17 scratch surface (@0xD9E7)
+filled with 0xFF (`mov al,0xff; lcall 0xb8d,4` @0xDA0E — the SW cursor's transparency key),
+the frame blitted into it (`lcall 0xc36,0xa` @0xDA2C), then the **hotspot read off marker
+pixels**: the last row whose column-16 pixel is opaque (`di` walks column 16 in steps of 0x11
+@0xDA36..0xDA5A) and the last column of row 16 that is opaque (`[bp+si-0x22]` @0xDA51) —
+both frames carry a single marker (index 9) at (16,0) and (0,16), so the **hotspot is (0,0)**.
+The pair is stored at `[0x262C]/[0x262E]` (@0xDAB2..0xDAB7), passed to `0xA58:0x1D9`
+(@0xDAC6), and the 16×16 top-left is copied to the mouse image `[0x9300]` (`bx=0x10` @0xDAEF,
+`0xB8F:6` @0xDAF2) — the marker row/column never shows. Frame 1 (disk 0) is the arrow;
+frame 2 (disk 1, the arrow with a box) is installed by the map-view pointer handler
+`func_024342` when the button is held and `now − press_latch > 0x14` ticks of the 60.8766 Hz
+clock (@0x243A3..0x243C3, latch `[0x2D0A:0x2D0C]` @0x2436E, flag `[0xB94]`), and the arrow
+restored by `push 1` @0x24338. **B** (RULINGS 2026-09-02z). The P4 shell draws it so.
+
 ### 4. Click hit-testing — distributed, no central region table
 
 The two seed "call sites" `0x109E2` and `0x5A9F0` are **FALSE POSITIVES**, not int 0x33:

@@ -188,6 +188,87 @@ def data_uri(img, fmt="PNG"):
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
+# Part E (docs/REMAINING_WORK.md) -- the screens' own assets, each with a
+# byte-cited consumer in VICEROY.EXE (tools/gen_sd_pack.py PART_E block
+# carries the same list and the per-board pak gate):
+#   CC-00..24 + CCBKGD   the Continental Congress portrait page,
+#                        func_03BB4A @0x03BB4A / func_03BAA6 @0x03BAA6
+#   DEC-UPPA..Z / DEC-LOWA..Z / DEC-SQIG + DECOIND   the Declaration signing,
+#                        func_03DA2A @0x03DA2A (DECLARAT.PIK is an orphan)
+DEC_SS = [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
+    [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"]
+#   SCORE01..24          the end-game score plate, func_03A9C0 @0x03A9C0
+#                        (over WOODPAN2.PIK, already packed, drawn through
+#                        the PLATE's palette -- @0x3AB46..0x3AB84)
+SCORE_SS = [f"SCORE{i:02d}" for i in range(1, 25)]
+#   KINGLOSE / KINGWIN + ENGLND2/FRANCE2/SPAIN2/DUTCH2   the King's win/loss
+#                        audience, func_075352 @0x075352 (N=1 victory over
+#                        KINGLSS1 with the *1 banner; N=2 defeat over
+#                        KINGLSS2 with the *2 banner)
+KING_SS = ["KINGLOSE", "KINGWIN", "ENGLND2", "FRANCE2", "SPAIN2", "DUTCH2"]
+#   CURSOR (2 frames 17x17)   the mouse pointer, func_00D9E0 @0x00D9E0
+#   PARCH  (1 frame 32x24)    the colony building-field ground tile,
+#                             func_0051D2 @0x02705F
+#   MPSLOGO (16 frames) / MPSNAME (29 frames)   the MicroProse boot logo --
+#                             OPENING.EXE's _do_logo @0x1700 / pacer @0x1916
+#                             (VICEROY.EXE never references them); shown by
+#                             the ports before the title screen
+PART_E_SS = [f"CC-{i:02d}" for i in range(25)] + DEC_SS + SCORE_SS + KING_SS + \
+    ["CURSOR", "PARCH", "MPSLOGO", "MPSNAME"]
+PART_E_PIK = ["CCBKGD", "DECOIND"]
+# Sheets whose pixels the running game resolves through a PIK's palette,
+# not their own embedded copy (the same VGA-is-global rule as
+# MASTER_PALETTE_SHEETS): the portrait page uploads CCBKGD's table
+# (func_03BB4A @0x3BB87) and blits the CC sheets through it.  Backgrounds
+# in BAKE_MERGED_PIK are themselves baked through the table the screen
+# streams -- the PIK's palette AFTER the game.js usePalette merge (magenta
+# placeholders from the master, then OPENMENU; an unauthored EGA-stub
+# low-16 row from the master), which is exactly rd_use_palette's DAC.
+# CCBKGD's low-16 IS the EGA stub and its art uses indices 5 and 12.
+SHEET_PALETTE_FROM_PIK = {f"CC-{i:02d}": "CCBKGD" for i in range(25)}
+# the DEC sheets blit over DECOIND's DAC (func_03DA2A @0x3DA6A); their own
+# tables differ from it only at 252..255, which the art never uses
+SHEET_PALETTE_FROM_PIK.update({n: "DECOIND" for n in DEC_SS})
+# the king pages composite their sheets INTO the KINGLSS<N>.PIK buffer and
+# upload that PIK's palette (func_075352 @0x7542B/@0x7549D/@0x754AD); the
+# two KINGLSS tables are identical, the sheets' own differ only at 242/255
+SHEET_PALETTE_FROM_PIK.update({n: "KINGLSS1" for n in KING_SS +
+                               ["KING1", "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1"]})
+BAKE_MERGED_PIK = {"CCBKGD", "DECOIND", "KINGLSS1", "KINGLSS2"}
+EGA_STUB = [0, 0, 0, 0, 0, 170, 0, 170, 0, 0, 170, 170, 170, 0, 0, 170, 0, 170,
+            170, 85, 0, 170, 170, 170, 85, 85, 85, 85, 85, 255, 85, 255, 85,
+            85, 255, 255, 255, 85, 85, 255, 85, 255, 255, 255, 85, 255, 255, 255]
+
+
+def is_placeholder(c):
+    return c[0] > 240 and c[1] < 110 and c[2] > 240
+
+
+def merged_palette(pal, master, ui):
+    """game.js usePalette (line 36) over three flat 768-entry tables."""
+    out = list(pal)
+    for i in range(256):
+        c = pal[i * 3:i * 3 + 3]
+        if not is_placeholder(c):
+            continue
+        m = master[i * 3:i * 3 + 3]
+        src = m if not is_placeholder(m) else ui[i * 3:i * 3 + 3]
+        out[i * 3:i * 3 + 3] = src
+    if list(pal[:48]) == EGA_STUB:
+        out[:48] = master[:48]
+    return out
+# Backgrounds a screen draws through a palette that is NOT the PIK's own
+# (the way the C port always does: indices through the current DAC).  The
+# JS gets the raw index plane for these so it can re-table at runtime:
+# WOODPAN2 shows through whichever SCORE plate's palette the score screen
+# uploads (24 distinct tables, func_03A9C0 @0x3AB46..0x3AB84).
+INDEX_PLANE_PIK = ["WOODPAN2"]
+# Sheets whose embedded palette the JS renderer must be able to ADOPT
+# (usePalette on a sheet name): the woodcut frame, the map chrome, and the
+# 24 score plates (each is the DAC for its own screen).
+EXPORT_SHEET_PAL = {"WOODFRAM", "WOODTILE"} | set(SCORE_SS)
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     pal_json = json.load(open(ROOT / "data_extracted/palette.json"))
@@ -198,7 +279,8 @@ def main():
     want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2",
                 "KINGLSS1", "KINGLSS2", "COLONY", "EUROPE"] + \
         [f"REPORT{i}" for i in range(1, 10)] + \
-        [f"LEVN{i:04d}" for i in range(1, 11)]
+        [f"LEVN{i:04d}" for i in range(1, 11)] + \
+        PART_E_PIK
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
                "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",
                # Woodcut event plates: the frame plus every plate with a live
@@ -215,7 +297,8 @@ def main():
                # meeting-flow portraits).
                "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5",
                "MYR0", "MYR1", "MYR2", "MYR3"] + \
-              [f"IND{t}A{a}" for t in range(8) for a in range(4)]
+              [f"IND{t}A{a}" for t in range(8) for a in range(4)] + \
+              PART_E_SS
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"
@@ -230,14 +313,26 @@ def main():
                 print("  MISSING", key); continue
             raw = z.read(names[key])
             img = pik_to_png(raw, fallback)
-            img.save(OUT / f"{nm}.png")
             _, _, _, own = load_pik(raw)
             pal = list(own) if own is not None else list(fallback)
+            if nm in BAKE_MERGED_PIK:
+                uip = bundle["backgrounds"]["OPENMENU"]["pal"]
+                merged = merged_palette(pal, fallback,
+                                        [c for rgb in uip for c in rgb])
+                w0, h0, idx0, _ = load_pik(raw)
+                im2 = Image.frombytes("P", (w0, h0), bytes(idx0))
+                im2.putpalette(merged)
+                img = im2.convert("RGB")
+            img.save(OUT / f"{nm}.png")
             bundle["backgrounds"][nm] = {
                 "w": img.width, "h": img.height,
                 "pal": [[pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]]
                         for i in range(256)],
             }
+            if nm in INDEX_PLANE_PIK:
+                _, _, idx, _ = load_pik(raw)
+                bundle["backgrounds"][nm]["idx"] = \
+                    base64.b64encode(bytes(idx)).decode()
             print(f"  {nm}.PIK -> {img.width}x{img.height}")
         for nm in want_ss:
             key = nm + ".SS"
@@ -246,6 +341,12 @@ def main():
             p = tmp / key
             p.write_bytes(z.read(names[key]))
             override = fallback if nm in MASTER_PALETTE_SHEETS else None
+            if nm in SHEET_PALETTE_FROM_PIK:
+                bgp = bundle["backgrounds"][SHEET_PALETTE_FROM_PIK[nm]]["pal"]
+                uip = bundle["backgrounds"]["OPENMENU"]["pal"]
+                override = merged_palette([c for rgb in bgp for c in rgb],
+                                          fallback,
+                                          [c for rgb in uip for c in rgb])
             atlas, recs, mask = sheet_to_png(p, override)
             atlas.save(OUT / f"{nm}.png")
             bundle["sheets"][nm] = {"atlas": f"{nm}.png", "frames": recs}
@@ -259,7 +360,7 @@ def main():
             # palette indices 0x5C/0x5D/0x5E -- needs the table exported. (Both
             # of these keep their embedded palette; see MASTER_PALETTE_SHEETS
             # for the one sheet that does not.)
-            if nm in ("WOODFRAM", "WOODTILE"):
+            if nm in EXPORT_SHEET_PAL:
                 sp = ssdec.load_sheet(str(p))["pal"]
                 bundle["sheets"][nm]["pal"] = [[sp[i * 3], sp[i * 3 + 1], sp[i * 3 + 2]]
                                                for i in range(256)]

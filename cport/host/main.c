@@ -702,6 +702,41 @@ int main(int argc, char **argv) {
                                     const char *out, int arg);
         return render_boot_main(argv[2], argv[3], argv[4], atoi(argv[5]));
     }
+    /* --rendercongress SAVE PAK OUT.ppm MASK (Part E plate pages) */
+    if (argc > 5 && strcmp(argv[1], "--rendercongress") == 0) {
+        extern int render_congress_main(const char *save, const char *pak,
+                                        const char *out, long mask);
+        return render_congress_main(argv[2], argv[3], argv[4],
+                                    atol(argv[5]));
+    }
+    /* --renderdeclaration SAVE PAK OUT.ppm NAME STEP */
+    if (argc > 6 && strcmp(argv[1], "--renderdeclaration") == 0) {
+        extern int render_declaration_main(const char *save, const char *pak,
+                                           const char *out, const char *name,
+                                           int step);
+        return render_declaration_main(argv[2], argv[3], argv[4], argv[5],
+                                       atoi(argv[6]));
+    }
+    /* --renderscore SAVE PAK OUT.ppm PANEL NAME */
+    if (argc > 6 && strcmp(argv[1], "--renderscore") == 0) {
+        extern int render_score_main(const char *save, const char *pak,
+                                     const char *out, int panel,
+                                     const char *name);
+        return render_score_main(argv[2], argv[3], argv[4], atoi(argv[5]),
+                                 argv[6]);
+    }
+    /* --renderendking SAVE PAK OUT.ppm WIN */
+    if (argc > 5 && strcmp(argv[1], "--renderendking") == 0) {
+        extern int render_endking_main(const char *save, const char *pak,
+                                       const char *out, int win);
+        return render_endking_main(argv[2], argv[3], argv[4], atoi(argv[5]));
+    }
+    /* --renderlogo PAK OUT.ppm TICK */
+    if (argc > 4 && strcmp(argv[1], "--renderlogo") == 0) {
+        extern int render_logo_main(const char *pak, const char *out,
+                                    int tick);
+        return render_logo_main(argv[2], argv[3], atoi(argv[4]));
+    }
     /* --renderwoodcut SAVE PAK OUT.ppm N */
     if (argc > 5 && strcmp(argv[1], "--renderwoodcut") == 0) {
         extern int render_woodcut_main(const char *save, const char *pak,

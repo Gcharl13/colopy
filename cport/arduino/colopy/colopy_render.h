@@ -139,6 +139,14 @@ void rm_draw_name(const char *leader);
  * drawCards 1147) */
 void rm_draw_briefing(int nation, int page);
 void rm_draw_king(int nation);
+/* the war's end: func_075352(1,2,"KINGLOSE") (win) / (2,1,"KINGWIN") */
+void rm_draw_king_plate(int win);
+/* the MicroProse boot logo at pacer tick `tick` (OPENING.EXE _do_logo
+ * @0x1700): the phase steps once per RM_LOGO_STEP_TICKS ticks of the
+ * 60.8766 Hz clock and ends past RM_LOGO_END_TICK */
+void rm_draw_mpslogo(int tick);
+#define RM_LOGO_STEP_TICKS 6      /* OPENING DGROUP [0x50] */
+#define RM_LOGO_END_TICK 228      /* @0x196E: cmp [0xD2],0xE4 */
 void rm_draw_cards(int card, int nation, int difficulty,
                    const char *leader);
 void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */
@@ -146,6 +154,27 @@ void rm_draw_hof(void);           /* drawHof 12358 over CR.hof */
  * mode 0 = index, 1 = entry page */
 void rm_draw_pedia(int cat, int sel, int mode);
 int  rm_pedia_count(int cat);
+/* the index-row of the entry keyed idx in a category (the sorted
+ * rows), -1 = none — the one-shot Founding Father page's handoff */
+int  rm_pedia_row_of(int cat, int idx);
+/* ---- the Part E plate pages (colopy_report_render.c) ---- */
+/* the Continental Congress portrait page, func_03BB4A @0x03BB4A:
+ * new_ff = the father lit up, -1 = the F3 gallery (drawn identically —
+ * the reveal wipe is collapsed to its final frame) */
+void rm_draw_congress(int new_ff);
+/* the Declaration signing, func_03DA2A @0x03DA2A: DECOIND.PIK + the
+ * first `step` stroke events of the leader's signature (INT_MAX = all);
+ * rm_declaration_total = the event count for that name, rm_declaration_
+ * name = the signer (CR.leader, else the nation's default leader) */
+void rm_draw_declaration(const char *name, int step);
+int  rm_declaration_total(const char *name);
+const char *rm_declaration_name(void);
+#define RM_DECL_TICK_HZ 60.8766   /* one stroke frame per [0x92E8] tick */
+/* the end-game score plate, func_03A9C0 @0x03A9C0: SCORE<panel+1> over
+ * WOODPAN2 through the plate's palette + the @EXPLOITS/@SCORE text */
+void rm_draw_score(int panel);
+/* the tune the plate plays (0x181F:0x4C0 @0x3AD51..0x3AD6D) */
+#define RM_SCORE_TUNE(panel) ((panel) >= 23 ? 0x24 : (panel) > 6 ? 0x25 : 0x21)
 /* the options dialogs (drawOptions 7969): which 0 game / 1 colony
  * report / 2 sound; toggle = optionsCommit's XOR */
 void rm_draw_options(int which, int row);
@@ -191,6 +220,10 @@ typedef struct {
     uint8_t num_set[4];
 } rm_subs;
 int  rm_event_exists(const char *key);
+/* the fillTemplate rule (game.js) over a line; the body lines of a key */
+void rm_fill_template(const char *line, const rm_subs *subs, char *out,
+                      size_t cap);
+const char *const *rm_event_body(const char *key, int *n);
 int  rm_event_rows(const char *key);   /* option rows = the tail lines */
 const char *rm_event_default(const char *key);  /* @default prefill, "" */
 void rm_draw_combat(void);          /* the Combat Analysis panel (CR.combat) */

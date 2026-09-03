@@ -71,6 +71,30 @@ PALETTE_CEILING = {
     "report sav1653 F9 mission": 0,
     "event RAIDSTORES 0 0 - sav1653": 31,
     "woodcut sav1653 1": 21438,
+    # Part E plate pages (screens track, 2026-09-02): the 25 CC sheets carry
+    # CCBKGD's palette except entries 251/255, neither used by the art, so
+    # the page resolves identically through the atlas and the DAC.
+    "congress sav1653 33554431": 0,
+    # the Declaration: the full signature and a mid-stroke step; the DEC
+    # sheets blit over DECOIND's DAC (baked through its merged table)
+    "declaration sav1653 Willem van Oranje 3 9999": 0,
+    "declaration sav1653 Willem van Oranje 3 37": 0,
+    # the score plate: band 0 (SCORE01, the one 140x97 plate) and band 23
+    # (SCORE24, every @SCORE row on the ladder); WOODPAN2 is re-tabled
+    # through the plate's palette on both sides
+    "score sav1653 0 Willem van Oranje": 0,
+    "score sav1653 23 Willem van Oranje": 0,
+    # the King's audience at the war's end: victory (KINGLSS1 + DUTCH1 +
+    # KINGLOSE) and defeat (KINGLSS2 + DUTCH2 + KINGWIN); the sheets are
+    # baked through KINGLSS1's merged table, which is the DAC
+    "endking sav1653 1": 0,
+    "endking sav1653 0": 0,
+    # the MicroProse boot logo (OPENING.EXE's phase): the first step, a
+    # mid-name step, and the clamped name; the sheets' own palette is the
+    # DAC on both sides (its 252..255 are black, not placeholders)
+    "logo 1": 0,
+    "logo 100": 0,
+    "logo 130": 0,
 }
 
 

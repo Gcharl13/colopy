@@ -380,16 +380,16 @@ pack (67 sheet files packed + `PHYS0C` derived at runtime; 28 backgrounds).
 
 | Group | Count | Pairs with |
 |---|---|---|
-| Founding Father portraits `CC-00..CC-24` | 25 | F3 draws names as text only |
-| Declaration lettering `DEC-LOW/UPP A-Z`, `DEC-SQIG` | 53 | Declaration screen does not exist |
-| Score plates `SCORE01..24` | 24 | End-game score screen unimplemented |
+| Founding Father portraits `CC-00..CC-24` | 25 | ~~F3 draws names as text only~~ **SHIPPED 2026-09-02** (screens track, note E1 below) |
+| Declaration lettering `DEC-LOW/UPP A-Z`, `DEC-SQIG` | 53 | ~~Declaration screen does not exist~~ **SHIPPED 2026-09-02** (note E2 below) |
+| Score plates `SCORE01..24` | 24 | ~~End-game score screen unimplemented~~ **SHIPPED 2026-09-02** (note E3 below) |
 | Opening cinematic sheets | 14 | `OPENING.EXE` — separate program (Part H) |
 | Closing cinematic sheets | 7 | `CLOSING.EXE` — separate program (Part H) |
-| King / win / lose plates | 5 | Endgame screens unimplemented |
-| Second banner frames `*2` | 4 | Only `*1` banners packed |
-| MicroProse boot logo | 2 | Boot animation not implemented |
-| `CURSOR.SS`, `PARCH.SS` | 2 | **Why the BLE pointer is a hand-drawn arrow** |
-| Backgrounds | 7 | `CCBKGD CLOS-BKG CUSTOMIZ DECLARAT DECOIND OPENBORD OPENING` |
+| King / win / lose plates | 5 | ~~Endgame screens unimplemented~~ **KINGWIN + KINGLOSE SHIPPED 2026-09-02** (note E4); `KING2`, `WIN`, `WIN-FWRK` are **orphans** (no loader in any EXE) — never packed |
+| Second banner frames `*2` | 4 | ~~Only `*1` banners packed~~ **SHIPPED 2026-09-02** (note E5) |
+| MicroProse boot logo | 2 | ~~Boot animation not implemented~~ **SHIPPED 2026-09-02** (note E6; OPENING.EXE's phase, played by the ports before the title) |
+| `CURSOR.SS`, `PARCH.SS` | 2 | ~~**Why the BLE pointer is a hand-drawn arrow**~~ **SHIPPED 2026-09-02** (note E7: the P4 pointer is CURSOR.SS; the colony building field is the PARCH tile in both engines) |
+| Backgrounds | 7 | `CCBKGD` **shipped (E1)**, `DECOIND` **shipped (E2)**; `DECLARAT` **orphan** (no loader in any EXE, never packed); `CUSTOMIZ` **TBD** (note E8); `OPENBORD`, `OPENING`, `CLOS-BKG` belong to OPENING.EXE / CLOSING.EXE (Part H) |
 
 **Correctly excluded, and staying excluded:** `BDARK.SS` (CLAUDE.md hard rule 5,
 enforced by an assert in `gen_sd_pack.py:187`) and `WDCUT06` / `WDCUT12` — both
@@ -398,6 +398,203 @@ event (the WDCUT12 razed-scene gloss was REFUTED 2026-07-30).
 
 All source files are present in `raw/COLONIZE/`; the blocker is painter work, not
 extraction.
+
+### Part E closure notes (screens track, 2026-09-02)
+
+Every note cites VICEROY.EXE file offsets re-read from
+`data_extracted/disassembly/VICEROY_annotated.asm` on the day; the research
+lead (`part-e-screens.md`) was re-derived, not trusted. Pak sizes are the
+decoded sizes `tools/gen_sd_pack.py` stores. The pak grows per group; the
+Teensy's SD path has a fixed 3.5 MB `pakbuf`, so `gen_sd_pack.py --board
+teensy` leaves the whole Part E group out (the `PART_E` block there) and the
+renderers draw nothing for a missing entry — see `cport/MEMORY_BUDGET.md`.
+
+- **E1 — Founding Father portraits `CC-00..24` + `CCBKGD.PIK` (SHIPPED).**
+  The page is `func_03BB4A(power, new_ff)` @0x03BB4A (thunk `0x191F:0xF74`):
+  CCBKGD.PIK full-screen (@0x3BB6A load, @0x3BB87 its palette to the DAC,
+  @0x3BBB5 buffer→screen 320×200), then `func_03BAA6(power)` @0x03BAA6 walks
+  the 25-byte draw-order table at file 0x1EBDA (`[bx+0x123a]` @0x3BAB8 =
+  `[6,20,1,23,24,22,7,3,8,18,4,21,10,13,0,17,5,12,15,11,2,9,14,19,16]`), tests
+  ownership through `0x181F:0x7B4` @0x3BAC5, builds `"CC-"+NN` (@0x3BAD1..
+  0x3BAFD, NN = the table VALUE = `@FATHERS` index, zero-padded when <10) and
+  blits frame 1 anchored at the sheet's own `es:[bx+0x46]/[+0x48]` at 100 %
+  (@0x3BB25..0x3BB36) — every portrait's position is baked into its `.SS`.
+  Reveal @0x3BBBA..0x3BC0C (bit cleared → draw → present → bit set → draw →
+  staged present arg 8); key/click wait @0x3BC14; game palette back @0x3BC24.
+  Callers: the `@FREEDOM` acquisition `func_03BC42` @0x3BD1D, followed by the
+  Colonizopedia Founding Father page `func_06AE08(ff)` @0x3BD26; and the F3
+  report's dismissal `func_037A20` @0x3806E..0x38073 with `new_ff = -1`.
+  Ports: JS `drawCongressPortraits` / `plateScreen('congress')` + `pediaOnce`
+  (`port/src/game.js`); C `rm_draw_congress` (`cport/render/
+  colopy_report_render.c`), `CR.ff_show` channel (`colopy_turn.c` after
+  `FREEDOM`, `colopy_input.c` F3 exit), `congress_dismiss` → one-shot pedia
+  page. Oracle `tools/render_congress_compare.py` (0 structural, 0 accepted:
+  the CC atlases and CCBKGD are baked through the merged CCBKGD table, which
+  is what the DAC shows — `port/tools/build_assets.py SHEET_PALETTE_FROM_PIK`
+  / `BAKE_MERGED_PIK`). Pak delta **+243,191 B** (3,149,165 → 3,392,356).
+  TBD: the reveal's wipe verb `0x181F:0x3EA` (arg 8) is collapsed to its final
+  frame; the F3 second page is gated in the engine on the timed-message
+  latches `[0x346]`/`[0x9E38]` (@0x38060/@0x38067; both are 20-tick clock
+  latches written beside `msg_append` @0x2C7C1 / @0x35B4E) — runtime clock
+  state the ports do not model, so the page is unconditional.
+- **E2 — Declaration lettering `DEC-UPPA..Z` / `DEC-LOWA..Z` / `DEC-SQIG` +
+  `DECOIND.PIK` (SHIPPED).** The signing page is `func_03DA2A` @0x03DA2A
+  (thunk `0x191F:0x109A`): DECOIND.PIK full-screen (@0x3DA47/@0x3DA6A/
+  @0x3DA98; `DECLARAT.PIK` has no loader in any EXE — never packed), leader
+  name `0x540E + [0x5398]·0x34` (@0x3DAB4) → `strlwr` (@0x3DACD) → word-
+  initial capitals (@0x3DB06..0x3DB3C, ctype table file 0x2018D), sheets
+  loaded per letter present (@0x3DB8E..0x3DC20) + SQIG (@0x3DC22). Pen seed
+  **x=126 @0x3DC3C, y=148 @0x3DC42** (x = `dx` of the top-left blit
+  `0x181F:0x254` @0x3DD36, y = its stack arg @0x3DD2C — the spec had the
+  axes swapped, RULINGS 2026-09-02w); per char space/punct → x+3,y−1;
+  non-alpha → SQIG ×10, y−4, stop; upper → UPP ×10, y−3; lower → LOW ×7,
+  y−2 (@0x3DC58..0x3DCFD); frames = engine i+2 = disk descriptors 1..n
+  (@0x3DD30); x += descriptor-0 width (@0x3DD16/@0x3DDD9); wrap `x ≥ 220`
+  → SQIG-and-stop (@0x3DE04). Cadence: one frame per `0xC0C:6` tick =
+  `[0x267A]=0x92E8` (@0xC857) = the 60.8766 Hz counter, since the ≥5 ISR-
+  tick floor (@0x3DDB9) is 8.2 ms; key/click mid-run = skip (@0x3DD74/
+  @0x3DD88); a final `wait_keyOrClick` @0x3DE17 dismisses (the spec's "no
+  final key-wait" was wrong). Ports: JS `declEvents`/`drawDeclaration` +
+  `plateScreen('declaration')` after `@INDEPENDENCE`; C `rm_draw_declaration`
+  / `rm_declaration_total` + `CR.decl_show` (`colopy_woi.c`) + `SCR_DECLARATION`
+  with `UI.decl_step` advanced by both board loops at 60.8766 Hz. Oracle
+  `tools/render_declaration_compare.py` (full signature + a mid-stroke step,
+  both 0/0). Pak delta **+241,122 B** (3,392,356 → 3,633,478). **TBD**: the
+  caller — no `lcall`/`ljmp`/far pointer to `0x191F:0x109A` exists (the
+  tracker's "dispatch slot 4 @0x3EA0B" is `ljmp 0x191F:0x364` = `func_03C638`);
+  a live capture must pin where the page sits relative to `@INDEPENDENCE`.
+- **E3 — Score plates `SCORE01..24` (SHIPPED).** Trigger `func_03B2F8` @0x3B2F8
+  (thunk `0x181F:0x574`): snapshot → `func_039EE2(0)` @0x3B340 → **`func_03A9C0(1,
+  &panel)`** @0x3B350 → HoF insert `func_03ADA6` @0x3B364; the callers show
+  `@SCORED` after (@0x580A, @0x2FAC9). `func_03A9C0` @0x03A9C0: `func_039EE2(1)`
+  first draws the **F10 body with its own key-wait** (@0x3A998..0x3A9B5); base
+  ≤ 0 → no plate (@0x3AA00); `scaled = mult·base/100` UN-halved (@0x3AA31..
+  0x3AA3E); band loop i=1..24: panel = i−1 while `i·i/3 < scaled` (@0x3AA41..
+  0x3AA68); rating = scaled>>1 AFTER (@0x3AA6A; cinematics.md §4 had the
+  order reversed — RULINGS 2026-09-02x); clamp ≤23, no screen for panel<0 /
+  display=0 / `[0x5382]&0x10` (@0x3AA71..0x3AAA0). Page: WOODPAN2 into the
+  screen surface (@0x3AAFF) then the SCORE sheet loaded with `[0x23F2:0x23F4]`
+  aimed at the PIK's palette buffer (@0x3AB46..0x3AB68) → the DAC (@0x3AB84) is
+  the **plate's** palette (24 distinct tables; the JS re-tables WOODPAN2's
+  index plane, shipped via `build_assets.INDEX_PLANE_PIK`); FONTTINY centred
+  verb `0x181F:0x100`: `@EXPLOITS` ×3 at x=0 w=320 y=5/12/19 colour 0xFC
+  (`%STRING0` = name @0x5426+player·0x34, `%NUMBER0` = rating; @0x3AB9D..
+  0x3AC0B; `%%` → `%` per the format verb @0x6F0CE), `@SCORE` rows 0..panel at
+  y=0xC3−7(i+1) centred x=0xA0 w=0xA0, 0xFE / 0xFC on row panel (@0x3AC1A..
+  0x3ACA8; comma split `0x191F:0xFC4`=file 0x6FA3E, ltrim `0x1A1F:0xB44`=file
+  0xD972), caption = the last row's field 2 with `%STRING0` = `strrchr(name,' ')`
+  (`0xD1D:0xD1A` = file 0x102EA, the pointer AT the space) centred x=0x22 w=0x8C
+  y=0x8E 0xFC (@0x3ACB2..0x3AD0B); plate frame 1 anchored (@0x3AD4C: SCORE01 →
+  (34,40), 02..24 → (33,40)); tune 0x24/0x25/0x21 (@0x3AD51..0x3AD6D); key wait
+  @0x3AD86. Ports: JS `scorePanel`/`drawScoreScreen`/`drawPikThrough`, the
+  end game as plates `report(F10)` → `score` → `@SCORED`; C `score_panel`,
+  `rm_draw_score`, `CR.f10_show`/`score_show`/`scored_pending` with
+  `end_game_scored` deferred past the plates on the live front (immediate
+  under the harness, like the JS stub); boards play `RM_SCORE_TUNE` via
+  `au_cmd`. The `@EXPLOITS` popup and the **random `@SCORE` pick are gone from
+  both engines** (the C's `R(DAT_SCORENAMES_COUNT)` draw with them — no RNG
+  on the path, C3.4). Oracle `tools/render_score_compare.py` (bands 0 and 23,
+  0/0) — which exposed the C's `prof == 0 → +2` population bug (fixed, same
+  ruling). Pak delta **+356,354 B** (3,633,478 → 3,989,832). **TBD**: the
+  `0x5426` string is read as the country (port model); F10's icon flow
+  `func_039E98` (one ICONS icon per colonist, x+=8 from 16, wrap ≥292 to y+=8,
+  stop y≥144) is not the ports' `min(value,12)` row — unchanged here.
+- **E4 — King win / lose plates `KINGLOSE.SS` / `KINGWIN.SS` (SHIPPED).** Painter
+  `func_075352(N, sub, key)` @0x075352 (thunk `0x191F:0xABA`): `"KINGLSS"+N`
+  (@0x7536E..0x75385) loaded to the PIK buffer (@0x753A9), `<NATION>+N` from
+  `[0x5398]` (ENGLND/FRANCE/SPAIN/DUTCH @0x753BB..0x753F3) blitted **into the
+  buffer** anchored at its descriptor (@0x7541A..0x7542B), the king sheet
+  selected @0x75430..0x75461 — (1,1) KING1 with tune 0x3E (@0x7544D), (1,≠1)
+  **KINGLOSE**, (2,*) **KINGWIN** — blitted the same way (@0x75477..0x7549D),
+  DAC ← the PIK palette (@0x754AD), buffer → screen (@0x754DB), FONTKING
+  (@0x754F6, FONTTINY fallback @0x7550A), the key's `@`-text run by
+  `0x181F:0x3FE` @0x75540 (its own directives: `@KINGLOSE @width=68 @x=232
+  @y=31`, `@KINGWIN @width=90 @x=202 @y=125`, GAME.TXT 3328–3341). Triggers
+  in `func_02F3A2`: **victory** @0x2F542..0x2F55F = `@WINNING` popup →
+  `func_075352(1, 2, "KINGLOSE")` → `[0x5382]|=8`; **defeat** @0x2F670..
+  0x2F6B0 = `@LOSING<n>` → `func_075352(2, 1, "KINGWIN")` (%STRING0 = the
+  per-player string `[bx-0x72BE]`, read as the country) → `0x191F:0xAAC` →
+  `jmp 0x2F44C` (the score). Rects (ssdec): KINGLOSE (74,198) 149×179 →
+  (0,20); KINGWIN (134,198) 214×198 → (27,1). Ports: JS `drawEndKing` over a
+  shared `drawKingText` runner (the audience's `drawKing` refactored onto it),
+  `plateScreen('endking')` replacing the `KINGLOSE`/`KINGWIN` **popups** in
+  `runWar`; C `rm_draw_king_plate` over `king_page`/`king_text`, `CR.king_show`
+  (`colopy_woi.c`, the two `ev_emit`s removed in lockstep), `SCR_ENDKING`.
+  Oracle `tools/render_endking_compare.py` (win / lose, 0/0). **TBD**: the
+  runner's text RGB (engine-resident, cinematics.md §3c — the audience's
+  measured ink 36 is the stand-in); the `[bx-0x72BE]` string's identity.
+- **E5 — second banners `ENGLND2` / `FRANCE2` / `SPAIN2` / `DUTCH2` (SHIPPED).**
+  Not a "frame 2": separate 1-frame sheets built by `func_075352` with N=2
+  (`<NATION>`+`strcat_itoa(2)` @0x753F3) — the **defeat** page only (the sole
+  N=2 caller @0x2F6A6); the `*1` sheets serve both the boot audience
+  (@0x7555C3) and the victory page (@0x2F550). Rects (ssdec): ENGLND2
+  (139,132) 174×133 → (52,0), FRANCE2 (137,130) 176×131 → (49,0), SPAIN2
+  (144,127) 170×128 → (59,0), DUTCH2 (140,130) 170×131 → (55,0). Packed and
+  drawn by E4's page. E4+E5 pak delta **+164,131 B** (3,989,832 → 4,153,963).
+- **E6 — MicroProse boot logo `MPSLOGO.SS` (16) / `MPSNAME.SS` (29) (SHIPPED).**
+  VICEROY.EXE never references them (byte search); OPENING.EXE loads both after
+  `#SOUND.COL` (@0x1BEC/@0x1C06, DGROUP base 0xBF10) and plays them as its first
+  phase — re-read with capstone: `_do_logo` @0x1700 places a frame at
+  `(xa − (w>>1), ya − h + 0x17)` from the record's own descriptor (@0x170D..
+  0x1742 logo, @0x1796..0x17AE name) — the logo's 16 frames all (163,118) 155×119
+  → **(86,22)**; draws the name frame `[0xD6]` first (@0x1836) and the logo frame
+  `[0xD4]` over it (@0x1850); `[0xD4]++` wraps to 1 past nframes (@0x18F2..
+  0x1903); the name phase starts at tick `[0xD2] ≥ 0x5C` = 92 (@0x175C) and its
+  frame clamps at 29 (@0x176F..0x177C). The pacer @0x1916 steps once per
+  `[0x50]` = 6 ticks (DGROUP 0xBF60) of the 60.8766 Hz clock `[0x5CB6]` (ISR ÷2
+  @0x3E0D, ÷5 @0x3E5D/@0x3E73, `add [0x5CB6],1` @0x3EA9; `timer_install`
+  @0x3FC5..0x3FD9, PIT 0x7A8) and ends past tick 0xE4 = 228 (@0x196E). Both
+  counters start at 1 (DGROUP 0xD4/0xD6), so tick t shows logo disk frame
+  `(t−1) mod 16` and, for t ≥ 92, name disk frame `min(t−92, 28)`; step = 98.6
+  ms, phase 3.75 s. Ports: JS `drawMpsLogo` + the `mpslogo` screen before the
+  title (`main()`), any key/click → title; C `rm_draw_mpslogo(tick)` +
+  `SCR_MPSLOGO`, the P4 `boot_title` enters it when the pak carries the sheets
+  and its loop paces it (the Teensy boots straight into a save). Oracle
+  `tools/render_logo_compare.py` (ticks 1/100/130, 0/0). Pak delta **+415,378 B**
+  (4,156,941 → 4,572,319). **TBD**: the DAC reload from `[0x4AE8]` at tick 196
+  (@0x194B..0x196B — source unread; the sheets' own palette is kept); the
+  backdrop under the frames (black here); the `[0x84]/[0x86]` sound latches
+  (@0x193C..0x1959); the exact input verb (`func_001522`, cinematics.md §9).
+- **E7 — `CURSOR.SS` (2 frames 17×17) and `PARCH.SS` (32×24) (SHIPPED).**
+  Both are mandatory boot assets of VICEROY.EXE (exit codes 0x17 / 0x1D,
+  loader @0x076153 / @0x07621F). **Cursor**: `func_00D9E0` @0x00D9E0 blits the
+  frame into a 17×17 scratch filled with 0xFF (@0xD9E7..0xDA2C), reads the
+  hotspot off the frame's **marker pixels** — the last opaque row of column 16
+  and the last opaque column of row 16 (@0xDA36..0xDA67); both frames carry one
+  marker (value 9) at (16,0) and (0,16), so the **hotspot is (0,0)** — stores it
+  (`[0x262C]/[0x262E]` @0xDAB2..0xDAB7, `0xA58:0x1D9` @0xDAC6) and hands the
+  16×16 top-left to the mouse module (@0xDACE..0xDAF2). Frame 1 = the arrow;
+  frame 2 = the click-and-hold scroll cursor the map-view pointer handler
+  `func_024342` swaps in when the button is held and `now − press > 0x14` ticks
+  of the 60.8766 Hz clock (@0x243A3..0x243C3; press latch @0x2436E; restore
+  `push 1` @0x24338). Port: the P4 BLE pointer (`cursor_show`) draws the 16×16
+  frame with the 0xFD key and a 16×16 save-under, frame 2 after a 20-tick hold
+  on the map; a pak without CURSOR falls back to the old cross. **PARCH**: its
+  only consumer is the tiled-rect fill `func_0051D2` (`0x181F:0x4FC`) from the
+  colony painter @0x02705F with args **x=0, y=8, w=0xC7, h=0x78** (fallback
+  colour 7) — the whole **building field**, not a strip; the fill primitive
+  `0xBF5:0` = file 0xE350 phases each axis by the rect origin modulo the tile
+  (@0xE371..0xE3A2; the surface record is `(h, w, ptr)` — allocator file
+  0x787A2 stores `dx`=24 at +0, `ax`=32 at +2) against the screen origin and
+  clips to the rect (@0xE3F7..0xE417). Both ports replace the capture-fitted
+  hash speckle with the tile (`tileFill` / `tile_fill`); PARCH's five colours
+  are WOODTILE's, and were the 0x62/0x63/0x64 ramp the speckle imitated. The
+  colony oracle stays 0 structural / 141 accepted. Pak delta **+2,978 B**
+  (4,153,963 → 4,156,941).
+- **E8 — `CUSTOMIZ.PIK` (TBD, not shipped).** Consumer byte-cited:
+  `func_070060` @0x070060 (`0x1A1F:0xBE4`, `push 0x2022; lcall 0x181f,0x44e`
+  @0x70085/0x70088), entered from the boot-menu runner @0x075CCB on
+  `@BEGINMENU` row 3 "CUSTOMIZE New World"; grid helper `func_06FDF0` (x =
+  col·0x4C+0xA @0x6FDF3/0x6FDF7, y = row·0x3C+0x10 −1 when row>1 @0x6FDFF..
+  0x6FE12; cells 48×72). **Blocker**: the cell captions (LABELS index →
+  literal), the font, and the Diff/Power sub-popups `func_070302`/`func_070494`
+  are unread (tracker row 12), and its four `[0x1E7E]` selections feed a map
+  generator neither port models — a page with unread text is not built.
+- **Orphans, never packed**: `DECLARAT.PIK`, `KING2.SS`, `WIN.SS`, `WIN-FWRK.SS`
+  (no loader in any EXE), `BDARK.SS` (rule 5). **Part H**: `OPENBORD.PIK`
+  (OPENING.EXE `push 0x13e; lcall 0x1b4,8` @0x1D10 — the tracker's "OPENBORD
+  decor @0x075B8E/B0/D2" in VICEROY was a misread: those are `0x1A1F:0xDF8`
+  rect fills), `OPENING.PIK`, `CLOS-BKG.PIK` and the OPEN*/CLOS-* sheets.
 
 ---
 

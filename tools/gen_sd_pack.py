@@ -158,9 +158,50 @@ def build_sheet(path: Path, want_pal: bool):
     return payload, len(frames), maxw, maxh
 
 
+# ===================== Part E (screens track) -- BEGIN ======================
+# The assets the Part E screens draw (docs/REMAINING_WORK.md Part E).  They
+# enter the pak through the SAME census as every other sheet -- the manifest
+# port/tools/build_assets.py writes (PART_E_SS / PART_E_PIK there) -- so the
+# pak and the JS DATA cannot drift.  This block exists for two reasons:
+#   (a) a generation-time check that the census really carries the group
+#       (a manifest built from an older build_assets.py would silently ship
+#       a pak the new renderers find empty), and
+#   (b) the per-board gate `--board teensy`: the Teensy sketch reads the pak
+#       into a FIXED 3,500,000-byte EXTMEM buffer (cport/teensy/
+#       colopy_teensy.ino `pakbuf`), which the group overflows, while the
+#       P4's `pakbuf` is an 8,000,000-byte PSRAM allocation with room to
+#       spare (cport/MEMORY_BUDGET.md).  A gated pak simply lacks the
+#       entries; every Part E renderer treats a missing entry as "draw
+#       nothing" (rd_pak_find fails), so the Teensy build degrades to the
+#       pre-Part-E screens instead of truncating the pak.
+# Consumers (all VICEROY.EXE file offsets, re-read 2026-09-02):
+#   CC-00..24 + CCBKGD.PIK   Continental Congress portrait page,
+#                            func_03BB4A @0x03BB4A / func_03BAA6 @0x03BAA6
+#   DEC-UPP?/DEC-LOW?/DEC-SQIG + DECOIND.PIK   the Declaration signing,
+#                            func_03DA2A @0x03DA2A (DECLARAT.PIK: orphan)
+#   SCORE01..24              the end-game score plate, func_03A9C0 @0x03A9C0
+#                            (WOODPAN2.PIK, already packed, through the
+#                            plate's own palette @0x3AB46..0x3AB84)
+#   KINGLOSE/KINGWIN + ENGLND2/FRANCE2/SPAIN2/DUTCH2   the King's win/loss
+#                            audience, func_075352 @0x075352 (KINGLSS1/2
+#                            and the *1 banners are already packed)
+PART_E_SHEETS = [f"CC-{i:02d}" for i in range(25)] + \
+    [f"DEC-UPP{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + \
+    [f"DEC-LOW{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"] + ["DEC-SQIG"] + \
+    [f"SCORE{i:02d}" for i in range(1, 25)] + \
+    ["KINGLOSE", "KINGWIN", "ENGLND2", "FRANCE2", "SPAIN2", "DUTCH2"] + \
+    ["CURSOR", "PARCH"] + \
+    ["MPSLOGO", "MPSNAME"]  # the MicroProse boot logo (OPENING.EXE @0x1700)
+PART_E_PIKS = ["CCBKGD", "DECOIND"]
+# ====================== Part E (screens track) -- END =======================
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(ROOT / "cport" / "pak" / "COLOPY.PAK"))
+    ap.add_argument("--board", choices=("p4", "teensy"), default="p4",
+                    help="teensy: leave the Part E group out (see the "
+                         "PART_E block); p4: the full pak (default)")
     args = ap.parse_args()
 
     if not COLONIZE.is_dir():
@@ -181,8 +222,21 @@ def main():
 
     entries = []                          # (name, payload, w, h, frames)
 
+    # ---- Part E (screens track) census check + per-board gate ----
+    missing = [n for n in PART_E_SHEETS if n not in man["sheets"]] + \
+        [n for n in PART_E_PIKS if n not in man["backgrounds"]]
+    if missing:
+        sys.exit("Part E assets missing from the manifest census: %s -- "
+                 "rebuild it with port/tools/build_assets.py" % missing)
+    gated = set()
+    if args.board == "teensy":
+        gated = set(PART_E_SHEETS) | set(PART_E_PIKS)
+        print("--board teensy: leaving the Part E group out (%d sheets, "
+              "%d backgrounds)" % (len(PART_E_SHEETS), len(PART_E_PIKS)))
+
     # ---- sprite sheets: the port's census minus the derived PHYS0C ----
-    sheet_names = sorted(k for k in man["sheets"] if k != "PHYS0C")
+    sheet_names = sorted(k for k in man["sheets"]
+                         if k != "PHYS0C" and k not in gated)
     for nm in sheet_names:
         assert nm != "BDARK", "BDARK.SS is an orphan — never load (rule 5)"
         # every sheet carries its embedded palette (768 B each): the
@@ -201,7 +255,7 @@ def main():
         entries.append((f"{nm}.SS", payload, w, h, nfr))
 
     # ---- backgrounds ----
-    for nm in sorted(man["backgrounds"]):
+    for nm in sorted(k for k in man["backgrounds"] if k not in gated):
         w, h, pix, rgb = load_pik((COLONIZE / f"{nm}.PIK").read_bytes())
         mb = man["backgrounds"][nm]
         if (mb["w"], mb["h"]) != (w, h):
@@ -255,7 +309,16 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(bytes(toc) + bytes(body))
 
-    # ---- generated TOC header ----
+    # ---- generated TOC header (the FULL pak's; a gated board pak is a
+    # strict subset and must not rewrite the committed contract) ----
+    total = toc_size + len(body)
+    n_bg = len([k for k in man["backgrounds"] if k not in gated])
+    if gated:
+        print(f"COLOPY.PAK ({args.board}): {count} entries, {total} bytes "
+              f"({len(sheet_names)} sheets, {n_bg} backgrounds, "
+              f"{len(man['fonts'])} fonts, {n_text} text pairs)")
+        print(f"wrote {out} (header {HDR_OUT.relative_to(ROOT)} untouched)")
+        return
     names = [e[0] for e in entries]
     hdr = [
         "/* Generated by tools/gen_sd_pack.py — DO NOT hand-edit.",
@@ -307,9 +370,8 @@ def main():
            "#endif /* COLOPY_PAK_H */", ""]
     HDR_OUT.write_text("\n".join(hdr))
 
-    total = toc_size + len(body)
     print(f"COLOPY.PAK: {count} entries, {total} bytes "
-          f"({len(sheet_names)} sheets, {len(man['backgrounds'])} backgrounds, "
+          f"({len(sheet_names)} sheets, {n_bg} backgrounds, "
           f"{len(man['fonts'])} fonts, {n_text} text pairs)")
     print(f"wrote {out} + {HDR_OUT.relative_to(ROOT)}")
 

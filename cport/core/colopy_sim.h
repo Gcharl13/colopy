@@ -324,6 +324,9 @@ void offer_mercenaries(void);         /* offerMercenaries (game.js:9235) */
 void check_intervention(void);        /* checkIntervention (game.js:9327) */
 void refs_push(int ui);               /* G.refUnits.push */
 void end_game_sequence(void);         /* endGameSequence (game.js:8119) */
+int  score_panel(const score_parts_t *s);   /* func_03A9C0's band, -1 none */
+int  end_game_scored(void);           /* the @SCORED ask after the plates;
+                                       * returns the row (0 = leave) */
 int  rel_have_treaty(int a, int b);
 int  rel_parley_eligible(int rn);
 void rel_declare_war(int a, int b);
@@ -586,6 +589,27 @@ typedef struct {
     int16_t ui_select;               /* LIVE FRONT: select this
                                       * units_order index (-1 none) —
                                       * the landfall party (10905) */
+    int8_t  ff_show;                 /* LIVE FRONT: the Continental
+                                      * Congress portrait page
+                                      * (func_03BB4A): >= 0 the new
+                                      * father to light up (@0x3BD1D),
+                                      * -2 the F3 gallery (@0x38073),
+                                      * -1 none */
+    uint8_t decl_show;               /* LIVE FRONT: the Declaration
+                                      * signing page (func_03DA2A) is
+                                      * due — set after @INDEPENDENCE
+                                      * (its engine dispatch is TBD) */
+    uint8_t king_show;               /* LIVE FRONT: the King's audience at
+                                      * the war's end (func_075352):
+                                      * 1 victory (KINGLOSE), 2 defeat
+                                      * (KINGWIN), 0 none */
+    uint8_t f10_show;                /* LIVE FRONT: the end-game F10 page
+                                      * (func_039EE2(1) @0x3B350) */
+    int8_t  score_show;              /* LIVE FRONT: the SCORE<panel+1>
+                                      * plate (func_03A9C0), -1 none */
+    uint8_t scored_pending;          /* LIVE FRONT: ask @SCORED once the
+                                      * plates are dismissed
+                                      * (end_game_scored) */
     uint8_t land_ho;                 /* woodcut-1 latch (G.landHo;
                                       * loads import it true, 10240) */
     char leader[24];                 /* G.leader — the front sets it at

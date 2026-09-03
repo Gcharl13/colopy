@@ -11757,3 +11757,194 @@ capture loop now probes the frame state and gives every view-mode entry a fresh 
 **Not changed**: the MAP row's total depends on the water-cycle phase at capture time
 (5,186 with 3,120 cycle-accepted vs 2,066 in a phase-matched session); the census reports
 the phase-explained pixels in their own column rather than fixing a phase.
+
+## 2026-09-02v — screens track: the Part E plate pages (E1 portraits)
+
+**Conflict**: `docs/UI_AUDIT_TRACKER.md` row 5 glossed `0x191F:0xF74` as the
+F3 report's "OK/dismiss"; `docs/REMAINING_WORK.md` Part E listed the 25
+`CC-NN.SS` portraits as unshipped with no consumer named.
+
+**Bytes** (`VICEROY_annotated.asm`, re-read): `0x191F:0xF74` is the thunk of
+`func_03BB4A(power, new_ff)` @0x03BB4A — the CCBKGD.PIK **portrait page**
+(load @0x3BB6A, DAC @0x3BB87, blit 320×200 @0x3BBB5, key/click wait
+`0x181F:0x3C0` @0x3BC14). F3 (`func_037A20`) waits for its own key
+@0x3805B and only then calls the page @0x38073 with `new_ff = -1`; the
+`@FREEDOM` handler `func_03BC42` calls it @0x3BD1D with the new father and
+follows with the pedia page `func_06AE08` @0x3BD26. The painter
+`func_03BAA6` @0x03BAA6 reads the draw-order table at file 0x1EBDA and
+blits each owned `CC-NN` at its sheet-baked anchor (`es:[bx+0x46]/[+0x48]`,
+@0x3BB25..0x3BB36).
+
+**Decisions**:
+1. Row 5's gloss is corrected in place; the page is ported to both engines
+   as the `congress` plate (JS `plateScreen`, C `SCR_CONGRESS` via the
+   `CR.ff_show` live-front channel), with `tools/render_congress_compare.py`
+   as its oracle (ceiling 0).
+2. The CC atlases and CCBKGD are baked through CCBKGD's palette **after the
+   usePalette merge** (its low-16 is the EGA stub; the art uses indices 5
+   and 12): the DAC shows the master's row there, so the JS PNGs must too —
+   not a raised ceiling.
+3. Recorded TBD, not guessed: the reveal wipe (`0x181F:0x3EA`, arg 8) and
+   the `[0x346]`/`[0x9E38]` latches gating the F3 second page (timed
+   message flashes, 20-tick latches @0x2C7C1 / @0x35B4E).
+4. `tools/stale_check.py` probe G2 no longer pins "exactly seven" render
+   oracles: it requires a ceiling entry per oracle, whatever their number.
+5. The Teensy SD path (`pakbuf` 3,500,000 B) cannot hold the Part E pak:
+   `gen_sd_pack.py --board teensy` omits the group rather than truncating.
+
+## 2026-09-02w — screens track: the Declaration signing (E2), three corrections
+
+**Conflict**: `spec/ui/declaration_independence.md` §1/§2 gives the pen
+seed as "(x=0x94=148, y=0x7E=126)" with the glyph width advancing **y**;
+§4 says there is "no separate final-OK key-wait inside func_03DA2A";
+`docs/UI_AUDIT_TRACKER.md` row 16 names "dispatch slot 4 @0x3EA0B" as
+the caller; row 16 and the spec leave the per-glyph cadence TBD.
+
+**Bytes** (`func_03DA2A` @0x03DA2A, re-read; `func_00E76A` = `0x181F:0x254`
+@0xE76A..0xE84A): the blit verb takes **x in `dx`** (clipped against the
+surface width @0xE7E2..0xE7FC) and **y on the stack `[bp+6]`** (clipped
+against the height @0xE833..0xE848). The signing loop passes
+`dx = [bp-0x1FC]` @0x3DD36 and pushes `[bp-0x4FE]` @0x3DD2C, seeded
+`[bp-0x1FC] = 0x7E` @0x3DC3C and `[bp-0x4FE] = 0x94` @0x3DC42 — so the pen
+starts at **x = 126, y = 148**, the descriptor-0 width (`es:[bx+0x4A]`
+@0x3DD16) advances **x** (@0x3DDD9), the class delta {−1,−2,−3,−4} moves
+**y** (@0x3DDE0), and the wrap test `cmp [bp-0x1FC],0xDC` @0x3DE04 is on
+**x**. The exit block calls `0x181F:0x3C0` @0x3DE17 = `func_004A80` =
+`wait_keyOrClick` (spec/ui/input.md §193) — a final dismissal wait, which
+the spec itself lists among the "restore" calls. `0x3EA0B` is `ljmp
+0x191F:0x364` = `func_03C638`; a raw search for the far pointer
+`9A 10 1F 19` (`0x191F:0x109A`) finds nothing in VICEROY.EXE. The frame
+pacer @0x3DD51..0x3DDC3 waits one `0xC0C:6` tick at a time until ≥ 5 ISR
+ticks have passed; `0xC0C:6` (file 0xE4C6) reads through `[0x267A]`, which
+`timer_install` sets to `0x92E8` @0xC857 — the 60.8766 Hz counter
+(docs/PALETTE_AND_CYCLING.md; ISR ÷2 ÷5 of 608.766 Hz). Five ISR ticks are
+8.2 ms, under one 16.43 ms tick, so **each stroke frame lands on the next
+60.8766 Hz tick**.
+
+**Decisions**:
+1. Pen seed x=126 / y=148; x advances by the glyph width; y drifts up by
+   the class delta; wrap on x ≥ 220. The spec's swapped axes are struck
+   (its offsets were right, the register/stack roles were read backwards).
+2. There IS a final key/click wait (@0x3DE17). Both ports: a key mid-run
+   = the skip flag, a key afterwards = dismiss.
+3. The cadence is **resolved**: one stroke frame per 60.8766 Hz tick
+   (`DECL_FRAME_MS` / `RM_DECL_TICK_HZ`); only the first frame's phase
+   (up to 5 ISR ticks) is unmodelled.
+4. The caller stays **TBD**: the tracker's "slot 4 @0x3EA0B" is struck; the
+   ports show the page after `@INDEPENDENCE` and say so.
+5. DECLARAT.PIK is never packed (orphan, B-negative, unchanged).
+
+## 2026-09-02x — screens track: the score plate (E3) and what it corrected
+
+**Conflicts**: `spec/ui/cinematics.md` §4 gives the band loop as running on
+`scaled … >> 1`; `spec/systems/scoring.md` §2 calls `[0x372]` "the score
+accumulator, zeroed at the top of func_03A9C0"; both ports popped
+`@EXPLOITS` up and picked the `@SCORE` row at random (the C burning an RNG
+draw for it); both template fillers left `%%` as two signs; the C
+`score_parts` gave a profession byte of 0 the +2 plain-colonist score.
+
+**Bytes**: `func_03A9C0` @0x03A9C0 — `[bp-2] = mult·base/100` @0x3AA31..
+0x3AA3E, the band loop @0x3AA41..0x3AA68 compares `i·i/3` against THAT
+value (`cmp ax,[bp-2]; jge` @0x3AA55/0x3AA58), and only then `sar [bp-2],1`
+@0x3AA6A halves it for `%NUMBER0`. `[0x372]` is saved @0x3A9E5, zeroed
+@0x3A9EC and restored @0x3AD9F exactly as every PIK page does with the
+palette-cycling enable (func_03BB4A @0x3BB56/@0x3BC37, func_03DA2A
+@0x3DA5E/@0x3DE3A, func_075352 @0x75368/@0x7558D) — it is not a score
+accumulator. The page draws the three `@EXPLOITS` lines itself
+(@0x3ABC7..0x3AC0B) and the `@SCORE` ladder rows 0..panel with the achieved
+row highlighted (@0x3AC1A..0x3ACA8) — no popup, no random pick; no
+`0x181F:0x4D4` exists in 0x039E98..0x03B36E. The format verb `0x191F:0x910`
+(file 0x6EEEC) turns `%%` into the literal "%" at DG 0x1FC5 @0x6F0CE..
+0x6F0E6. `0xD1D:0xD1A` (file 0x102EA) is `strrchr`, returning the pointer
+AT the last space. The population gate (`func_039EE2` @0x3A0BE..0x3A117)
+gives `{0x19,0x1A,0x1B}` +1, `0x1C` +2 and everything else — byte 0 =
+`@JOBEXPERT[0]` included — +4; the JS `SAV_PROFESSION0` already read it
+so, and the two ports disagreed by 16 on sav1653 (299 vs 315).
+
+**Decisions**:
+1. The band is chosen on the un-halved value; the halving is display-only.
+   cinematics.md §4 is amended, not rewritten.
+2. `[0x372]` is the palette-cycling enable everywhere; scoring.md's
+   "accumulator" sentence is struck.
+3. The end game is F10 (its own key-wait @0x3A9B5) → the plate → `@SCORED`
+   in both engines; the `@EXPLOITS` popup, the random `@SCORE` notice and
+   the C's `R(DAT_SCORENAMES_COUNT)` draw are removed together (lockstep:
+   no draw exists on the engine's path).
+4. `%%` → `%` in both fillers (byte-cited).
+5. The caption's `%STRING0` is `strrchr(name, ' ')` with its leading space
+   (or the whole name); the second comma field is left-trimmed
+   (`0x1A1F:0xB44` = file 0xD972) before the fill.
+6. The C population classifier drops `prof == 0 → +2`; the two ports agree
+   again (and with the engine's gate).
+7. The name at `0x5426 + player·0x34` is read as the country (the port's
+   existing `@EXPLOITS` model) — its identity is recorded as unread.
+
+## 2026-09-02y — screens track: the King's win/loss pages (E4/E5)
+
+**Conflict**: both ports popped `@KINGLOSE` and `@KINGWIN` up as ordinary
+bulletins; `docs/REMAINING_WORK.md` Part E listed five "King / win / lose
+plates" and four `*2` "banner frames" as unshipped.
+
+**Bytes**: `func_075352(N, sub, key)` @0x075352 composites `KINGLSS<N>.PIK`,
+the `<NATION><N>.SS` banner and one king sheet — `(1,1)` KING1, `(1,≠1)`
+KINGLOSE, `(2,*)` KINGWIN (@0x75430..0x75461) — into the PIK buffer with the
+anchored verb (@0x7542B/@0x7549D), then runs the key's `@`-text in FONTKING
+through `0x181F:0x3FE` @0x75540 — the text is ON the page. `func_02F3A2`
+calls it with `(1, 2, "KINGLOSE")` after `@WINNING` (@0x2F542..0x2F552) and
+`(2, 1, "KINGWIN")` after `@LOSING<n>` (@0x2F670..0x2F6A8). `KING2`, `WIN`
+and `WIN-FWRK` occur in no EXE (byte search, B-negative). The `*2` sheets are
+separate one-frame sheets named by `strcat_itoa(N)` @0x753F3.
+
+**Decisions**:
+1. `@KINGLOSE`/`@KINGWIN` are page text, not popups: both ports draw the
+   pages (`endking` plate / `SCR_ENDKING`) and drop the popup emits together
+   (no audio cue keyed on them — `colopy_audio_cues.c`).
+2. The audience page's runner (`drawKing` / `rm_draw_king`) is refactored
+   into a shared king-page painter so the three pages cannot drift.
+3. The `*2` banners ship with the defeat page; `KING2`/`WIN`/`WIN-FWRK` stay
+   out (rule-5 analogue).
+4. TBD, not guessed: the runner's text RGB (engine-resident); the identity
+   of the `[bx-0x72BE]` string `@KINGWIN` prints (read as the country).
+
+## 2026-09-02z — screens track: the pointer, the parchment, the boot logo (E6/E7)
+
+**Conflicts**: `spec/ui/colony_screen.md` §3.7 called `0x181F:0x4FC
+@0x02705F` a "strip blit"; both ports painted the colony building field
+with a positional-hash speckle fitted to a capture; the P4 pointer was a
+hand-drawn cross; the cursor hotspot was TBD-7; the boot logo lived only in
+a research lead.
+
+**Bytes**: `func_0051D2` (`0x181F:0x4FC`) is the tiled fill of the PARCH
+tile surface `[0x82E]` (built at boot @0x07621F..0x07624D); its call
+@0x02705F passes x=0, y=8, w=0xC7, h=0x78, fallback colour 7 — the whole
+building field. The primitive `0xBF5:0` (file 0xE350) phases x by `x mod
+tile.w` and y by `y mod tile.h` against the screen origin (@0xE371..
+0xE3A2) and clips tiles to the rect (@0xE3F7..0xE417); the surface record
+is `(h, w, ptr)` — the allocator at file 0x787A2 stores `dx` at +0 and `ax`
+at +2, the boot call passing `ax=0x20, dx=0x18`. PARCH's five colours
+(98/99/100/106/107) equal WOODTILE's and are the 0x62/0x63/0x64 ramp the
+speckle imitated. `func_00D9E0` @0x00D9E0 reads the cursor hotspot off
+marker pixels in the frame's last column and row (@0xDA36..0xDA67); both
+CURSOR frames carry one marker at (16,0) and (0,16) → hotspot (0,0);
+frame 2 is selected by `func_024342` after a > 0x14-tick hold on the map
+(@0x243A3..0x243C3). OPENING.EXE's `_do_logo` @0x1700 and pacer @0x1916
+were re-read with capstone and agree with the lead; the clock is the ISR
+÷2 ÷5 counter `[0x5CB6]` (@0x3E0D/@0x3E5D/@0x3EA9, install @0x3FD0..0x3FD9).
+
+**Decisions**:
+1. The building field is the PARCH tile, phased to the screen origin, in
+   both engines; the hash speckle is retired from that role (its function
+   is kept for any other caller). The §3.7 "strip" wording is amended.
+2. The P4 pointer is CURSOR.SS frame 1 (arrow) / frame 2 (after a 20-tick
+   hold on the map), hotspot (0,0), 16×16 with the marker row/column
+   excluded; a pak without the sheet keeps the old cross. TBD-7 is closed.
+3. The boot logo is ported as a screen before the title (`mpslogo` /
+   `SCR_MPSLOGO`) at OPENING.EXE's cadence (6 ticks of 60.8766 Hz per step,
+   end past tick 228, name from tick 92). TBD, not guessed: the `[0x4AE8]`
+   DAC reload at tick 196, the backdrop under the frames, the sound
+   latches `[0x84]/[0x86]`, the exact input verb.
+4. `CUSTOMIZ.PIK` stays unshipped: its captions/font/sub-popups are unread
+   and its selections feed an unmodelled generator (REMAINING_WORK E8).
+5. The tracker row 8 "OPENBORD decor @0x075B8E/B0/D2" is struck: those
+   sites are `0x1A1F:0xDF8` rect fills and "OPENBORD" does not occur in
+   VICEROY.EXE; the PIK is OPENING.EXE's (@0x1D10).

@@ -45,7 +45,7 @@ by `tools/gen_arduino_p4_sketch.py`.
 | Internal SRAM | every static above (~219 KB BSS + 3 KB data), the loop task's stack, and the IDF/Arduino runtime's own allocations |
 | PSRAM (heap, `heap_caps_malloc(..., MALLOC_CAP_SPIRAM)`) | `fbuf` 1,228,800 B (1024x600 RGB565), `pakbuf` 8,000,000 B cap, `savbuf` 80,000 B — plus the MIPI DPI driver's own frame buffer, allocated *before* the sketch runs |
 | Program flash | core code, `colopy_data`, `colopy_text` |
-| microSD | `COLOPY.PAK` (3,148,409 B today), `COLAUDIO.PAK` when present, `.SAV` files — the only writable store (the `.CPX` sidecar is gone since 2026-09-02, C3.7) |
+| microSD | `COLOPY.PAK` (4,572,319 B with the Part E screens E1–E7, 2026-09-02; 3,149,165 B before them — the per-group deltas are in `docs/REMAINING_WORK.md` Part E), `COLAUDIO.PAK` when present, `.SAV` files — the only writable store (the `.CPX` sidecar is gone since 2026-09-02, C3.7) |
 
 **Tools ▸ PSRAM must be Enabled.** Without it the DPI driver cannot allocate
 its ~1.2 MB frame buffer and fails before any of the above is attempted:
@@ -127,6 +127,20 @@ Harness: `cport/teensy/` (PlatformIO). SD `.SAV` in, full turns,
 | OCRAM | 512 KB | the statics above (~219 KB) + the SD I/O buffer (80 KB, one save) + the event ring |
 | Program flash | 8 MB | core code + `colopy_data` + `colopy_text` (~195 KB) |
 | microSD | GB | `.SAV` files, `COLOPY.PAK` |
+
+**Part E screens and the Teensy pak (2026-09-02).** The Part E plate pages
+(`docs/REMAINING_WORK.md` Part E closure notes) add their assets to
+`COLOPY.PAK`; the P4's 8 MB `pakbuf` absorbs them, the Teensy's SD path has
+a FIXED `EXTMEM pakbuf[3500000]` that the full group overflows. The gate is
+per board, not per byte: `tools/gen_sd_pack.py --board teensy` writes a pak
+WITHOUT the Part E group (the `PART_E` block names it; the committed
+`colopy_pak.h` always describes the full pak), and every Part E renderer
+draws nothing for an entry `rd_pak_find` cannot see, so the Teensy build
+degrades to the pre-Part-E screens instead of reading a truncated prefix.
+The `COLOPY_PAK_FLASH` build embeds whatever `cport/pak/COLOPY.PAK` is
+present into the 8 MB program flash (`colopy_pak_blob.c`); that path has no
+3.5 MB ceiling but does share flash with the code and `colopy_text` — measure
+the sketch size, do not assume.
 
 `colopy_text` can be dropped from flash entirely: `COLOPY.PAK` carries a `TEXT`
 section with the exact same 3,137 key/value pairs, so a flash-constrained build

@@ -690,6 +690,8 @@ const G = {
   colonyPopupUnit: -1,    // @UNITOPTIONS: which G.units entry the menu is for
   colonistSel: 0,
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
+  pediaOnce: false,       // the one-shot Founding Father page (func_06AE08)
+  plates: [], plate: null, // queued full-screen plate pages (plateScreen)
   crosses: 0,             // immigration accumulator
   bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
   rivals: [], metAnyone: false,
@@ -868,6 +870,7 @@ function beginGame() {
   G.dialog = null; G.colonyPopup = null; G.dragArm = null; G.drag = null;
   G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
   G.wcSeen = 0; G.wcAfter = null;    // woodcut shown-bitmask ([0x540A])
+  G.plates = []; G.plate = null; G.pediaOnce = false;
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
   MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
@@ -1437,18 +1440,15 @@ function firstTribeContact(v) {
 // its own directives @width=78 @x=232 @y=21: one 8px line per source line —
 // blank `^` lines consume a slot — with `^^` lines centred in the column and
 // the quoted body left-aligned at x=232.
-function drawKing(ctx) {
-  usePalette('KINGLSS1');
-  ctx.drawImage(IMG.KINGLSS1, 0, 0);
-  sheetAnchored(ctx, NATION_STEM[G.nation], 0);
-  sheetAnchored(ctx, 'KING1', 0);
-
-  const n = DATA.nations[G.nation];
-  const src = (DATA.viceroy[G.nation === 3 ? 1 : 0] || '')
-    .replace(/%COUNTRY/g, n.country).split('\n');
-  const X = 232, WIDTH = 78, CX = X + WIDTH / 2, INK = lut(36);
-  let y = 21;
-  for (const raw of src) {
+// The @-text runner of the king pages (0x181F:0x3FE with the key,
+// func_075352 @0x75540, FONTKING @0x754F6): one 8px line per source line
+// laid out by the key's own directives -- blank `^` lines consume a slot,
+// `^^` lines are centred in the column, body lines are left-aligned at x
+// and wrapped at @width.  (The runner's ink RGB is engine-resident -- lut(36)
+// is the audience page's measured stand-in, spec/ui/cinematics.md §3c: A.)
+function drawKingText(ctx, src, X, WIDTH, y) {
+  const CX = X + WIDTH / 2, INK = lut(36);
+  for (const raw of src.split('\n')) {
     const m = raw.match(/^\^*/)[0].length;
     const text = raw.slice(m).trim();
     if (text) {
@@ -1459,9 +1459,380 @@ function drawKing(ctx) {
       if (m >= 2) y += 8;
     } else y += 8;
   }
+  return y;
+}
+// func_075352(N, sub, key) @0x075352, the royal-audience page: KINGLSS<N>
+// (@0x7536E..0x753A9) with the <NATION><N> banner (@0x753BB..0x7542B) and
+// one king sheet composited INTO the PIK buffer (@0x75477..0x7549D), the
+// PIK's palette to the DAC (@0x754AD), buffer -> screen (@0x754DB), then
+// the key's text in FONTKING.  Sheet select @0x75430..0x75461: (1,1) ->
+// KING1 (the audience, tune 0x3E @0x7544D), (1,other) -> KINGLOSE, (2,*)
+// -> KINGWIN.  Every sheet lands at its own descriptor anchor.
+function drawKing(ctx) {
+  usePalette('KINGLSS1');
+  ctx.drawImage(IMG.KINGLSS1, 0, 0);
+  sheetAnchored(ctx, NATION_STEM[G.nation], 0);
+  sheetAnchored(ctx, 'KING1', 0);
+  const n = DATA.nations[G.nation];
+  const src = (DATA.viceroy[G.nation === 3 ? 1 : 0] || '')
+    .replace(/%COUNTRY/g, n.country);
+  drawKingText(ctx, src, 232, 78, 21);
   // No caption: neither the bytes (func_075352, read whole) nor the DOS
   // capture docs/screens/07_king_audience.png carry one -- the wait is the
   // popup engine's own modal wait on the @VICEROY scroll (@0x075540).
+}
+// The war's end (func_02F3A2): victory @0x2F542..0x2F55F = @WINNING popup,
+// then func_075352(1, 2, "KINGLOSE") -> KINGLSS1 + <NATION>1 + KINGLOSE.SS
+// ((74,198) 149x179 -> (0,20)) with @KINGLOSE laid out by its own
+// directives @width=68 @x=232 @y=31 (GAME.TXT 3328-3331); defeat
+// @0x2F670..0x2F6B0 = @LOSING<n>, then func_075352(2, 1, "KINGWIN") ->
+// KINGLSS2 + <NATION>2 (ENGLND2 (139,132) 174x133 -> (52,0), FRANCE2 ->
+// (49,0), SPAIN2 -> (59,0), DUTCH2 -> (55,0)) + KINGWIN.SS ((134,198)
+// 214x198 -> (27,1)) with @KINGWIN (@width=90 @x=202 @y=125, %STRING0 =
+// the country, GAME.TXT 3338-3341), then the score.  The pen seeds the
+// painter stores (@0x75526/@0x7552C: 242/47) are register seeds the
+// runner re-lays-out from the directives (RULINGS 2026-07-31).  KING2.SS,
+// WIN.SS and WIN-FWRK.SS have no loader in any EXE -- never drawn.
+const NATION_STEM2 = ['ENGLND2', 'FRANCE2', 'SPAIN2', 'DUTCH2'];
+function drawEndKing(ctx) {
+  const win = !!(G.plate && G.plate.params.win);
+  const pik = win ? 'KINGLSS1' : 'KINGLSS2';
+  usePalette(pik);
+  ctx.drawImage(IMG[pik], 0, 0);
+  sheetAnchored(ctx, (win ? NATION_STEM : NATION_STEM2)[G.nation], 0);
+  sheetAnchored(ctx, win ? 'KINGLOSE' : 'KINGWIN', 0);
+  const key = win ? 'KINGLOSE' : 'KINGWIN';
+  const t = DATA.events[key];
+  if (!t) return;
+  const src = t.body.map(l => fillTemplate(l, { STRING0: DATA.nations[G.nation].country }))
+    .join('\n');
+  if (win) drawKingText(ctx, src, 232, 68, 31);
+  else drawKingText(ctx, src, 202, 90, 125);
+}
+
+// ---------------------------------------------------------------- plates
+// Full-screen pages the engine shows modally between the popups, each a
+// wait_keyOrClick (0x181F:0x3C0 = func_004A80) page with no chrome: the
+// Continental Congress portrait page (func_03BB4A), the Declaration signing
+// (func_03DA2A), the end-game score plate (func_03A9C0) and the King's
+// win/loss audience (func_075352).  The port queues them like woodcuts --
+// the popups fire first, the plate shows once the queue drains, and the
+// dismissal hands back to the map (or runs the plate's `after` first).
+// The sim harnesses stub plateScreen out the way they stub woodcutOnce, so
+// the screen stays 'map' under the oracles.
+const PLATE_SCREENS = new Set(['congress', 'declaration', 'score', 'endking']);
+function plateScreen(name, params, after) {
+  G.plates = G.plates || [];
+  G.plates.push({ name, params: params || {}, after: after || null });
+  if (!G.plate) plateNext();
+}
+function plateNext() {
+  const p = (G.plates || []).shift();
+  if (!p) { G.screen = 'map'; return; }
+  G.plate = p;
+  // an advisor report can be queued as a plate too (the end-game F10 page,
+  // func_039EE2(1) with its own key-wait @0x3A9B5)
+  if (p.name === 'report') G.report = p.params.fk;
+  G.screen = p.name;
+}
+function plateDismiss() {
+  const p = G.plate;
+  G.plate = null;
+  G.screen = 'map';
+  if (p && p.after) p.after();
+  if (G.screen === 'map') plateNext();
+}
+
+// The Continental Congress portrait page, func_03BB4A @0x03BB4A: CCBKGD.PIK
+// full-screen (buffer -> screen 320x200 @0x3BBB5, its own palette to the DAC
+// @0x3BB87), then func_03BAA6 @0x03BAA6 walks the 25-entry DGROUP draw-order
+// table at file 0x1EBDA (DG 0x123A, read @0x3BAB8) and, for every father the
+// power owns (power_has_father 0x181F:0x7B4 @0x3BAC5), builds "CC-" + NN
+// (@0x3BAD1..0x3BAFD; NN = the table VALUE = the @FATHERS index, zero-padded
+// @0x3BAE0/0x3BAE6) and blits its frame 1 anchored at the sheet's own
+// (es:[bx+0x46], es:[bx+0x48]) at 100% @0x3BB25..0x3BB36 -- every portrait's
+// screen position is baked into its .SS, and the table is only the paint
+// order.  The reveal (@0x3BBBA..0x3BC0C: the new father's bit is cleared,
+// the page drawn and presented, the bit set, the page drawn again and
+// staged-presented with arg 8) is a wipe the port collapses to its final
+// frame (the wipe verb 0x181F:0x3EA is TBD).  Then the key/click wait
+// @0x3BC14, the game palette back @0x3BC24.  No title, frame or OK widget.
+// Two callers: the @FREEDOM acquisition (func_03BC42 @0x3BD1D, followed by
+// the Colonizopedia Founding Father page func_06AE08 @0x3BD26) and the F3
+// report's dismissal (func_037A20 @0x38073, new_ff = -1: the gallery of
+// everyone owned).  The 25 CC sheets carry CCBKGD's palette except entries
+// 251/255 (measured), so the atlas resolves like the DAC does.
+const FF_DRAW_ORDER = [6, 20, 1, 23, 24, 22, 7, 3, 8, 18, 4, 21, 10, 13, 0,
+                       17, 5, 12, 15, 11, 2, 9, 14, 19, 16];
+function fatherOwnedIdx(i) {
+  const f = DATA.fathers[i];
+  return !!f && G.fathersOwned.includes(f.name);
+}
+function drawCongressPortraits(ctx) {
+  usePalette('CCBKGD');
+  ctx.drawImage(IMG.CCBKGD, 0, 0);
+  for (const id of FF_DRAW_ORDER)
+    if (fatherOwnedIdx(id)) sheetAnchored(ctx, 'CC-' + String(id).padStart(2, '0'), 0);
+}
+// func_06AE08(ff) @0x3BD26: the Colonizopedia Founding Father page shown
+// once after the reveal, then straight back to the game (the pedia's own
+// index never opens).
+function pediaOnce(cat, idx) {
+  G.pediaCat = cat;
+  G.pediaSel = Math.max(0, pediaList().findIndex(e => e.idx === idx));
+  G.pediaMode = 'entry';
+  G.pediaOnce = true;
+  G.screen = 'pedia';
+}
+
+// ---- the Declaration of Independence signing, func_03DA2A @0x03DA2A ----
+// DECOIND.PIK full-screen (@0x3DA47 load, @0x3DA6A its palette to the DAC,
+// @0x3DA98 buffer->screen 320x200; DECLARAT.PIK has no loader in any EXE),
+// then the leader name (0x540E + player*0x34 @0x3DAB4) is lower-cased
+// (strlwr 0xD1D:0xD46 @0x3DACD = file 0x10316, A..Z only) and word-initial
+// capitalised (@0x3DB06..0x3DB3C: an alpha char after a non-alpha, if lower,
+// -= 0x20; ctype table DG 0x27ED = file 0x2018D, MSC layout bit0 upper,
+// bit1 lower, bit2 digit, bit3 space, bit4 punct).  Only the letters that
+// occur load their sheets ("DEC-UPP"+c / "DEC-LOW"+c @0x3DB8E..0x3DC20;
+// DEC-SQIG always @0x3DC22).  Pen seed x=0x7E (126) @0x3DC3C, y=0x94 (148)
+// @0x3DC42 -- x is the dx register of the top-left blit 0x181F:0x254
+// @0x3DD36 and y its stack arg @0x3DD2C (the spec's swapped axes are
+// corrected in RULINGS 2026-09-02w).  Per char (@0x3DC58..0x3DCFD):
+//   space|punct  -> x advance 3, y -1, no sheet          (@0x3DC6B/0x3DC70)
+//   not alpha    -> DEC-SQIG, 10 frames, y -4, then STOP (@0x3DC88..0x3DCA1)
+//   upper        -> DEC-UPP<c>, 10 frames, y -3          (@0x3DCCB/0x3DCD1)
+//   lower        -> DEC-LOW<c>,  7 frames, y -2          (@0x3DCF2/0x3DCF8)
+// frames i=0..n-1 are engine frames i+2 = disk descriptors 1..n (@0x3DD30/
+// 0x3DD31; descriptor 0 is the empty stroke), each drawn top-left at the
+// pen and presented; then x += the glyph's descriptor-0 width (es:[bx+0x4A]
+// @0x3DD16, applied @0x3DDD9), y += the class delta (@0x3DDE0).  Loop head
+// @0x3DDE8..0x3DE0F: stop on the end flag or the NUL; x >= 0xDC (220)
+// forces the SQIG-and-stop path (@0x3DE04).
+// Cadence (@0x3DD51..0x3DDC3): after each frame the ISR tick word [0x8338]
+// is zeroed and the loop waits one 0xC0C:6 tick at a time until >= 5 ISR
+// ticks (608.766 Hz) have passed; 0xC0C:6 reads through [0x267A] = the
+// 60.8766 Hz counter [0x92E8] (timer_install @0xC857; PALETTE_AND_CYCLING.md)
+// and 5 ISR ticks are 8.2 ms < one tick, so every stroke frame lands on the
+// next 60.8766 Hz tick: period 16.43 ms (first-frame phase jitter up to 5
+// ISR ticks).  Any key or click sets the skip flag (@0x3DD74/0x3DD88) and
+// the rest draws at once; the finished page waits for a key/click
+// (0x181F:0x3C0 @0x3DE17) before the game palette returns (@0x3DE27).
+// No caller of func_03DA2A is reachable statically (no lcall/ljmp/far
+// pointer to 0x191F:0x109A -- TBD, a live capture pins the dispatch), so the
+// port shows the page right after @INDEPENDENCE.
+const DECL_FRAME_MS = 1000 / 60.8766;
+const DECL_PUNCT = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~';
+// the ctype classes the loop tests, from the table bytes at file 0x2018D
+function declClass(ch) {
+  const c = ch.charCodeAt(0);
+  if (c >= 0x41 && c <= 0x5A) return 'upper';
+  if (c >= 0x61 && c <= 0x7A) return 'lower';
+  if (c === 0x20 || (c >= 9 && c <= 13)) return 'space';
+  if (DECL_PUNCT.includes(ch)) return 'punct';
+  return 'other';                 // digits, controls, >= 0x80: the squiggle
+}
+function declTitleCase(name) {
+  let s = '', wordStart = true;
+  for (const raw of name) {
+    const ch = declClass(raw) === 'upper' ? raw.toLowerCase() : raw;   // strlwr
+    const cl = declClass(ch);
+    if (cl === 'upper' || cl === 'lower') {
+      s += wordStart && cl === 'lower' ? ch.toUpperCase() : ch;
+      wordStart = false;
+    } else { s += ch; wordStart = true; }
+  }
+  return s;
+}
+// The stroke events in engine order: {sheet, frame (disk descriptor), x, y}.
+function declEvents(name) {
+  const out = [];
+  const s = declTitleCase(name);
+  let x = 126, y = 148;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    let cl = declClass(ch);
+    if (x >= 220) cl = 'other';                       // @0x3DE04 -> @0x3DC88
+    let sheet = null, frames = 0, adv = 3, dy = -1;
+    if (cl === 'other') { sheet = 'DEC-SQIG'; frames = 10; dy = -4; }
+    else if (cl === 'upper') { sheet = 'DEC-UPP' + ch; frames = 10; dy = -3; }
+    else if (cl === 'lower') { sheet = 'DEC-LOW' + ch.toUpperCase(); frames = 7; dy = -2; }
+    if (sheet) {
+      adv = frameSize(sheet, 0)[0];
+      for (let f = 0; f < frames; f++) out.push({ sheet, frame: f + 1, x, y });
+    }
+    x += adv; y += dy;
+    if (cl === 'other') break;                        // the end flag [bp-0x56]
+  }
+  return out;
+}
+function declName() { return G.leader || DATA.nations[G.nation].leader; }
+
+// ---- the end-game score plate, func_03A9C0(display, &panel) @0x03A9C0 ----
+// Selector (@0x3AA0A..0x3AA79): base = func_039EE2's component sum (<= 0
+// -> no screen @0x3AA00); mult = diff+4, +1 if >= 3, +1 if >= 4; scaled =
+// mult*base/100 (@0x3AA31..0x3AA3E, NOT yet halved); for i = 1..24 the panel
+// is i-1 whenever i*i/3 < scaled (@0x3AA41..0x3AA68); THEN the printed
+// rating = scaled >> 1 (@0x3AA6A); panel clamped <= 23 (@0x3AA71); no
+// screen when panel < 0, display == 0 or the "scored" latch [0x5382]&0x10
+// (@0x3AA88..0x3AAA0).  spec/ui/cinematics.md §4 had the halving before
+// the loop -- RULINGS 2026-09-02x.  The row is DETERMINISTIC (the former
+// random pick is gone from both ports).
+function scorePanel(s) {
+  if (s.base <= 0) return -1;
+  const scaled = Math.trunc(s.mult * s.base / 100);
+  let panel = -1;
+  for (let i = 1; i <= 24; i++) if (Math.trunc(i * i / 3) < scaled) panel = i - 1;
+  return Math.min(panel, 23);
+}
+// Page (@0x3AAA5..0x3AD9F): "SCORE" + ("0" if panel < 9) + (panel+1)
+// (@0x3AAAA..0x3AADA); WOODPAN2.PIK straight into the screen surface
+// (@0x3AAFF), then the SCORE sheet loads with the palette-receive pointer
+// [0x23F2:0x23F4] aimed at the PIK's palette buffer (@0x3AB46..0x3AB68), so
+// the DAC upload @0x3AB84 is the PLATE's palette -- WOODPAN2 shows through
+// it (24 distinct tables; the JS re-tables the index plane).  Text, all
+// FONTTINY ([0x89E]) through the centred verb 0x181F:0x100(str, x, w, y,
+// colour): the three @EXPLOITS lines (%STRING0 = the name at 0x5426 +
+// player*0x34, %NUMBER0 = the halved rating, @0x3AB9D..0x3ABB9) at x=0
+// w=320, y = 5, 5+(H+1), 5+2(H+1) (H = FONTTINY height 6), colour 0xFC
+// (@0x3ABC7..0x3AC0B); then @SCORE rows i = 0..panel (@0x3AC1A..0x3ACA8) at
+// y = 0xC3 - (H+1)(i+1) = 188, 181, ..., each line split at its comma
+// (0x191F:0xFC4 = file 0x6FA3E, the second field LEFT-TRIMMED by
+// 0x1A1F:0xB44 = file 0xD972), the first field centred in x=0xA0 w=0xA0
+// (@0x3AC89/0x3AC8C), colour 0xFE, or 0xFC on the achieved row i == panel
+// (@0x3AC3E..0x3AC4E); the caption = the LAST row's second field with
+// %STRING0 = strrchr(name, ' ') (0xD1D:0xD1A = file 0x102EA -- the pointer
+// AT the last space, so the surname keeps its leading space) or the whole
+// name (@0x3ACB2..0x3ACE2), centred in x=0x22 w=0x8C at y=0x8E, colour 0xFC
+// (@0x3ACF6..0x3AD0B); present; the plate's frame 1 anchored at its own
+// descriptor (SCORE01 (104,136) 140x97 -> (34,40); 02..24 (104,138)
+// 142x99 -> (33,40)) at 100% (@0x3AD2F..0x3AD4C); tune 0x24 if panel >= 23,
+// 0x25 if > 6, else 0x21 via 0x181F:0x4C0 (@0x3AD51..0x3AD6D -- no audio in
+// this build); staged present; key/click wait @0x3AD86.
+const _pikThrough = new Map();
+// A PIK drawn from its index plane through the CURRENT palette (the C
+// port's single-DAC behaviour) -- for backgrounds a screen shows through
+// another asset's table.  Falls back to the baked image when no plane was
+// shipped (build_assets.INDEX_PLANE_PIK).
+function drawPikThrough(ctx, name, palKey) {
+  const b64 = DATA.pikidx && DATA.pikidx[name];
+  if (!b64) { if (IMG[name]) ctx.drawImage(IMG[name], 0, 0); return; }
+  const key = name + '|' + palKey;
+  let c = _pikThrough.get(key);
+  if (!c) {
+    const idx = b64bytes(b64);
+    c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const im = g.createImageData(W, H);
+    for (let i = 0; i < idx.length && i < W * H; i++) {
+      const col = PAL[idx[i]];
+      im.data[i * 4] = col[0]; im.data[i * 4 + 1] = col[1];
+      im.data[i * 4 + 2] = col[2]; im.data[i * 4 + 3] = 255;
+    }
+    g.putImageData(im, 0, 0);
+    _pikThrough.set(key, c);
+  }
+  ctx.drawImage(c, 0, 0);
+}
+function scoreSurname(name) {
+  const k = name.lastIndexOf(' ');
+  return k >= 0 ? name.slice(k) : name;
+}
+function drawScoreScreen(ctx, panel) {
+  if (panel === undefined) panel = G.plate ? G.plate.params.panel : 0;
+  const plate = 'SCORE' + String(panel + 1).padStart(2, '0');
+  usePalette(plate);
+  drawPikThrough(ctx, 'WOODPAN2', plate);
+  const H = FONT.tiny.height;
+  const s = scoreParts();
+  const rating = s.base > 0 ? Math.trunc(s.mult * s.base / 100) >> 1 : 0;
+  const ex = (DATA.events.EXPLOITS && DATA.events.EXPLOITS.body) || [];
+  let y = 5;
+  for (let i = 0; i < 3 && i < ex.length; i++, y += H + 1)
+    FONT.tiny.center(ctx, fillTemplate(ex[i], { STRING0: DATA.nations[G.nation].country,
+                                                NUMBER0: rating }),
+                     160, y, lut(0xFC));
+  const rows = DATA.scorenames || [];
+  let caption = '';
+  for (let i = 0; i <= panel && i < rows.length; i++) {
+    const k = rows[i].indexOf(',');
+    const f1 = k >= 0 ? rows[i].slice(0, k) : rows[i];
+    caption = k >= 0 ? rows[i].slice(k + 1).replace(/^[ \t]+/, '') : '';
+    FONT.tiny.center(ctx, f1, 0xA0 + 0xA0 / 2, 0xC3 - (H + 1) * (i + 1),
+                     lut(i === panel ? 0xFC : 0xFE));
+  }
+  const name = G.leader || DATA.nations[G.nation].leader;
+  FONT.tiny.center(ctx, fillTemplate(caption, { STRING0: scoreSurname(name) }),
+                   0x22 + 0x8C / 2, 0x8E, lut(0xFC));
+  sheetAnchored(ctx, plate, 0);
+}
+// step = how many stroke events are on screen; undefined = the live plate's
+// own clock (one event per 60.8766 Hz tick from when the page opened, or all
+// of them once a key/click set the skip flag).
+function drawDeclaration(ctx, step) {
+  usePalette('DECOIND');
+  ctx.drawImage(IMG.DECOIND, 0, 0);
+  const ev = declEvents(declName());
+  const p = G.plate && G.plate.name === 'declaration' ? G.plate.params : null;
+  if (step === undefined) {
+    if (p) {
+      if (p.t0 === undefined) p.t0 = G.wallClock;
+      p.total = ev.length;
+      p.step = p.skip ? ev.length
+        : Math.min(ev.length, Math.floor((G.wallClock - p.t0) / DECL_FRAME_MS));
+      step = p.step;
+    } else step = ev.length;
+  }
+  const n = Math.min(step, ev.length);
+  for (let i = 0; i < n; i++) sheetFrame(ctx, ev[i].sheet, ev[i].frame, ev[i].x, ev[i].y);
+}
+
+// ---- the MicroProse boot logo, OPENING.EXE `_do_logo` @0x1700 / pacer @0x1916 ----
+// VICEROY.EXE never references MPSLOGO/MPSNAME; OPENING.EXE loads both right
+// after #SOUND.COL (@0x1BEC/@0x1C06) and plays them as its first phase.  The
+// pacer (@0x1916..0x198A) steps once every [0x50] = 6 ticks of the 60.8766 Hz
+// clock [0x5CB6] (the INT 8 ISR's /2 /5 of 608.766 Hz @0x3E0D/@0x3E5D..0x3EA9;
+// timer_install @0x3FC5..0x3FD9): tick [0xD2]++ then `_do_logo`.  `_do_logo`
+// (@0x170D..0x1742, @0x1796..0x17AE) places a frame at top-left
+// (xa - (w>>1), ya - h + 0x17) from the record's own descriptor -- the logo
+// (all 16 frames (163,118) 155x119) at (86,22) -- draws the NAME frame [0xD6]
+// first (@0x1836) and the logo frame [0xD4] over it (@0x1850), presents, then
+// [0xD4]++ wrapping to 1 past nframes (@0x18F2..0x1903) and, in the name
+// phase, [0xD6]++ (@0x190F).  The name phase starts at tick 0x5C = 92
+// (@0x175C); its frame clamps at nframes = 29 (@0x176F..0x177C) and stays.
+// Both counters start at 1 (DGROUP 0xD4/0xD6 = 1), so the draw at tick t
+// shows logo disk frame (t-1) mod 16 and, for t >= 92, name disk frame
+// min(t-92, 28).  The phase ends past tick 0xE4 = 228 (@0x196E..0x1976);
+// a DAC reload from [0x4AE8] happens at tick 0xC4 = 196 (@0x194B..0x196B --
+// its source is TBD, the sheets' own palette is kept here); the backdrop
+// under the frames is TBD (black here); any key/click ends the phase
+// (func_001522, spec/ui/cinematics.md §9).  Step = 6/60.8766 s = 98.6 ms.
+const LOGO_STEP_MS = 6000 / 60.8766, LOGO_END_TICK = 228, LOGO_NAME_TICK = 92;
+function logoTop(sheet, idx) {
+  const f = DATA.sheets[sheet] && DATA.sheets[sheet].frames[idx];
+  return f ? [f.hx - (f.w >> 1), f.hy - f.h + 0x17] : null;
+}
+function drawMpsLogo(ctx, tick) {
+  if (tick === undefined) {
+    if (G.logoT0 === undefined) G.logoT0 = G.wallClock;
+    tick = Math.floor((G.wallClock - G.logoT0) / LOGO_STEP_MS);
+    if (tick > LOGO_END_TICK) { G.logoT0 = undefined; G.screen = 'title'; return; }
+  }
+  usePalette('MPSLOGO');
+  ctx.fillStyle = ink(0); ctx.fillRect(0, 0, W, H);
+  if (tick < 1) return;                       // nothing drawn before the first step
+  const nName = (DATA.sheets.MPSNAME || { frames: [] }).frames.length;
+  if (tick >= LOGO_NAME_TICK && nName) {
+    const k = Math.min(tick - LOGO_NAME_TICK, nName - 1);
+    const p = logoTop('MPSNAME', k);
+    if (p) sheetFrame(ctx, 'MPSNAME', k, p[0], p[1]);
+  }
+  const nLogo = (DATA.sheets.MPSLOGO || { frames: [] }).frames.length;
+  if (nLogo) {
+    const k = (tick - 1) % nLogo;
+    const p = logoTop('MPSLOGO', k);
+    if (p) sheetFrame(ctx, 'MPSLOGO', k, p[0], p[1]);
+  }
 }
 
 function wrapText(font, s, width) {
@@ -4745,13 +5116,17 @@ function drawColony(ctx) {
   for (let y = 0; y < H; y += th)
     for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
 
-  // Building field (0,8,199,120). The ground is not a flat fill: the capture
-  // shows a per-pixel speckle over the contiguous palette ramp 0x62/0x63/0x64,
-  // in roughly 30/52/17 proportion (0x63 base, 0x62 highlight, 0x64 shadow).
-  // The engine's noise source is unidentified, so this is a deterministic
-  // positional hash matched to those measured proportions -- an approximation
-  // of the texture, not a reproduction of the generator. Tracked as TBD.
-  groundSpeckle(ctx, 0, 8, 199, 120);
+  // Building field (0,8,199,120): the PARCH.SS parchment tile, 32x24, the
+  // ground the colony painter lays with the tiled-rect fill 0x181F:0x4FC =
+  // func_0051D2 @0x02705F (args x=0, y=8, w=0xC7, h=0x78, fallback colour 7;
+  // the tile surface [0x82E] = the 32x24 PARCH tile the boot loader builds
+  // @0x07621F..0x07624D, hard-loaded at boot).  The fill primitive
+  // 0xBF5:0 = file 0xE350 phases each axis by (origin mod tile) against the
+  // SCREEN origin -- x mod 32, y mod 24 (@0xE371..0xE3A2) -- and clips the
+  // tiles to the rect (@0xE3F7..0xE417), so the first tile row here starts
+  // at PARCH row 8.  The capture-measured speckle ramp 0x62/0x63/0x64 the
+  // port used to hash was this tile's own colours (98/99/100 + 106/107).
+  tileFill(ctx, 'PARCH', 0, 8, 199, 120);
   // Both painters blit at (plotX, plotY+8). An occupied plot draws EXE frame
   // def_id+1, an empty one its category's scenery frame, skipped when that
   // table byte is 0 (`func_026FF2 @0x26FF2`). Both are EXE-sheet indices and
@@ -5234,8 +5609,26 @@ function drawColonyPlaza(ctx, c) {
   sheetFrame(ctx, 'ICONS', SOL_CROWN, crownX, 132);
 }
 
+// The engine's tiled-rect fill (func_0051D2 / func_005234 -> 0xBF5:0 = file
+// 0xE350): frame 0 of a tile sheet over (x,y,w,h), each axis phased by the
+// rect origin modulo the tile size (@0xE371..0xE3A2) -- i.e. the tiling is
+// anchored at the screen origin -- and every tile clipped to the rect.
+function tileFill(ctx, sheet, x, y, w, h) {
+  const [tw, th] = frameSize(sheet, 0);
+  if (!tw || !th) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  for (let ty = y - (y % th); ty < y + h; ty += th)
+    for (let tx = x - (x % tw); tx < x + w; tx += tw)
+      sheetFrame(ctx, sheet, 0, tx, ty);
+  ctx.restore();
+}
 // Positional-hash speckle over a 3-entry palette ramp. Deterministic so the
-// screen does not shimmer between frames.
+// screen does not shimmer between frames.  (No longer the building-field
+// ground -- that is the PARCH tile, tileFill above -- kept for any other
+// caller.)
 function groundSpeckle(ctx, x, y, w, h, base) {
   const ramp = base || [0x63, 0x62, 0x64];
   ctx.fillStyle = ink(ramp[0]);
@@ -8542,11 +8935,14 @@ function fillTemplate(line, subs) {
   // %COUNTRY is the engine's own-nation substitution (@UNREST uses it).
   // A '$' after the placeholder is KEPT: it is the gold-coin glyph the
   // fonts carry ("1352$." renders with the coin, census3_buy_prompt).
+  // "%%" is one literal '%': the engine's format verb (0x191F:0x910 = file
+  // 0x6EEEC) appends the "%" string at DG 0x1FC5 and skips the second sign
+  // (@0x6F0CE..0x6F0E6) -- @EXPLOITS "RATING: %NUMBER0%%" reads "61%".
   return line.replace(/%COUNTRY/g, DATA.nations[G.nation].country)
              .replace(/%(STRING|NUMBER)(\d)/g, (m, kind, n) => {
     const v = subs[`${kind}${n}`];
     return v === undefined ? '' : String(v);
-  });
+  }).replace(/%%/g, '%');
 }
 // ---- popup speaker channels (spec/ui/popups.md §2.7) ----------------------
 // The engine dispatches the portrait through three DGROUP words: [0x1F5C] = 8
@@ -10148,6 +10544,12 @@ function updateCongress() {
   // joined the Continental Congress!"
   showEvent('FREEDOM', { STRING0: G.fatherInProgress,
                          STRING1: DATA.nations[G.nation].adjective });
+  // func_03BC42 @0x3BD1D: the CCBKGD portrait page lights the new father up,
+  // then @0x3BD26 his Colonizopedia page (func_06AE08) -- before the effects.
+  {
+    const ffIdx = DATA.fathers.findIndex(f => f.name === G.fatherInProgress);
+    plateScreen('congress', { newFF: ffIdx }, () => pediaOnce(5, ffIdx));
+  }
   applyFatherEffect(G.fatherInProgress);
   G.fatherInProgress = null;
 }
@@ -10796,17 +11198,13 @@ function endGameSequence() {
   if (G.scored) return;
   G.retired = true;
   const s = scoreParts();
-  // the score screen's tune -- func_03A9C0: the rank [bp-0xc0] starts at -1
-  // (@0x3A9C4) and the loop @0x3AA41..0x3AA68 sets it to n-1 for every n in
-  // 1..24 with n*n/3 < score (score = base*mult/100 @0x3AA31..0x3AA3E,
-  // BEFORE the >>1 @0x3AA6A), clamped <= 0x17 @0x3AA71; then @0x3AD51:
-  // rank >= 0x17 -> 0x24, > 6 -> 0x25, else 0x21 (play @0x3AD6D)
+  // the score page's tune -- func_03A9C0 @0x3AD51..0x3AD6D, INSIDE the page
+  // path (after the no-screen gates @0x3AA88..0x3AAA0), keyed on the band
+  // the page shows (scorePanel = the rank loop @0x3AA41..0x3AA68 clamped
+  // <= 0x17 @0x3AA71): >= 0x17 -> 0x24, > 6 -> 0x25, else 0x21
   {
-    const score = Math.floor(s.mult * s.base / 100);
-    let rank = -1;
-    for (let n = 1; n <= 24; n++) if (Math.floor(n * n / 3) < score) rank = n - 1;
-    if (rank > 0x17) rank = 0x17;
-    sfx(rank >= 0x17 ? 0x24 : rank > 6 ? 0x25 : 0x21);
+    const band = scorePanel(s);
+    if (band >= 0) sfx(band >= 0x17 ? 0x24 : band > 6 ? 0x25 : 0x21);
   }
   // The Hall of Fame entry (HALLFAME.DAT record semantics).
   // HALLFAME.DAT semantics (capture-pinned 2026-08-07): score = the POINTS
@@ -10817,19 +11215,20 @@ function endGameSequence() {
              score: s.base, rating: s.total,
              declared: !!(G.flags & WOI_DECLARED),
              independent: !!(G.flags & WOI_WON) });
-  const name = G.leader || DATA.nations[G.nation].leader;
-  showEvent('EXPLOITS', { NUMBER0: s.total,
-                          STRING0: DATA.nations[G.nation].country });
-  const rows = DATA.scorenames || [];
-  if (rows.length)
-    notice(rows[Math.floor(Math.random() * rows.length)]
-             .replace(/%STRING0/g, name));
-  G.report = 'F10';
-  G.screen = 'report';
-  askEvent('SCORED', {}, (choice) => {
+  // func_03B2F8 @0x3B2F8: silent sum (func_039EE2(0) @0x3B340), then the
+  // plate screen func_03A9C0(1, &panel) @0x3B350 -- which first draws the
+  // F10 body (func_039EE2(1)) with its own key-wait @0x3A9B5, then the
+  // SCORE<panel+1> page (none when base <= 0 or no band) -- then the
+  // Hall-of-Fame insert @0x3B364; the caller shows @SCORED after that
+  // (@0x580A / @0x2FAC9).  @EXPLOITS is drawn ON the plate, not popped up,
+  // and the @SCORE row is the band -- the old random pick is gone.
+  const panel = scorePanel(s);
+  const scored = () => askEvent('SCORED', {}, (choice) => {
     G.scored = true;
     if (choice === 0) { G.screen = 'title'; G.menuRow = 0; }
   });
+  plateScreen('report', { fk: 'F10' }, panel >= 0 ? null : scored);
+  if (panel >= 0) plateScreen('score', { panel }, scored);
 }
 // The War-of-Independence screen lockouts: Europe and the Foreign Affairs
 // report close for the duration (@EUROPENOTAVAIL is byte-cited to push
@@ -11868,6 +12267,10 @@ function declareIndependence() {
     // 11/12 are COLONY BURNING / COLONY DESTROYED. So the declaration is the
     // popup alone.
     showEvent('INDEPENDENCE', { STRING0: G.leader || DATA.nations[G.nation].leader });
+    // The signing page (func_03DA2A, DECOIND + the DEC-* signature). Its
+    // engine dispatch site is unreachable statically (TBD); it follows the
+    // @INDEPENDENCE popup here.
+    plateScreen('declaration', { step: 0 });
     // @SEIZURE: every ship in the home port or on the crossing is seized
     // by the Royal Navy at the declaration (the wartime-seizure family).
     for (const e of G.europe)
@@ -12042,16 +12445,20 @@ function runWar() {
   const landed = G.refUnits.filter(u => !u.ship).length;
   if (landed === 0 && afloat === 0) {
     G.flags |= WOI_WON;
-    showEvent('KINGLOSE', {});
-    // @WINNING: Parliament's declaration, with the General's name.
+    // @WINNING: Parliament's declaration, with the General's name -- then
+    // the King's audience with KINGLOSE.SS and @KINGLOSE on the page
+    // (func_02F3A2 @0x2F542..0x2F55F; no popup).
     showEvent('WINNING', { STRING0: G.leader || DATA.nations[G.nation].leader });
+    plateScreen('endking', { win: true });
   }
   // Defeat: the King holds every colony. @KINGWIN is the Crown's own gloat --
   // @KINGVICTORY belongs to the European-war tax cut, not to this.
   if (!G.colonies.length && !(G.flags & WOI_WON) && !G.lostWar) {
     G.lostWar = true;
     showEvent('LOSING2', { STRING0: DATA.nations[G.nation].country });
-    showEvent('KINGWIN', { STRING0: DATA.nations[G.nation].country });
+    // the King's audience with KINGWIN.SS and @KINGWIN on the page
+    // (func_02F3A2 @0x2F670..0x2F6B0), then the score (@0x2F6B5 -> 0x2F44C)
+    plateScreen('endking', { win: false });
     endGameSequence();
   }
 }
@@ -15615,7 +16022,31 @@ function onClickBody(mx, my) {
       break;
     }
     case 'report':
+      if (G.plate && G.plate.name === 'report') { plateDismiss(); break; }
       G.screen = 'map';
+      // func_037A20 @0x38060..0x38073: dismissing F3 shows the CCBKGD
+      // portrait gallery (func_03BB4A(power, -1)) as a second page, unless
+      // the timed-message latches [0x346]/[0x9E38] are set (TBD: both are
+      // 20-tick clock latches beside msg_append @0x2C7C1/@0x35B5A -- runtime
+      // state the port does not model, so the page is unconditional here).
+      if (G.report === 'F3') plateScreen('congress', { newFF: -1 });
+      break;
+    case 'declaration': {
+      // A key/click mid-signature is the skip flag (@0x3DD74/0x3DD88): the
+      // rest draws at once; the finished page's key/click dismisses
+      // (@0x3DE17).
+      const p = G.plate && G.plate.params;
+      if (p && !p.skip && p.step < p.total) { p.skip = true; break; }
+      plateDismiss();
+      break;
+    }
+    case 'congress':
+    case 'score':
+    case 'endking':
+      plateDismiss();
+      break;
+    case 'mpslogo':                 // any key/click ends the logo phase
+      G.logoT0 = undefined; G.screen = 'title';
       break;
     case 'village': {
       const b = villageBox(), seed = b.y + 6 + b.textH + 3;
@@ -15628,7 +16059,11 @@ function onClickBody(mx, my) {
     case 'pedia': {
       // The index is two columns of 22 rows; a click on an entry page returns
       // to the index, which is what Esc does from there too.
-      if (G.pediaMode !== 'index') { G.pediaMode = 'index'; return; }
+      if (G.pediaMode !== 'index') {
+        if (G.pediaOnce) { G.pediaOnce = false; plateNext(); return; }
+        G.pediaMode = 'index';
+        return;
+      }
       const n = pediaList().length;
       const r = Math.floor((my - 24) / 7), i = (mx >= 160 ? 22 : 0) + r;
       if (r >= 0 && r < 22 && i < n) { G.pediaSel = i; G.pediaMode = 'entry'; }
@@ -16005,7 +16440,19 @@ function onKeyBody(e) {
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
       break;
     case 'report':
-      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
+      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) {
+        if (G.plate && G.plate.name === 'report') { plateDismiss(); break; }
+        G.screen = 'map';
+        if (G.report === 'F3') plateScreen('congress', { newFF: -1 });   // @0x38073
+      }
+      break;
+    // The plate pages are wait_keyOrClick (func_004A80): ANY key dismisses.
+    case 'congress':
+    case 'declaration':
+    case 'score':
+    case 'endking':
+    case 'mpslogo':
+      onClick(-1, -1);
       break;
     case 'options': {
       const n = G.options.rows.length;
@@ -16049,7 +16496,10 @@ function onKeyBody(e) {
       } else {
         if (k === 'ArrowLeft' || k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
         if (k === 'ArrowRight' || k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
-        if (k === 'Escape' || k === 'x') G.pediaMode = 'index';
+        if (k === 'Escape' || k === 'x') {
+          if (G.pediaOnce) { G.pediaOnce = false; plateNext(); }
+          else G.pediaMode = 'index';
+        }
       }
       break;
     }
@@ -16284,7 +16734,11 @@ function frameBody() {
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage,
-     trade: drawTrade, options: drawOptions }[G.screen] || drawMap)(ctx);
+     trade: drawTrade, options: drawOptions,
+     congress: drawCongressPortraits,
+     declaration: drawDeclaration,
+     score: drawScoreScreen, endking: drawEndKing,
+     mpslogo: drawMpsLogo }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);
@@ -16313,6 +16767,8 @@ async function main() {
   screenCanvas.width = W; screenCanvas.height = H;
   ctx = screenCanvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
+  // The MicroProse logo phase (OPENING.EXE's first) before the title.
+  if (DATA.sheets.MPSLOGO && G.screen === 'title') G.screen = 'mpslogo';
   resize();
   window.addEventListener('resize', resize);
   window.addEventListener('keydown', guarded(onKey));

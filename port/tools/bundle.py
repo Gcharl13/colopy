@@ -567,6 +567,11 @@ def build_data():
     for k, v in man["sheets"].items():
         if "pal" in v:
             D["palettes"][k] = v["pal"]
+    # Backgrounds shipped as a raw INDEX PLANE too (base64, w*h bytes) so the
+    # renderer can draw them through a palette that is not the PIK's own --
+    # the C port's single-DAC behaviour (build_assets.INDEX_PLANE_PIK).
+    D["pikidx"] = {k: v["idx"] for k, v in man["backgrounds"].items()
+                   if "idx" in v}
     D["fonts"] = {}
     alias = {"FONTINTR": "intr", "FONTTINY": "tiny", "FONTKING": "king",
              "FONT-NP": "np", "FONTSMAL": "smal"}

@@ -140,9 +140,23 @@ static void fill_template(const char *line, const rm_subs *subs,
             p += 8;
             continue;
         }
+        /* "%%" is one literal '%': the format verb 0x191F:0x910 (file
+         * 0x6EEEC) appends the "%" at DG 0x1FC5 and skips the second
+         * sign @0x6F0CE..0x6F0E6 (@EXPLOITS "%NUMBER0%%") */
+        if (*p == '%' && p[1] == '%') { out[o++] = '%'; p += 2; continue; }
         out[o++] = *p++;
     }
     out[o] = 0;
+}
+void rm_fill_template(const char *line, const rm_subs *subs, char *out,
+                      size_t cap) {
+    fill_template(line, subs, out, cap);
+}
+const char *const *rm_event_body(const char *key, int *n) {
+    const dat_events_entry_t *e = event_by_key(key);
+    if (!e) { *n = 0; return 0; }
+    *n = (int)e->n_body;
+    return e->body;
 }
 
 /* width of a line with the {braces} stripped (the JS .replace) */

@@ -283,6 +283,115 @@ int render_woodcut_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* the frame + its index plane, the way every --render* mode emits them */
+static int write_frame(const char *out_path) {
+    FILE *o = fopen(out_path, "wb");
+    if (!o) return 0;
+    fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);
+    for (int i = 0; i < RD_W * RD_H; i++)
+        fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
+    fclose(o);
+    char idx_path[512];
+    snprintf(idx_path, sizeof(idx_path), "%s.idx", out_path);
+    o = fopen(idx_path, "wb");
+    if (o) {
+        fwrite(RD.fb, 1, RD_W * RD_H, o);
+        fwrite(RD.pal, 1, 768, o);
+        fclose(o);
+    }
+    return 1;
+}
+static void load_fixture(const char *save) {
+    if (strcmp(save, "sav1653") == 0)
+        colopy_load_sav(sav1653, sizeof(sav1653));
+    else if (strcmp(save, "savraleigh") == 0)
+        colopy_load_sav(savraleigh, sizeof(savraleigh));
+    else
+        colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    colopy_init(1653);
+    units_session_seed();
+}
+
+/* --rendercongress SAVE PAK OUT.ppm MASK: the Continental Congress
+ * portrait page with the owned set PINNED from a 25-bit mask (bit i =
+ * @FATHERS index i), like sim_trace's rendercongress. */
+int render_congress_main(const char *save, const char *pak_path,
+                         const char *out_path, long mask) {
+    load_fixture(save);
+    CS.powers[cs_nation()].founding_fathers = (uint32_t)mask;
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_congress(-1);
+    if (!write_frame(out_path)) return 1;
+    printf("render congress %s %ld -> %s\n", save, mask, out_path);
+    free(pak);
+    return 0;
+}
+
+/* --renderdeclaration SAVE PAK OUT.ppm NAME STEP: the Declaration
+ * signing page with the signer's name and the stroke step pinned. */
+int render_declaration_main(const char *save, const char *pak_path,
+                            const char *out_path, const char *name,
+                            int step) {
+    load_fixture(save);
+    snprintf(CR.leader, sizeof(CR.leader), "%s", name);
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_declaration(name, step);
+    if (!write_frame(out_path)) return 1;
+    printf("render declaration %s '%s' %d -> %s\n", save, name, step,
+           out_path);
+    free(pak);
+    return 0;
+}
+
+/* --renderscore SAVE PAK OUT.ppm PANEL NAME: the end-game score plate
+ * with the band and the signer's name pinned (the rating is the
+ * fixture's own score_parts). */
+int render_score_main(const char *save, const char *pak_path,
+                      const char *out_path, int panel, const char *name) {
+    load_fixture(save);
+    snprintf(CR.leader, sizeof(CR.leader), "%s", name);
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_score(panel);
+    if (!write_frame(out_path)) return 1;
+    printf("render score %s %d '%s' -> %s\n", save, panel, name, out_path);
+    free(pak);
+    return 0;
+}
+
+/* --renderendking SAVE PAK OUT.ppm WIN: the King's audience at the
+ * war's end (1 = victory / KINGLOSE, 0 = defeat / KINGWIN). */
+int render_endking_main(const char *save, const char *pak_path,
+                        const char *out_path, int win) {
+    load_fixture(save);
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_king_plate(win);
+    if (!write_frame(out_path)) return 1;
+    printf("render endking %s %d -> %s\n", save, win, out_path);
+    free(pak);
+    return 0;
+}
+
+/* --renderlogo PAK OUT.ppm TICK: the MicroProse boot logo at a pacer
+ * tick (no sav). */
+int render_logo_main(const char *pak_path, const char *out_path, int tick) {
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_mpslogo(tick);
+    if (!write_frame(out_path)) return 1;
+    printf("render logo %d -> %s\n", tick, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
 int render_boot_main(const char *kind, const char *pak_path,
                      const char *out_path, int arg) {
