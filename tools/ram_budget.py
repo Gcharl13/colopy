@@ -69,7 +69,11 @@ def main() -> int:
                     d += int(p[1])
                 elif p[0] == ".bss":
                     b += int(p[1])
-                elif p[0] == ".data.rel.ro":
+                elif p[0].startswith(".data.rel.ro"):
+                    # .data.rel.ro / .data.rel.ro.local: const pointer tables that
+                    # need relocation under the host's PIE build. The board
+                    # has no PIE and maps flash directly, so these stay in
+                    # flash there -- reported, never charged.
                     relro += int(p[1])
         data += d
         bss += b
