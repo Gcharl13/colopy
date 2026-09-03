@@ -12307,3 +12307,52 @@ radius" reading (2026-08-30, running-game observation) is replaced by the
 byte predicate in both engines (`step()` / `cmd` move); the observation
 stands as consistent with it (the ship that sights land at radius 2
 reaches radius 1 a move later).
+
+## 2026-09-03i2 — integration: the map sidebar's "Moves" line has no byte source, and where the type-table stat block really lives
+
+**Conflict**: the census MAP note carried "Still OPEN: Moves: 6 vs DOS 5 —
+and 5 matches NEITHER the pinned full moves (@UNIT Frigate movement = 6)
+NOR the record's +0x06 = 9 thirds = 3; the loader's moves semantics are
+UNREAD". Both ports print `Moves: <remaining whole> <frac>/3` in the map
+sidebar at the measured (260,69).
+
+**Read this session** (`data_extracted/disassembly/VICEROY_annotated.asm`):
+
+1. **`[0x5234]` is `movement * 3`.** The @UNIT loader stores the movement
+   column tripled — `lcall 0x1a1f,0x88a / mov cx,ax / shl al,1 / add al,cl
+   / mov [si+0x5234],al` @0x074EFD..0x074F08 — into a stride-14 per-type
+   table. This is the allowance the move gate spends against (a plain step
+   charges +3 @0x05CAE2; `allowance − [0x3149] >= 3` @0x03EE95), so a unit
+   gets exactly `movement` steps. Consistent, and it confirms `unit.md` §5.
+2. **The type-table description block is `@0x069BD6..@0x069CEB`, and it is
+   NOT the map sidebar.** It indexes by the unit's TYPE (`imul bx,
+   [bp-0x62],0x1c / mov bl,[bx+0x3146]` @0x069C3E..0x069C4A), reads
+   `[0x5236]` and prints `(t*3)>>1` (@0x069BEC..0x069BF8), then
+   `[0x5234]/3` = the movement column (@0x069C5C..0x069C62), then the
+   `[0x5237]` byte appended only when non-zero (@0x069C86..0x069CD3), each
+   line ending in the shared line-emitter `0x181F:0x1BE` (62 call sites,
+   all in the REPORT/PEDIA composers — func_03ADA6, func_039EE2,
+   func_03744A). It sits immediately before `func_069D8C`, the
+   Colonizopedia "Terrain Type" page (CLAUDE.md hard rule 7), and its shape
+   matches the port's OWN pedia stat block (`pediaStats` game.js: "Moves /
+   Attack / Defend", then Cargo, then Hull). A first cut that rewrote the
+   map sidebar from this block was REVERTED before commit: the binding is
+   to the pedia-side stat block, not to (260,69).
+3. **Nothing in the map-render range reads move state at all.** Every read
+   of the spent-credits byte `+0x3149` in the listing sits at or below
+   `0x062F5C`; the map/sidebar renderers (0x066xxx..0x06Axxx) contain none,
+   and no other move field is read there either. **So the DOS sidebar
+   cannot be displaying a REMAINING move budget** — the ports' decreasing
+   `Moves: n 1/3` line (which is what makes the census read 6 where DOS
+   reads 5) has no byte support.
+
+**Ruling**: the ports' map-sidebar Moves CONTENT is a measured-and-guessed
+reading and is now FLAGGED as such in both engines' comments; the geometry
+(260,69)/(260,77) stays measured and correct. The line was NOT changed —
+changing it on an unbound block would have been a guess of the same kind.
+
+**Not decided**: which composer draws the two sidebar text lines, and hence
+whether the DOS number is the type allowance, a different field, or a
+different label entirely. The search is narrowed: it is not the type-table
+block above, and it reads no move state. `[0x2E3C]`, `[0x2F24]`, `[0x2F26]`
+(the strings the type-table block appends) are unidentified.

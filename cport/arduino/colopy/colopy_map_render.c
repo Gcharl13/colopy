@@ -792,6 +792,16 @@ static void draw_sidebar(const rm_view *vw) {
         rm_unit_panel(242, 68, 0, u->type, rm_unit_flags_ui(ui), u->orders,
                    rm_owner_colour_ui(ui), unit_icon(ui),
                    rm_owner_power_ui(ui));
+        /* FLAGGED (2026-09-03, RULINGS 2026-09-03i2): the CONTENT of this
+         * line is a GUESS.  No site in the map-render range reads any move
+         * state -- every read of the spent-credits byte +0x3149 sits at or
+         * below 0x062F5C -- so the DOS sidebar cannot be showing a
+         * remaining budget, and this decreasing number (with its thirds) is
+         * what makes the census MAP frame read 6 where DOS reads 5.  The
+         * type-table block @0x069BD6..@0x069CEB ([0x5234]/3 = the @UNIT
+         * movement column, loader @0x074F04..0x074F08) was checked and is
+         * the PEDIA stat block, not this line.  The GEOMETRY below stays
+         * measured and correct. */
         int whole = CR.unit_moves[u - CS.units] / 3, frac = CR.unit_moves[u - CS.units] % 3;
         if (frac)
             snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);
