@@ -401,3 +401,39 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
    human**, `controller==0` `@0x65DC7`; AI gets +0), saturating at 20. So the human
    starts each tribe more alarmed at higher difficulty (handicap). **B** (formula);
    "alarm seed" label **R**.
+
+
+## Amendment 2026-09-03 — the raid ladder re-read (CORE-B, RULINGS 2026-09-03c)
+
+`func_05BE84(tribe_power, colony, home_settlement, force, attacker_type)`,
+called from the combat resolver `@0x5DF5E` when a native attacker beats a
+European colony (`[bp-0x9C] == 0`, or forced for Braves vs a human colony
+defended by Artillery `@0x5D1A6..@0x5D1D2`). Clock reseed `@0x5BEED` (not
+mirrored, RULINGS 2026-09-03b).
+
+- Gate: `roll = random_int(0,12) - 1` (`@0x5BEF9..@0x5BF06`), `+ difficulty
+  - 2` for a human owner (`@0x5BF09..@0x5BF21`); `K = 3*func_00864E(0) + 1`
+  (chain-0 tiers present); `roll < K && !force` → exit (`@0x5BF32`).
+- Outcome `random_int(1,4)` (`@0x5BF35`); softener `@0x5BF44..@0x5BF69`:
+  `turn < 40*(2-diff)` and `diff <= 1` and outcome ∈ {2,3} → 0.
+- Building gates `@0x5BF6E..@0x5C023` (`0x181F:0x9FC` = has_building):
+  out 2: `random_int(0,8) > (human?diff:1)+2` → 1, Fort → 1; out 4:
+  Stockade → 1; out 3: Fortress → 0; out 1: Stockade and `random_int(0,8)
+  > diff` → 0.
+- Ladder (`@0x5C023..@0x5C03B`): **1 STORES, 2 WREAK, 3 SHIP, 4 GOLD, 0
+  NOTHING** — §3's "3 → RAIDGOLD, 4 → RAIDBURN/RAIDSHIP" is withdrawn.
+- STORES `@0x5C03E..@0x5C0C7` + payload `@0x5C348..@0x5C426` (RULINGS
+  2026-09-03c items 6; credit −4). WREAK `@0x5C0CA..@0x5C24F` + payload
+  `@0x5C42A..@0x5C52C` (item 7; credit −12; human message `RAIDBURN`).
+  SHIP `@0x5C252..@0x5C297` (the tile stack's first ship, damaged through
+  `0x1A1F:0x6E0` = func_05B2C2, unread; credit −16). GOLD `@0x5C29A..
+  @0x5C31F` (`max = gold*size/(pop_census+1)+10` clamp 0x7FFF,
+  `random_int(0x32,max)`, `gold < amount || amount < 0x32` → 0; credit −8).
+  NOTHING `@0x5C61C` (`RAIDNOTHING`, sfx 0x5B, no credit). `RAIDWREAK` is
+  the AI-owner bulletin only (`@0x5C1C5..@0x5C1E6`).
+- End `@0x5C642..@0x5C651`: the raider's home settlement alarm word toward
+  the owner := 0.
+- Port status: both engines run this model (`nativeRaid` / `native_raid`);
+  the pre-raid combat, the force flag, `func_05B2C2`, the tribe-row war
+  bit on the credits and the `[0x9410]` census are flagged stand-ins; the
+  tribal-win massacre (`func_05CA7E @0x5D59A..@0x5D67A`) has no port site.

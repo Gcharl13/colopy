@@ -8050,11 +8050,6 @@ function surpriseRaidCheck(v, target) {
                                   STRING1: target ? target.name : '',
                                   STRING2: t.name });
 }
-function raidOutcome() {
-  let out = 1 + Math.floor(Math.random() * 4);
-  if (G.turn < 40 * (2 - G.difficulty)) out -= 1;
-  return Math.max(0, out);
-}
 // ---- the raid-target scorer: func_0460F8 = 0x181F:0x316, byte-ported ------
 // Disassembled 2026-08-07e (RULINGS.md). Per settlement it scores the best
 // human-controlled colony within taxi distance 6 and returns that score --
@@ -8134,137 +8129,219 @@ function raidTargetScore(v) {
   return { colony: best, score: best ? bestScore : -1 };
 }
 
-// One raid ATTEMPT by village v against colony c. The gate is func_05BE84's:
-// roll random_int(1,12)-1 (@0x5BEFD), +(difficulty-2) for a human owner
-// (@0x5BF1A), against threshold 3*K+1 (@0x5BEE5) -- and K is now BYTE-READ
-// (RULINGS.md 2026-08-07c): the `push 0; lcall 0x181f,0xab0` @0x5BED9 resolves
-// to func_00864E, which walks the BUILDING UPGRADE CHAIN from id 0 counting the
-// links the colony has -- chain 0 is Stockade -> Fort -> Fortress, so K is the
-// colony's FORTIFICATION COUNT, exactly what colonyLevel() already computes.
-// A raid that fails the gate simply does not happen (the @0x5BF32 exit).
+// One raid ATTEMPT by village v against colony c = func_05BE84 (stub
+// 0x1A1F:0x6C8), re-read whole 2026-09-03 (RULINGS 2026-09-03c). Engine
+// arguments: (tribe power, colony, the raider's HOME settlement, force,
+// attacker type); the port passes force = 0 -- the engine forces a raid
+// when Braves hit a human colony defended by Artillery (@0x5D1A6..
+// @0x5D1D2), a combat-resolver path the port's arrival model skips
+// (flagged). The clock reseed @0x5BEED is NOT mirrored (RULINGS
+// 2026-09-03b).
+//   gate  : roll = random_int(0,12) - 1 (@0x5BEF9..@0x5BF06), + difficulty
+//           - 2 for a HUMAN owner (@0x5BF09..@0x5BF21); K = 3 * (present
+//           tiers of chain 0, func_00864E @0x5BED9) + 1; roll < K and not
+//           forced -> nothing happens at all (@0x5BF32 -> the exit).
+//   out   : random_int(1,4) (@0x5BF35); the EARLY SOFTENER @0x5BF44..
+//           @0x5BF69 zeroes outcomes 2/3 only while turn < 40*(2-diff)
+//           AND difficulty <= 1 (the old "-1 at every difficulty" is gone).
+//   gates : BUILDING gates (0x181F:0x9FC = has_building), not attributes:
+//           out 2: random_int(0,8) > (human ? diff : 1) + 2 -> 1; Fort -> 1
+//           out 4: Stockade -> 1;  out 3: Fortress -> 0;
+//           out 1: Stockade and random_int(0,8) > diff -> 0 (@0x5BF6E..@0x5C023)
+//   ladder: 1 STORES, 2 WREAK, 3 SHIP, 4 GOLD, 0 NOTHING (@0x5C023..@0x5C03B;
+//           the port had 3 = gold / 4 = burn).
+//   end   : the raider's home settlement zeroes its alarm word toward the
+//           colony owner (@0x5C642..@0x5C651) -- v.alarm here.
+// The raid chain table (ANCHOR): @BUILDING is laid out chain by chain; the
+// +0x03 predecessor / +0x04 next links the parser writes (@0x74661/@0x7466F)
+// are not read, so the chains are the consecutive-row families with the
+// Stable (17) and the Capitol (30..31) as their own roots -- the WREAK
+// payload has its own Capitol case @0x5C46A, so root(0x1E) != 9.
+const RAID_CHAIN_FIRST = [0, 0, 0, 3, 3, 3, 6, 6, 6, 9, 9, 9, 12, 12, 12, 15, 15,
+  17, 18, 19, 19, 21, 21, 21, 24, 24, 24, 27, 27, 27, 30, 30, 32, 32, 32,
+  35, 35, 37, 37, 39, 39, 39];
+const raidChainNext = (b) =>
+  (b + 1 < RAID_CHAIN_FIRST.length && RAID_CHAIN_FIRST[b + 1] === RAID_CHAIN_FIRST[b]) ? b + 1 : -1;
+// DS:0x2CA (file 0x1DC6A), 42 bytes: the chain-root JOB of each @BUILDING
+// row (read by func_009786 @0x978D), -1 = none.
+const RAID_ROOT_JOB = [21, 21, 21, 15, 15, 15, -1, -1, -1, 17, 17, 17, 18, 18, 18,
+  -1, -1, -1, -1, -1, -1, 11, 11, 11, 10, 10, 10, 9, 9, 9, 17, 17, 12, 12, 12,
+  13, 13, 16, 16, 14, 14, 14];
+// has_building for the raid: the Warehouse/Capitol EXPANSIONS live in the
+// +0x95/+0x96 level bytes, not in the bitset (colony_bld_seed), so rows
+// 16/31 never test present -- the level decrement below handles them.
+const raidHas = (c, b) =>
+  b !== 16 && b !== 31 && c.buildings.includes(DATA.buildings[b].name);
+// [0x9410 + p] per-power population census: zeroed by the census
+// (@0x4215D); the ports' stand-in is units + colony population (flagged,
+// the same one newsTick uses for the bulletin).
+function popCensus(p) {
+  if (p === G.nation)
+    return G.units.length + G.colonies.reduce((n, c) => n + c.colonists.length, 0);
+  const r = rivalOf(p);
+  return r ? r.units.length + r.colonies.reduce((n, c) => n + (c.pop || 0), 0) : 0;
+}
 function nativeRaid(v, c) {
   G.eventTribe = v.tribe;
-  const gate = 1 + Math.floor(Math.random() * 12) - 1 + (G.difficulty - 2);
-  if (gate < 3 * colonyLevel(c) + 1) return;
+  const t = G.tribes[v.tribe] || {};
+  const human = true;                       // the port raids the human's colonies
+  let roll = Math.floor(Math.random() * 13) - 1;
+  if (human) roll += G.difficulty - 2;
+  const K = 3 * colonyLevel(c) + 1;
+  const force = 0;
+  if (roll < K && !force) return;
   surpriseRaidCheck(v, c);
-  {
-    const t = G.tribes[v.tribe];
-    const S = { STRING0: t ? t.name : '', STRING1: c.name,
-                STRING3: DATA.nations[G.nation].adjective };
-    switch (raidOutcome()) {
-      case 1: {                                    // @RAIDSTORES
-        // The good picker, BYTE-READ 2026-08-29 (@0x5C03E..@0x5C0C7): up
-        // to 100 tries of random_int(0,15), accepted at stock >= 10; on
-        // the FIRST try, a tribe with no horse counter facing a pick
-        // stocked past 52 flips a coin for HORSES instead (@0x5C05F..
-        // @0x5C084). The muskets magnitude check (@0x5C08F, the
-        // random(0,200)-diff*tries register) has an unread consumer --
-        // omitted, flagged. No pick in 100 tries -> @RAIDNOTHING.
-        const t2 = G.tribes[v.tribe] || {};
-        let good = -1;
-        for (let tries = 1; tries <= 100 && good < 0; tries++) {
-          const pick = Math.floor(Math.random() * 16);
-          if (tries === 1 && !(t2.horsesKnown || 0) &&
-              (c.stock[pick] || 0) > 52 &&
-              Math.floor(Math.random() * 2) === 0) { good = 8; break; }
-          if ((c.stock[pick] || 0) >= 10) good = pick;
-        }
-        if (good < 0 || !(c.stock[good] > 0)) {
-          showEvent('RAIDNOTHING', S); break;
-        }
-        // amount = clamp(1, stock, random_int(min(10, stock/2), stock/2))
-        // (@0x5C370..@0x5C3AD) -- the raid takes a LOAD, not the slot.
-        const half = c.stock[good] >> 1;
-        const lo = Math.min(10, half);
-        let qty = lo + Math.floor(Math.random() * (half - lo + 1));
-        qty = Math.max(1, Math.min(c.stock[good], qty));
-        c.stock[good] -= qty;
-        const g = [qty, good];
-        // The haul arms the TRIBE (corrected 2026-08-29 -- the old
-        // "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
-        // pointer): stolen HORSES bump the herd-counter byte +0x08 and
-        // add 25 to the herd word +0x0A (@0x5C3DD..@0x5C3E4); stolen
-        // MUSKETS bump the muskets counter +0x07, twice at a 50+ load
-        // (@0x5C3EE..@0x5C3FB). Other goods are simply gone.
-        if (g[1] === 8) {
-          t2.horsesKnown = (t2.horsesKnown || 0) + 1;
-          t2.herd = (t2.herd || 0) + 25;
-        }
-        if (g[1] === 15)
-          t2.musketsKnown = (t2.musketsKnown || 0) + (g[0] >= 50 ? 2 : 1);
-        // The sated-raid tension credit, byte-read: -4 for a stores raid
-        // (push -4 @0x5C416; the gold raid's is -16).
-        adjustTension(v.tribe, -4, 0);
-        showEvent('RAIDSTORES', { ...S, STRING2: DATA.cargo[g[1]].name });
-        break;
-      }
-      case 2: {                                    // @RAIDWREAK
-        // Payload byte-read (func_05BE84 @0x5C42A..): the raid DECREMENTS a
-        // building tier (dec ColonyRecord+0x95/+0x96 by target id, name
-        // substituted). The port's flat building list models the decrement
-        // as removing one non-starting building.
-        const smash = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
-        if (smash.length) {
-          const b = smash[Math.floor(Math.random() * smash.length)];
-          c.buildings.splice(c.buildings.indexOf(b), 1);
-        }
-        showEvent('RAIDWREAK', S);
-        break;
-      }
-      case 3: {                                    // @RAIDGOLD
-        // Amount byte-read (@0x5C2D4..0x5C2F1): random(0x32, min(gold,
-        // 0x7FFF)) -- 50 up to the whole treasury -- followed by the -16
-        // tension credit (push -0x10 @0x5C5BC, the raid is sated).
-        const cap = Math.min(G.gold, 0x7FFF);
-        const take = cap >= 0x32
-          ? 0x32 + Math.floor(Math.random() * (cap - 0x32 + 1))
-          : G.gold;
-        G.gold -= take;
-        adjustTension(v.tribe, -16, 0);
-        showEvent('RAIDGOLD', { ...S, NUMBER0: take });
-        break;
-      }
-      case 4: {                                    // @RAIDBURN / @RAIDSHIP
-        const ship = G.units.find(u => u.ship && u.x === c.x && u.y === c.y);
-        if (ship) { ship.damaged = true; showEvent('RAIDSHIP', { ...S, STRING2: ship.type }); break; }
-        const burnable = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
-        // @INDIANBURNCOLONY: a burn raid on an undefended one-man colony
-        // razes it outright ("Colony burned to the ground! King demands
-        // explanation!") -- the threshold reading is flagged.
-        if (!burnable.length && c.colonists.length <= 1 &&
-            !G.units.some(du => !du.ship && du.x === c.x && du.y === c.y)) {
-          showEvent('INDIANBURNCOLONY',
-                    { STRING0: S.STRING0, STRING1: S.STRING3, STRING3: c.name });
-          c.vanished = true;
-          break;
-        }
-        // @INDIANWINCOLONY (byte-attributed @0x5E01F, func_05CA7E: the
-        // human-visible massacre; INDIANWINCOLONY2 is its !human bulletin
-        // twin @0x5E026). The aftermath window decrements settlement size
-        // while size > 1 (dec [bx+4] @0x5D67A) -- mirrored: an undefended
-        // multi-colonist colony loses one colonist to the massacre; the
-        // trigger placement inside the raid ladder is the port's, flagged.
-        if (!burnable.length && c.colonists.length > 1 &&
-            !G.units.some(du => !du.ship && du.x === c.x && du.y === c.y)) {
-          const dead = c.colonists.pop();
-          showEvent('INDIANWINCOLONY',
-                    { STRING0: S.STRING0, STRING1: S.STRING3,
-                      STRING2: dead.profession || dead.type, STRING3: c.name });
-          break;
-        }
-        if (!burnable.length) { showEvent('RAIDWREAK', S); break; }
-        const b = burnable[Math.floor(Math.random() * burnable.length)];
-        c.buildings.splice(c.buildings.indexOf(b), 1);
-        showEvent('RAIDBURN', { ...S, STRING2: b });
-        break;
-      }
-      default:                                     // @RAIDNOTHING
-        showEvent('RAIDNOTHING', S);
-        break;
-    }
-    // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
-    if (!G.raidSeen) { G.raidSeen = true; woodcutOnce(13); }
+  let out = 1 + Math.floor(Math.random() * 4);
+  if (G.turn < 40 * (2 - G.difficulty) && G.difficulty <= 1 && (out === 2 || out === 3))
+    out = 0;
+  if (out === 2) {
+    const k = human ? G.difficulty : 1;
+    if (Math.floor(Math.random() * 9) > k + 2) out = 1;
+    if (raidHas(c, 1)) out = 1;                                   // Fort
   }
+  if (out === 4 && raidHas(c, 0)) out = 1;                        // Stockade
+  if (out === 3 && raidHas(c, 2)) out = 0;                        // Fortress
+  if (out === 1 && raidHas(c, 0) && Math.floor(Math.random() * 9) > G.difficulty)
+    out = 0;
+  const S = { STRING0: t.name || '', STRING1: c.name,
+              STRING3: DATA.nations[G.nation].adjective };
+  let good = -1, bld = -1, ship = null, take = 0;
+  if (out === 1) {
+    // STORES picker @0x5C03E..@0x5C0C7: up to 100 tries of random_int(0,15),
+    // accepted at stock >= 10; on the FIRST try a tribe with no horse
+    // counter facing a pick stocked past 52 flips a coin for HORSES
+    // (@0x5C05F..@0x5C084); a MUSKETS pick draws random_int(0,200) into a
+    // register nothing reads (@0x5C08F..@0x5C0A6 -- dead, but a draw).
+    let tries = 0;
+    for (;;) {
+      tries++;
+      good = Math.floor(Math.random() * 16);
+      if (!(t.horsesKnown || 0) && tries === 1 && (c.stock[good] || 0) > 52 &&
+          Math.floor(Math.random() * 2) === 0) good = 8;
+      if (good === 15) Math.random();                             // dead draw
+      if (tries < 100 && (c.stock[good] || 0) < 10) continue;
+      break;
+    }
+    if (tries >= 100) out = 0;
+  } else if (out === 2) {
+    // WREAK picker @0x5C0CA..@0x5C1A8: random_int(0,0x29) up to 100 tries;
+    // invalid = 0x23 Carpenter's Shop, the Town Hall chain (root 9), the
+    // chain of the building under construction, or one of {0x27 Church,
+    // 0x15/0x18/0x1B the Weaver's/Tobacconist's/Distiller's Houses, 0/1/2
+    // the forts, 0x20 Fur Trader's House}; retry while absent or invalid;
+    // 100 tries or an invalid last pick -> outcome 0. Then the CLIMB
+    // @0x5C214..@0x5C24F: while the next tier is present, target it.
+    const bip = c.building && DATA.buildings.some(b => b.name === c.building)
+      ? RAID_CHAIN_FIRST[DATA.buildings.findIndex(b => b.name === c.building)] : -1;
+    let tries = 0, valid = 1;
+    for (;;) {
+      valid = 1;
+      tries++;
+      bld = Math.floor(Math.random() * 42);
+      if (bld === 0x23) valid = 0;
+      if (RAID_CHAIN_FIRST[bld] === 9) valid = 0;
+      if (bip >= 0 && RAID_CHAIN_FIRST[bld] === bip) valid = 0;
+      if ([0x27, 0x15, 0x18, 0x1B, 0, 1, 2, 0x20].includes(bld)) valid = 0;
+      if (tries < 100 && (!raidHas(c, bld) || !valid)) continue;
+      break;
+    }
+    if (tries >= 100 || !valid) out = 0;
+    else for (;;) {
+      const nxt = raidChainNext(bld);
+      if (nxt >= 0 && raidHas(c, nxt)) bld = nxt; else break;
+    }
+  } else if (out === 3) {
+    // SHIP @0x5C252..@0x5C297: walk the tile's unit stack for a type
+    // 0xD..0x12; none -> outcome 0
+    ship = G.units.find(u => u.ship && u.x === c.x && u.y === c.y) || null;
+    if (!ship) out = 0;
+  } else if (out === 4) {
+    // GOLD @0x5C29A..@0x5C31F: max = gold * size / (population census + 1)
+    // + 10 (32-bit), clamped to 0x7FFF; amount = random_int(0x32, max);
+    // gold < amount or amount < 0x32 -> outcome 0.
+    let max = Math.floor(G.gold * c.colonists.length / (popCensus(G.nation) + 1)) + 10;
+    if (max > 0x7FFF) max = 0x7FFF;
+    take = 0x32 + Math.floor(Math.random() * (max - 0x32 + 1));
+    if (G.gold < take || take < 0x32) out = 0;
+  }
+  // payloads @0x5C32C..@0x5C61C (the human owner's messages; RAIDWREAK is
+  // the AI-owner bulletin @0x5C1DC, never the human's)
+  switch (out) {
+    case 1: {                                    // @RAIDSTORES
+      if (!(c.stock[good] > 0)) break;           // @0x5C351: silent
+      // amount = clamp(1, stock, random_int(min(10, stock/2), stock/2))
+      const half = c.stock[good] >> 1;
+      const lo = Math.min(10, half);
+      let qty = lo + Math.floor(Math.random() * (half - lo + 1));
+      qty = Math.max(1, Math.min(c.stock[good], qty));
+      c.stock[good] -= qty;
+      showEvent('RAIDSTORES', { ...S, STRING2: DATA.cargo[good].name });
+      // the haul arms the TRIBE: horses -> counter +0x08 and herd +25
+      // (@0x5C3DD), muskets -> counter +0x07, twice at a 50+ load (@0x5C3EE)
+      if (good === 8) {
+        t.horsesKnown = (t.horsesKnown || 0) + 1;
+        t.herd = (t.herd || 0) + 25;
+      }
+      if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + (qty >= 50 ? 2 : 1);
+      // -4 unless the tribe's row carries the war bit (rel & 2 @0x5C40D --
+      // the tribe war bit is unmodeled, the credit always applies; flagged)
+      adjustTension(v.tribe, -4, 0);
+      break;
+    }
+    case 2: {                                    // @RAIDBURN (WREAK)
+      let name = DATA.buildings[bld].name;
+      if (bld === 15) {
+        // Warehouse: dec +0x95; a remaining level names the Expansion
+        if (c.buildings.includes('Warehouse Expansion')) {
+          c.buildings.splice(c.buildings.indexOf('Warehouse Expansion'), 1);
+          name = 'Warehouse Expansion';
+        } else c.buildings.splice(c.buildings.indexOf('Warehouse'), 1);
+      } else if (bld === 30) {
+        // Capitol: dec +0x96, the name is always the Expansion's (@0x5C486)
+        name = 'Capitol Expansion';
+        if (c.buildings.includes('Capitol Expansion'))
+          c.buildings.splice(c.buildings.indexOf('Capitol Expansion'), 1);
+        else c.buildings.splice(c.buildings.indexOf('Capitol'), 1);
+      } else {
+        // a chain ROOT (+0x03 link < 0): n = func_009818(b) = the number of
+        // colonists working the root's job (DS:0x2CA; 0 when the row has
+        // none); then every colonist whose OCCUPATION equals n is moved to
+        // job 0xD Carpenter (@0x5C4B6..@0x5C4E1 -- read as bytes, the
+        // compare is against the COUNT, not the job; ported literally).
+        if (RAID_CHAIN_FIRST[bld] === bld) {
+          const job = RAID_ROOT_JOB[bld];
+          const n = job < 0 ? 0
+            : c.colonists.filter(p => jobIndex(p.job) === job).length;
+          if (n >= 0)
+            for (const p of c.colonists)
+              if (jobIndex(p.job) === n) { p.job = DATA.jobs[13]; p.cell = null; }
+        }
+        c.buildings.splice(c.buildings.indexOf(name), 1);
+      }
+      showEvent('RAIDBURN', { ...S, STRING2: name });
+      adjustTension(v.tribe, -12, 0);            // push -0xC @0x5C52E
+      break;
+    }
+    case 3: {                                    // @RAIDSHIP
+      ship.damaged = true;                       // func_05B2C2 (unread) stand-in
+      showEvent('RAIDSHIP', { ...S, STRING2: ship.type });
+      adjustTension(v.tribe, -16, 0);            // push -0x10 @0x5C5BC
+      break;
+    }
+    case 4: {                                    // @RAIDGOLD
+      G.gold -= take;
+      showEvent('RAIDGOLD', { ...S, NUMBER0: take });
+      adjustTension(v.tribe, -8, 0);             // push -8 @0x5C617
+      break;
+    }
+    default:                                     // @RAIDNOTHING
+      showEvent('RAIDNOTHING', S);
+      break;
+  }
+  // @0x5C642: the home settlement's alarm word toward the owner := 0
+  v.alarm = 0;
+  // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
+  if (!G.raidSeen) { G.raidSeen = true; woodcutOnce(13); }
 }
 
 // ---- the native unit mover -------------------------------------------------

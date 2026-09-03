@@ -12027,3 +12027,81 @@ drawn after `@0x52F95` in an AI turn, after `@0x48604` in a tribe turn or
 after `@0x5BEF6` in a raid can be matched draw-for-draw against a DOS
 run — the draw lists in the CORE-B implementation are the JS-vs-C
 contract only. The sharing is REAL in the EXE; the isolation is a choice.
+
+## 2026-09-03c — CORE-B: the raid ladder `func_05BE84` re-read whole (C1.10 closed)
+
+Every site below was read this session (`asmr 05BE84 05C660`); the ports
+carried six readings that the bytes contradict.
+
+1. **Gate draw is `random_int(0,12)`** (`push 0xC; push 0` `@0x5BEF9`,
+   13 values, `dec ax` `@0x5BF05`), then `+ difficulty - 2` only for a
+   HUMAN owner (`@0x5BF09..@0x5BF21`); `K = 3*count + 1` with `count =
+   func_00864E(0)` (chain-0 tiers present); `roll < K` and not forced →
+   the raid does not happen (`@0x5BF32`). The ports drew 12 values.
+2. **The early softener is difficulty-gated**: `@0x5BF44..@0x5BF69` zeroes
+   the outcome only when `turn < 40*(2-difficulty)` AND `difficulty <= 1`
+   AND the outcome is 2 or 3. The ports subtracted one from every
+   outcome at every difficulty.
+3. **The "attribute gates" are BUILDING gates**: `0x181F:0x9FC` is
+   `func_00863E = has_building([0x8DC6], idx)` on the `+0x84` bitset.
+   Outcome 2: `random_int(0,8) > (human ? difficulty : 1) + 2` → 1
+   (`@0x5BF95..@0x5BFAA`), Fort (row 1) → 1 (`@0x5BFAF`); outcome 4:
+   Stockade → 1 (`@0x5BFC8`); outcome 3: Fortress → 0 (`@0x5BFE1`);
+   outcome 1: Stockade and `random_int(0,8) > difficulty` → 0
+   (`@0x5BFFA..@0x5C01E`). The ledger's "power attribute 0/2 bits" is
+   withdrawn.
+4. **Dispatch order is 1 STORES, 2 WREAK, 3 SHIP, 4 GOLD** (`@0x5C023..
+   @0x5C03B` and the payload switch `@0x5C32C..@0x5C344`: 3 → `@0x5C534`
+   RAIDSHIP, 4 → `@0x5C5C2` RAIDGOLD). The ports had 3 = gold, 4 = burn/
+   ship. natives.md §3's "3 → RAIDGOLD, 4 → RAIDBURN/RAIDSHIP" is wrong.
+5. **GOLD amount** `@0x5C29A..@0x5C31F`: `max = gold*size /
+   (pop_census[0x9410+owner] + 1) + 10` (long mul/div), clamped 0x7FFF;
+   `amount = random_int(0x32, max)`; `gold < amount` or `amount < 0x32` →
+   outcome 0. Credit is **−8** (`push -8` `@0x5C617`); **−16** is the SHIP
+   branch (`@0x5C5BC`), **−12** WREAK (`@0x5C52E`), **−4** STORES
+   (`@0x5C416`); each only when the tribe row lacks the war bit
+   (`rel_get & 2`, unmodeled in the ports — the credits always apply,
+   flagged). The ledger's "random(0x32, min(gold,0x7FFF)) with −16" is
+   withdrawn.
+6. **STORES**: the muskets register `@0x5C08F..@0x5C0A6`
+   (`random_int(0,200) - difficulty*tries`) is never read — a dead
+   computation that still draws; a zero stock at the payload (`@0x5C351`)
+   exits SILENTLY (no message, no credit); the message for a human is
+   `RAIDSTORES` (0x1B94, mode 5, sfx 0x4F).
+7. **WREAK** (`@0x5C0CA..@0x5C24F`): `random_int(0,0x29)` up to 100 tries;
+   invalid = 0x23 Carpenter's Shop, `root(b) == 9` (Town Hall chain via
+   `func_00975A`, the `+0x03` predecessor walk), the chain of the building
+   under construction (`0x181F:0xCC2 == 1`), or `b ∈ {0x27, 0x15, 0x18,
+   0x1B, 0, 1, 2, 0x20}`; retry while absent or invalid; then the CLIMB
+   `@0x5C214..@0x5C24F` follows the `+0x04` next link while present.
+   Payload `@0x5C42A..@0x5C52C`: Warehouse `dec +0x95` (a remaining level
+   names "Warehouse Expansion", `[0x9042]`), Capitol `dec +0x96` (name is
+   always `[0x90F6]` "Capitol Expansion"), a chain ROOT calls
+   `func_009818(b)` = the NUMBER of colonists working the root's job
+   (`DS:0x2CA` table via `func_009786`, count via `func_009626`; the
+   Stockade chain returns −soldiers and is skipped) and then moves every
+   colonist whose OCCUPATION EQUALS THAT COUNT to job 0xD Carpenter
+   (`@0x5C4B6..@0x5C4E1` — as bytes, a count compared to a job id; both
+   ports reproduce it literally and flag it); then `0x181F:0xBBE(b, 0)`
+   clears the bit; the human's message is `RAIDBURN` (0x1B9F, sfx 0x53).
+   `RAIDWREAK` (0x1B8A) is appended only for an AI-owned colony
+   (`@0x5C1C5..@0x5C1E6`) — it is never the human's message.
+8. **End**: the raider's home settlement zeroes its alarm word toward the
+   owner (`[0x54F6 + (settle*9 + owner)*2] = 0` `@0x5C642..@0x5C651`) —
+   a raid ENDS the war footing; the ports had the village raiding on
+   every turn while alarm ≥ 128.
+9. The chain table the ports use (consecutive @BUILDING families, Stable
+   and Capitol as their own roots) is ANCHOR: the link parser
+   (`func_07464C`, writes `@0x74661/@0x7466F`) is called through a path
+   the listing does not name; the Capitol case at `@0x5C46A` shows
+   `root(0x1E) != 9`.
+
+**Not ported, flagged**: the force flag (Braves vs a human colony
+defended by Artillery, `@0x5D1A6..@0x5D1D2`) and the combat that precedes
+the raid in the engine (the port's brave raids on arrival); `func_05B2C2`
+(the SHIP damage resolver, `0x1A1F:0x6E0`) — the ports mark the ship
+damaged; the `[0x9410]` population census (stand-in: units + colony
+population); the tribal-win massacre placements (`INDIANWINCOLONY` /
+`INDIANBURNCOLONY`) that rode the old case 4 are gone from the ladder —
+they belong to `func_05CA7E`'s aftermath (`@0x5D59A..@0x5D67A`), which
+the port's raid model never enters (open leaf, natives.md).
