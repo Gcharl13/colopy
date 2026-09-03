@@ -85,6 +85,8 @@ typedef struct {
     int16_t dlg_unit;                /* kinds 2/3: the ship record */
     int8_t  colony_popup_row;
     int8_t  colony_popup_unit;   /* @UNITOPTIONS: units_order index */
+    int8_t  garrison_sel1;       /* the selected GARRISON figure, units_order
+                                  * index + 1 (0 = none; [0x8D7C] >= size) */
     /* the Part E plate pages */
     int8_t  ff_new;              /* SCR_CONGRESS: the father lit up
                                   * (@FATHERS index) or -1 = the F3

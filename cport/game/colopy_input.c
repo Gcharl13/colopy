@@ -1500,6 +1500,19 @@ static void outside_commit(void) {
     int row = UI.colony_popup_row, k = UI.colonist_sel;
     UI.colony_popup = 0;                     /* close BEFORE the ask */
     if (cci < 0 || row < 0 || row > 5) return;
+    if (UI.garrison_sel1 > 0) {
+        /* a selected GARRISON figure re-equips in place (func_009318
+         * mode 1, C3.11) -- no eject, no refusal path */
+        int q = UI.garrison_sel1 - 1;
+        UI.garrison_sel1 = 0;
+        if (q < CR.n_units_order) {
+            int ui = CR.units_order[q];
+            if (CS.units[ui].map_x == CS.colonies[cci].map_x &&
+                CS.units[ui].map_y == CS.colonies[cci].map_y)
+                unit_reequip(cci, ui, 0x13 + row);
+        }
+        return;
+    }
     if (k < 0 || k >= CS.colonies[cci].population) return;
     colonist_out(cci, k, 0x13 + row);
     if (player_colony_rec(UI.colony) != cci ||
@@ -3109,6 +3122,10 @@ static void in_click_inner(int mx, int my, int right) {
              * opens @UNITOPTIONS (game.js plazaUnitAt) */
             int gq = rm_plaza_unit_hit(cci, mx, my);
             if (gq >= 0) {
+                /* selected too ([0x8D7C] takes garrison figures,
+                 * func_029AC0): a following fence tap re-equips it
+                 * (C3.11) */
+                UI.garrison_sel1 = (int8_t)(gq + 1);
                 UI.colony_popup = 4;
                 UI.colony_popup_unit = (int8_t)gq;
                 UI.colony_popup_row = 0;
@@ -3119,8 +3136,10 @@ static void in_click_inner(int mx, int my, int right) {
                 if (UI.colonist_sel == k) {
                     UI.colony_popup = 1;
                     UI.colony_popup_row = 0;
-                } else
+                } else {
                     UI.colonist_sel = (int8_t)k;
+                    UI.garrison_sel1 = 0;
+                }
             }
             return;
         }
@@ -3133,8 +3152,10 @@ static void in_click_inner(int mx, int my, int right) {
                 if (UI.colonist_sel == bw) {
                     UI.colony_popup = 1;
                     UI.colony_popup_row = 0;
-                } else
+                } else {
                     UI.colonist_sel = (int8_t)bw;
+                    UI.garrison_sel1 = 0;
+                }
                 return;
             }
             /* THE FENCE IS A HIT-RECT (C3.2, 2026-09-02): the Stockade
@@ -3146,8 +3167,12 @@ static void in_click_inner(int mx, int my, int right) {
              * opens his OUTSIDE-jobs menu (func_029DD4 @0x02A07E..
              * @0x02A08A -> func_028D8C(1)); the board's tap is the
              * drop's equivalent (@0x029F7B..@0x029F98). */
-            if (hit(mx, my, 123, 106, 73, 18) && UI.colonist_sel >= 0 &&
-                UI.colonist_sel < c->population) {
+            if (hit(mx, my, 123, 106, 73, 18) &&
+                ((UI.garrison_sel1 > 0 &&
+                  UI.garrison_sel1 - 1 < CR.n_units_order) ||
+                 (UI.colonist_sel >= 0 && UI.colonist_sel < c->population))) {
+                /* a selected garrison figure takes the same menu (no job
+                 * test @0x02A07E) and re-equips in place (C3.11) */
                 UI.colony_popup = 6;
                 UI.colony_popup_row = 0;
                 return;

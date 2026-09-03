@@ -239,7 +239,8 @@ extern int colopy_front_live;
 int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
 void colonist_remove_last(int ci);
 void colonist_remove_at(int ci, int k);  /* func_008FB4 (0x181F:0xA9C) */
-int  colonist_to_fence(int ci, int k);  /* colonistToFence; unit idx or -1 */
+int  colonist_to_fence(int ci, int k);
+void unit_reequip(int ci, int ui, int job);  /* func_009318 mode 1 (C3.11) */  /* colonistToFence; unit idx or -1 */
 int  colonist_out(int ci, int k, int job);      /* func_02883E eject path, job 0x13..0x18 */
 int  colonist_out_refusal(int ci, int job);     /* func_025A1E: 0 / 21 / 20 / 3 */
 int  colonist_eject(int ci, int k, int job);    /* func_009318 mode 2 */

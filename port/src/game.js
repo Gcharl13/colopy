@@ -688,6 +688,7 @@ const G = {
   colonyPopup: null,      // 'build' | 'jobs' | 'occupation' | 'unitopts'
   colonyPopupRow: 0,
   colonyPopupUnit: -1,    // @UNITOPTIONS: which G.units entry the menu is for
+  garrisonSel: -1,        // the selected GARRISON figure ([0x8D7C] >= size): G.units index
   colonistSel: 0,
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
   pediaOnce: false,       // the one-shot Founding Father page (func_06AE08)
@@ -3020,6 +3021,31 @@ function ejectColonist(c, i, job) {
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
   }
   return u;
+}
+// func_009318 mode 1 (C3.11, 2026-09-03): a GARRISON figure at the fence
+// is RE-EQUIPPED IN PLACE (@0x009576..@0x0095C0). The prologue first banks
+// the unit's CURRENT job's goods (its job = byte[0x30E + type] @0x008BB2,
+// goods per job func_00903E; @0x009356..@0x0093BE: tools -> the unit's own
+// +0x15 count, any other good -> 50), then the tools quantum min(100,
+// stock/20*20) (@0x0093D0..@0x0093EC); the op sets type := byte[0x2F5 + job]
+// (@0x00959C), orders := 0 (@0x0095A0), a Pioneer's tools (@0x0095A5..
+// @0x0095AE); the shared tail (@0x0094E6, @0x0095CE..@0x00960D) debits the
+// NEW job's goods, floored at 0. Types with 0xFF in the table bank nothing.
+const TYPE_JOB = [19, 21, 20, 24, 23, 22, 255, 23, 255, 21, 255, 255, 255, 255,
+                  255, 255, 255, 255, 255, 255, 255, 255, 255, 0];   // DS:0x30E
+function reequipUnit(c, u, job) {
+  if (!u || !OUTSIDE_JOB_UNIT[job]) return;
+  const ti = DATA.units.findIndex(r => r.name === u.type);
+  const oj = ti >= 0 && ti < TYPE_JOB.length ? TYPE_JOB[ti] : 255;
+  if (oj !== 255 && OUTSIDE_JOB_GOODS[oj])
+    for (const g of OUTSIDE_JOB_GOODS[oj])
+      c.stock[g] += (g === GOOD.TOOLS ? (u.tools | 0) : 50);
+  const toolsAmt = Math.min(100, Math.floor(c.stock[GOOD.TOOLS] / 20) * 20);
+  becomeType(u, DATA.units[OUTSIDE_JOB_UNIT[job]].name);
+  u.orders = 0;
+  if (job === JOB_OUT_PIONEER) u.tools = toolsAmt;
+  for (const g of OUTSIDE_JOB_GOODS[job])
+    c.stock[g] = Math.max(0, c.stock[g] - (g === GOOD.TOOLS ? toolsAmt : 50));
 }
 // The whole "take him out" path: validator, the refusal messages / the
 // @ABANDON ask (row 1 proceeds), then the op.
@@ -5952,6 +5978,14 @@ function colonyPopupCommit() {
   }
   if (G.colonyPopup === 'outside') {
     G.colonyPopup = null;                  // close BEFORE the @ABANDON ask
+    // a selected GARRISON figure re-equips in place (func_009318 mode 1,
+    // C3.11) -- the same menu, no eject, no refusal path
+    if (G.garrisonSel >= 0) {
+      const gu = G.units[G.garrisonSel];
+      G.garrisonSel = -1;
+      if (gu && gu.x === c.x && gu.y === c.y) reequipUnit(c, gu, r.outJob);
+      return;
+    }
     colonistOut(c, G.colonistSel, r.outJob);
     if (G.colonies[G.colony] === c)
       G.colonistSel = Math.max(0, Math.min(G.colonistSel, c.colonists.length - 1));
@@ -16171,7 +16205,7 @@ function onClickBody(mx, my) {
         if (on) {
           const i = c.colonists.indexOf(on);
           if (G.colonistSel === i) { G.colonyPopup = 'occupation'; G.colonyPopupRow = 0; }
-          else G.colonistSel = i;
+          else { G.colonistSel = i; G.garrisonSel = -1; }
           return;
         }
         {
@@ -16206,6 +16240,10 @@ function onClickBody(mx, my) {
         // on the tile) -- is a unit, and opens @UNITOPTIONS.
         const gu = plazaUnitAt(c, mx, my);
         if (gu >= 0) {
+          // the figure is SELECTED ([0x8D7C] takes garrison figures too,
+          // func_029AC0 -- a following fence click re-equips it, C3.11)
+          // and its menu opens
+          G.garrisonSel = gu;
           G.colonyPopup = 'unitopts';
           G.colonyPopupUnit = gu;
           G.colonyPopupRow = 0;
@@ -16231,12 +16269,15 @@ function onClickBody(mx, my) {
         const i = buildingWorkerAt(c, mx, my);
         if (i >= 0) {
           if (G.colonistSel === i) { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
-          else G.colonistSel = i;
+          else { G.colonistSel = i; G.garrisonSel = -1; }
           return;
         }
         // The fence plot (FENCE_RECT): a click with a colonist selected opens
         // his OUTSIDE-jobs menu (func_029DD4 @0x02A07E..@0x02A08A -> func_028D8C(1)).
-        if (hit(mx, my, FENCE_RECT) && c.colonists[G.colonistSel]) {
+        if (hit(mx, my, FENCE_RECT) &&
+            ((G.garrisonSel >= 0 && G.units[G.garrisonSel]) || c.colonists[G.colonistSel])) {
+          // a selected garrison figure takes the same menu (no job test
+          // @0x02A07E) and re-equips in place (C3.11)
           G.colonyPopup = 'outside'; G.colonyPopupRow = 0;
           return;
         }

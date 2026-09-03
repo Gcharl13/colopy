@@ -576,6 +576,53 @@ int colonist_eject(int ci, int k, int job) {
     return ui;
 }
 
+/* func_009318 mode 1 (C3.11, 2026-09-03): a GARRISON figure at the fence
+ * is RE-EQUIPPED IN PLACE (@0x009576..@0x0095C0).  The prologue banks the
+ * unit's CURRENT job's goods first (job = byte[0x30E + type] @0x008BB2,
+ * goods per job func_00903E; @0x009356..@0x0093BE: tools -> the unit's
+ * own +0x15 count, any other good -> 50), then the tools quantum
+ * min(100, stock/20*20) (@0x0093D0..@0x0093EC); the op sets type :=
+ * byte[0x2F5 + job] (@0x00959C), orders := 0 (@0x0095A0), a Pioneer's
+ * tools (@0x0095A5..@0x0095AE); the shared tail (@0x0094E6,
+ * @0x0095CE..@0x00960D) debits the NEW job's goods, floored at 0.  Types
+ * with 0xFF in the table bank nothing.  Mirrors game.js reequipUnit. */
+static const uint8_t TYPE_JOB[24] = {                     /* DS:0x30E */
+    19, 21, 20, 24, 23, 22, 255, 23, 255, 21, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 255, 255, 255, 0 };
+void unit_reequip(int ci, int ui, int job) {
+    if (ci < 0 || ci >= CS.n_colonies || ui < 0 || ui >= CS.n_units) return;
+    if (job < 0x13 || job > 0x18) return;
+    ColonyRecord *c = &CS.colonies[ci];
+    UnitRecord *u = &CS.units[ui];
+    int oj = u->type < 24 ? TYPE_JOB[u->type] : 255;
+    if (oj >= 0x13 && oj <= 0x18)
+        for (int g = 0; g < 2; g++) {
+            int good = OUTSIDE_JOB_GOODS[oj - 0x13][g];
+            if (good < 0) continue;
+            c->stock[good] = (uint16_t)(c->stock[good] +
+                                        (good == TOOLS ? u->tools : 50));
+        }
+    int tools_amt = (c->stock[TOOLS] / 20) * 20;
+    if (tools_amt > 100) tools_amt = 100;
+    int nt = OUTSIDE_JOB_UNIT[job - 0x13];
+    u->type = (uint8_t)nt;
+    /* becomeType: the moves budget follows the type (game.js) */
+    CR.unit_no_moves[ui] = 0;
+    {
+        int mv = dat_units[nt].movement * 3;
+        if (!CR.unit_moves_undef[ui] && CR.unit_moves[ui] > mv)
+            CR.unit_moves[ui] = (uint8_t)mv;
+    }
+    u->orders = 0;
+    if (job == 0x14) u->tools = (uint8_t)tools_amt;
+    for (int g = 0; g < 2; g++) {
+        int good = OUTSIDE_JOB_GOODS[job - 0x13][g];
+        if (good < 0) continue;
+        int amt = good == TOOLS ? tools_amt : 50;
+        c->stock[good] = (uint16_t)(c->stock[good] > amt ? c->stock[good] - amt : 0);
+    }
+}
+
 /* The whole "take him out" path for a HUMAN player: validator, the
  * refusal messages / the @ABANDON ask (row 1 proceeds), then the op.
  * Returns the unit index, -1 when refused or declined. */
