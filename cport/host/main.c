@@ -543,6 +543,15 @@ static void print_projection(int job_convert) {
         printf("],\"frac\":[");
         for (int d = 0; d < 8; d++)
             printf("%s%u", d ? "," : "", CR.tribe_frac[d]);
+        /* the tribe +0x0C hoard word and the +0x03 grudge/council bits */
+        printf("],\"hoard\":[");
+        for (int d = 0; d < 8; d++)
+            printf("%s%d", d ? "," : "",
+                   (int)(int16_t)(CS.tribes[d * 0x4E + 0x0C] |
+                                  (CS.tribes[d * 0x4E + 0x0D] << 8)));
+        printf("],\"tflags\":[");
+        for (int d = 0; d < 8; d++)
+            printf("%s%u", d ? "," : "", CS.tribes[d * 0x4E + 3] & 0x60);
         /* villages [pop, growth, alarm, mission|-1, braveOwed] */
         printf("],\"villages\":[");
         for (int v = 0; v < CS.n_villages; v++) {

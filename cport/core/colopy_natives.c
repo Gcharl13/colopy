@@ -177,7 +177,45 @@ static void spawn_brave(int vi) {
         return;
     }
 }
+/* The WAR COUNCIL of the per-tribe turn func_0485F6 @0x48632..@0x48759
+ * (JS tribeWarCouncil; RULINGS 2026-09-03e): post-Declaration, once per
+ * tribe (+0x03 bit 0x20), tension >= 25 draws random_int(1,400), the
+ * GRUDGE bit 0x40 forces the flag, then random_int(0, 2*(5-diff)) == 0
+ * -> @INDIANGRUDGE, +100 tension toward the player (the -100 toward
+ * [0x53D2] is unmodeled, flagged), the player's missions on the tribe's
+ * settlements are lost (func_045D00), muskets := min(n, m) * 4 (8-bit),
+ * horses := min(n, h), herd := horses * 25, latch set. */
+static void tribe_war_council(void) {
+    if (!(CR.woi_flags & WOI_DECLARED)) return;
+    for (int t = 0; t < 8; t++) {
+        int tb = t * 0x4E;
+        if (CR.tribe_dead[t] || (CS.tribes[tb + 3] & 0x20)) continue;
+        int tension = CR.tension[t];
+        int flag = 0;
+        if (tension >= 25) flag = tension >= 1 + R(400) ? 1 : 0;
+        if (CS.tribes[tb + 3] & 0x40) flag = 1;
+        if (!flag) continue;
+        if (R(2 * (5 - (int)cs_difficulty()) + 1) != 0) continue;
+        ev_emit("INDIANGRUDGE", 0, 0, dat_tribes[t].name, dat_tribes[t].singular);
+        adjust_tension(t, 100, 0);
+        int count = 0;
+        for (int v = 0; v < CS.n_villages; v++) {
+            if (CS.villages[v].owner_tribe != t + 4) continue;
+            count++;
+            if (CS.villages[v].mission != 0xFF &&
+                (CS.villages[v].mission & 0x0F) == cs_nation())
+                CS.villages[v].mission = 0xFF;
+        }
+        int m = CR.tribe_muskets_known[t] < count ? CR.tribe_muskets_known[t] : count;
+        CR.tribe_muskets_known[t] = (int16_t)((m * 4) & 0xFF);
+        int h = CR.tribe_horses_known[t] < count ? CR.tribe_horses_known[t] : count;
+        CR.tribe_horses_known[t] = (int16_t)h;
+        CR.tribe_herd[t] = (int16_t)(h * 25);
+        CS.tribes[tb + 3] |= 0x20;
+    }
+}
 static void native_tick(void) {
+    tribe_war_council();
     for (int vi = 0; vi < CS.n_villages; vi++) {
         NativeSettlement *v = &CS.villages[vi];
         /* growth accumulator += population, acting at 20 (settlement +0x06) */

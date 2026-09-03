@@ -7516,6 +7516,22 @@ function seedNatives() {
   // §19.11: map creation spawns exactly ONE brave per village, linked to it;
   // a village only builds another when its own dies. Done in a second pass so a
   // brave never lands on a site that has not been placed yet.
+  // The tribe +0x0C HOARD word (RULINGS 2026-09-03e): zeroed at tribe init
+  // (@0x65E71) and, once every settlement stands, += the tribe's tech for
+  // every in-bounds tile (0x181F:0x302: 1..W-2, 1..H-2) of the 5x5 box
+  // around each settlement whose terrain class (0x181F:0x78C) is 0x1B
+  // MOUNTAINS (@0x665E0..@0x6664B, summed into the owning tribe
+  // @0x6662A). Static after newgame; the teach-weight builder divides it
+  // by the settlement count (villageSkill).
+  for (const t of G.tribes) t.hoard = 0;
+  for (const v of G.villages) {
+    const t = G.tribes[v.tribe];
+    for (let y = v.y - 2; y <= v.y + 2; y++)
+      for (let x = v.x - 2; x <= v.x + 2; x++) {
+        if (x < 1 || y < 1 || x > MAP.w - 2 || y > MAP.h - 2) continue;
+        if (terrainClass(at(x, y)) === 0x1B) t.hoard += t.level || 0;
+      }
+  }
   for (const v of G.villages) spawnBrave(v);
 }
 
@@ -8630,7 +8646,42 @@ function missionStrength(v) {
   if (G.fathersOwned.includes('Juan de Sepulveda')) m = Math.floor(m / 2);
   return m;
 }
+// The WAR COUNCIL of the per-tribe turn func_0485F6 @0x48632..@0x48759
+// (read 2026-09-03, RULINGS 2026-09-03e): only after the Declaration
+// ([0x5382] & 1) and while the +0x03 bit 0x20 latch is clear; t = tension
+// toward the current player; flag = t >= 25 && t >= random_int(1,400)
+// (the draw happens whenever t >= 25); the GRUDGE bit forces the flag;
+// then random_int(0, 2*(5-difficulty)) must land on 0 -> @INDIANGRUDGE,
+// tension +100 toward the player (and -100 toward [0x53D2], the port's
+// single-power tension cannot carry it -- flagged), every settlement of
+// the tribe carrying the player's mission loses it (func_045D00), the
+// muskets counter := min(settlements, counter) * 4 (an 8-bit shift), the
+// horses counter := min(settlements, counter), the herd := horses * 25,
+// latch set. The clock reseed @0x48604 is not mirrored (2026-09-03b).
+function tribeWarCouncil() {
+  if (!(G.flags & WOI_DECLARED)) return;
+  G.tribes.forEach((t, ti) => {
+    if (t.dead || t.council) return;
+    const tension = t.tension || 0;
+    let flag = 0;
+    if (tension >= 25) flag = tension >= 1 + Math.floor(Math.random() * 400) ? 1 : 0;
+    if (t.grudge) flag = 1;
+    if (!flag) return;
+    if (Math.floor(Math.random() * (2 * (5 - G.difficulty) + 1)) !== 0) return;
+    G.eventTribe = ti;
+    showEvent('INDIANGRUDGE', { STRING0: t.name, STRING1: t.singular || t.name });
+    adjustTension(ti, 100, 0);
+    for (const v of G.villages)
+      if (v.tribe === ti && v.mission && v.mission.power === G.nation) v.mission = null;
+    const count = G.villages.filter(v => v.tribe === ti).length;
+    t.musketsKnown = (Math.min(count, t.musketsKnown | 0) * 4) & 0xFF;
+    t.horsesKnown = Math.min(count, t.horsesKnown | 0);
+    t.herd = t.horsesKnown * 25;
+    t.council = true;
+  });
+}
 function nativeTick() {
+  tribeWarCouncil();
   for (const v of G.villages) {
     // Growth.
     v.growth = (v.growth || 0) + v.pop;
@@ -9076,6 +9127,10 @@ function attackVillage(v, u) {
     // is destroyed (0x191F:0x248 @0x5D6A9) and 0x4A plays @0x5D6BC
     if (v.pop > 1) { v.pop -= 1; sfx(0x48); G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is reduced.`; return; }
     sfx(0x4A);
+    // the GRUDGE bit (TribeRecord +0x03 |= 0x40 @0x5D69D..@0x5D6A1): set in
+    // the size-1 removal branch only when the winner is a HUMAN power
+    // (controller == 0 @0x5D696) -- an AI razing leaves no grudge
+    t.grudge = true;
     const gold = razeGold(v);
     G.gold += gold;
     t.avenge = true;                                // the post-Declaration flag
@@ -14075,6 +14130,12 @@ function importSav(bytes) {
     // settlement count for the Silver Miner weight (@0x492B8). Its writer
     // is unread -- imported verbatim, FLAGGED as "hoard".
     t.hoard = u16(tb + 0x0C);
+    // +0x03 bits (2026-09-03, RULINGS 2026-09-03e): 0x40 = the GRUDGE the
+    // human's razing of a size-1 settlement leaves (@0x5D69D..@0x5D6A1),
+    // 0x20 = the WAR COUNCIL latch (@0x48755) -- both read by the tribe
+    // turn func_0485F6 @0x48640/@0x48683 after the Declaration.
+    t.grudge = !!(d[tb + 3] & 0x40);
+    t.council = !!(d[tb + 3] & 0x20);
     t.stock = [];
     for (let g = 0; g < 16; g++) t.stock.push(u16(tb + 0x0E + g * 2));
   });

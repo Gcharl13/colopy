@@ -157,6 +157,11 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
         tension[ti] = (uint8_t)(rng_range(0, 14) + 2 * difficulty);
         int off = ti * 0x4E + 0x46 + nation * 2;
         put16(CS.tribes + off, tension[ti]);
+        /* the record's +0x02 TECH byte (the JS t.level = @TRIBES column,
+         * read back from the SAV by tribe_level()) — was never written
+         * on a fresh C game (found 2026-09-03 by the hoard projection:
+         * tribe_level() read 0 while the JS held the data level) */
+        CS.tribes[ti * 0x4E + 2] = (uint8_t)dat_tribes[ti].level;
     }
     /* placement = func_065D26's TRIBE.TXT mode (@0x660C4..@0x66246,
      * 2026-08-29): per site a triangular +-2 jitter (random_int(-1,1) +
@@ -241,6 +246,27 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
                     }
             }
         }
+    }
+
+    /* the tribe +0x0C HOARD word (RULINGS 2026-09-03e, JS seedNatives):
+     * zeroed at tribe init (@0x65E71), then += the tribe's tech for every
+     * in-bounds tile (1..W-2, 1..H-2) of the 5x5 box around each
+     * settlement whose terrain class is 0x1B Mountains (@0x665E0..
+     * @0x6664B, into the owning tribe @0x6662A) */
+    for (int ti = 0; ti < 8; ti++) put16(CS.tribes + ti * 0x4E + 0x0C, 0);
+    for (int vi = 0; vi < CS.n_villages; vi++) {
+        int ti = CS.villages[vi].owner_tribe - 4;
+        if (ti < 0 || ti >= 8) continue;
+        uint8_t *hp = CS.tribes + ti * 0x4E + 0x0C;
+        int hoard = hp[0] | (hp[1] << 8);
+        for (int y = CS.villages[vi].map_y - 2; y <= CS.villages[vi].map_y + 2; y++)
+            for (int x = CS.villages[vi].map_x - 2; x <= CS.villages[vi].map_x + 2; x++) {
+                if (x < 1 || y < 1 || x > COLOPY_MAP_W - 2 || y > COLOPY_MAP_H - 2)
+                    continue;
+                uint8_t tv = map_at(x, y);
+                if ((tv & 0xA0) == 0xA0) hoard += dat_tribes[ti].level;
+            }
+        put16(hp, (uint16_t)hoard);
     }
 
     /* the player's starting force (682): ONE ship (Dutch = Merchantman)

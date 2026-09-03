@@ -437,3 +437,28 @@ mirrored, RULINGS 2026-09-03b).
   the pre-raid combat, the force flag, `func_05B2C2`, the tribe-row war
   bit on the credits and the `[0x9410]` census are flagged stand-ins; the
   tribal-win massacre (`func_05CA7E @0x5D59A..@0x5D67A`) has no port site.
+
+
+## Amendment 2026-09-03b — the grudge bit, the war council, the hoard (CORE-B, RULINGS 2026-09-03e)
+
+- **TribeRecord +0x03 bit 0x40 = GRUDGE**: set only when a HUMAN power
+  razes a size-1 settlement (`func_05CA7E @0x5D68A..@0x5D6A1`); bit 0x20 =
+  the war-council latch (`@0x48755`).
+- **The war council** (`func_0485F6 @0x48632..@0x48759`, per tribe, after
+  the Declaration, once): `tension >= 25 && tension >= random_int(1,400)`
+  or the grudge bit, then `random_int(0, 2*(5-difficulty)) == 0` →
+  @INDIANGRUDGE, +100 tension toward the player, −100 toward `[0x53D2]`,
+  the player's missions on the tribe's settlements destroyed
+  (`func_045D00`), muskets counter `:= min(settlements, counter) * 4`
+  (8-bit), horses `:= min(settlements, counter)`, herd `:= horses * 25`.
+  Both engines run it (`tribeWarCouncil` / `tribe_war_council`); the −100
+  leg is flagged (single-power tension).
+- **TribeRecord +0x0C = the HOARD**: `Σ over the tribe's settlements of
+  tech × (Mountain tiles in the in-bounds 5x5 box)` written at newgame
+  (`@0x65E71`, `@0x665E0..@0x6664B`); the Silver Miner teach weight
+  divides it by the settlement count. Both engines write it at village
+  seeding; §3's FLAG on the `+0x0C` writer is lifted.
+- **Demand cadence / the +0x2E stamp**: the research lead (adjacency-driven
+  meetings through `func_059B90 → func_056C3E`, the per-power visit stamp
+  0/1/2) is recorded in RULINGS 2026-09-03e as UNVERIFIED and unported;
+  the ports' per-turn roll stays flagged.

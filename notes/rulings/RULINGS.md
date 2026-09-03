@@ -12175,3 +12175,62 @@ building set, every colonist's occupation, tensions, alarms, the tribe
 counters, damaged ships and the events; it covers RAIDSTORES, RAIDBURN
 (incl. the occupation quirk), RAIDGOLD and RAIDNOTHING (no ship stands in
 those colonies, so RAIDSHIP is exercised by inspection only).
+
+## 2026-09-03e — CORE-B: the grudge bit, the hoard writer, the @LEADERNAME triple; the leads left unverified
+
+**Grudge (TribeRecord +0x03 bit 0x40) — BYTE_VERIFIED, ported.** Writer
+`func_05CA7E @0x5D68A..@0x5D6A1`: in the size-1 settlement branch
+(`cmp [bx+4],1; jbe` `@0x5D674`), only when the winner `[bp-0x86] < 4` and
+`AIPersonality.controller == 0` — the HUMAN razes — `or [bx+3],0x40` on
+the tribe pointer `[0x8D4E]`. Reader `func_0485F6 @0x48632..@0x48759`
+(the per-tribe turn; clock reseed `@0x48604`, not mirrored): only while
+`[0x5382] & 1` (declared) and `+0x03 & 0x20` clear; `t = tension(tribe,
+[0x5398])`; `t >= 25` draws `random_int(1,400)` and the flag is `t >=
+roll`; the grudge bit forces the flag; `random_int(0, 2*(5-difficulty))`
+must be 0; then @INDIANGRUDGE (0x14F6), `tension_apply(tribe, [0x5398],
++100)`, `tension_apply(tribe, [0x53D2], −100)`, `func_045D00(tribe,
+[0x5398])` (every settlement with `+0x05 & 0xF == player` → `+0x05 =
+0xFF`), `+0x07 = min([0x962A+tribe], +0x07) << 2` (8-bit), `+0x08 =
+min(same, +0x08)`, `+0x0A = +0x08 * 25`, `+0x03 |= 0x20`. Both engines
+run it at the head of the native pass (`tribeWarCouncil` /
+`tribe_war_council`); the −100 toward `[0x53D2]` has no home in the
+ports' single-power tension (flagged); both harnesses project the bits
+(`tflags`).
+
+**Hoard (TribeRecord +0x0C) — BYTE_VERIFIED, ported.** Writers are the
+two newgame sites only: `mov [bx+0xC],0` `@0x65E71` (tribe init) and
+`add [bx+0xC],ax` `@0x6662A` with `ax = +0x02` (tech), for every in-bounds
+tile (`0x181F:0x302`) of the 5x5 box around each settlement (`@0x665E0..
+@0x6664B`) whose class (`0x181F:0x78C`, `func_00624E`) is 0x1B Mountains;
+`@0x6665D` re-selects the settlement so the sum lands in its owning
+tribe. Static after newgame, SAV-persisted. Both engines write it at the
+end of village seeding; the C1.6 "hoard writer" residue closes and the
+`villageSkill` FLAG on it is lifted; both harnesses project it.
+
+**The persisted triple `[0x9566 + p*3]` — BYTE_VERIFIED reading, no port
+consumer.** Loader `func_0749E0 @0x74C2F..@0x74C51` (key `LEADERNAME`
+0x2218): after the leader name, three integer reads per power into
+`[0x9566+3p]`, `+1`, `+2` — i.e. the three numeric columns of NAMES.TXT
+@LEADERNAME (England 1,−1,0; France 0,1,0; Spain 1,0,−1; Netherlands
+−1,0,1). Readers re-read this session: `+0 @0x547AB` (per-colony AI
+`func_053B7E`: `(v+2)*50 <= colony muskets` arming threshold), `+1
+@0x4C5F8` (`func_04C5C0`: recruit divisor `4 − v` over `pop_census −
+colonies`), `+2 @0x541D4` (the colony-AI score's war-tier term:
+`cx = 3*ax/2 − v − turn>>7`). Column roles (military readiness / expansion
+pace / war tier) are ANCHOR readings of those consumers. None of the three
+consumers is ported (rival colony AI, B3.6), so the triple is documented,
+not loaded: C1.17's "meaning TBD" leaf is resolved.
+
+**Leads NOT re-verified and NOT ported this session** (the research
+reports' claims stand as leads only): the tribe `+0x2E` per-power visit
+stamp (natives-ai report F/P7) and the adjacency-driven demand cadence
+`func_059B90 → func_056C3E` (the ports' per-turn demand roll stays the
+flagged stand-in — C1.9 narrowed, not closed); the AI-AI treaty/war tick
+`func_057DC0` and its evaluator `func_057AFC` (only their contact gate
+`@0x57DE2..@0x57DF4` was read here for 2026-09-03a; the rival-vs-rival
+war simulation in `newsTick`/`news_tick` stays FLAGGED — C1.17); the
+meeting-side grievance setter `@0x59AE9`; `func_046056`'s metric and the
+totem override; `func_061E10` and the sector waypoint chain; the
+discovery predicate `func_03FDDE`; @INDIANROAD; the AI Europe pass
+`func_051EF4`. Each remains a ledger residue with the report's offsets
+as its lead.
