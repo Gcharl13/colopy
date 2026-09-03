@@ -23,8 +23,10 @@
 
 /* START_GOLD (game.js:629) */
 static const int32_t START_GOLD[5] = { 1000, 300, 0, 0, 0 };
-/* TRIBE_SITE_DX/DY (game.js:5145) */
-#define TRIBE_SITE_DX 2
+/* TRIBE_SITE_DX/DY (game.js TRIBE_SITE_DX): 0 since G11 (2026-09-03) --
+ * the 2 compensated a terrain table shifted by two tiles (the old
+ * extract_mp.py read the .MP version word as tiles) */
+#define TRIBE_SITE_DX 0
 #define TRIBE_SITE_DY 0
 #define PIONEER_TOOLS 100            /* mkUnit (game.js:664) */
 
@@ -101,6 +103,7 @@ static int add_unit(int type, int x, int y, int owner) {
     u->type = (uint8_t)type;
     u->owner_flags = (uint8_t)owner;
     u->profession = DAT_JOBEXPERT_COUNT;   /* none (28); 0 = Expert Farmers */
+    u->home_settlement = 0xFF;             /* +0x06: no settlement (C3.9) */
     return CS.n_units++;
 }
 
@@ -121,6 +124,26 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
 
     /* planes: the shipped map, no improvements, regions rebuilt */
     memcpy(CS.terrain, dat_map_tiles, COLOPY_PLANE);
+    /* VICEROY's load-time normalisation of a file map (G12, 2026-09-03;
+     * formats/MP_FORMAT.md "VICEROY loader behavior"): new_game_state_init
+     * fills rows 0 and h-1 with Arctic 0x18 (@0x75746..0x75785), then
+     * func_064A10(1) outlines (0,0)-(w-1,h-1) and (1,0)-(w-2,h-1) with
+     * Sea Lane 0x1A (@0x65941..0x65986 -- columns 0, 1, w-2, w-1),
+     * re-fills rows 0/h-1 Arctic (@0x6598B..0x659CA), then folds every
+     * tile (@0x659D8..0x65A85): base = b & 0x1F; base >= 0x18 untouched;
+     * bit 0x20 set -> (b & 0xE0) | (base & 7); else 16 <= base < 24 ->
+     * b - 8.  Layer 2 and the fog plane are zeroed (@0x65AA5..0x65ACE) --
+     * CS.improve is already zero here, fog is CR runtime. */
+    for (int y = 0; y < COLOPY_MAP_H; y++)
+        for (int x = 0; x < COLOPY_MAP_W; x++) {
+            uint8_t *t = &CS.terrain[y * COLOPY_MAP_W + x];
+            if (y == 0 || y == COLOPY_MAP_H - 1) { *t = 0x18; continue; }
+            if (x <= 1 || x >= COLOPY_MAP_W - 2) { *t = 0x1A; continue; }
+            int base = *t & 0x1F;
+            if (base >= 0x18) continue;
+            if (*t & 0x20) *t = (uint8_t)((*t & 0xE0) | (base & 7));
+            else if (base >= 16) *t = (uint8_t)(*t - 8);
+        }
     build_regions();
 
     /* globals: year 1492 s0 turn 0 (beginGame 670), tutorial mask 0x0E
@@ -149,6 +172,11 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
     /* G.plotSeedBase = (random * 2^32) >>> 0 (677): with the shared
      * 15-bit stream that is exactly r * 131072 */
     uint32_t plot = rng_next() * 131072u;
+    /* [0x190] = random_int(1, 0x7FFF) @0x64A16..0x64A23 -- the map
+     * generator's first act, called from new_game_state_init @0x7579B
+     * right after the .MP load, before any placement (G12; the JS draws
+     * G.mapSeed at the same point) */
+    uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
 
     /* seedNatives (5146): tensions first (one draw per tribe, in
      * dat_tribes order), then the villages, then one brave each */
@@ -279,8 +307,13 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
                     CS.units[u].map_x == bx && CS.units[u].map_y == by)
                     taken = 1;
             if (taken) continue;
-            add_unit(braves, bx, by,
-                     4 + (CS.villages[vi].owner_tribe - 4));
+            {
+                int bi = add_unit(braves, bx, by,
+                                  4 + (CS.villages[vi].owner_tribe - 4));
+                /* +0x06 = the home village (spawn @0x006ED2, C3.9) --
+                 * the leash cr_reset_from_load reads back */
+                if (bi >= 0) CS.units[bi].home_settlement = (uint8_t)vi;
+            }
             break;
         }
     }
@@ -298,9 +331,6 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
      * dispatcher's turn-0 arm (func_020F50 @0x020FB5..0x020FFB: turn 0,
      * difficulty 0, [0x5386]&0x10 clear; %STRING0 = @UNIT name) */
     tut_once(1, 0, 0, dat_units[ship_type].name, 0);
-
-    /* G.mapSeed = 1 + random(0x7FFF) (742) */
-    uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
 
     /* seedMarket (4308): per-good start price start1..start2 */
     for (int i = 0; i < 16; i++)
@@ -320,6 +350,8 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
     /* --- runtime: the loader's own build, then the fresh-game
      * overrides (the importer marks everyone met; beginGame does not:
      * t.met=false 5148 / seedRivals met:false 7307) --- */
+    sav_tail_init();                 /* the trailing block the seeds and
+                                      * routes are saved in (C3.7/C3.8) */
     cr_reset_from_load();
     memset(CR.tribe_met, 0, sizeof(CR.tribe_met));
     for (int n = 0; n < 4; n++) CR.rivals[n].met = 0;

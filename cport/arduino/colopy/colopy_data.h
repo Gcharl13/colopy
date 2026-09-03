@@ -176,5 +176,6 @@ extern const int32_t dat_starts[4][2];
 #define DAT_MAP_W 58
 #define DAT_MAP_H 72
 extern const uint8_t dat_map_tiles[4176];
+extern const char dat_pikidx_woodpan2[];
 
 #endif

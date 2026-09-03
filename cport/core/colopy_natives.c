@@ -180,6 +180,9 @@ static void spawn_brave(int vi) {
         int ui = unit_append(TY_BRAVES, 4 + (v->owner_tribe - 4), x, y);
         if (ui >= 0) {
             CR.native_home[ui] = (int8_t)vi;
+            /* the record's +0x06 home-settlement index: for natives the
+             * NativeSettlement (spawn @0x006ED2..0x006EDA, C3.9) */
+            CS.units[ui].home_settlement = (uint8_t)vi;
             natives_push(ui);
         }
         return;

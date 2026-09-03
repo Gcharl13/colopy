@@ -73,7 +73,13 @@ typedef struct COLOPY_PACKED {
     uint8_t  owner_flags;           /* +0x03  low nibble = nation (>=4 tribe) */
     uint8_t  flags;                 /* +0x04 */
     uint8_t  _pad_05[1];
-    uint8_t  moves_remaining;       /* +0x06  in thirds */
+    uint8_t  home_settlement;       /* +0x06  home-settlement index (C3.9,
+                                     * 2026-09-03): 0xFF none; spawn stores
+                                     * the colony-at lookup @0x006DDA, colony
+                                     * removal renumbers @0x02EF0A..0x02EF3B
+                                     * (Europeans only, @0x02EF2E).  The
+                                     * port's moves-in-thirds now live in
+                                     * CR.unit_moves, off the record. */
     uint8_t  _pad_07[1];
     uint8_t  orders;                /* +0x08 */
     uint8_t  goto_x;                /* +0x09 */

@@ -174,7 +174,7 @@ int enter_rumour(int ui, int x, int y) {
 
 /* skipUnit (game.js:10872): give up the rest of the turn's moves. */
 void cmd_skip(int ui) {
-    CS.units[ui].moves_remaining = 0;
+    CR.unit_moves[ui] = 0;
     CR.unit_moves_undef[ui] = 0;         /* a NUMBER was written */
 }
 
@@ -187,7 +187,7 @@ void cmd_skip(int ui) {
 void cmd_set_order(int ui, int n) {
     if (n == 5) snd_play(0x58);
     CS.units[ui].orders = (uint8_t)n;
-    CS.units[ui].moves_remaining = 0;
+    CR.unit_moves[ui] = 0;
     CR.unit_moves_undef[ui] = 0;
 }
 
@@ -203,11 +203,11 @@ void cmd_goto(int ui, int gx, int gy) {
  * to u.moves, which a rival-born object does not have (undefined). */
 void cmd_activate(int ui) {
     CS.units[ui].orders = 0;
-    if (CR.unit_moves_undef[ui] || !CS.units[ui].moves_remaining) {
+    if (CR.unit_moves_undef[ui] || !CR.unit_moves[ui]) {
         if (CR.unit_no_moves[ui]) CR.unit_moves_undef[ui] = 1;
         else {
             CR.unit_moves_undef[ui] = 0;
-            CS.units[ui].moves_remaining = (uint8_t)unit_full_moves(ui);
+            CR.unit_moves[ui] = (uint8_t)unit_full_moves(ui);
         }
     }
 }
@@ -447,6 +447,10 @@ int cmd_found_colony(int ui, const char *name) {
     c->map_x = u->map_x;
     c->map_y = u->map_y;
     c->owner_power = (uint8_t)cs_nation();
+    /* founding sets improvement-plane bit 0x10 on the tile
+     * (func_005D4E(x,y,0x10,1) @0x0222E6..0x0222F0 / @0x0224E9..
+     * 0x0224F3); removal clears 0x02 (colony_removed_fixup) (C3.10) */
+    CS.improve[c->map_y * COLOPY_MAP_W + c->map_x] |= 0x10;
     /* A new colony lifts the fog over its whole working area.  The
      * colony screen's scene panel draws the 5x5 around the town
      * (spec/ui/colony_screen.md 3.8), so anything still fogged there
@@ -525,7 +529,7 @@ void cmd_improve(int ui, int n) {
     }
     u->orders = (uint8_t)n;
     CR.unit_work[ui] = 0;
-    u->moves_remaining = 0;
+    CR.unit_moves[u - CS.units] = 0;
     CR.unit_moves_undef[ui] = 0;
     if (n == 9) work_objection(ui, 1);
     if (n == 8 && is_forested_id(tile_terrain(v))) work_objection(ui, 0);
@@ -552,7 +556,7 @@ void cmd_move(int ui, int dx, int dy) {
      * JS <= 0 test and NaN-step; the shared script filter (movesLeft > 0)
      * keeps both engines off that path, so it stays unported. */
     if (CR.unit_moves_undef[ui]) return;
-    if (u->moves_remaining <= 0) return;
+    if (CR.unit_moves[u - CS.units] <= 0) return;
     int nx = u->map_x + dx, ny = u->map_y + dy;
     if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H) return;
     uint8_t v = map_at(nx, ny);
@@ -604,7 +608,7 @@ void cmd_move(int ui, int dx, int dy) {
                         if (first < 0) first = ni;
                     }
                     CR.unit_n_pass[ui] = 0;
-                    u->moves_remaining = 0;
+                    CR.unit_moves[u - CS.units] = 0;
                     /* the party ashore takes over from the ship (10905) */
                     if (first >= 0)
                         for (int k = 0; k < CR.n_units_order; k++)
@@ -655,8 +659,8 @@ void cmd_move(int ui, int dx, int dy) {
             if (rng_next() <= 16383) {
                 ev_emit("SHIPRUN", 0, 0, dat_units[u->type].name, 0);
             } else {
-                u->moves_remaining = (uint8_t)(u->moves_remaining > 3
-                                                   ? u->moves_remaining - 3
+                CR.unit_moves[u - CS.units] = (uint8_t)(CR.unit_moves[u - CS.units] > 3
+                                                   ? CR.unit_moves[u - CS.units] - 3
                                                    : 0);
                 CR.unit_moves_undef[ui] = 0;
                 ev_emit("SHIPSLOW", 0, 0, dat_units[u->type].name, 0);
@@ -692,14 +696,14 @@ void cmd_move(int ui, int dx, int dy) {
                 return;
             }
             int full = unit_full_moves(ui);
-            int tired = u->moves_remaining < full;
+            int tired = CR.unit_moves[u - CS.units] < full;
             if (tired && !ship) {
                 CR.unit_fatigue[ui] =
-                    (uint8_t)(u->moves_remaining * 3 <= full ? 2 : 1);
+                    (uint8_t)(CR.unit_moves[u - CS.units] * 3 <= full ? 2 : 1);
                 ev_emit("HALF", CR.unit_fatigue[ui] == 2 ? 1 : 2, 0, 0, 0);
                 if (ask_choice() != 0) {   /* row 1: let them rest */
                     CR.unit_fatigue[ui] = 0;
-                    u->moves_remaining = 0;
+                    CR.unit_moves[u - CS.units] = 0;
                     CR.unit_moves_undef[ui] = 0;
                     CR.ui_advance = 1;
                     return;
@@ -799,14 +803,14 @@ void cmd_move(int ui, int dx, int dy) {
                                         ? "CAPTURED3" : "CAPTURED",
                                     loot, 0, dat_nations[me].adjective,
                                     ci2 >= 0 ? CS.colonies[ci2].name : 0);
-                            u->moves_remaining = 0;
+                            CR.unit_moves[u - CS.units] = 0;
                             CR.unit_moves_undef[ui] = 0;
                             CR.ui_advance = 1;
                             return;
                         }
                     }
                     /* "the colony holds" — msg only, the move is spent */
-                    u->moves_remaining = 0;
+                    CR.unit_moves[u - CS.units] = 0;
                     CR.unit_moves_undef[ui] = 0;
                     CR.ui_advance = 1;
                     return;
@@ -857,7 +861,7 @@ void cmd_move(int ui, int dx, int dy) {
                                  h.good, -h.qty);
                         CS.powers[me].gold += offer_gold;
                     }
-                    u->moves_remaining = 0;
+                    CR.unit_moves[u - CS.units] = 0;
                     CR.unit_moves_undef[ui] = 0;
                     return;
                 }
@@ -870,7 +874,7 @@ void cmd_move(int ui, int dx, int dy) {
                      * JS X = target.colonists?.length ?? 3 — rival
                      * colonies carry no colonist list, so X is the
                      * CONSTANT 3 (the JS reading, mirrored). */
-                    u->moves_remaining = 0;
+                    CR.unit_moves[u - CS.units] = 0;
                     CR.unit_moves_undef[ui] = 0;
                     ev_emit("SCOUTCOLONY", 0, 0, 0, 0);
                     int c2 = ask_choice();
@@ -892,7 +896,7 @@ void cmd_move(int ui, int dx, int dy) {
                     return;
                 }
                 if (!rel_parley_eligible(rival)) return;   /* msg only */
-                u->moves_remaining = 0;
+                CR.unit_moves[u - CS.units] = 0;
                 CR.unit_moves_undef[ui] = 0;
                 run_meeting(rival, 1);
                 return;
@@ -926,7 +930,7 @@ void cmd_move(int ui, int dx, int dy) {
             /* peace: the parley (water tiles carry no colony, so the
              * trade/scout arms cannot arise here) */
             if (!rel_parley_eligible(rival)) return;   /* msg only */
-            u->moves_remaining = 0;
+            CR.unit_moves[u - CS.units] = 0;
             CR.unit_moves_undef[ui] = 0;
             run_meeting(rival, 1);
             return;
@@ -937,7 +941,7 @@ void cmd_move(int ui, int dx, int dy) {
             /* enterVillage (game.js:11146): the move is spent and the
              * @ACTIONS menu opens (CR.cur_village); the action itself
              * comes from the caller (the script / future UI). */
-            u->moves_remaining = 0;
+            CR.unit_moves[u - CS.units] = 0;
             CR.unit_moves_undef[ui] = 0;
             village_enter(vi, ui);
             return;
@@ -964,8 +968,8 @@ void cmd_move(int ui, int dx, int dy) {
      * floors at zero.  tutorial/centring are presentation; the fog
      * reveal (10839) is state — the plane rides in the .SAV. */
     int cost = move_cost(ship, u->map_x, u->map_y, nx, ny);
-    u->moves_remaining = (uint8_t)(cost > u->moves_remaining
-                                       ? 0 : u->moves_remaining - cost);
+    CR.unit_moves[u - CS.units] = (uint8_t)(cost > CR.unit_moves[u - CS.units]
+                                       ? 0 : CR.unit_moves[u - CS.units] - cost);
     u->map_x = (uint8_t)nx;
     u->map_y = (uint8_t)ny;
     /* sfx 0x52: a human Wagon Train arriving on a colony tile —

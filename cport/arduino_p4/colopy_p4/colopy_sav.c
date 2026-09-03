@@ -275,6 +275,21 @@ size_t colopy_save_sav(uint8_t *buf, size_t cap) {
     CS.globals[0x1E] = (uint8_t)CS.n_colonies;
     CS.globals[0x1F] = (uint8_t)(CS.n_colonies >> 8);
     routes_to_sav();
+    /* the map-detail salt [0x190] rides in the tail (C3.8, offset 612):
+     * a new game's draw and a loaded word both go back where the engine
+     * keeps it; the [0x8D80] plot base (tail 608, 4 B) is written only when the slot
+     * is empty (a new game's zero tail) -- a loaded file keeps the
+     * saving session's tick, the port pins its own (cr_reset_from_load) */
+    if (CS.tail_len >= 614) {
+        CS.tail[612] = (uint8_t)(CR.map_seed & 0xFF);
+        CS.tail[613] = (uint8_t)(CR.map_seed >> 8);
+        if (!(CS.tail[608] | CS.tail[609] | CS.tail[610] | CS.tail[611])) {
+            CS.tail[608] = (uint8_t)(CR.plot_seed & 0xFF);
+            CS.tail[609] = (uint8_t)((CR.plot_seed >> 8) & 0xFF);
+            CS.tail[610] = (uint8_t)((CR.plot_seed >> 16) & 0xFF);
+            CS.tail[611] = (uint8_t)((CR.plot_seed >> 24) & 0xFF);
+        }
+    }
 
     uint8_t *p = buf;
     memcpy(p, CS.prelude, SAV_PRELUDE);            p += SAV_PRELUDE;
@@ -355,4 +370,12 @@ uint32_t colopy_digest(void) {
     h = fnv(h, CS.fog, sizeof(CS.fog));
     h = fnv(h, &CS.rng, sizeof(CS.rng));
     return h;
+}
+
+/* a fresh game's tail: the engine writes its 1502 trailing bytes from live
+ * DGROUP (save.md blocks 48-55); the port starts them zero so the two seed
+ * words and the route block have a home (C3.7/C3.8, 2026-09-03) */
+void sav_tail_init(void) {
+    CS.tail_len = SAV_TAIL_LEN;
+    memset(CS.tail, 0, SAV_TAIL_LEN);
 }

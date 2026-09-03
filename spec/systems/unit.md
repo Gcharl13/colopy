@@ -182,3 +182,13 @@ write in `func_05B2C2` — DEMOTE @0x05B5AA–@0x05B68F changes type only), the 
 of `func_05C65A` applied @0x05C7D6.. (0x1A→0x19→0x1C→0x15; 0x1B unchanged). Scout level
 (`func_061454` @0x0614A6–@0x0614E3): `type == 5` → 1, `+0x17 == 0x16` inside that branch
 → 2, de Soto (attribute 7) +1 only when already ≥ 1.
+
+## Amendment 2026-09-03 — `+0x06` (0x314A) is the home-settlement index (C3.9)
+
+Not a countdown timer: spawn stores 0xFF @0x006DBA then the settlement-at
+lookup @0x006DDA (a colony record index for Europeans, a `NativeSettlement`
+index for natives @0x006ED2..0x006EDA); colony removal (`func_02EE34`
+@0x02EF00..0x02EF40) renumbers it for European units only (== idx → 0xFF,
+> idx → −1). Both ports carry it (`home_settlement` / `u.homeIdx`,
+braves' `home`); the ports' moves-in-thirds now live off the record
+(`CR.unit_moves`, `u.movesLeft`). RULINGS 2026-09-03i1.

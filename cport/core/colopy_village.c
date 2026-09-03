@@ -624,7 +624,7 @@ static void attack_village(int vi, int ui) {
      * row the port synthesises; the player is always the attacker here) */
     snd_play(combat_attack_sound(CS.units[ui].type, dp.type));
     if (!win) { unit_remove(ui); return; }       /* msg only in JS */
-    CS.units[ui].moves_remaining = 0;
+    CR.unit_moves[ui] = 0;
     CR.unit_moves_undef[ui] = 0;
     /* the village branch of func_05CA7E @0x5D666: population > 1 ->
      * `dec [bx+4]` @0x5D67A then 0x48 @0x5D683; otherwise the settlement

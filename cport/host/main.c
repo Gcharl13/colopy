@@ -183,7 +183,7 @@ static void script_commands(int t) {
              * parley; the sea lane's dialog is inert so skip its tiles) */
             int sx = u->map_x + DIRS8[(t + k) % 8][0];
             int sy = u->map_y + DIRS8[(t + k) % 8][1];
-            if (!CR.unit_moves_undef[ui] && u->moves_remaining > 0 &&
+            if (!CR.unit_moves_undef[ui] && CR.unit_moves[u - CS.units] > 0 &&
                 sx >= 0 && sy >= 0 && sx < COLOPY_MAP_W &&
                 sy < COLOPY_MAP_H && tile_water(map_at(sx, sy)) &&
                 tile_terrain(map_at(sx, sy)) != TERR_SEALANE)
@@ -198,7 +198,7 @@ static void script_commands(int t) {
         }
         if (a < 5) {
             const int *d = DIRS8[(t + k) % 8];
-            if (!CR.unit_moves_undef[ui] && u->moves_remaining > 0 &&
+            if (!CR.unit_moves_undef[ui] && CR.unit_moves[u - CS.units] > 0 &&
                 script_tile_free(u->map_x + d[0], u->map_y + d[1]))
                 cmd_move(ui, d[0], d[1]);
         } else if (a == 5) {
@@ -225,7 +225,7 @@ static void script_commands(int t) {
                             occupied = 1;
                     }
                 if (!occupied && !CR.unit_moves_undef[ui] &&
-                    u->moves_remaining > 0) {
+                    CR.unit_moves[u - CS.units] > 0) {
                     cmd_move(ui, DIRS8[di][0], DIRS8[di][1]);
                     if (CR.cur_village >= 0) {
                         uint8_t ids[10];
@@ -488,14 +488,24 @@ static void print_projection(int job_convert) {
                    CR.brave_owed[v]);
         }
         /* natives (braves) [x, y, heading|-1] in G.natives order */
+        printf("],\"att\":[");
+        {
+            int16_t o[10];
+            for (int k = 0; colopy_att_log(k, o); k++)
+                printf("%s[%d,%d,%d,%d,%d,%d,%d,%d,%d,%d]", k ? "," : "",
+                       o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7], o[8],
+                       o[9]);
+            colopy_att_log_clear();
+        }
         printf("],\"natives\":[");
         first = 1;
         for (int k = 0; k < CR.n_natives; k++) {
             int ui = CR.natives_order[k];
-            printf("%s[%u,%u,%d]", first ? "" : ",", CS.units[ui].map_x,
+            printf("%s[%u,%u,%d,%d]", first ? "" : ",", CS.units[ui].map_x,
                    CS.units[ui].map_y,
                    CR.native_heading[ui] == 0xFF ? -1
-                                                 : CR.native_heading[ui]);
+                                                 : CR.native_heading[ui],
+                   CR.native_home[ui]);
             first = 0;
         }
         /* the JS G.units census + per-unit command state (slice 2) —
@@ -509,7 +519,7 @@ static void print_projection(int job_convert) {
             /* a rival-born member's movesLeft is UNDEFINED after its
              * first refresh (no u.moves on the JS object) — JSON null */
             if (CR.unit_moves_undef[ui]) printf("null");
-            else printf("%u", CS.units[ui].moves_remaining);
+            else printf("%u", CR.unit_moves[ui]);
             printf(",%u,%d]", CS.units[ui].tools,
                    /* 0 = Expert Farmers counts; 28 = none (C4.26) */
                    CS.units[ui].profession < DAT_JOBEXPERT_COUNT

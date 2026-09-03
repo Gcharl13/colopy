@@ -85,7 +85,6 @@ RENDERMAP = """([save, vx, vy, sel, menu, msel, blink]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;               // the C load pins CR.map_seed the same way -- nibble 9 measured, see cr_reset_from_load
   // the C harness calls units_session_seed(): moves full, orders 0
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   G.cyclePhase = 0;               // static frame: no colour cycling
@@ -108,7 +107,6 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
-  G.mapSeed = 1657;
   G.plotSeedBase = 0x795;         // the census harness's measured boot-clock base
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   G.cyclePhase = 0; G.blink = true; G.drag = null;
@@ -139,7 +137,6 @@ INPUT = """([save, events]) => {
   if (save) {
     importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
                               savnewcolony: 'savNewColony' }[save]]));
-    G.mapSeed = 1657;
     // the SHARED seeded stream (the TURNS trace's LCG) — colopy_init(1653)
     // on the C side; without it the first Math.random consumer (rumour
     // entry, combat rolls) diverges
@@ -340,7 +337,6 @@ RENDERWOODCUT = """([save, n]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;
   G.woodcut = n;
   G.screen = 'woodcut';
   const cv = document.querySelector('canvas');
@@ -355,7 +351,6 @@ RENDERCONGRESS = """([save, mask]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;
   // the owned set pinned from a 25-bit mask (bit i = @FATHERS index i), so
   // the oracle can show every portrait regardless of the fixture's own
   G.fathersOwned = DATA.fathers.filter((f, i) => (mask >>> i) & 1).map(f => f.name);
@@ -373,7 +368,6 @@ RENDERDECLARATION = """([save, name, step]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;
   G.leader = name;                    // the signature's only runtime input
   G.screen = 'declaration';
   G.plate = null;                     // an explicit step, not the live clock
@@ -389,7 +383,6 @@ RENDERSCORE = """([save, panel, name]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;
   G.leader = name;                    // the caption's surname
   G.screen = 'score';
   G.plate = null;
@@ -405,7 +398,6 @@ RENDERENDKING = """([save, win]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;
   G.screen = 'endking';
   G.plate = { name: 'endking', params: { win: !!win }, after: null };
   const cv = document.querySelector('canvas');
@@ -430,7 +422,6 @@ RENDERREPORT = """([save, fk, synth]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
-  G.mapSeed = 1657;
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   // SYNTH 'mission': a mission of the viewing power on every third
   // settlement (record index v % 3 == 0) -- the fixtures carry none and the
@@ -456,7 +447,6 @@ RENDEREUROPE = """([save, euroShip, dockSel, euroRow, marketSel]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
-  G.mapSeed = 1657;
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   G.cyclePhase = 0; G.blink = true; G.drag = null;
   PTR.x = -100; PTR.y = -100;
@@ -478,7 +468,6 @@ RENDEREVENT = """([save, key, mode, sel, speaker]) => {
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
-  G.mapSeed = 1657;
   for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
   G.cyclePhase = 0; G.blink = true; G.sel = 0; G.zoom = 0;
   G.openMenu = -1; G.view = { x: 20, y: 30 }; G.screen = 'map';
@@ -535,8 +524,11 @@ PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
       villages: G.villages.map(v => [v.pop, v.growth || 0, v.alarm || 0,
         v.mission ? (v.mission.power | (v.mission.expert ? 16 : 0)) : -1,
         v.braveOwed ? 1 : 0]),
+      // [x, y, heading, home village index] -- the home is the leash of
+      // headingScore (C3.9: the record's +0x06 in both engines)
+      att: ATT_LOG.splice(0),
       natives: G.natives.map(q => [q.x, q.y,
-        q.heading === undefined ? -1 : q.heading]),
+        q.heading === undefined ? -1 : q.heading, G.villages.indexOf(q.home)]),
       punits: G.units.map(u => [u.x, u.y, u.orders | 0, u.work | 0,
         u.movesLeft, u.tools | 0,
         u.profession ? DATA.jobexpert.indexOf(u.profession) : -1]),
@@ -619,7 +611,6 @@ NEWGAME = """([nation, diff, n]) => {
 }"""
 
 # The prefix-turn trace: EXACTLY the pipeline colopy_turn.c implements —
-# header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
 # uses, seed 1653, so both sides draw the same stream.
 TURNS = """([save, n, agitate, script, STEPRNG]) => {
@@ -630,7 +621,6 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
   // beginGame ROLLS the rumour/detail salt [0x190] with the NATIVE RNG
   // (game.js:742, before the LCG below replaces it) — pin it so
   // rumourAt agrees across runs and with the C (cr_reset_from_load).
-  G.mapSeed = 1657;
   let _s = 1653 >>> 0;
   Math.random = () => {
     const lo = (_s & 0xFFFF) * 214013;
@@ -827,7 +817,6 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
       G._steps.push([name, G.rngState >>> 0]);
       return r;
     };
-    payUpkeep = wrap('payUpkeep', payUpkeep);
     advanceImprovements = wrap('advanceImprovements', advanceImprovements);
     checkImmigration = wrap('checkImmigration', checkImmigration);
     updateCongress = wrap('updateCongress', updateCongress);

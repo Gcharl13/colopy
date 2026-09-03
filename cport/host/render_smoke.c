@@ -562,13 +562,13 @@ static void in_project(void) {
     for (int i = 0; i < CR.n_units_order; i++) {
         int uu = CR.units_order[i];
         printf("%s[%d,%d]", i ? "," : "", CS.units[uu].orders,
-               CR.unit_moves_undef[uu] ? -1 : CS.units[uu].moves_remaining);
+               CR.unit_moves_undef[uu] ? -1 : CR.unit_moves[uu]);
     }
     printf("],");
     if (su >= 0)
         printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
                CS.units[su].map_y, CS.units[su].orders,
-               CR.unit_moves_undef[su] ? -1 : CS.units[su].moves_remaining);
+               CR.unit_moves_undef[su] ? -1 : CR.unit_moves[su]);
     else
         printf("\"u\":null,");
     printf("\"gold\":%d,\"year\":%u}\n",

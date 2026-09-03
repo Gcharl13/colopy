@@ -804,10 +804,20 @@ static void news_tick(void) {
                      * used to move only the stub, so the record kept
                      * running under the victim (found 2026-09-02 by the
                      * rival-colony projection). */
+                    /* ...and only the VICTIM'S record: a rival stub planted
+                     * on another power's colony tile (the ship-planting
+                     * path does not test occupancy, flagged) shares the
+                     * site with that power's record, which the JS keeps --
+                     * burning the stub must not burn the neighbour's
+                     * colony (agitate oracle, 2026-09-03) */
                     int rci = -1;
                     for (int q = 0; q < CS.n_colonies; q++)
                         if (CS.colonies[q].map_x == vc.x &&
-                            CS.colonies[q].map_y == vc.y) { rci = q; break; }
+                            CS.colonies[q].map_y == vc.y &&
+                            (CS.colonies[q].owner_power & 3) == victim) {
+                            rci = q;
+                            break;
+                        }
                     if ((int)rng_next() <= 16383 && wr->n_col < 6) {
                         if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
                             wr->col[wr->n_col++] = vc;
@@ -1904,10 +1914,10 @@ static void advance_goto(void) {
             if (!goto_path_step(ui, gx, gy, &nx, &ny)) break;
             if (nx == u->map_x && ny == u->map_y) break;
             int cost = move_cost(is_ship2, u->map_x, u->map_y, nx, ny);
-            if (steps > 0 && cost > u->moves_remaining) break;
-            u->moves_remaining = (uint8_t)(cost > u->moves_remaining
+            if (steps > 0 && cost > CR.unit_moves[u - CS.units]) break;
+            CR.unit_moves[u - CS.units] = (uint8_t)(cost > CR.unit_moves[u - CS.units]
                                                ? 0
-                                               : u->moves_remaining - cost);
+                                               : CR.unit_moves[u - CS.units] - cost);
             u->map_x = (uint8_t)nx;
             u->map_y = (uint8_t)ny;
             colopy_reveal(nx, ny, unit_sight_radius(ui));

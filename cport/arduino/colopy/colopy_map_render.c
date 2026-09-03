@@ -792,7 +792,7 @@ static void draw_sidebar(const rm_view *vw) {
         rm_unit_panel(242, 68, 0, u->type, rm_unit_flags_ui(ui), u->orders,
                    rm_owner_colour_ui(ui), unit_icon(ui),
                    rm_owner_power_ui(ui));
-        int whole = u->moves_remaining / 3, frac = u->moves_remaining % 3;
+        int whole = CR.unit_moves[u - CS.units] / 3, frac = CR.unit_moves[u - CS.units] % 3;
         if (frac)
             snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);
         else

@@ -325,6 +325,10 @@ void check_intervention(void);        /* checkIntervention (game.js:9327) */
 void refs_push(int ui);               /* G.refUnits.push */
 void end_game_sequence(void);         /* endGameSequence (game.js:8119) */
 int  score_panel(const score_parts_t *s);   /* func_03A9C0's band, -1 none */
+void sav_tail_init(void);             /* a new game's zero tail (colopy_sav.c) */
+#define COLOPY_ATT_LOG 64
+int  colopy_att_log(int i, int16_t out[10]);   /* this turn's attacks */
+void colopy_att_log_clear(void);
 int  end_game_scored(void);           /* the @SCORED ask after the plates;
                                        * returns the row (0 = leave) */
 int  rel_have_treaty(int a, int b);
@@ -462,6 +466,9 @@ typedef struct {
     uint8_t alarm[COLOPY_MAX_SETTLEMENTS];  /* per-village (JS v.alarm) */
     uint8_t brave_owed[COLOPY_MAX_SETTLEMENTS]; /* JS v.braveOwed */
     uint8_t unit_work[COLOPY_MAX_UNITS];    /* pioneer work counters */
+    uint8_t unit_moves[COLOPY_MAX_UNITS];   /* moves left, in thirds (JS
+                                             * u.movesLeft) -- runtime, not
+                                             * the record's +0x06 (C3.9) */
     /* JS u.sailHome: this ship is under a Go To whose destination is
      * the sea lane it was ordered home through, so ARRIVING there
      * departs instead of just clearing the order. */
@@ -531,7 +538,7 @@ typedef struct {
                                   * retirement report leaves the map, a
                                   * woodcut dismissal returns to it */
     /* Slice 2 — the player-command layer.  u.movesLeft lives in the
-     * RECORD's moves_remaining byte, in THIRDS (the @UNIT loader
+     * port's CR.unit_moves entry (off the record since C3.9), in THIRDS (the @UNIT loader
      * multiplies the column by 3, unit.md §3 / game.js:660); seeded full
      * at load (mkUnit — the JS importer ignores the save's byte) and
      * refreshed at the top of endTurn (game.js:10740).

@@ -820,13 +820,39 @@ function mkUnit(spec, x, y, cargo) {
   // makes a road step cost 1/3 of a move.
   const u = { type: t.name, icon: t.icon, x, y,
               moves: t.movement * MOVE_UNIT, movesLeft: t.movement * MOVE_UNIT,
-              ship: t.hull > 0, nation: G.nation, orders: 0, cargo: cargo || [] };
+              ship: t.hull > 0, nation: G.nation, orders: 0, cargo: cargo || [],
+              // the record's +0x06 home-settlement index (C3.9); NOT `home`,
+              // which is the natives' village object (a captured colonist
+              // parked in G.natives must keep a falsy home)
+              homeIdx: 0xFF };
   if (profession) u.profession = profession;
   // A Pioneer is a colonist carrying tools; UnitRecord +0x15 starts at 100.
   if (t.name === 'Pioneers') u.tools = PIONEER_TOOLS;
   return u;
 }
 
+// VICEROY's load-time normalisation of a file map (G12, 2026-09-03;
+// formats/MP_FORMAT.md "VICEROY loader behavior"): new_game_state_init fills
+// rows 0 and h-1 with Arctic 0x18 (@0x75746..0x75785), then func_064A10(1)
+// outlines (0,0)-(w-1,h-1) and (1,0)-(w-2,h-1) with Sea Lane 0x1A
+// (@0x65941..0x65986 -- columns 0, 1, w-2, w-1), re-fills rows 0/h-1 Arctic
+// (@0x6598B..0x659CA), then folds every tile (@0x659D8..0x65A85): base =
+// b & 0x1F; base >= 0x18 untouched; bit 0x20 set -> (b & 0xE0) | (base & 7);
+// else 16 <= base < 24 -> b - 8. Layer 2 and the fog plane are zeroed
+// (@0x65AA5..0x65ACE) -- IMPROVE.fill(0) / SEEN.fill(0) below. Saves are
+// untouched: the engine wrote their planes post-fold.
+function normalizeShippedMap() {
+  for (let y = 0; y < MAP.h; y++)
+    for (let x = 0; x < MAP.w; x++) {
+      const i = y * MAP.w + x;
+      if (y === 0 || y === MAP.h - 1) { MAP.tiles[i] = 0x18; continue; }
+      if (x <= 1 || x >= MAP.w - 2) { MAP.tiles[i] = 0x1A; continue; }
+      const b = MAP.tiles[i], base = b & 0x1F;
+      if (base >= 0x18) continue;
+      if (b & 0x20) MAP.tiles[i] = (b & 0xE0) | (base & 7);
+      else if (base >= 16) MAP.tiles[i] = b - 8;
+    }
+}
 function beginGame() {
   G.gold = START_GOLD[G.difficulty];
   G.tax = 0; G.year = 1492; G.season = 0; G.turn = 0;
@@ -837,6 +863,16 @@ function beginGame() {
   // keeps it in G, which round-trips through save/load -- a deliberate
   // difference, and the friendlier one.
   G.plotSeedBase = (Math.random() * 0x100000000) >>> 0;
+  // The map generator's first act is to store the seed the rumour hash reads.
+  // func_064A10 @0x64A16 is `push 0x7fff; push 1; lcall random_int`, so the
+  // range is random_int(1, 0x7FFF) -- the LOWER BOUND IS 1, not 0. A zero salt
+  // would disable both the detail band and rumours outright (gates @0x60A9 and
+  // @0x6191). Push order confirmed against the known random_int(1,9) at
+  // @0x614F6 (`push 9; push 1`). Stored @0x64A23 into word [0x190]. It is
+  // drawn HERE, before any placement: new_game_state_init calls func_064A10
+  // right after the .MP load (@0x7579B), ahead of the tribe and unit passes
+  // (G12, 2026-09-03; the C draws it at the same point).
+  G.mapSeed = 1 + Math.floor(Math.random() * 0x7FFF);
   // cycle_init stamps every band's last-rotation time with the clock as the map
   // screen comes up, so the first frame of a game is always phase 0 -- which is
   // the phase docs/screens/06_ingame_map.png was captured at.
@@ -874,6 +910,7 @@ function beginGame() {
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
   MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
+  normalizeShippedMap();
   IMPROVE.fill(0);
   buildRegions();
   seedNatives();
@@ -897,14 +934,7 @@ function beginGame() {
   SEEN.fill(0);
   revealAll();
   G.razed = 0; G.bellsTotal = 0; G.lostWar = false;
-  // The map generator's first act is to store the seed the rumour hash reads.
-  // func_064A10 @0x64A16 is `push 0x7fff; push 1; lcall random_int`, so the
-  // range is random_int(1, 0x7FFF) -- the LOWER BOUND IS 1, not 0. A zero salt
-  // would disable both the detail band and rumours outright (gates @0x60A9 and
-  // @0x6191). Push order confirmed against the known random_int(1,9) at
-  // @0x614F6 (`push 9; push 1`). Stored @0x64A23 into word [0x190].
   G.combat = null;
-  G.mapSeed = 1 + Math.floor(Math.random() * 0x7FFF);
   G.rumoursDone = new Set(); G.rumourFloor = 1;
   G.foundFountain = false; G.foundCibola = false;
   G.metAnyone = false;
@@ -3169,6 +3199,9 @@ function buildColony() {
       }
       f.cell = best;
     }
+    // founding marks the tile: improvement bit 0x10 (func_005D4E(x,y,0x10,1)
+    // @0x0222E6..0x0222F0 / @0x0224E9..0x0224F3, C3.10); removal clears 0x02
+    IMPROVE[nc.y * MAP.w + nc.x] |= 0x10;
     G.colonies.push(nc);
     // The founder joins the colony, so it leaves the map.
     G.units.splice(G.sel, 1);
@@ -7439,7 +7472,9 @@ function adjustTension(tribe, delta, cause) {
 // column, so an origin shift of this kind is expected; the exact derivation of
 // 2 is not in the evidence.) Tribes are matched by @TRIBES' `singular` column,
 // which is what TRIBE.TXT's section names are.
-const TRIBE_SITE_DX = 2, TRIBE_SITE_DY = 0;
+// 0 since G11 (2026-09-03): the 2 compensated a terrain table shifted by two
+// tiles (the old extract_mp.py read the .MP version word as tiles).
+const TRIBE_SITE_DX = 0, TRIBE_SITE_DY = 0;
 function seedNatives() {
   G.tribes = DATA.tribes.map(t => ({
     name: t.name, singular: t.singular, level: t.level, color: t.color,
@@ -10017,7 +10052,16 @@ function tryPromote(winner, wStrength, total) {
                             STRING2: next || 'Free Colonists' });
 }
 // The attacker wins iff roll <= ATK.
+const ATT_LOG = [];
+function attLog(att, def) {
+  const own = (u) => u.nation >= 0 ? u.nation : (u.tribe !== undefined ? 4 + u.tribe : 15);
+  const ti = (u) => DATA.units.findIndex(r => r.name === u.type);
+  ATT_LOG.push([ti(att), own(att), att.x, att.y, ti(def), own(def), def.x, def.y,
+                combatStrength(att, false), combatStrength(def, true)]);
+}
 function resolveAttack(att, def) {
+  // the turns oracle's `att` field: who attacked whom (both engines)
+  attLog(att, def);
   const AA = combatAnalysis(att, false), DD = combatAnalysis(def, true);
   const A = AA.total, D = DD.total;
   const roll = 1 + Math.floor(Math.random() * (A + D));
@@ -10348,7 +10392,11 @@ function newsTick() {
         const vc = victim.colonies[Math.floor(Math.random() * victim.colonies.length)];
         victim.colonies.splice(victim.colonies.indexOf(vc), 1);
         if (Math.random() < 0.5 && winner.colonies.length < 6) {
-          winner.colonies.push({ ...vc, nation: winner.nation });
+          // ONE record changes hands (the engine rewrites the owner byte;
+          // RULINGS 2026-09-02): the same object moves, so a later fall of
+          // this colony removes the full record here as it does in the C
+          vc.nation = winner.nation;
+          winner.colonies.push(vc);
           showEvent('CAPTURED2', { STRING0: DATA.nations[winner.nation].country,
                                    STRING2: vc.name });
         } else {
@@ -13762,7 +13810,9 @@ function importSav(bytes) {
   // Bits 2 and 4 now carried too: bit 2 marks a PRIME-RESOURCE tile
   // (func_005F82 pairs it with the resource nibble), bit 4 suppresses the
   // detail band (tile_terrain_variant_hash @0x00616A).
-  for (let i = 0; i < plane; i++) IMPROVE[i] = d[planeBase + plane + i] & 0x4E;
+  // 0x10 = the colony-founding mark (func_005D4E(x,y,0x10,1) @0x0222F0 /
+  // @0x0224F3, C3.10) rides along with road 0x08 / plow 0x40 / 0x04 / 0x02
+  for (let i = 0; i < plane; i++) IMPROVE[i] = d[planeBase + plane + i] & 0x5E;
   // Plane 3's LOW NIBBLE is the region id (func_005D9C reads [0x164]) --
   // carried verbatim, replacing the flood-fill approximation.
   for (let i = 0; i < plane; i++) {
@@ -14042,7 +14092,14 @@ function importSav(bytes) {
       if (pass === 0 !== isShip) continue;          // ships first, riders second
       if (own >= 4) {
         if (pass === 1) {
-          const home = G.villages.filter(v => v.tribe === own - 4)
+          // +0x06 is the brave's HOME-SETTLEMENT index into the village
+          // records (spawn @0x006ED2..0x006EDA, C3.9, 2026-09-03) when it
+          // names a village of its own tribe; the tribe's nearest village
+          // (first on tie) stays as the fallback for a foreign or
+          // out-of-range byte -- the C loader reads it the same way.
+          const hv = G.villages[d[b + 0x06]];
+          const home = (hv && hv.tribe === own - 4) ? hv :
+            G.villages.filter(v => v.tribe === own - 4)
             .sort((a, q) => (Math.abs(a.x - x) + Math.abs(a.y - y)) -
                             (Math.abs(q.x - x) + Math.abs(q.y - y)))[0];
           G.natives.push({ type: type.name, icon: unit(type.name).icon, x, y,
@@ -14072,6 +14129,12 @@ function importSav(bytes) {
       }
       const u = mkUnit(type.name, x, y);
       u.__rec = i;                       // for the chain-order pass below
+      // +0x06 is the engine's HOME-SETTLEMENT index (C3.9): 0xFF none, else
+      // the colony RECORD index (any owner).  Kept as loaded; the JS has no
+      // global record order for its split colony lists, so a spawn here
+      // stores 0xFF and the C (the .SAV-writing engine) carries the
+      // lookup and the removal renumber -- FLAGGED as the JS's narrowing.
+      u.homeIdx = d[b + 0x06];
       // ORDERS (C1.18, 2026-08-28): record byte +0x08 indexes the same
       // @ORDERS table as the status letter (1 Sentry / 5 Fortify /
       // 6 Fortified) -- those stable states are RESTORED, so a fortified
@@ -14158,6 +14221,15 @@ function importSav(bytes) {
   G.routes = [];
   {
     const tailBase = planeBase + 4 * plane;
+    // [0x190], the map-detail salt, IS in the tail (C3.8, 2026-09-03): the
+    // third of the four trailing writes (save.md block 54, @0x073A5C..
+    // 0x073A6A; loader fread(0x190, 2) @0x074211..0x074225 right after the
+    // 4-byte [0x8D80] @0x0741F6), tail offset 2*0x10E + 2*0x20 + 4 (RNG
+    // residue) + 4 ([0x8D80]) = 612. COLONY00.SAV (= the sav1653 fixture)
+    // carries 19129 -- low nibble 9, exactly the census-measured pin
+    // above, now READ rather than assumed. Zero would disable the detail
+    // band and rumours (@0x60A9/@0x6191), so an empty word keeps the pin.
+    G.mapSeed = u16(tailBase + 612) || G.mapSeed;
     const routeBase = tailBase + 2 * 0x10E + 2 * 0x20 + 4 + 4 + 2;
     const nroutes = Math.min(MAX_ROUTES, u16(g + 0x20));
     const ordOf = {};

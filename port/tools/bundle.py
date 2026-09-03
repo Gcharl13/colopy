@@ -551,8 +551,11 @@ def build_data():
     vals = [int(sc[k]) for k in ("start", "end", "x0", "y0", "x1", "y1", "x2", "y2")]
     D["starts"] = [[vals[i * 2], vals[i * 2 + 1]] for i in range(4)]
 
-    mp = json.load(open(ROOT / "data_extracted/map/AMER2_tiles.json"))
-    D["map"] = {"w": mp["width"], "h": mp["height"], "tiles": mp["tiles"]}
+    # the terrain layer of AMER2.MP as tools/extract_mp.py reads it (6-byte
+    # header, func_071106 @0x7113E-0x71167): the old data_extracted/map/
+    # AMER2_tiles.json had read the version word as two tiles (G11)
+    mp = json.load(open(ROOT / "assets/maps/amer2.json"))
+    D["map"] = {"w": mp["width"], "h": mp["height"], "tiles": mp["layers"]["terrain"]}
 
     man = json.load(open(ASSETS / "manifest.json"))
     D["sheets"] = {k: {"frames": v["frames"]} for k, v in man["sheets"].items()}

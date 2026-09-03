@@ -11948,3 +11948,54 @@ were re-read with capstone and agree with the lead; the clock is the ISR
 5. The tracker row 8 "OPENBORD decor @0x075B8E/B0/D2" is struck: those
    sites are `0x1A1F:0xDF8` rect fills and "OPENBORD" does not occur in
    VICEROY.EXE; the PIK is OPENING.EXE's (@0x1D10).
+
+## 2026-09-03i1 — integration pass: the new-game map, the `[0x190]` tail word, the unit home byte, and three latent JS/C splits the new oracle fields exposed
+
+**Conflict**: closing G11/G12/C3.8/C3.9/C3.10 changed the new-game RNG path
+and the loaded map salt; the `newgame`, `turns` and `agitate` oracles then
+diverged in three places that had nothing to do with the rows themselves.
+Each was run to a byte or to the JS/C bookkeeping and ruled:
+
+1. **`[0x190]` sits at tail offset 612, not 608.** The four trailing writes
+   after the planes are `[bp-6]` (4 B, RNG residue) @604, `[0x8D80]` (4 B)
+   @608, `[0x190]` (2 B) @612, then the 0x378 route block @614 — the
+   loader's `fread(0x8D80, 4)` @0x0741F6 precedes `fread(0x190, 2)`
+   @0x074211..0x074225 (`data_extracted/disassembly/VICEROY_annotated.asm`).
+   COLONY00.SAV (the sav1653 fixture) carries 1410965 / 19129: the plot pin
+   0x795 and the census-measured nibble 9 are both the FILE's own values,
+   so both engines now READ `[0x190]` at load (zero keeps the pin) and the
+   twelve `G.mapSeed = 1657` harness pins in `tools/sim_trace.py` are gone.
+   `[0x8D80]` stays pinned at load (a per-session BIOS tick either way).
+2. **A brave's home village is the record's +0x06 byte** (C3.9: for
+   natives it indexes `NativeSettlement`, spawn @0x006ED2..0x006EDA). The
+   C had re-derived every brave's home as the tribe's NEAREST village
+   (`cr_reset_from_load`, an importer rule applied to new games too) while
+   the JS kept the spawn village; the `headingScore` leash term diverged
+   the first time the new placement put a brave equidistant from two
+   villages. Both engines now store the village at spawn and read it back
+   from the byte (nearest-village only as the fallback for a foreign or
+   out-of-range byte); the `natives` projection carries the home index.
+3. **A captured player colonist parked in `G.natives` must have no home.**
+   The first cut named the new JS field `u.home`; the natives mover tests
+   `n.home` for a village object, so a captured colonist (the JS's
+   rival-capture quirk parks it in `G.natives`) started taking heading
+   draws. Renamed `u.homeIdx`. The per-turn `att` projection (attacker /
+   defender type, owner, position, A, D — a rival stub reports its live
+   `CR.runit_x/y`) is what located it, and stays.
+4. **Burning a rival stub must not burn a neighbour's record.** The
+   rival ship-planting path founds on an occupied tile (unchanged,
+   FLAGGED), so two powers can hold stubs at one site while ONE
+   ColonyRecord stands there; `news_tick`'s BURNED3 looked the record up
+   by position and razed it whichever power owned it, the JS dropped only
+   the victim's stub. The C now requires the record's owner to be the
+   victim. In the JS a CAPTURED2 moves the same object (owner rewritten)
+   instead of a copy — one record, as the engine's owner-byte rewrite.
+5. **Tooling**: the `steprng` phase probe of `tools/sim_trace.py` still
+   wrapped the deleted `payUpkeep` (upkeep was cut content, 2026-09-02) and
+   threw; fixed. `data_extracted/map/AMER2_tiles.json` (the shifted table)
+   is deleted; `port/tools/bundle.py` reads `assets/maps/amer2.json`.
+
+**Not decided**: the ports' new-game draw ORDER past the `[0x190]` draw
+(the JS's own; the engine's per-power loop @0x75820 unread in that light);
+the AI founding sites' improvement bit (C3.10); the rival planting on an
+occupied colony tile.

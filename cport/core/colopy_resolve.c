@@ -162,8 +162,8 @@ static void become_type(int ui, const char *name) {
      * the next refresh if it was undefined going in. */
     CR.unit_no_moves[ui] = 0;
     int mv = dat_units[t].movement * 3;
-    if (!CR.unit_moves_undef[ui] && u->moves_remaining > mv)
-        u->moves_remaining = (uint8_t)mv;
+    if (!CR.unit_moves_undef[ui] && CR.unit_moves[u - CS.units] > mv)
+        CR.unit_moves[u - CS.units] = (uint8_t)mv;
 }
 
 /* applyDefeat (game.js:7066).  Returns the removed record index, or -1 —
@@ -413,6 +413,19 @@ static int settlement_at(int x, int y) {
     return 0;
 }
 
+/* the attacks of the current turn, for the turns projection (`att`):
+ * [attacker type, owner, x, y, defender type, owner, x, y, A, D] -- a
+ * rival-side piece reports its LIVE position (CR.runit_x/y), the JS
+ * object's, not the record's stale import bytes */
+static int16_t g_att_log[COLOPY_ATT_LOG][10];
+static int g_att_n;
+int colopy_att_log(int i, int16_t out[10]) {
+    if (i < 0 || i >= g_att_n) return 0;
+    memcpy(out, g_att_log[i], sizeof(g_att_log[i]));
+    return 1;
+}
+void colopy_att_log_clear(void) { g_att_n = 0; }
+
 int resolve_attack(int att_ui, int def_ui) {
     combat_params pa, pd;
     analysis_params(att_ui, 0, &pa);
@@ -422,6 +435,18 @@ int resolve_attack(int att_ui, int def_ui) {
 
     int roll = 1 + R(A + D);
     int win = roll <= A;
+    if (g_att_n < COLOPY_ATT_LOG) {
+        int16_t *o = g_att_log[g_att_n++];
+        const UnitRecord *au = &CS.units[att_ui], *du = &CS.units[def_ui];
+        int ar = is_rival_side(att_ui), dr = is_rival_side(def_ui);
+        o[0] = au->type; o[1] = au->owner_flags & 0x0F;
+        o[2] = ar ? CR.runit_x[att_ui] : au->map_x;
+        o[3] = ar ? CR.runit_y[att_ui] : au->map_y;
+        o[4] = du->type; o[5] = du->owner_flags & 0x0F;
+        o[6] = dr ? CR.runit_x[def_ui] : du->map_x;
+        o[7] = dr ? CR.runit_y[def_ui] : du->map_y;
+        o[8] = (int16_t)A; o[9] = (int16_t)D;
+    }
     /* the sounds: attack @0x5D317 (after the roll @0x5D188, before the
      * consequences), then the attacker-won sound @0x5D50F when a defender
      * existed ([bp-0x6e]==0): ship or Artillery attacker -> 0x43, a
@@ -484,7 +509,7 @@ int resolve_attack(int att_ui, int def_ui) {
      * rival included: a captured attacker enters G.units showing the
      * NUMBER 0 until its first refresh makes it undefined. */
     if (att_ui >= 0) {
-        CS.units[att_ui].moves_remaining = 0;
+        CR.unit_moves[att_ui] = 0;
         CR.unit_moves_undef[att_ui] = 0;
     }
     return removed;
@@ -517,7 +542,7 @@ int naval_attack(int att_ui, int def_ui) {
     if (!win && !ship_attacker_type(CS.units[def_ui].type)) {
         /* the flagged evade stand-in: no consequence, so no 0x4D */
         ev_emit("EVASIVE", 0, 0, td->name, ta->name);
-        CS.units[att_ui].moves_remaining = 0;
+        CR.unit_moves[att_ui] = 0;
         CR.unit_moves_undef[att_ui] = 0;
         return 1;
     }
@@ -551,7 +576,7 @@ int naval_attack(int att_ui, int def_ui) {
     if (rem >= 0 && rem < att_ui) att_ui--;
     else if (rem == att_ui) att_ui = -1;     /* the attacker sank */
     if (att_ui >= 0) {
-        CS.units[att_ui].moves_remaining = 0;    /* att.movesLeft = 0 */
+        CR.unit_moves[att_ui] = 0;    /* att.movesLeft = 0 */
         CR.unit_moves_undef[att_ui] = 0;
     }
     return 1;
@@ -561,6 +586,16 @@ int naval_attack(int att_ui, int def_ui) {
  * filter's memmove pair, without the flag round trip. */
 void colony_remove(int ci) {
     colony_removed_fixup(ci);            /* func_02EE34: tile bit + routes */
+    /* func_02EE34's unit pass @0x02EF00..0x02EF40: every EUROPEAN unit
+     * (owner nibble < 4, @0x02EF2E) whose +0x06 home index is this
+     * record goes to 0xFF (@0x02EF3B); one past it moves down one
+     * (@0x02EF0A..0x02EF17, signed compare -- 0xFF stays) (C3.9) */
+    for (int i = 0; i < CS.n_units; i++) {
+        UnitRecord *u = &CS.units[i];
+        if ((u->owner_flags & 0x0F) >= 4) continue;
+        if (u->home_settlement == (uint8_t)ci) u->home_settlement = 0xFF;
+        else if ((int8_t)u->home_settlement > ci) u->home_settlement--;
+    }
     memmove(&CS.colonies[ci], &CS.colonies[ci + 1],
             (size_t)(CS.n_colonies - ci - 1) * sizeof(ColonyRecord));
     memmove(&CR.col[ci], &CR.col[ci + 1],

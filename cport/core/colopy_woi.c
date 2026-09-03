@@ -141,8 +141,8 @@ static void mobilize_continentals(void) {
             if (to < 0) continue;
             u->type = (uint8_t)to;       /* promoted IN PLACE */
             int mv = dat_units[to].movement * 3;
-            if (!CR.unit_moves_undef[ui] && u->moves_remaining > mv)
-                u->moves_remaining = (uint8_t)mv;
+            if (!CR.unit_moves_undef[ui] && CR.unit_moves[u - CS.units] > mv)
+                CR.unit_moves[u - CS.units] = (uint8_t)mv;
             budget--;
             promoted++;
             here++;
@@ -264,7 +264,7 @@ void run_war(void) {
     for (int i = CR.n_refs - 1; i >= 0; i--) {
         int ui = CR.refs_order[i];
         UnitRecord *u = &CS.units[ui];
-        u->moves_remaining = (uint8_t)(dat_units[u->type].movement * 3);
+        CR.unit_moves[u - CS.units] = (uint8_t)(dat_units[u->type].movement * 3);
         if (dat_units[u->type].hull > 0) continue;
         int best = -1, bd = 0;
         for (int ci = 0; ci < CS.n_colonies; ci++) {

@@ -95,7 +95,7 @@ static int next_unit(void) {
     for (int i = 1; i <= n; i++) {
         int k = (UI.sel + i) % n;
         int ui = CR.units_order[k];
-        if (!CR.unit_moves_undef[ui] && CS.units[ui].moves_remaining > 0 &&
+        if (!CR.unit_moves_undef[ui] && CR.unit_moves[ui] > 0 &&
             CS.units[ui].orders == 0) {
             UI.sel = k;
             center_on(CS.units[ui].map_x, CS.units[ui].map_y);
@@ -230,7 +230,7 @@ static void pillage_row(void) {
     int i = y * COLOPY_MAP_W + x;
     if (!CS.improve[i]) return;          /* "nothing here to destroy" */
     CS.improve[i] = 0;
-    CS.units[ui].moves_remaining = 0;
+    CR.unit_moves[ui] = 0;
     advance();
 }
 
@@ -1981,7 +1981,7 @@ static void trade_commit(void) {
     CR.unit_route[ui] = (int16_t)row;
     CR.unit_stop_index[ui] = 0;
     CS.units[ui].orders = 2;                 /* ORDER_TRADE */
-    CS.units[ui].moves_remaining = 0;
+    CR.unit_moves[ui] = 0;
     CR.unit_moves_undef[ui] = 0;
     advance();
 }
@@ -2387,7 +2387,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                 if (ui < 0) return;
                 int ox = CS.units[ui].map_x, oy = CS.units[ui].map_y;
                 int had = !CR.unit_moves_undef[ui] &&
-                          CS.units[ui].moves_remaining > 0;
+                          CR.unit_moves[ui] > 0;
                 CR.ui_advance = 0;
                 int vil_before = CR.cur_village;
                 cmd_move(ui, DIR[i].dx, DIR[i].dy);
@@ -2419,7 +2419,7 @@ static void in_key_inner(const char *k, int alt, int shift) {
                     if (nx - UI.view_x < 3 || nx - UI.view_x > VIEW_COLS - 4 ||
                         ny - UI.view_y < 3 || ny - UI.view_y > VIEW_ROWS - 4)
                         center_on(nx, ny);
-                    if (CS.units[ui].moves_remaining <= 0) advance();
+                    if (CR.unit_moves[ui] <= 0) advance();
                 }
             }
             return;

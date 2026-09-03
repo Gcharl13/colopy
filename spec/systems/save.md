@@ -333,3 +333,13 @@ triple does not exist in the EXE to extract. **B** (renderer + geometry-field re
    So the score-field semantics are resolved: **one `int16` score @ `+0x26` = the scoring.md
    composite**; the rest of the 42 bytes is the name + vanity metadata, no hidden mechanic.
    Source: `hall_of_fame_table` (string-handle I/O; sort key `+0x26` byte-confirmed). **B.**
+
+## Amendment 2026-09-03 — the four trailing fields, by offset (C3.8)
+
+Tail offsets after the planes (`2·0x10E + 2·0x20 = 604`): `[bp−6]` RNG
+residue 4 B @604, `[0x8D80]` plot base 4 B @608, `[0x190]` map salt 2 B
+@612, the 0x378 route block @614 — the loader reads them in that order
+(`fread(0x8D80, 4)` @0x0741F6..0x07420C, `fread(0x190, 2)` @0x074211..
+0x074225, the route block @0x07422C). Both ports read `[0x190]` at load and
+the C writes it back (RULINGS 2026-09-03i1). COLONY00.SAV carries
+`[0x8D80]` = 1410965 and `[0x190]` = 19129.

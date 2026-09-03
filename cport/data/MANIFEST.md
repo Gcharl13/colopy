@@ -59,4 +59,5 @@ with it. Nothing is dropped silently.
 | `sheets` | EXCLUDED: render: sprite-sheet geometry |
 | `cycle` | EXCLUDED: render: palette-cycling animation |
 | `palettes` | EXCLUDED: render: per-screen palettes |
+| `pikidx` | emitted |
 | `fonts` | EXCLUDED: render: glyph atlases |

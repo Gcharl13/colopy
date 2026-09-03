@@ -136,8 +136,14 @@ void cr_reset_from_load(void) {
             CR.unit_work[i] = u->turns_worked;
     }
     /* natives: every non-ship record owned >= 4 is a brave (importer
-     * game.js:10431); home = the tribe's nearest village by Manhattan
-     * distance, first on tie (the stable-sort [0]). */
+     * game.js:10431); home = the record's +0x06 HOME-SETTLEMENT index
+     * (C3.9, 2026-09-03: for natives it indexes NativeSettlement,
+     * @0x006ED2..0x006EDA) when it names a village of the brave's own
+     * tribe; otherwise (a foreign or out-of-range byte) the tribe's
+     * nearest village by Manhattan distance, first on tie -- the old
+     * reading, kept as the fallback.  A new game's spawn stores the
+     * village it spawned from (spawn_brave), so the two engines agree
+     * on the leash term of heading_score. */
     memset(CR.native_heading, 0xFF, sizeof(CR.native_heading));
     memset(CR.native_home, 0xFF, sizeof(CR.native_home));   /* -1 */
     for (int i = 0; i < CS.n_units; i++) {
@@ -146,7 +152,10 @@ void cr_reset_from_load(void) {
         if (own < 4 || u->type >= DAT_UNITS_COUNT ||
             dat_units[u->type].hull > 0) continue;
         int best = -1, bd = 0;
-        for (int v = 0; v < CS.n_villages; v++) {
+        if (u->home_settlement < CS.n_villages &&
+            CS.villages[u->home_settlement].owner_tribe == own)
+            best = u->home_settlement;
+        for (int v = 0; best < 0 && v < CS.n_villages; v++) {
             if (CS.villages[v].owner_tribe != own) continue;  /* tribe+4 */
             int dx = CS.villages[v].map_x - u->map_x;
             int dy = CS.villages[v].map_y - u->map_y;
@@ -252,6 +261,19 @@ void cr_reset_from_load(void) {
      * 1657 = nibble 9.  The full seed value stays unknowable from one
      * frame -- only the nibble is evidence-backed. */
     CR.map_seed = 1657;
+    /* ...until 2026-09-03 (C3.8): the word IS in the save -- the third of
+     * the four trailing writes after the planes (save.md block 54,
+     * @0x073A5C..0x073A6A; loader fread(0x190, 2) @0x074211..0x074225,
+     * right after the 4-byte [0x8D80] read @0x0741F6), tail offset
+     * 2*0x10E + 2*0x20 + 4 (the RNG residue) + 4 ([0x8D80]) = 612.
+     * COLONY00.SAV (= the sav1653 fixture) carries 19129 -- low nibble
+     * 9, exactly the census-measured pin above, which is now read rather
+     * than assumed.  Zero would disable the detail band and rumours
+     * (@0x60A9/@0x6191), so an empty word keeps the pin. */
+    if (CS.tail_len >= 614) {
+        uint16_t w = (uint16_t)(CS.tail[612] | (CS.tail[613] << 8));
+        if (w) CR.map_seed = w;
+    }
     /* [0x8D80] is the BIOS tick count captured once at game launch
      * (@0x075FF5 via 0x181F:0xE72 = the 0040:006C reader @0xE4D2), so a
      * loaded game's building layouts are PER-SESSION, not per-save.  The
@@ -379,7 +401,7 @@ void cr_reset_from_load(void) {
  * FLAGGED. */
 void units_session_seed(void) {
     for (int i = 0; i < CS.n_units; i++) {
-        CS.units[i].moves_remaining = (uint8_t)unit_full_moves(i);
+        CR.unit_moves[i] = (uint8_t)unit_full_moves(i);
         uint8_t o = CS.units[i].orders;
         /* 3 (Go To) restores when the loader accepted its goal */
         if (o == 3 && CR.goal_x[i] >= 0) continue;
@@ -1474,7 +1496,7 @@ void turn_step_prefix(void) {
         if (unit_on_map_player(i)) {
             if (CR.unit_no_moves[i]) { CR.unit_moves_undef[i] = 1; continue; }
             CR.unit_moves_undef[i] = 0;
-            CS.units[i].moves_remaining =
+            CR.unit_moves[i] =
                 (uint8_t)(dat_units[CS.units[i].type].movement * 3);
         }
     for (int i = 0; i < CS.n_units; i++)
@@ -1548,12 +1570,8 @@ void rival_colony_pass(int power) {
 void colony_vanish_filter(void) {
     for (int ci = CS.n_colonies - 1; ci >= 0; ci--) {
         if (!CR.col[ci].vanished) continue;
-        colony_removed_fixup(ci);        /* func_02EE34: tile bit + routes */
-        memmove(&CS.colonies[ci], &CS.colonies[ci + 1],
-                (size_t)(CS.n_colonies - ci - 1) * sizeof(ColonyRecord));
-        memmove(&CR.col[ci], &CR.col[ci + 1],
-                (size_t)(CS.n_colonies - ci - 1) * sizeof(colony_rt));
-        CS.n_colonies--;
+        colony_remove(ci);               /* func_02EE34: tile bit, routes,
+                                          * the units' home index (C3.9) */
     }
 }
 
@@ -1569,7 +1587,24 @@ int unit_append(int type, int owner, int x, int y) {
     u->map_y = (uint8_t)y;
     u->type = (uint8_t)type;
     u->owner_flags = (uint8_t)(owner & 0x0F);
-    u->moves_remaining = (uint8_t)(dat_units[type].movement * 3);
+    CR.unit_moves[i] = (uint8_t)(dat_units[type].movement * 3);
+    /* +0x06 = the home-settlement index (C3.9): spawn stores 0xFF
+     * (@0x006DBA) then the colony-at-tile lookup (@0x006DDA) -- the
+     * colony RECORD index, any owner, or 0xFF off a colony */
+    u->home_settlement = 0xFF;
+    if ((owner & 0x0F) >= 4) {
+        for (int v = 0; v < CS.n_villages; v++)
+            if (CS.villages[v].map_x == x && CS.villages[v].map_y == y) {
+                u->home_settlement = (uint8_t)v;
+                break;
+            }
+    } else {
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if (CS.colonies[ci].map_x == x && CS.colonies[ci].map_y == y) {
+                u->home_settlement = (uint8_t)ci;
+                break;
+            }
+    }
     /* profession byte 0 = Expert Farmers (C4.26); "none" is the engine's
      * 28 sentinel, matching the JS object's missing field */
     u->profession = DAT_JOBEXPERT_COUNT;
@@ -1602,6 +1637,7 @@ void unit_remove(int ui) {
     size_t n = (size_t)(CS.n_units - ui - 1);
     memmove(&CS.units[ui], &CS.units[ui + 1], n * sizeof(UnitRecord));
     memmove(&CR.unit_work[ui], &CR.unit_work[ui + 1], n);
+    memmove(&CR.unit_moves[ui], &CR.unit_moves[ui + 1], n);
     memmove(&CR.unit_sail_home[ui], &CR.unit_sail_home[ui + 1], n);
     memmove(&CR.unit_offered[ui], &CR.unit_offered[ui + 1], n);
     memmove(&CR.unit_damaged[ui], &CR.unit_damaged[ui + 1], n);
