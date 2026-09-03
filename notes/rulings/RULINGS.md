@@ -12234,3 +12234,25 @@ totem override; `func_061E10` and the sector waypoint chain; the
 discovery predicate `func_03FDDE`; @INDIANROAD; the AI Europe pass
 `func_051EF4`. Each remains a ledger residue with the report's offsets
 as its lead.
+
+## 2026-09-03f — CORE-B: the discovery (@LANDHO) predicate is a 3x3 non-water scan on any move
+
+`func_03FDDE`'s post-move block (file `@0x3FF5C..@0x3FFF6`; the annotated
+listing is desynced there — `func_03FF4C` is an empty header — so the
+bytes were disassembled with capstone via `tools/follow_thunk.py --at
+0x3FF5C`): `0x1A1F:0x142(unit, nx, ny)`, `0x181F:0xDB8(nx, ny)`, then
+`imul bx,[0x5394],0x34; test [bx+0x543E],0x80; jne exit` `@0x3FF81..
+@0x3FF8B` — while the current NATION's flag byte bit 0x80 is clear, the
+loop `@0x3FF8D..@0x3FFEF` walks `x = nx-1..nx+1` (outer, `[bp-8]`) and
+`y = ny-1..ny+1` (inner, `[bp-6]`), and the first tile with
+`0x181F:0x768(x,y) == 0` (not water) sets the bit (`or [bx+0x543E],0x80`
+`@0x3FFC5`), sets `[bp-0x10] = 1` and calls `0x181F:0xF6C = func_020EFE`
+(woodcut 1, the @LANDHO prompt). No sight radius, no ship test — the
+caller is the move handler for the selected unit `[0x5392]`, so any
+successful move of the current nation's unit qualifies; ships simply
+reach it first. The latch lives in the SAV-persisted `0x540E` block
+(flags byte +0x30). **Ruling**: the ports' "land within the ship's sight
+radius" reading (2026-08-30, running-game observation) is replaced by the
+byte predicate in both engines (`step()` / `cmd` move); the observation
+stands as consistent with it (the ship that sights land at radius 2
+reaches radius 1 a move later).

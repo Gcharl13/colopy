@@ -977,16 +977,16 @@ void cmd_move(int ui, int dx, int dy) {
         colony_rec_at(nx, ny) >= 0)
         snd_play(0x52);
     colopy_reveal(nx, ny, unit_sight_radius(ui));
-    /* DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
-     * land first enters a player ship's view (running-game observation,
-     * 2026-08-30 — top trust tier; handler func_020EFE from the
-     * ship-move chain func_03FDDE, its exact predicate unread — the
-     * any-land-within-sight scan is FLAGGED; mirrors the JS step()). */
-    if (!CR.land_ho && ship &&
-        (u->owner_flags & 0x0F) == cs_nation()) {
-        int r = unit_sight_radius(ui), land = 0;
-        for (int dy = -r; dy <= r && !land; dy++)
-            for (int dx = -r; dx <= r && !land; dx++)
+    /* DISCOVERY: byte-read 2026-09-03 (func_03FDDE @0x3FF81..@0x3FFEF,
+     * RULINGS 2026-09-03f): after ANY successful move of the current
+     * nation's unit, while the [0x543E] bit 0x80 latch is clear, the
+     * first non-water tile of the 3x3 box around the new tile sets the
+     * latch and fires func_020EFE (woodcut 1 + @LANDHO) — no sight
+     * radius, no ship test (mirrors the JS step()). */
+    if (!CR.land_ho && (u->owner_flags & 0x0F) == cs_nation()) {
+        int land = 0;
+        for (int dy = -1; dy <= 1 && !land; dy++)
+            for (int dx = -1; dx <= 1 && !land; dx++)
                 if (!tile_water(map_at(nx + dx, ny + dy))) land = 1;
         if (land) {
             CR.land_ho = 1;

@@ -114,3 +114,13 @@ Layout **B**: the world is drawn into the map viewport rect **(0, 8, 240, 192)**
    — Lost-City magnitude `+scout_level·10` (level 0..3 = type5 +1 / Seasoned +1 /
    de Soto +1) and bad-outcome reroll `random_int(1,level+1)`; infiltrate roll
    `random_int(1,36)≤(X+6)·2` Seasoned-halved (§3). **B.**
+
+
+## Amendment 2026-09-03 — the discovery predicate (CORE-B, RULINGS 2026-09-03f)
+
+`func_03FDDE @0x3FF81..@0x3FFEF` (capstone over the desynced listing):
+after any successful move of the current nation's unit, while
+`[0x543E + nation*0x34] & 0x80` is clear, the 3x3 box around the new tile
+is scanned (x outer, y inner) and the first non-water tile
+(`0x181F:0x768 == 0`) sets the latch and calls `func_020EFE` (woodcut 1 +
+@LANDHO). No sight radius, no ship restriction. Both engines carry it.

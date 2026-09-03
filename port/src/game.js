@@ -14918,17 +14918,18 @@ function step(u, nx, ny) {
   // branch before the step).
   if (u.type === 'Wagon Train' && G.units.includes(u) && colonyAt(nx, ny)) sfx(0x52);
   reveal(nx, ny, sightRadius(u));
-  // DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
-  // land first enters a player ship's view (running-game observation,
-  // 2026-08-30 -- the top trust tier; the handler is func_020EFE, called
-  // from the ship-move chain func_03FDDE, its exact sighting predicate
-  // unread -- the any-land-within-sight scan here is FLAGGED). The old
-  // landfall-time trigger fired a whole voyage later.
-  if (!G.landHo && u.ship && u.nation === G.nation) {
-    const r = sightRadius(u);
+  // DISCOVERY: the predicate is BYTE-READ 2026-09-03 (func_03FDDE's
+  // post-move block @0x3FF81..@0x3FFEF, capstone over the desynced
+  // listing; RULINGS 2026-09-03f): after ANY successful move of the
+  // current nation's unit, while the nation's [0x543E] flag bit 0x80 is
+  // clear, the 3x3 box around the new tile is scanned (y then x) and the
+  // first NON-WATER tile (0x181F:0x768 == 0) sets the latch and calls
+  // func_020EFE (woodcut 1 + @LANDHO). No sight radius, no ship test --
+  // the ship case is just what reaches it first.
+  if (!G.landHo && u.nation === G.nation) {
     let land = false;
-    for (let dy = -r; dy <= r && !land; dy++)
-      for (let dx = -r; dx <= r && !land; dx++)
+    for (let dy = -1; dy <= 1 && !land; dy++)
+      for (let dx = -1; dx <= 1 && !land; dx++)
         if (!tileWater(at(nx + dx, ny + dy))) land = true;
     if (land) { G.landHo = true; woodcutOnce(1); }
   }
