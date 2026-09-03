@@ -306,10 +306,12 @@ size_t colopy_save_sav(uint8_t *buf, size_t cap) {
      * (B4.6): the JS keeps its MET/TREATY 0x40 in two maps, the record
      * has one bit — OR them. Tribe columns and the timers ride verbatim. */
     for (int a = 0; a < 4; a++)
-        for (int b = 0; b < 4; b++)
+        for (int b = 0; b < 4; b++) {
             CS.powers[a].war_rel[b] = (uint8_t)
                 (CR.war_matrix[a][b] |
                  ((CR.treaty_matrix[a][b] & REL_TREATY) ? 0x40 : 0));
+            CS.powers[a].rel_timer[b] = CR.rel_timer[a][b];
+        }
     memcpy(p, CS.powers, SAV_POWERS);              p += SAV_POWERS;
     memcpy(p, CS.villages, (size_t)CS.n_villages * sizeof(NativeSettlement));
     p += (size_t)CS.n_villages * sizeof(NativeSettlement);

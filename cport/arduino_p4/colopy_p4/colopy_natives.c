@@ -104,14 +104,6 @@ static int colony_level(int ci) {
     if (colony_has_name(ci, "Stockade")) return 1;
     return 0;
 }
-/* STARTING_BUILDINGS (game.js:2163): the upkeep-0 min_colony-1 rows,
- * derived from @BUILDING, matched by NAME. */
-static int is_starting_name(const char *name) {
-    for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
-        if (dat_buildings[b].upkeep == 0 && dat_buildings[b].min_colony == 1 &&
-            strcmp(dat_buildings[b].name, name) == 0) return 1;
-    return 0;
-}
 /* The friendly/hostile claim gate: the first player colony with a village
  * of this tribe within the 7x7 box (game.js:5433/5472). */
 static int colony_near_tribe(int tribe) {
@@ -188,7 +180,45 @@ static void spawn_brave(int vi) {
         return;
     }
 }
+/* The WAR COUNCIL of the per-tribe turn func_0485F6 @0x48632..@0x48759
+ * (JS tribeWarCouncil; RULINGS 2026-09-03e): post-Declaration, once per
+ * tribe (+0x03 bit 0x20), tension >= 25 draws random_int(1,400), the
+ * GRUDGE bit 0x40 forces the flag, then random_int(0, 2*(5-diff)) == 0
+ * -> @INDIANGRUDGE, +100 tension toward the player (the -100 toward
+ * [0x53D2] is unmodeled, flagged), the player's missions on the tribe's
+ * settlements are lost (func_045D00), muskets := min(n, m) * 4 (8-bit),
+ * horses := min(n, h), herd := horses * 25, latch set. */
+static void tribe_war_council(void) {
+    if (!(CR.woi_flags & WOI_DECLARED)) return;
+    for (int t = 0; t < 8; t++) {
+        int tb = t * 0x4E;
+        if (CR.tribe_dead[t] || (CS.tribes[tb + 3] & 0x20)) continue;
+        int tension = CR.tension[t];
+        int flag = 0;
+        if (tension >= 25) flag = tension >= 1 + R(400) ? 1 : 0;
+        if (CS.tribes[tb + 3] & 0x40) flag = 1;
+        if (!flag) continue;
+        if (R(2 * (5 - (int)cs_difficulty()) + 1) != 0) continue;
+        ev_emit("INDIANGRUDGE", 0, 0, dat_tribes[t].name, dat_tribes[t].singular);
+        adjust_tension(t, 100, 0);
+        int count = 0;
+        for (int v = 0; v < CS.n_villages; v++) {
+            if (CS.villages[v].owner_tribe != t + 4) continue;
+            count++;
+            if (CS.villages[v].mission != 0xFF &&
+                (CS.villages[v].mission & 0x0F) == cs_nation())
+                CS.villages[v].mission = 0xFF;
+        }
+        int m = CR.tribe_muskets_known[t] < count ? CR.tribe_muskets_known[t] : count;
+        CR.tribe_muskets_known[t] = (int16_t)((m * 4) & 0xFF);
+        int h = CR.tribe_horses_known[t] < count ? CR.tribe_horses_known[t] : count;
+        CR.tribe_horses_known[t] = (int16_t)h;
+        CR.tribe_herd[t] = (int16_t)(h * 25);
+        CS.tribes[tb + 3] |= 0x20;
+    }
+}
 static void native_tick(void) {
+    tribe_war_council();
     for (int vi = 0; vi < CS.n_villages; vi++) {
         NativeSettlement *v = &CS.villages[vi];
         /* growth accumulator += population, acting at 20 (settlement +0x06) */
@@ -628,141 +658,193 @@ int raid_target_score(int vi, int *score_out) {
     return best;
 }
 
-/* ---- one raid attempt (nativeRaid, game.js:5702 / func_05BE84) --------- */
+/* ---- one raid attempt: nativeRaid = func_05BE84, re-read whole
+ * 2026-09-03 (RULINGS 2026-09-03c; the JS comment block carries the
+ * per-site citations).  force = 0 here (the Braves-vs-Artillery forcing
+ * lives in the combat resolver the port's arrival model skips); the
+ * clock reseed @0x5BEED is not mirrored (RULINGS 2026-09-03b). ------- */
+/* the raid chain table (ANCHOR: consecutive @BUILDING families, the Stable
+ * and the Capitol their own roots — the WREAK payload has a Capitol case
+ * @0x5C46A, so root(0x1E) != 9) */
+static const int8_t RAID_CHAIN_FIRST[42] = {
+    0, 0, 0, 3, 3, 3, 6, 6, 6, 9, 9, 9, 12, 12, 12, 15, 15, 17, 18, 19, 19,
+    21, 21, 21, 24, 24, 24, 27, 27, 27, 30, 30, 32, 32, 32, 35, 35, 37, 37,
+    39, 39, 39 };
+static int raid_chain_next(int b) {
+    return (b + 1 < 42 && RAID_CHAIN_FIRST[b + 1] == RAID_CHAIN_FIRST[b]) ? b + 1 : -1;
+}
+/* DS:0x2CA (file 0x1DC6A): the chain-root JOB per @BUILDING row, -1 none */
+static const int8_t RAID_ROOT_JOB[42] = {
+    21, 21, 21, 15, 15, 15, -1, -1, -1, 17, 17, 17, 18, 18, 18, -1, -1, -1,
+    -1, -1, -1, 11, 11, 11, 10, 10, 10, 9, 9, 9, 17, 17, 12, 12, 12, 13, 13,
+    16, 16, 14, 14, 14 };
+/* has_building for the raid: the Warehouse/Capitol EXPANSIONS live in the
+ * +0x95/+0x96 level bytes, never in the bitset — rows 16/31 test absent */
+static int raid_has(int ci, int b) {
+    if (b == 16 || b == 31) return 0;
+    return colony_has_name(ci, dat_buildings[b].name);
+}
+/* [0x9410 + p] population census stand-in (units + colony population,
+ * flagged — the same one news_tick uses) */
+static int pop_census_player(void) {
+    int n = CR.n_units_order;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
+            n += CS.colonies[ci].population;
+    return n;
+}
 static void native_raid(int vi, int ci) {
     int tribe = CS.villages[vi].owner_tribe - 4;
     ColonyRecord *c = &CS.colonies[ci];
-    /* gate: random_int(1,12)-1 + (difficulty-2) vs 3*K+1, K = the
-     * fortification count (func_00864E, RULINGS 2026-08-07c) */
-    int gate = R(12) + cs_difficulty() - 2;
-    if (gate < 3 * colony_level(ci) + 1) return;
+    int human = 1;
+    /* gate: random_int(0,12) - 1 (+ difficulty - 2 for a human owner)
+     * against K = 3 * (chain-0 tiers present) + 1 */
+    int roll = R(13) - 1;
+    if (human) roll += (int)cs_difficulty() - 2;
+    int K = 3 * colony_level(ci) + 1;
+    if (roll < K) return;                        /* force = 0 */
     /* @INDIANSURPRISE: a raid from a still-calm tribe (band < restless) */
     if (tribe >= 0 && tribe < 8 && tension_band(CR.tension[tribe]) < 2)
         ev_emit("INDIANSURPRISE", 0, 0, dat_tribes[tribe].name, c->name);
-    /* outcome random_int(1,4), softened while turn < 40*(2-difficulty) */
     int out = 1 + R(4);
-    if ((int)cs_turn() < 40 * (2 - (int)cs_difficulty())) out -= 1;
-    if (out < 0) out = 0;
-    switch (out) {
-    case 1: {                                        /* @RAIDSTORES */
-        /* the good picker, BYTE-READ 2026-08-29 (@0x5C03E..@0x5C0C7):
-         * up to 100 tries of random_int(0,15), accepted at stock >= 10;
-         * FIRST try + no tribe horse counter + the pick stocked past 52
-         * flips a coin for HORSES (@0x5C05F..@0x5C084); the muskets
-         * magnitude register (@0x5C08F) has an unread consumer --
-         * omitted, flagged (mirrors game.js) */
-        int g = -1;
-        for (int tries = 1; tries <= 100 && g < 0; tries++) {
-            int pick = R(16);
-            if (tries == 1 && tribe >= 0 && tribe < 8 &&
-                CR.tribe_horses_known[tribe] == 0 &&
-                c->stock[pick] > 52 && R(2) == 0) { g = 8; break; }
-            if (c->stock[pick] >= 10) g = pick;
-        }
-        if (g < 0 || c->stock[g] <= 0) {
-            ev_emit("RAIDNOTHING", 0, 0, 0, 0);
+    if ((int)cs_turn() < 40 * (2 - (int)cs_difficulty()) && cs_difficulty() <= 1 &&
+        (out == 2 || out == 3)) out = 0;
+    if (out == 2) {
+        int k = human ? (int)cs_difficulty() : 1;
+        if (R(9) > k + 2) out = 1;
+        if (raid_has(ci, 1)) out = 1;            /* Fort */
+    }
+    if (out == 4 && raid_has(ci, 0)) out = 1;    /* Stockade */
+    if (out == 3 && raid_has(ci, 2)) out = 0;    /* Fortress */
+    if (out == 1 && raid_has(ci, 0) && R(9) > (int)cs_difficulty()) out = 0;
+    int good = -1, bld = -1, ship = -1;
+    int32_t take = 0;
+    if (out == 1) {
+        /* STORES picker @0x5C03E..@0x5C0C7 (+ the dead muskets draw) */
+        int tries = 0;
+        for (;;) {
+            tries++;
+            good = R(16);
+            if (tribe >= 0 && tribe < 8 && CR.tribe_horses_known[tribe] == 0 &&
+                tries == 1 && c->stock[good] > 52 && R(2) == 0) good = 8;
+            if (good == 15) (void)rng_next();    /* random_int(0,200), unread */
+            if (tries < 100 && c->stock[good] < 10) continue;
             break;
         }
-        /* amount = clamp(1, stock, random_int(min(10,stock/2), stock/2))
-         * (@0x5C370..@0x5C3AD) -- a LOAD, not the whole slot */
-        int half = c->stock[g] >> 1;
-        int lo = half < 10 ? half : 10;
-        int qty = lo + R(half - lo + 1);
-        if (qty > c->stock[g]) qty = c->stock[g];
-        if (qty < 1) qty = 1;
-        c->stock[g] = (int16_t)(c->stock[g] - qty);
-        /* the haul arms the TRIBE (corrected 2026-08-29 — the old
-         * "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
-         * pointer): stolen HORSES bump the herd-counter byte +0x08 and
-         * add 25 to the herd word +0x0A (@0x5C3DD..@0x5C3E4); stolen
-         * MUSKETS bump the muskets counter +0x07, twice at a 50+ load
-         * (@0x5C3EE..@0x5C3FB). Other goods are simply gone. */
-        if (tribe >= 0 && tribe < 8) {
-            if (g == 8) {
-                CR.tribe_horses_known[tribe]++;
-                CR.tribe_herd[tribe] = (int16_t)(CR.tribe_herd[tribe] + 25);
-            }
-            if (g == 15)
-                CR.tribe_muskets_known[tribe] =
-                    (int16_t)(CR.tribe_muskets_known[tribe] +
-                              (qty >= 50 ? 2 : 1));
+        if (tries >= 100) out = 0;
+    } else if (out == 2) {
+        /* WREAK picker @0x5C0CA..@0x5C1A8 + the climb @0x5C214..@0x5C24F */
+        int bipv = (int8_t)c->building_in_production;
+        int bip = (bipv >= 0 && bipv < 42) ? RAID_CHAIN_FIRST[bipv] : -1;
+        int tries = 0, valid = 1;
+        for (;;) {
+            valid = 1;
+            tries++;
+            bld = R(42);
+            if (bld == 0x23) valid = 0;
+            if (RAID_CHAIN_FIRST[bld] == 9) valid = 0;
+            if (bip >= 0 && RAID_CHAIN_FIRST[bld] == bip) valid = 0;
+            if (bld == 0x27 || bld == 0x15 || bld == 0x18 || bld == 0x1B ||
+                bld == 0 || bld == 1 || bld == 2 || bld == 0x20) valid = 0;
+            if (tries < 100 && (!raid_has(ci, bld) || !valid)) continue;
+            break;
         }
-        adjust_tension(tribe, -4, 0);        /* push -4 @0x5C416 */
-        ev_emit("RAIDSTORES", qty, 0, c->name, dat_cargo[g].name);
-        break;
-    }
-    case 2: {                                        /* @RAIDWREAK */
-        const colony_rt *r = &CR.col[ci];
-        int pick[48], np = 0;
-        for (int k = 0; k < r->n_bld; k++)
-            if (!is_starting_name(dat_buildings[r->bld[k]].name))
-                pick[np++] = r->bld[k];
-        if (np)
-            colony_bld_remove_name(ci, dat_buildings[pick[R(np)]].name);
-        ev_emit("RAIDWREAK", 0, 0, c->name, 0);
-        break;
-    }
-    case 3: {                                        /* @RAIDGOLD */
-        PowerRecord *p = &CS.powers[cs_nation()];
-        int32_t cap = p->gold < 0x7FFF ? p->gold : 0x7FFF;
-        int32_t take = cap >= 0x32 ? 0x32 + R((int)(cap - 0x32 + 1))
-                                   : p->gold;
-        p->gold -= take;
-        adjust_tension(tribe, -16, 0);       /* push -0x10 @0x5C5BC */
-        ev_emit("RAIDGOLD", take, 0, c->name, 0);
-        break;
-    }
-    case 4: {                                        /* @RAIDBURN/@RAIDSHIP */
-        int ship = -1;
+        if (tries >= 100 || !valid) out = 0;
+        else for (;;) {
+            int nxt = raid_chain_next(bld);
+            if (nxt >= 0 && raid_has(ci, nxt)) bld = nxt; else break;
+        }
+    } else if (out == 3) {
+        /* SHIP @0x5C252: the tile stack's first ship (G.units order) */
         for (int k = 0; k < CR.n_units_order && ship < 0; k++) {
-            int ui = CR.units_order[k];      /* G.units order */
+            int ui = CR.units_order[k];
             if (dat_units[CS.units[ui].type].hull > 0 &&
                 CS.units[ui].map_x == c->map_x &&
                 CS.units[ui].map_y == c->map_y) ship = ui;
         }
-        if (ship >= 0) {
-            CR.unit_damaged[ship] = 1;
-            ev_emit("RAIDSHIP", 0, 0, c->name,
-                    dat_units[CS.units[ship].type].name);
-            break;
+        if (ship < 0) out = 0;
+    } else if (out == 4) {
+        /* GOLD @0x5C29A..@0x5C31F */
+        PowerRecord *p = &CS.powers[cs_nation()];
+        int64_t mx = (int64_t)p->gold * c->population / (pop_census_player() + 1) + 10;
+        if (mx > 0x7FFF) mx = 0x7FFF;
+        take = 0x32 + floordiv((int)rng_next() * ((int)mx - 0x32 + 1), 32768);
+        if (p->gold < take || take < 0x32) out = 0;
+    }
+    switch (out) {
+    case 1: {                                        /* @RAIDSTORES */
+        if (c->stock[good] <= 0) break;              /* @0x5C351: silent */
+        int half = c->stock[good] >> 1;
+        int lo = half < 10 ? half : 10;
+        int qty = lo + R(half - lo + 1);
+        if (qty > c->stock[good]) qty = c->stock[good];
+        if (qty < 1) qty = 1;
+        c->stock[good] = (uint16_t)(c->stock[good] - qty);
+        ev_emit("RAIDSTORES", qty, 0, c->name, dat_cargo[good].name);
+        if (tribe >= 0 && tribe < 8) {
+            if (good == 8) {
+                CR.tribe_horses_known[tribe]++;
+                CR.tribe_herd[tribe] = (int16_t)(CR.tribe_herd[tribe] + 25);
+            }
+            if (good == 15)
+                CR.tribe_muskets_known[tribe] =
+                    (int16_t)(CR.tribe_muskets_known[tribe] + (qty >= 50 ? 2 : 1));
         }
-        const colony_rt *r = &CR.col[ci];
-        int pick[48], np = 0;
-        for (int k = 0; k < r->n_bld; k++)
-            if (!is_starting_name(dat_buildings[r->bld[k]].name))
-                pick[np++] = r->bld[k];
-        int defended = 0;
-        for (int ui = 0; ui < CS.n_units && !defended; ui++)
-            if (unit_on_map_player(ui) &&
-                dat_units[CS.units[ui].type].hull <= 0 &&
-                CS.units[ui].map_x == c->map_x &&
-                CS.units[ui].map_y == c->map_y) defended = 1;
-        if (!np && c->population <= 1 && !defended) {
-            /* @INDIANBURNCOLONY — razed outright (threshold flagged) */
-            ev_emit("INDIANBURNCOLONY", 0, 0, dat_tribes[tribe].name,
-                    c->name);
-            CR.col[ci].vanished = 1;
-            break;
-        }
-        if (!np && c->population > 1 && !defended) {
-            /* @INDIANWINCOLONY (@0x5E01F): dec size while > 1 @0x5D67A */
-            colonist_remove_last(ci);
-            ev_emit("INDIANWINCOLONY", 0, 0, dat_tribes[tribe].name,
-                    c->name);
-            break;
-        }
-        if (!np) { ev_emit("RAIDWREAK", 0, 0, c->name, 0); break; }
-        {
-            int b = pick[R(np)];
-            colony_bld_remove_name(ci, dat_buildings[b].name);
-            ev_emit("RAIDBURN", 0, 0, c->name, dat_buildings[b].name);
-        }
+        adjust_tension(tribe, -4, 0);        /* push -4 @0x5C416 (war bit unmodeled) */
         break;
     }
+    case 2: {                                        /* @RAIDBURN (WREAK) */
+        const char *name = dat_buildings[bld].name;
+        if (bld == 15) {
+            if (colony_has_name(ci, "Warehouse Expansion")) {
+                colony_bld_remove_name(ci, "Warehouse Expansion");
+                name = "Warehouse Expansion";
+            } else colony_bld_remove_name(ci, "Warehouse");
+        } else if (bld == 30) {
+            name = "Capitol Expansion";              /* always (@0x5C486) */
+            if (colony_has_name(ci, "Capitol Expansion"))
+                colony_bld_remove_name(ci, "Capitol Expansion");
+            else colony_bld_remove_name(ci, "Capitol");
+        } else {
+            if (RAID_CHAIN_FIRST[bld] == bld) {
+                /* func_009818: n = colonists working the root's job; every
+                 * colonist whose OCCUPATION == n becomes a Carpenter
+                 * (@0x5C4B6..@0x5C4E1 — the compare is against the
+                 * count; ported literally, mirrors the JS) */
+                int job = RAID_ROOT_JOB[bld], n = 0;
+                if (job >= 0)
+                    for (int k = 0; k < c->population && k < 32; k++)
+                        if (c->occupation[k] == job) n++;
+                for (int k = 0; k < c->population && k < 32; k++)
+                    if (c->occupation[k] == n) {
+                        c->occupation[k] = 13;
+                        for (int w = 0; w < 8; w++)      /* p.cell = null */
+                            if ((uint8_t)c->tiles[w] == k) c->tiles[w] = -1;
+                    }
+            }
+            colony_bld_remove_name(ci, name);
+        }
+        ev_emit("RAIDBURN", 0, 0, c->name, name);
+        adjust_tension(tribe, -12, 0);               /* push -0xC @0x5C52E */
+        break;
+    }
+    case 3:                                          /* @RAIDSHIP */
+        CR.unit_damaged[ship] = 1;                   /* func_05B2C2 stand-in */
+        ev_emit("RAIDSHIP", 0, 0, c->name, dat_units[CS.units[ship].type].name);
+        adjust_tension(tribe, -16, 0);               /* push -0x10 @0x5C5BC */
+        break;
+    case 4:                                          /* @RAIDGOLD */
+        CS.powers[cs_nation()].gold -= take;
+        ev_emit("RAIDGOLD", take, 0, c->name, 0);
+        adjust_tension(tribe, -8, 0);                /* push -8 @0x5C617 */
+        break;
     default:
         ev_emit("RAIDNOTHING", 0, 0, 0, 0);          /* @RAIDNOTHING */
         break;
     }
+    /* @0x5C642: the home settlement's alarm word toward the owner := 0 */
+    CR.alarm[vi] = 0;
+    CS.villages[vi].alarm[cs_nation()] = 0;
     /* woodcut 13, INDIAN RAID (@0x05D219): once-per-game latch into the
      * wcSeen word (globals +0x8A) — no event key (drawn, not shown) */
     if (!CR.raid_seen) {
@@ -780,10 +862,24 @@ static int tension_band4(int tension) {
     return tension >= 75 ? 3 : tension >= 50 ? 2 : tension >= 25 ? 1 : 0;
 }
 
-/* ---- the idle mover (headingScore, game.js:5825 / func_046FFA) --------- */
-static const int8_t DIRS_DX[8] = { 1, -1, 0, 0, 1, 1, -1, -1 };
-static const int8_t DIRS_DY[8] = { 0, 0, 1, -1, 1, -1, 1, -1 };
-static int tile_occupied(int self, int x, int y) {
+/* ---- the idle mover (headingScore, game.js / func_046FFA) ---------------
+ * The engine's ring DS:0xB4/0xBE (N, E, S, W, NW, NE, SE, SW) -- the
+ * candidate order is the tie-break order.  The 2026-09-03 terms (the +4
+ * pair, the +5 unclaimed, the war block, the besieger, the rumour skip)
+ * carry the JS comment block's citations; the flags there apply here. */
+static const int8_t HS_DX[8] = { 0, 1, 0, -1, -1, 1, 1, -1 };
+static const int8_t HS_DY[8] = { -1, 0, 1, 0, -1, -1, 1, 1 };
+/* func_004900 (0x181F:0x370): max(|dx|,|dy|) + (min >> 1) */
+static int engine_dist(int dx, int dy) {
+    int a = dx < 0 ? -dx : dx, b = dy < 0 ? -dy : dy;
+    return b < a ? (b >> 1) + a : (a >> 1) + b;
+}
+/* func_00624E: 0x1B Mountains / 0x1C Hills for a relief tile, else id */
+static int terrain_class(uint8_t v) {
+    if (v & 0x20) return (v & 0x80) ? 0x1B : 0x1C;
+    return v & 0x1F;
+}
+static int occupied_by_unit(int self, int x, int y) {
     for (int ui = 0; ui < CS.n_units; ui++) {
         if (ui == self) continue;
         const UnitRecord *u = &CS.units[ui];
@@ -791,30 +887,125 @@ static int tile_occupied(int self, int x, int y) {
         if (unit_on_map_player(ui) && u->map_x == x && u->map_y == y) return 1;
         int own = u->owner_flags & 0x0F;
         if (own < 4 && own != cs_nation() && u->type < DAT_UNITS_COUNT &&
+            !CR.unit_in_natives[ui] &&
             CR.runit_x[ui] == x && CR.runit_y[ui] == y)
             return 1;
     }
-    for (int v = 0; v < CS.n_villages; v++)
-        if (CS.villages[v].map_x == x && CS.villages[v].map_y == y) return 1;
+    return 0;
+}
+static int player_colony_idx(int x, int y) {
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
-            CS.colonies[ci].map_x == x && CS.colonies[ci].map_y == y)
-            return 1;
-    return 0;
+            CS.colonies[ci].map_x == x && CS.colonies[ci].map_y == y) return ci;
+    return -1;
+}
+/* JS settlementOwner: player colony -> nation, rival colony (the CR stub
+ * list) -> its nation, village -> tribe + 4, else -1 */
+static int settlement_owner(int x, int y) {
+    if (player_colony_idx(x, y) >= 0) return cs_nation();
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        const rival_rt *r = &CR.rivals[rn];
+        for (int k = 0; k < r->n_col; k++)
+            if (r->col[k].x == x && r->col[k].y == y) return rn;
+    }
+    for (int v = 0; v < CS.n_villages; v++)
+        if (CS.villages[v].map_x == x && CS.villages[v].map_y == y)
+            return CS.villages[v].owner_tribe;
+    return -1;
+}
+/* the besieger ring count: armed (attack > 1, non-ship) player + rival
+ * units on (x,y), minus the colony's size >> 2 (JS order: G.units, then
+ * rivals in nation order) */
+static int armed_stack(int x, int y) {
+    int n = 0;
+    for (int q = 0; q < CR.n_units_order; q++) {
+        const UnitRecord *u = &CS.units[CR.units_order[q]];
+        if (u->map_x == x && u->map_y == y && dat_units[u->type].hull <= 0 &&
+            dat_units[u->type].attack > 1) n++;
+    }
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            int ui = CR.runits_order[rn][k];
+            const UnitRecord *u = &CS.units[ui];
+            if (CR.runit_x[ui] == x && CR.runit_y[ui] == y &&
+                u->type < DAT_UNITS_COUNT && dat_units[u->type].hull <= 0 &&
+                dat_units[u->type].attack > 1) n++;
+        }
+    }
+    return n;
 }
 static void heading_score(int ui, int home_vi) {
     UnitRecord *u = &CS.units[ui];
     const NativeSettlement *home = &CS.villages[home_vi];
-    int best = 8, best_score = -1;
+    int tr2 = (u->owner_flags & 0x0F) - 4;
+    int tension = (tr2 >= 0 && tr2 < 8) ? CR.tension[tr2] : 0;
+    int own = (u->owner_flags & 0x0F);                       /* [bp-0x94] */
+    int war_mode = tension >= 75 || CR.alarm[home_vi] >= 0x80;
+    /* [bp-0x4C]: the besieger of the home settlement */
+    int besieger = -1, total = 0;
+    for (int i = 0; i < 8; i++) {
+        int x = home->map_x + HS_DX[i], y = home->map_y + HS_DY[i];
+        if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) continue;
+        int owner = CS.region[y * COLOPY_MAP_W + x] >> 4;
+        if (owner == 0x0F || owner >= 4) continue;
+        if (tile_water(map_at(x, y))) continue;
+        int n = armed_stack(x, y);
+        if (n <= 0) continue;
+        int pci = player_colony_idx(x, y);
+        if (pci >= 0) n -= CS.colonies[pci].population >> 2;
+        else {
+            for (int rn = 0; rn < 4; rn++) {
+                if (rn == (int)cs_nation()) continue;
+                const rival_rt *r = &CR.rivals[rn];
+                for (int k = 0; k < r->n_col; k++)
+                    if (r->col[k].x == x && r->col[k].y == y) { n -= r->col[k].pop >> 2; rn = 4; break; }
+            }
+        }
+        if (n > 0) { total += n; besieger = owner; }
+    }
+    if (total < 2) besieger = -1;
+    int unit_road = CS.improve[u->map_y * COLOPY_MAP_W + u->map_x] & 0x0A;
+    int unit_river = map_at(u->map_x, u->map_y) & 0x40;
+    int leash_home = (CS.region[home->map_y * COLOPY_MAP_W + home->map_x] & 0x0F) ==
+                     (CS.region[u->map_y * COLOPY_MAP_W + u->map_x] & 0x0F);
+    int best = 8, best_score = -1, best_colony = -1;
+    int alarmed = 0;                 /* [bp-0x14] survives an owner >= 4 */
     for (int cand = 0; cand <= 8; cand++) {
-        int x = cand == 8 ? u->map_x : u->map_x + DIRS_DX[cand];
-        int y = cand == 8 ? u->map_y : u->map_y + DIRS_DY[cand];
+        int x = cand == 8 ? u->map_x : u->map_x + HS_DX[cand];
+        int y = cand == 8 ? u->map_y : u->map_y + HS_DY[cand];
         if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H)
             continue;
-        int t = tile_terrain(map_at(x, y));
-        /* dest Ocean/Sea Lane/Arctic: reject @0x0473BB */
-        if (t == TERR_OCEAN || t == TERR_SEALANE || t == 24) continue;
-        if (cand != 8 && tile_occupied(ui, x, y)) continue;
+        uint8_t tv = map_at(x, y);
+        int tc = terrain_class(tv);
+        if (tc == 0x19 || tc == 0x1A) continue;
+        if (rumour_at(x, y)) continue;
+        if (tc == 0x18) continue;
+        int idx = y * COLOPY_MAP_W + x;
+        int owner = (CS.region[idx] >> 4) == 0x0F ? -1 : (CS.region[idx] >> 4);
+        int s_owner = settlement_owner(x, y);
+        int prime = map_detail_id(x, y, tv) >= 0;
+        int tense = 0;
+        if (owner < 0 || owner == own) { tense = 0; alarmed = 0; }
+        else if (owner >= 4) { tense = 0; }
+        else {
+            int al = owner == (int)cs_nation() ? CR.alarm[home_vi] : 0;
+            alarmed = al >= 0x80 ? 1 : 0;
+            tense = (owner == (int)cs_nation() && tension >= 75) ? 1 : 0;
+            if (tense) alarmed = 1;
+            if (owner == besieger) alarmed = 1;
+        }
+        int hostile = alarmed || tense;
+        int pc = player_colony_idx(x, y);
+        int colony_pick = -1;
+        if (cand != 8) {
+            if (occupied_by_unit(ui, x, y)) continue;
+            if (s_owner >= 4 || (s_owner >= 0 && s_owner != (int)cs_nation()))
+                continue;
+            if (pc >= 0 && !(war_mode && hostile)) continue;
+            if (pc >= 0) colony_pick = pc;
+        }
         int s = 200;                                 /* base @0x0473A4 */
         int h = CR.native_heading[ui];
         if (cand != 8 && h < 8) {                    /* continuity */
@@ -823,19 +1014,16 @@ static void heading_score(int ui, int home_vi) {
                 s += 3;                              /* @0x047A99 */
             else if ((h ^ 4) == cand) s -= 6;        /* @0x047AB0 */
         }
-        /* the home-settlement leash @0x047AD0-0x047B39, HALVED for an
-         * armed unit (func_00765C @0x47B14: Armed Braves / Mtd. Warriors
-         * here) and QUARTERED for a mounted one (func_007630 @0x47B26:
-         * Mtd. Braves / Mtd. Warriors); both stack to an eighth.  (The
-         * war-party halving @0x47B05 never applies -- war braves ride
-         * the raid mission.) */
-        {
-            int dx = x - home->map_x, dy = y - home->map_y;
-            if (dx < 0) dx = -dx;
-            if (dy < 0) dy = -dy;
-            int d = dx > dy ? dx : dy;
+        if ((CS.improve[idx] & 0x0A) && unit_road) s += 4;
+        else if (!(cand & 1) && (tv & 0x40) && unit_river) s += 4;
+        if (leash_home) {
+            /* the leash @0x47ACA..@0x47B39: the 0x370 metric, > 2 costs
+             * 3*d, halved on a war footing (@0x47B05), armed / mounted
+             * halvings; only on the unit tile's landmass (@0x4718B) */
+            int d = engine_dist(x - home->map_x, y - home->map_y);
             if (d > 2) {
                 int pen = 3 * d;
+                if (war_mode) pen >>= 1;
                 const char *tn = dat_units[u->type].name;
                 int armed = strcmp(tn, "Armed Braves") == 0 ||
                             strcmp(tn, "Mtd. Warriors") == 0;
@@ -846,17 +1034,11 @@ static void heading_score(int ui, int home_vi) {
                 s -= pen;
             }
         }
-        /* the FRONTIER term (@0x47B3C..@0x47C96, func_00704C): a foreign
-         * party adjacent to the candidate -- another tribe's brave -25;
-         * a European +50 (the 0x20 peace bit unmodeled for tribes) plus
-         * (tension-50)>>2 when the attitude band is above Content.
-         * Player pieces only; landmass check skipped -- both flagged
-         * (mirrors game.js headingScore). */
+        /* the FRONTIER term (@0x47B3C..@0x47C96; player pieces only) */
         {
-            int tr2 = (u->owner_flags & 0x0F) - 4;
             int foreign_tribe = 0, euro = 0;
             for (int nd = 0; nd < 8; nd++) {
-                int nx = x + DIRS_DX[nd], ny = y + DIRS_DY[nd];
+                int nx = x + HS_DX[nd], ny = y + HS_DY[nd];
                 for (int q = 0; q < CR.n_natives && !foreign_tribe; q++) {
                     int qi = CR.natives_order[q];
                     if (qi == ui) continue;
@@ -876,16 +1058,11 @@ static void heading_score(int ui, int home_vi) {
             }
             if (euro) {
                 s += 50;
-                if (tr2 >= 0 && tr2 < 8 &&
-                    tension_band4(CR.tension[tr2]) > 0)
-                    s += ((int)CR.tension[tr2] - 50) >> 2;
+                if (tension_band4(tension) > 0) s += (tension - 50) >> 2;
             } else if (foreign_tribe) s -= 25;
         }
-        /* the COLONY-DRIFT term (@0x47C9A..@0x47D45): the nearest player
-         * colony within 12 pulls by (band+1)*(12-d)/4; region gate and
-         * the [bp-6] +5 omitted -- flagged (mirrors game.js). */
-        {
-            int tr2 = (u->owner_flags & 0x0F) - 4;
+        if (!war_mode) {
+            if (owner < 0) s += 5;                   /* @0x47CA4 */
             int best_d = 99;
             for (int ci = 0; ci < CS.n_colonies; ci++) {
                 if ((CS.colonies[ci].owner_power & 3) != cs_nation())
@@ -897,94 +1074,45 @@ static void heading_score(int ui, int home_vi) {
                 int d2 = dx > dy ? dx : dy;
                 if (d2 < best_d) best_d = d2;
             }
-            if (best_d < 12 && tr2 >= 0 && tr2 < 8)
-                s += ((tension_band4(CR.tension[tr2]) + 1) * (12 - best_d))
-                     >> 2;
-        }
+            if (best_d < 12)
+                s += ((tension_band4(tension) + 1) * (12 - best_d)) >> 2;
+        } else if (hostile) {
+            s += 5;                                  /* @0x47D57 */
+            if (prime) s += 10;                      /* @0x47D61 */
+            if (colony_pick >= 0) s += 500;          /* @0x47D84 */
+        } else if (s_owner >= 0) continue;           /* @0x47E78 */
         s += 1 + R(5);                               /* jitter @0x047F44 */
         if (s < 0) s = 0;                            /* clamp @0x047F6E */
-        if (s > best_score) { best_score = s; best = cand; }
+        if (s > best_score) { best_score = s; best = cand; best_colony = colony_pick; }
     }
     if (best < 8) {
-        u->map_x = (uint8_t)(u->map_x + DIRS_DX[best]);
-        u->map_y = (uint8_t)(u->map_y + DIRS_DY[best]);
+        if (best_colony >= 0) {
+            native_raid(home_vi, best_colony);   /* the attack, as the raid */
+            CR.native_heading[ui] = (uint8_t)best;
+            return;
+        }
+        u->map_x = (uint8_t)(u->map_x + HS_DX[best]);
+        u->map_y = (uint8_t)(u->map_y + HS_DY[best]);
         CR.native_heading[ui] = (uint8_t)best;
     }
 }
 
-/* ---- the mover (nativeMoveAI, game.js:5861) ---------------------------- */
+/* ---- the mover (nativeMoveAI) ---------------------------------------- */
 static void native_move_ai(void) {
     /* iterate in G.natives LIST order — the RNG draw order contract */
     for (int k = 0; k < CR.n_natives; k++) {
         int ui = CR.natives_order[k];
         int vi = CR.native_home[ui];
         if (vi < 0 || vi >= CS.n_villages) continue;
-        UnitRecord *u = &CS.units[ui];
-        int hostile = CR.alarm[vi] >= ALARM_RAID && player_colony_count();
-        if (hostile) {
-            /* the raid scorer picks the target; nearest colony to the
-             * BRAVE as the fallback (stable sort [0] = first on tie) */
-            int score, ci = raid_target_score(vi, &score);
-            if (ci < 0) {
-                int bd = 0;
-                for (int k = 0; k < CS.n_colonies; k++) {
-                    if ((CS.colonies[k].owner_power & 3) != cs_nation())
-                        continue;
-                    int dx = CS.colonies[k].map_x - u->map_x;
-                    int dy = CS.colonies[k].map_y - u->map_y;
-                    int d = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
-                    if (ci < 0 || d < bd) { ci = k; bd = d; }
-                }
-            }
-            const ColonyRecord *c = &CS.colonies[ci];
-            int adx = c->map_x - u->map_x, ady = c->map_y - u->map_y;
-            if (adx < 0) adx = -adx;
-            if (ady < 0) ady = -ady;
-            if ((adx > ady ? adx : ady) <= 1) {
-                /* at the palisade: the raid fires, the party turns home */
-                native_raid(vi, ci);
-                const NativeSettlement *v = &CS.villages[vi];
-                u->map_x = v->map_x;
-                u->map_y = (uint8_t)(v->map_y + 1);
-                if (tile_water(map_at(u->map_x, u->map_y))) {
-                    u->map_x = (uint8_t)(v->map_x + 1);
-                    u->map_y = v->map_y;
-                }
-                CR.native_heading[ui] = 0xFF;
-                continue;
-            }
-            /* one straight-line step (goto-executor stand-in, flagged) */
-            int bx = -1, by = -1, bd = 0;
-            for (int s = 0; s < 8; s++) {
-                int x = u->map_x + DIRS_DX[s], y = u->map_y + DIRS_DY[s];
-                if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H)
-                    continue;
-                if (tile_water(map_at(x, y))) continue;
-                int blocked = 0;
-                for (int w = 0; w < CS.n_villages && !blocked; w++)
-                    if (CS.villages[w].map_x == x && CS.villages[w].map_y == y)
-                        blocked = 1;
-                for (int qi = 0; qi < CS.n_units && !blocked; qi++) {
-                    if (qi == ui) continue;
-                    if ((is_brave(qi) || unit_on_map_player(qi)) &&
-                        CS.units[qi].map_x == x && CS.units[qi].map_y == y)
-                        blocked = 1;
-                }
-                for (int k = 0; k < CS.n_colonies && !blocked; k++)
-                    if ((CS.colonies[k].owner_power & 3) == cs_nation() &&
-                        CS.colonies[k].map_x == x && CS.colonies[k].map_y == y)
-                        blocked = 1;
-                if (blocked) continue;
-                int dx = c->map_x - x, dy = c->map_y - y;
-                int d = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
-                if (bx < 0 || d < bd) { bx = x; by = y; bd = d; }
-            }
-            if (bx >= 0) { u->map_x = (uint8_t)bx; u->map_y = (uint8_t)by; }
-            continue;
-        }
-        /* at peace: func_046FFA decides, including the stay candidate */
-        heading_score(ui, vi);
+        heading_score(ui, vi);       /* func_046FFA, war footing included */
     }
+}
+
+/* the raid-ladder parity probe (tools/sim_compare.py raid): one raid by
+ * village vi on player colony ci, straight into the ladder */
+void natives_raid_probe(int vi, int ci) {
+    nresolve();
+    native_raid(vi, ci);
 }
 
 /* ---- pipeline step 3 --------------------------------------------------- */

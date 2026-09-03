@@ -916,7 +916,7 @@ function beginGame() {
   buildRegions();
   seedNatives();
   seedRivals();
-  G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
+  G.warMatrix = {}; G.treatyMatrix = {}; G.relTimer = {}; G.parleyLock = {};
   G.parley = null; G.attitude = 8;
   G.routes = []; G.trade = null;
   G.mercSeen = false; G.interventionWatch = false; G.succession = false;
@@ -7585,6 +7585,22 @@ function seedNatives() {
   // §19.11: map creation spawns exactly ONE brave per village, linked to it;
   // a village only builds another when its own dies. Done in a second pass so a
   // brave never lands on a site that has not been placed yet.
+  // The tribe +0x0C HOARD word (RULINGS 2026-09-03e): zeroed at tribe init
+  // (@0x65E71) and, once every settlement stands, += the tribe's tech for
+  // every in-bounds tile (0x181F:0x302: 1..W-2, 1..H-2) of the 5x5 box
+  // around each settlement whose terrain class (0x181F:0x78C) is 0x1B
+  // MOUNTAINS (@0x665E0..@0x6664B, summed into the owning tribe
+  // @0x6662A). Static after newgame; the teach-weight builder divides it
+  // by the settlement count (villageSkill).
+  for (const t of G.tribes) t.hoard = 0;
+  for (const v of G.villages) {
+    const t = G.tribes[v.tribe];
+    for (let y = v.y - 2; y <= v.y + 2; y++)
+      for (let x = v.x - 2; x <= v.x + 2; x++) {
+        if (x < 1 || y < 1 || x > MAP.w - 2 || y > MAP.h - 2) continue;
+        if (terrainClass(at(x, y)) === 0x1B) t.hoard += t.level || 0;
+      }
+  }
   for (const v of G.villages) spawnBrave(v);
 }
 
@@ -8119,11 +8135,6 @@ function surpriseRaidCheck(v, target) {
                                   STRING1: target ? target.name : '',
                                   STRING2: t.name });
 }
-function raidOutcome() {
-  let out = 1 + Math.floor(Math.random() * 4);
-  if (G.turn < 40 * (2 - G.difficulty)) out -= 1;
-  return Math.max(0, out);
-}
 // ---- the raid-target scorer: func_0460F8 = 0x181F:0x316, byte-ported ------
 // Disassembled 2026-08-07e (RULINGS.md). Per settlement it scores the best
 // human-controlled colony within taxi distance 6 and returns that score --
@@ -8203,137 +8214,219 @@ function raidTargetScore(v) {
   return { colony: best, score: best ? bestScore : -1 };
 }
 
-// One raid ATTEMPT by village v against colony c. The gate is func_05BE84's:
-// roll random_int(1,12)-1 (@0x5BEFD), +(difficulty-2) for a human owner
-// (@0x5BF1A), against threshold 3*K+1 (@0x5BEE5) -- and K is now BYTE-READ
-// (RULINGS.md 2026-08-07c): the `push 0; lcall 0x181f,0xab0` @0x5BED9 resolves
-// to func_00864E, which walks the BUILDING UPGRADE CHAIN from id 0 counting the
-// links the colony has -- chain 0 is Stockade -> Fort -> Fortress, so K is the
-// colony's FORTIFICATION COUNT, exactly what colonyLevel() already computes.
-// A raid that fails the gate simply does not happen (the @0x5BF32 exit).
+// One raid ATTEMPT by village v against colony c = func_05BE84 (stub
+// 0x1A1F:0x6C8), re-read whole 2026-09-03 (RULINGS 2026-09-03c). Engine
+// arguments: (tribe power, colony, the raider's HOME settlement, force,
+// attacker type); the port passes force = 0 -- the engine forces a raid
+// when Braves hit a human colony defended by Artillery (@0x5D1A6..
+// @0x5D1D2), a combat-resolver path the port's arrival model skips
+// (flagged). The clock reseed @0x5BEED is NOT mirrored (RULINGS
+// 2026-09-03b).
+//   gate  : roll = random_int(0,12) - 1 (@0x5BEF9..@0x5BF06), + difficulty
+//           - 2 for a HUMAN owner (@0x5BF09..@0x5BF21); K = 3 * (present
+//           tiers of chain 0, func_00864E @0x5BED9) + 1; roll < K and not
+//           forced -> nothing happens at all (@0x5BF32 -> the exit).
+//   out   : random_int(1,4) (@0x5BF35); the EARLY SOFTENER @0x5BF44..
+//           @0x5BF69 zeroes outcomes 2/3 only while turn < 40*(2-diff)
+//           AND difficulty <= 1 (the old "-1 at every difficulty" is gone).
+//   gates : BUILDING gates (0x181F:0x9FC = has_building), not attributes:
+//           out 2: random_int(0,8) > (human ? diff : 1) + 2 -> 1; Fort -> 1
+//           out 4: Stockade -> 1;  out 3: Fortress -> 0;
+//           out 1: Stockade and random_int(0,8) > diff -> 0 (@0x5BF6E..@0x5C023)
+//   ladder: 1 STORES, 2 WREAK, 3 SHIP, 4 GOLD, 0 NOTHING (@0x5C023..@0x5C03B;
+//           the port had 3 = gold / 4 = burn).
+//   end   : the raider's home settlement zeroes its alarm word toward the
+//           colony owner (@0x5C642..@0x5C651) -- v.alarm here.
+// The raid chain table (ANCHOR): @BUILDING is laid out chain by chain; the
+// +0x03 predecessor / +0x04 next links the parser writes (@0x74661/@0x7466F)
+// are not read, so the chains are the consecutive-row families with the
+// Stable (17) and the Capitol (30..31) as their own roots -- the WREAK
+// payload has its own Capitol case @0x5C46A, so root(0x1E) != 9.
+const RAID_CHAIN_FIRST = [0, 0, 0, 3, 3, 3, 6, 6, 6, 9, 9, 9, 12, 12, 12, 15, 15,
+  17, 18, 19, 19, 21, 21, 21, 24, 24, 24, 27, 27, 27, 30, 30, 32, 32, 32,
+  35, 35, 37, 37, 39, 39, 39];
+const raidChainNext = (b) =>
+  (b + 1 < RAID_CHAIN_FIRST.length && RAID_CHAIN_FIRST[b + 1] === RAID_CHAIN_FIRST[b]) ? b + 1 : -1;
+// DS:0x2CA (file 0x1DC6A), 42 bytes: the chain-root JOB of each @BUILDING
+// row (read by func_009786 @0x978D), -1 = none.
+const RAID_ROOT_JOB = [21, 21, 21, 15, 15, 15, -1, -1, -1, 17, 17, 17, 18, 18, 18,
+  -1, -1, -1, -1, -1, -1, 11, 11, 11, 10, 10, 10, 9, 9, 9, 17, 17, 12, 12, 12,
+  13, 13, 16, 16, 14, 14, 14];
+// has_building for the raid: the Warehouse/Capitol EXPANSIONS live in the
+// +0x95/+0x96 level bytes, not in the bitset (colony_bld_seed), so rows
+// 16/31 never test present -- the level decrement below handles them.
+const raidHas = (c, b) =>
+  b !== 16 && b !== 31 && c.buildings.includes(DATA.buildings[b].name);
+// [0x9410 + p] per-power population census: zeroed by the census
+// (@0x4215D); the ports' stand-in is units + colony population (flagged,
+// the same one newsTick uses for the bulletin).
+function popCensus(p) {
+  if (p === G.nation)
+    return G.units.length + G.colonies.reduce((n, c) => n + c.colonists.length, 0);
+  const r = rivalOf(p);
+  return r ? r.units.length + r.colonies.reduce((n, c) => n + (c.pop || 0), 0) : 0;
+}
 function nativeRaid(v, c) {
   G.eventTribe = v.tribe;
-  const gate = 1 + Math.floor(Math.random() * 12) - 1 + (G.difficulty - 2);
-  if (gate < 3 * colonyLevel(c) + 1) return;
+  const t = G.tribes[v.tribe] || {};
+  const human = true;                       // the port raids the human's colonies
+  let roll = Math.floor(Math.random() * 13) - 1;
+  if (human) roll += G.difficulty - 2;
+  const K = 3 * colonyLevel(c) + 1;
+  const force = 0;
+  if (roll < K && !force) return;
   surpriseRaidCheck(v, c);
-  {
-    const t = G.tribes[v.tribe];
-    const S = { STRING0: t ? t.name : '', STRING1: c.name,
-                STRING3: DATA.nations[G.nation].adjective };
-    switch (raidOutcome()) {
-      case 1: {                                    // @RAIDSTORES
-        // The good picker, BYTE-READ 2026-08-29 (@0x5C03E..@0x5C0C7): up
-        // to 100 tries of random_int(0,15), accepted at stock >= 10; on
-        // the FIRST try, a tribe with no horse counter facing a pick
-        // stocked past 52 flips a coin for HORSES instead (@0x5C05F..
-        // @0x5C084). The muskets magnitude check (@0x5C08F, the
-        // random(0,200)-diff*tries register) has an unread consumer --
-        // omitted, flagged. No pick in 100 tries -> @RAIDNOTHING.
-        const t2 = G.tribes[v.tribe] || {};
-        let good = -1;
-        for (let tries = 1; tries <= 100 && good < 0; tries++) {
-          const pick = Math.floor(Math.random() * 16);
-          if (tries === 1 && !(t2.horsesKnown || 0) &&
-              (c.stock[pick] || 0) > 52 &&
-              Math.floor(Math.random() * 2) === 0) { good = 8; break; }
-          if ((c.stock[pick] || 0) >= 10) good = pick;
-        }
-        if (good < 0 || !(c.stock[good] > 0)) {
-          showEvent('RAIDNOTHING', S); break;
-        }
-        // amount = clamp(1, stock, random_int(min(10, stock/2), stock/2))
-        // (@0x5C370..@0x5C3AD) -- the raid takes a LOAD, not the slot.
-        const half = c.stock[good] >> 1;
-        const lo = Math.min(10, half);
-        let qty = lo + Math.floor(Math.random() * (half - lo + 1));
-        qty = Math.max(1, Math.min(c.stock[good], qty));
-        c.stock[good] -= qty;
-        const g = [qty, good];
-        // The haul arms the TRIBE (corrected 2026-08-29 -- the old
-        // "+0x08 raid budget / +0x0A wealth" gloss misread the tribe
-        // pointer): stolen HORSES bump the herd-counter byte +0x08 and
-        // add 25 to the herd word +0x0A (@0x5C3DD..@0x5C3E4); stolen
-        // MUSKETS bump the muskets counter +0x07, twice at a 50+ load
-        // (@0x5C3EE..@0x5C3FB). Other goods are simply gone.
-        if (g[1] === 8) {
-          t2.horsesKnown = (t2.horsesKnown || 0) + 1;
-          t2.herd = (t2.herd || 0) + 25;
-        }
-        if (g[1] === 15)
-          t2.musketsKnown = (t2.musketsKnown || 0) + (g[0] >= 50 ? 2 : 1);
-        // The sated-raid tension credit, byte-read: -4 for a stores raid
-        // (push -4 @0x5C416; the gold raid's is -16).
-        adjustTension(v.tribe, -4, 0);
-        showEvent('RAIDSTORES', { ...S, STRING2: DATA.cargo[g[1]].name });
-        break;
-      }
-      case 2: {                                    // @RAIDWREAK
-        // Payload byte-read (func_05BE84 @0x5C42A..): the raid DECREMENTS a
-        // building tier (dec ColonyRecord+0x95/+0x96 by target id, name
-        // substituted). The port's flat building list models the decrement
-        // as removing one non-starting building.
-        const smash = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
-        if (smash.length) {
-          const b = smash[Math.floor(Math.random() * smash.length)];
-          c.buildings.splice(c.buildings.indexOf(b), 1);
-        }
-        showEvent('RAIDWREAK', S);
-        break;
-      }
-      case 3: {                                    // @RAIDGOLD
-        // Amount byte-read (@0x5C2D4..0x5C2F1): random(0x32, min(gold,
-        // 0x7FFF)) -- 50 up to the whole treasury -- followed by the -16
-        // tension credit (push -0x10 @0x5C5BC, the raid is sated).
-        const cap = Math.min(G.gold, 0x7FFF);
-        const take = cap >= 0x32
-          ? 0x32 + Math.floor(Math.random() * (cap - 0x32 + 1))
-          : G.gold;
-        G.gold -= take;
-        adjustTension(v.tribe, -16, 0);
-        showEvent('RAIDGOLD', { ...S, NUMBER0: take });
-        break;
-      }
-      case 4: {                                    // @RAIDBURN / @RAIDSHIP
-        const ship = G.units.find(u => u.ship && u.x === c.x && u.y === c.y);
-        if (ship) { ship.damaged = true; showEvent('RAIDSHIP', { ...S, STRING2: ship.type }); break; }
-        const burnable = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
-        // @INDIANBURNCOLONY: a burn raid on an undefended one-man colony
-        // razes it outright ("Colony burned to the ground! King demands
-        // explanation!") -- the threshold reading is flagged.
-        if (!burnable.length && c.colonists.length <= 1 &&
-            !G.units.some(du => !du.ship && du.x === c.x && du.y === c.y)) {
-          showEvent('INDIANBURNCOLONY',
-                    { STRING0: S.STRING0, STRING1: S.STRING3, STRING3: c.name });
-          c.vanished = true;
-          break;
-        }
-        // @INDIANWINCOLONY (byte-attributed @0x5E01F, func_05CA7E: the
-        // human-visible massacre; INDIANWINCOLONY2 is its !human bulletin
-        // twin @0x5E026). The aftermath window decrements settlement size
-        // while size > 1 (dec [bx+4] @0x5D67A) -- mirrored: an undefended
-        // multi-colonist colony loses one colonist to the massacre; the
-        // trigger placement inside the raid ladder is the port's, flagged.
-        if (!burnable.length && c.colonists.length > 1 &&
-            !G.units.some(du => !du.ship && du.x === c.x && du.y === c.y)) {
-          const dead = c.colonists.pop();
-          showEvent('INDIANWINCOLONY',
-                    { STRING0: S.STRING0, STRING1: S.STRING3,
-                      STRING2: dead.profession || dead.type, STRING3: c.name });
-          break;
-        }
-        if (!burnable.length) { showEvent('RAIDWREAK', S); break; }
-        const b = burnable[Math.floor(Math.random() * burnable.length)];
-        c.buildings.splice(c.buildings.indexOf(b), 1);
-        showEvent('RAIDBURN', { ...S, STRING2: b });
-        break;
-      }
-      default:                                     // @RAIDNOTHING
-        showEvent('RAIDNOTHING', S);
-        break;
-    }
-    // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
-    if (!G.raidSeen) { G.raidSeen = true; woodcutOnce(13); }
+  let out = 1 + Math.floor(Math.random() * 4);
+  if (G.turn < 40 * (2 - G.difficulty) && G.difficulty <= 1 && (out === 2 || out === 3))
+    out = 0;
+  if (out === 2) {
+    const k = human ? G.difficulty : 1;
+    if (Math.floor(Math.random() * 9) > k + 2) out = 1;
+    if (raidHas(c, 1)) out = 1;                                   // Fort
   }
+  if (out === 4 && raidHas(c, 0)) out = 1;                        // Stockade
+  if (out === 3 && raidHas(c, 2)) out = 0;                        // Fortress
+  if (out === 1 && raidHas(c, 0) && Math.floor(Math.random() * 9) > G.difficulty)
+    out = 0;
+  const S = { STRING0: t.name || '', STRING1: c.name,
+              STRING3: DATA.nations[G.nation].adjective };
+  let good = -1, bld = -1, ship = null, take = 0;
+  if (out === 1) {
+    // STORES picker @0x5C03E..@0x5C0C7: up to 100 tries of random_int(0,15),
+    // accepted at stock >= 10; on the FIRST try a tribe with no horse
+    // counter facing a pick stocked past 52 flips a coin for HORSES
+    // (@0x5C05F..@0x5C084); a MUSKETS pick draws random_int(0,200) into a
+    // register nothing reads (@0x5C08F..@0x5C0A6 -- dead, but a draw).
+    let tries = 0;
+    for (;;) {
+      tries++;
+      good = Math.floor(Math.random() * 16);
+      if (!(t.horsesKnown || 0) && tries === 1 && (c.stock[good] || 0) > 52 &&
+          Math.floor(Math.random() * 2) === 0) good = 8;
+      if (good === 15) Math.random();                             // dead draw
+      if (tries < 100 && (c.stock[good] || 0) < 10) continue;
+      break;
+    }
+    if (tries >= 100) out = 0;
+  } else if (out === 2) {
+    // WREAK picker @0x5C0CA..@0x5C1A8: random_int(0,0x29) up to 100 tries;
+    // invalid = 0x23 Carpenter's Shop, the Town Hall chain (root 9), the
+    // chain of the building under construction, or one of {0x27 Church,
+    // 0x15/0x18/0x1B the Weaver's/Tobacconist's/Distiller's Houses, 0/1/2
+    // the forts, 0x20 Fur Trader's House}; retry while absent or invalid;
+    // 100 tries or an invalid last pick -> outcome 0. Then the CLIMB
+    // @0x5C214..@0x5C24F: while the next tier is present, target it.
+    const bip = c.building && DATA.buildings.some(b => b.name === c.building)
+      ? RAID_CHAIN_FIRST[DATA.buildings.findIndex(b => b.name === c.building)] : -1;
+    let tries = 0, valid = 1;
+    for (;;) {
+      valid = 1;
+      tries++;
+      bld = Math.floor(Math.random() * 42);
+      if (bld === 0x23) valid = 0;
+      if (RAID_CHAIN_FIRST[bld] === 9) valid = 0;
+      if (bip >= 0 && RAID_CHAIN_FIRST[bld] === bip) valid = 0;
+      if ([0x27, 0x15, 0x18, 0x1B, 0, 1, 2, 0x20].includes(bld)) valid = 0;
+      if (tries < 100 && (!raidHas(c, bld) || !valid)) continue;
+      break;
+    }
+    if (tries >= 100 || !valid) out = 0;
+    else for (;;) {
+      const nxt = raidChainNext(bld);
+      if (nxt >= 0 && raidHas(c, nxt)) bld = nxt; else break;
+    }
+  } else if (out === 3) {
+    // SHIP @0x5C252..@0x5C297: walk the tile's unit stack for a type
+    // 0xD..0x12; none -> outcome 0
+    ship = G.units.find(u => u.ship && u.x === c.x && u.y === c.y) || null;
+    if (!ship) out = 0;
+  } else if (out === 4) {
+    // GOLD @0x5C29A..@0x5C31F: max = gold * size / (population census + 1)
+    // + 10 (32-bit), clamped to 0x7FFF; amount = random_int(0x32, max);
+    // gold < amount or amount < 0x32 -> outcome 0.
+    let max = Math.floor(G.gold * c.colonists.length / (popCensus(G.nation) + 1)) + 10;
+    if (max > 0x7FFF) max = 0x7FFF;
+    take = 0x32 + Math.floor(Math.random() * (max - 0x32 + 1));
+    if (G.gold < take || take < 0x32) out = 0;
+  }
+  // payloads @0x5C32C..@0x5C61C (the human owner's messages; RAIDWREAK is
+  // the AI-owner bulletin @0x5C1DC, never the human's)
+  switch (out) {
+    case 1: {                                    // @RAIDSTORES
+      if (!(c.stock[good] > 0)) break;           // @0x5C351: silent
+      // amount = clamp(1, stock, random_int(min(10, stock/2), stock/2))
+      const half = c.stock[good] >> 1;
+      const lo = Math.min(10, half);
+      let qty = lo + Math.floor(Math.random() * (half - lo + 1));
+      qty = Math.max(1, Math.min(c.stock[good], qty));
+      c.stock[good] -= qty;
+      showEvent('RAIDSTORES', { ...S, STRING2: DATA.cargo[good].name });
+      // the haul arms the TRIBE: horses -> counter +0x08 and herd +25
+      // (@0x5C3DD), muskets -> counter +0x07, twice at a 50+ load (@0x5C3EE)
+      if (good === 8) {
+        t.horsesKnown = (t.horsesKnown || 0) + 1;
+        t.herd = (t.herd || 0) + 25;
+      }
+      if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + (qty >= 50 ? 2 : 1);
+      // -4 unless the tribe's row carries the war bit (rel & 2 @0x5C40D --
+      // the tribe war bit is unmodeled, the credit always applies; flagged)
+      adjustTension(v.tribe, -4, 0);
+      break;
+    }
+    case 2: {                                    // @RAIDBURN (WREAK)
+      let name = DATA.buildings[bld].name;
+      if (bld === 15) {
+        // Warehouse: dec +0x95; a remaining level names the Expansion
+        if (c.buildings.includes('Warehouse Expansion')) {
+          c.buildings.splice(c.buildings.indexOf('Warehouse Expansion'), 1);
+          name = 'Warehouse Expansion';
+        } else c.buildings.splice(c.buildings.indexOf('Warehouse'), 1);
+      } else if (bld === 30) {
+        // Capitol: dec +0x96, the name is always the Expansion's (@0x5C486)
+        name = 'Capitol Expansion';
+        if (c.buildings.includes('Capitol Expansion'))
+          c.buildings.splice(c.buildings.indexOf('Capitol Expansion'), 1);
+        else c.buildings.splice(c.buildings.indexOf('Capitol'), 1);
+      } else {
+        // a chain ROOT (+0x03 link < 0): n = func_009818(b) = the number of
+        // colonists working the root's job (DS:0x2CA; 0 when the row has
+        // none); then every colonist whose OCCUPATION equals n is moved to
+        // job 0xD Carpenter (@0x5C4B6..@0x5C4E1 -- read as bytes, the
+        // compare is against the COUNT, not the job; ported literally).
+        if (RAID_CHAIN_FIRST[bld] === bld) {
+          const job = RAID_ROOT_JOB[bld];
+          const n = job < 0 ? 0
+            : c.colonists.filter(p => jobIndex(p.job) === job).length;
+          if (n >= 0)
+            for (const p of c.colonists)
+              if (jobIndex(p.job) === n) { p.job = DATA.jobs[13]; p.cell = null; }
+        }
+        c.buildings.splice(c.buildings.indexOf(name), 1);
+      }
+      showEvent('RAIDBURN', { ...S, STRING2: name });
+      adjustTension(v.tribe, -12, 0);            // push -0xC @0x5C52E
+      break;
+    }
+    case 3: {                                    // @RAIDSHIP
+      ship.damaged = true;                       // func_05B2C2 (unread) stand-in
+      showEvent('RAIDSHIP', { ...S, STRING2: ship.type });
+      adjustTension(v.tribe, -16, 0);            // push -0x10 @0x5C5BC
+      break;
+    }
+    case 4: {                                    // @RAIDGOLD
+      G.gold -= take;
+      showEvent('RAIDGOLD', { ...S, NUMBER0: take });
+      adjustTension(v.tribe, -8, 0);             // push -8 @0x5C617
+      break;
+    }
+    default:                                     // @RAIDNOTHING
+      showEvent('RAIDNOTHING', S);
+      break;
+  }
+  // @0x5C642: the home settlement's alarm word toward the owner := 0
+  v.alarm = 0;
+  // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
+  if (!G.raidSeen) { G.raidSeen = true; woodcutOnce(13); }
 }
 
 // ---- the native unit mover -------------------------------------------------
@@ -8365,38 +8458,155 @@ function nativeRaid(v, c) {
 // straight-line step stands in for the goto executor's own path scoring
 // (func_04E2D6 step 5, unported) -- and func_05BE84's raid dispatch fires on
 // arrival.
+// The engine's 8-neighbour ring, DS:0xB4 (dx) / DS:0xBE (dy) at file
+// 0x1DA54 / 0x1DA5E: N, E, S, W, NW, NE, SE, SW; entries 8/9 are 0,0 (the
+// "stay" candidate 8 reads them). Candidate order is the tie-break order
+// (strict max @0x47F6E), so both engines walk it exactly.
+const HS_DX = [0, 1, 0, -1, -1, 1, 1, -1];
+const HS_DY = [-1, 0, 1, 0, -1, -1, 1, 1];
+// func_004900 (0x181F:0x370): the engine's distance metric --
+// max(|dx|,|dy|) + (min(|dx|,|dy|) >> 1) (@0x4904..@0x493A).
+function engineDist(dx, dy) {
+  const a = Math.abs(dx), b = Math.abs(dy);
+  return b < a ? (b >> 1) + a : (a >> 1) + b;
+}
+// func_00624E (0x181F:0x78C tail): the terrain CLASS -- 0x1B Mountains /
+// 0x1C Hills for a relief tile, else the id & 0x1F.
+function terrainClass(v) {
+  if (v & 0x20) return (v & 0x80) ? 0x1B : 0x1C;
+  return v & 0x1F;
+}
+// Amendment 2026-09-03 (CORE-B, C1.19): the leftover terms are byte-read
+// and ported --
+//   * the +4 PAIR @0x47AB4..@0x47AC6 / @0x47BB8..@0x47BD3: candidate AND
+//     unit tile both road/river-improved (0x181F:0x754 & 0xA) -> +4; else
+//     an EVEN candidate index (ring 0/2/4/6 = N/S/NW/SE, `test [bp-0x34],1`)
+//     with the terrain river bit 0x40 (0x181F:0x72C) on both -> +4;
+//   * the +5 @0x47CA4: an UNCLAIMED candidate (0x181F:0x6DC = territory
+//     nibble 0xF -> -1), peace mode only;
+//   * the WAR MODE @0x47C9A: [bp-0x86] = the number of European powers p
+//     with tension(tribe, p) >= 75 or the HOME settlement's alarm word
+//     toward p >= 0x80 (@0x4731A..@0x47365); nonzero routes every
+//     candidate through the war block @0x47D48..@0x47E7E instead of the
+//     peace terms: when the claim owner is hostile ([bp-0x14] alarmed /
+//     [bp-0x6E] tense, @0x4744F..@0x474DF) -> +5, +10 with a prime
+//     resource, +500 for a COLONY on the candidate (the attack), else the
+//     strength contest against a foreign stack; a NON-hostile candidate
+//     holding a settlement is rejected (@0x47E78);
+//   * the BESIEGER [bp-0x4C] @0x471F5..@0x47309: the European owner of
+//     ring tiles around the home settlement holding >= 2 armed units
+//     (attack > 1, non-ship, minus colony size >> 2) -- its claims count
+//     as hostile;
+//   * the rumour-tile skip 0x181F:0x75E @0x4737E.
+// Still flagged: the engine's four-power loop is the player only (tension
+// and alarm toward rivals are unmodeled); the foreign-STACK branch
+// (@0x4765A..@0x47A00: a second hostility pair vs the stack owner, the
+// moves-based terms and the @0x47D95 strength contest) has no port site
+// because a brave-vs-unit attack is not modeled -- an occupied candidate
+// stays rejected, and a rival colony too; the engine's own-tribe stack
+// rule (@0x479F1: >= 2 of ours with no settlement rejects, one costs
+// -40) is approximated by the reject.
 function headingScore(u, home) {
-  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-  const occupied = (x, y) =>
+  const t = G.tribes[u.tribe] || {};
+  const own = u.tribe + 4;                                   // [bp-0x94]
+  const occupiedByUnit = (x, y) =>
     G.natives.some(q => q !== u && q.x === x && q.y === y) ||
     G.units.some(q => q.x === x && q.y === y) ||
-    G.rivals.some(r => r.units.some(q => q.x === x && q.y === y)) ||
-    G.villages.some(w => w.x === x && w.y === y) ||
-    G.colonies.some(c => c.x === x && c.y === y);
-  let best = 8, bestScore = -1;
+    G.rivals.some(r => r.units.some(q => q.x === x && q.y === y));
+  const settlementOwner = (x, y) => {
+    const c = colonyAt(x, y);
+    if (c) return G.nation;
+    for (const r of G.rivals) if (r.colonies.some(rc => rc.x === x && rc.y === y)) return r.nation;
+    const w = G.villages.find(w => w.x === x && w.y === y);
+    return w ? w.tribe + 4 : -1;
+  };
+  const unitAttack = (q) => Number((unit(q.type) || {}).attack) || 0;
+  // [bp-0x86]: the war footing (player power only)
+  const warMode = (t.tension || 0) >= 75 || !!(home && (home.alarm || 0) >= 0x80);
+  // [bp-0x4C]: the besieger of the home settlement
+  let besieger = -1;
+  if (home) {
+    let total = 0;
+    for (let i = 0; i < 8; i++) {
+      const x = home.x + HS_DX[i], y = home.y + HS_DY[i];
+      if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
+      const owner = RESOURCE[y * MAP.w + x];
+      if (owner === 0x0F || owner >= 4) continue;
+      if (tileWater(at(x, y))) continue;
+      let n = 0;
+      for (const q of G.units) if (q.x === x && q.y === y && !q.ship && unitAttack(q) > 1) n++;
+      for (const r of G.rivals)
+        for (const q of r.units) if (q.x === x && q.y === y && !q.ship && unitAttack(q) > 1) n++;
+      if (n <= 0) continue;
+      const c = colonyAt(x, y) ||
+        G.rivals.flatMap(r => r.colonies).find(rc => rc.x === x && rc.y === y);
+      if (c) n -= (c.colonists ? c.colonists.length : (c.pop || 0)) >> 2;
+      if (n > 0) { total += n; besieger = owner; }
+    }
+    if (total < 2) besieger = -1;
+  }
+  const unitRoad = IMPROVE[u.y * MAP.w + u.x] & 0x0A;         // [bp-0x2A]
+  const unitRiver = at(u.x, u.y) & 0x40;                     // [bp-0x3E]
+  // [bp-0x78]: the home settlement counts for the leash only on the unit
+  // tile's landmass (region nibble 0x181F:0x6B4 @0x4718B..@0x47198)
+  const leashHome = home && REGION[home.y * MAP.w + home.x] === REGION[u.y * MAP.w + u.x];
+  let best = 8, bestScore = -1, bestColony = null;
+  let alarmed = 0;   // [bp-0x14] survives an owner >= 4 candidate (@0x47495)
   for (let cand = 0; cand <= 8; cand++) {
-    const x = cand === 8 ? u.x : u.x + DIRS[cand][0];
-    const y = cand === 8 ? u.y : u.y + DIRS[cand][1];
+    const x = cand === 8 ? u.x : u.x + HS_DX[cand];
+    const y = cand === 8 ? u.y : u.y + HS_DY[cand];
     if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
-    const t = tileTerrain(at(x, y));
-    if (t === TERR.OCEAN || t === TERR.SEALANE || t === 24) continue;  // 24 = Arctic
-    if (cand !== 8 && occupied(x, y)) continue;
+    const tv = at(x, y), tc = terrainClass(tv);
+    if (tc === 0x19 || tc === 0x1A) continue;                // @0x473C6
+    if (rumourAt(x, y)) continue;                            // @0x4737E
+    if (tc === 0x18) continue;                               // @0x473D2
+    const idx = y * MAP.w + x;
+    const owner = RESOURCE[idx] === 0x0F ? -1 : RESOURCE[idx];   // [bp-6]
+    const sOwner = settlementOwner(x, y);                    // [bp-0x5C]
+    const prime = detailId(x, y, tv) >= 0;                   // [bp-0x52]
+    // hostility vs the claim owner @0x4744F..@0x474DF
+    let tense = 0;
+    if (owner < 0 || owner === own) { tense = 0; alarmed = 0; }
+    else if (owner >= 4) { tense = 0; }
+    else {
+      const al = owner === G.nation && home ? (home.alarm || 0) : 0;
+      alarmed = al >= 0x80 ? 1 : 0;
+      tense = owner === G.nation && (t.tension || 0) >= 75 ? 1 : 0;
+      if (tense) alarmed = 1;
+      if (owner === besieger) alarmed = 1;
+    }
+    const hostile = alarmed || tense;
+    const pc = colonyAt(x, y);
+    let colonyPick = null;
+    if (cand !== 8) {
+      if (occupiedByUnit(x, y)) continue;
+      if (sOwner >= 4 || (sOwner >= 0 && sOwner !== G.nation)) continue;
+      if (pc && !(warMode && hostile)) continue;
+      if (pc) colonyPick = pc;
+    }
     let s = 200;
     if (cand !== 8 && u.heading !== undefined && u.heading < 8) {
       if (cand === u.heading) s += 4;
       else if (((u.heading + 1) & 7) === cand || ((u.heading + 7) & 7) === cand) s += 3;
       else if ((u.heading ^ 4) === cand) s -= 6;
     }
-    if (home) {
-      const d = Math.max(Math.abs(x - home.x), Math.abs(y - home.y));
+    // the +4 pair
+    if ((IMPROVE[idx] & 0x0A) && unitRoad) s += 4;
+    else if (!(cand & 1) && (tv & 0x40) && unitRiver) s += 4;
+    if (leashHome) {
+      // the HOME-SETTLEMENT LEASH @0x47ACA..@0x47B39 (re-read 2026-09-03):
+      // d = the engine metric 0x181F:0x370 = max + (min >> 1) from the
+      // candidate to the settlement (the old Chebyshev was wrong); d > 2
+      // costs 3*d, HALVED on a war footing ([bp-0x86] @0x47B05), halved
+      // again for an armed unit (func_00765C @0x47B14: Armed Braves /
+      // Mtd. Warriors) and quartered for a mounted one (func_007630
+      // @0x47B26: Mtd. Braves / Mtd. Warriors). The leash only applies
+      // while the settlement shares the unit tile's region nibble
+      // (@0x4718B..@0x47198, [bp-0x78] else -1).
+      const d = engineDist(x - home.x, y - home.y);
       if (d > 2) {
-        // the leash penalty 3*d, HALVED for an armed unit (func_00765C:
-        // types 1/4/0xB/0x14/0x16 -- Armed Braves, Mtd. Warriors here,
-        // @0x47B14) and QUARTERED for a mounted one (func_007630: types
-        // 4/5/0x15/0x16 -- Mtd. Braves, Mtd. Warriors, @0x47B26); both
-        // stack to an eighth. (The war-party halving @0x47B05 never
-        // applies here -- war-footing braves ride the raid mission.)
         let pen = 3 * d;
+        if (warMode) pen >>= 1;
         const armed = u.type === 'Armed Braves' || u.type === 'Mtd. Warriors';
         const mounted = u.type === 'Mtd. Braves' || u.type === 'Mtd. Warriors';
         if (armed) pen >>= 1;
@@ -8414,10 +8624,9 @@ function headingScore(u, home) {
     //   (tension - 50) >> 2 (@0x47B5F..@0x47BB2). The port scans the
     //   player's pieces only (rival tension is unmodeled, B3.6-adjacent).
     {
-      const t = G.tribes[u.tribe] || {};
       let foreignTribe = false, euro = false;
-      for (const [ddx, ddy] of DIRS) {
-        const nx = x + ddx, ny = y + ddy;
+      for (let nd = 0; nd < 8; nd++) {
+        const nx = x + HS_DX[nd], ny = y + HS_DY[nd];
         if (G.natives.some(q => q !== u && q.tribe !== u.tribe &&
                                 q.x === nx && q.y === ny)) foreignTribe = true;
         if (G.units.some(q => q.x === nx && q.y === ny) ||
@@ -8428,30 +8637,38 @@ function headingScore(u, home) {
         if (attBand(t.tension || 0) > 0) s += ((t.tension || 0) - 50) >> 2;
       } else if (foreignTribe) s -= 25;
     }
-    // the COLONY-DRIFT term (@0x47C9A..@0x47D45): the nearest player
-    // colony within distance 12 pulls by (attitude band + 1)*(12-d)/4 --
-    // idle braves loiter nearer colonies the worse relations get. (The
-    // engine gates on same-region (0x181f:0x6b4) and a preselected
-    // colony index from the function head; the port takes the nearest
-    // player colony and skips the region check, flagged. The +5 term on
-    // the unknown [bp-6] flag @0x47CA4 is omitted, not invented.)
-    {
-      const t = G.tribes[u.tribe] || {};
+    if (!warMode) {
+      if (owner < 0) s += 5;                                 // @0x47CA4
+      // the COLONY-DRIFT term (@0x47CAE..@0x47D45): the nearest player
+      // colony within distance 12 pulls by (attitude band + 1)*(12-d)/4.
+      // (The engine gates on same-region (0x181f:0x6b4) and a preselected
+      // colony index from the function head; the port takes the nearest
+      // player colony and skips the region check, flagged.)
       let bestD = 99;
       for (const c of G.colonies) {
         const d2 = Math.max(Math.abs(x - c.x), Math.abs(y - c.y));
         if (d2 < bestD) bestD = d2;
       }
-      if (bestD < 12)
-        s += ((attBand(t.tension || 0) + 1) * (12 - bestD)) >> 2;
-    }
-    s += 1 + Math.floor(Math.random() * 5);
-    if (s < 0) s = 0;
-    if (s > bestScore) { bestScore = s; best = cand; }
+      if (bestD < 12) s += ((attBand(t.tension || 0) + 1) * (12 - bestD)) >> 2;
+    } else if (hostile) {
+      s += 5;                                                // @0x47D57
+      if (prime) s += 10;                                    // @0x47D61
+      if (colonyPick) s += 500;                              // @0x47D84
+    } else if (sOwner >= 0) continue;                        // @0x47E78
+    s += 1 + Math.floor(Math.random() * 5);                  // jitter @0x47F44
+    if (s < 0) s = 0;                                        // clamp @0x47F4E
+    if (s > bestScore) { bestScore = s; best = cand; bestColony = colonyPick; }
   }
   if (best < 8) {
-    u.x += DIRS[best][0];
-    u.y += DIRS[best][1];
+    if (bestColony) {
+      // the attack on the colony: the port's raid fires in place of the
+      // combat resolution (flagged); the brave holds its tile
+      nativeRaid(home, bestColony);
+      u.heading = best;
+      return;
+    }
+    u.x += HS_DX[best];
+    u.y += HS_DY[best];
     u.heading = best;
   }
 }
@@ -8459,34 +8676,9 @@ function nativeMoveAI() {
   for (const n of G.natives) {
     const v = n.home;
     if (!v) continue;
-    const hostile = (v.alarm || 0) >= ALARM_RAID && G.colonies.length;
-    if (hostile) {
-      const c = raidTargetScore(v).colony || G.colonies.slice().sort((a, b) =>
-        (Math.abs(a.x - n.x) + Math.abs(a.y - n.y)) -
-        (Math.abs(b.x - n.x) + Math.abs(b.y - n.y)))[0];
-      if (Math.max(Math.abs(c.x - n.x), Math.abs(c.y - n.y)) <= 1) {
-        // At the palisade: the raid fires, and the party turns for home.
-        nativeRaid(v, c);
-        n.x = v.x; n.y = v.y + 1;
-        if (tileWater(at(n.x, n.y))) { n.x = v.x + 1; n.y = v.y; }
-        n.heading = undefined;
-        continue;
-      }
-      const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-      const step = DIRS
-        .map(([dx, dy]) => [n.x + dx, n.y + dy])
-        .filter(([x, y]) => x >= 0 && y >= 0 && x < MAP.w && y < MAP.h &&
-                !tileWater(at(x, y)) &&
-                !G.villages.some(w => w.x === x && w.y === y) &&
-                !G.natives.some(q => q !== n && q.x === x && q.y === y) &&
-                !G.units.some(q => q.x === x && q.y === y) &&
-                !G.colonies.some(q => q.x === x && q.y === y))
-        .sort((a, b) => (Math.abs(c.x - a[0]) + Math.abs(c.y - a[1])) -
-                        (Math.abs(c.x - b[0]) + Math.abs(c.y - b[1])))[0];
-      if (step) { n.x = step[0]; n.y = step[1]; }
-      continue;
-    }
-    // At peace: the func_046FFA scorer decides, including the stay candidate.
+    // func_046FFA decides every brave's step, war footing included (the
+    // straight-line raid march the port used to run is gone with the
+    // war-block port above).
     headingScore(n, v);
   }
 }
@@ -8523,7 +8715,42 @@ function missionStrength(v) {
   if (G.fathersOwned.includes('Juan de Sepulveda')) m = Math.floor(m / 2);
   return m;
 }
+// The WAR COUNCIL of the per-tribe turn func_0485F6 @0x48632..@0x48759
+// (read 2026-09-03, RULINGS 2026-09-03e): only after the Declaration
+// ([0x5382] & 1) and while the +0x03 bit 0x20 latch is clear; t = tension
+// toward the current player; flag = t >= 25 && t >= random_int(1,400)
+// (the draw happens whenever t >= 25); the GRUDGE bit forces the flag;
+// then random_int(0, 2*(5-difficulty)) must land on 0 -> @INDIANGRUDGE,
+// tension +100 toward the player (and -100 toward [0x53D2], the port's
+// single-power tension cannot carry it -- flagged), every settlement of
+// the tribe carrying the player's mission loses it (func_045D00), the
+// muskets counter := min(settlements, counter) * 4 (an 8-bit shift), the
+// horses counter := min(settlements, counter), the herd := horses * 25,
+// latch set. The clock reseed @0x48604 is not mirrored (2026-09-03b).
+function tribeWarCouncil() {
+  if (!(G.flags & WOI_DECLARED)) return;
+  G.tribes.forEach((t, ti) => {
+    if (t.dead || t.council) return;
+    const tension = t.tension || 0;
+    let flag = 0;
+    if (tension >= 25) flag = tension >= 1 + Math.floor(Math.random() * 400) ? 1 : 0;
+    if (t.grudge) flag = 1;
+    if (!flag) return;
+    if (Math.floor(Math.random() * (2 * (5 - G.difficulty) + 1)) !== 0) return;
+    G.eventTribe = ti;
+    showEvent('INDIANGRUDGE', { STRING0: t.name, STRING1: t.singular || t.name });
+    adjustTension(ti, 100, 0);
+    for (const v of G.villages)
+      if (v.tribe === ti && v.mission && v.mission.power === G.nation) v.mission = null;
+    const count = G.villages.filter(v => v.tribe === ti).length;
+    t.musketsKnown = (Math.min(count, t.musketsKnown | 0) * 4) & 0xFF;
+    t.horsesKnown = Math.min(count, t.horsesKnown | 0);
+    t.herd = t.horsesKnown * 25;
+    t.council = true;
+  });
+}
 function nativeTick() {
+  tribeWarCouncil();
   for (const v of G.villages) {
     // Growth.
     v.growth = (v.growth || 0) + v.pop;
@@ -8969,6 +9196,10 @@ function attackVillage(v, u) {
     // is destroyed (0x191F:0x248 @0x5D6A9) and 0x4A plays @0x5D6BC
     if (v.pop > 1) { v.pop -= 1; sfx(0x48); G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is reduced.`; return; }
     sfx(0x4A);
+    // the GRUDGE bit (TribeRecord +0x03 |= 0x40 @0x5D69D..@0x5D6A1): set in
+    // the size-1 removal branch only when the winner is a HUMAN power
+    // (controller == 0 @0x5D696) -- an AI razing leaves no grudge
+    t.grudge = true;
     const gold = razeGold(v);
     G.gold += gold;
     t.avenge = true;                                // the post-Declaration flag
@@ -10222,8 +10453,11 @@ function checkContact() {
     // Only the first meeting has a port site (checkContact); the
     // cooldown re-parley has none yet.
     sfx(0x8020 + r.nation);
-    setWar(G.nation, r.nation, REL.MET, true);
-    setWar(r.nation, G.nation, REL.MET, true);
+    // CONTACT = bit 0x20, written both ways by rel_or @0x5A1C6 once the
+    // meeting handler returns nonzero (RULINGS 2026-09-03a; the old MET
+    // = 0x40 write made every contacted rival an ALLY on the next save).
+    setWar(G.nation, r.nation, REL.CONTACT, true);
+    setWar(r.nation, G.nation, REL.CONTACT, true);
     if (r.attitude === undefined) r.attitude = 8;
     if (r.gold === undefined) r.gold = 1000 + Math.floor(Math.random() * 4000);
     G.msg = `We have made contact with the ${DATA.nations[r.nation].adjective}.`;
@@ -10301,6 +10535,16 @@ function newsTick() {
       if (v >= thr) {
         r.independent = true;
         showEvent('OTHERGRANTED', S2);
+        // The diplomacy RESET (@0x2F741..@0x2F771, read 2026-09-03): for
+        // every other power q, rel_or(p, q, 0x40) then rel_clear(p, q,
+        // 0xBB) -- both helpers write BOTH rows -- so the pair keeps only
+        // TREATY (and the 0x04 bit): the new nation is at peace with all.
+        for (let q = 0; q < 4; q++) {
+          if (q === r.nation) continue;
+          for (const k of [relKey(r.nation, q), relKey(q, r.nation)])
+            G.warMatrix[k] = ((G.warMatrix[k] || 0) | 0x40) & 0x44;
+          setTreaty(r.nation, q, REL.TREATY, true);
+        }
       } else if (v > (r.lastPct || 0)) {
         r.lastPct = v;
         showEvent('OTHERMIGHT', S2);
@@ -10457,6 +10701,10 @@ function rivalTurn() {
     // The pass's Europe update (func_0363A2 @0x2F218, after the colony
     // loop): the rival's own market drifts on its own pool.
     driftMarketOf(r.nation);
+    // The AI power turn func_052F7E: colony pass -> census -> the RELATION
+    // CYCLE (@0x53152) -> orders -> the Europe pass.  The cycle lands here,
+    // before the unit loop, in engine order.
+    relationCycle(r.nation);
     for (const c of r.colonies) if (c.colonists) c.pop = c.colonists.length;
     r.colonies = r.colonies.filter(c => !c.vanished);
     const war = atWar(G.nation, r.nation);
@@ -11327,16 +11575,61 @@ function retire() {
 }
 
 // ---------------------------------------------------------- diplomacy
-// spec/systems/diplomacy.md. Two 4x4 per-pair byte matrices, both byte-verified:
-//   the WAR matrix (PowerRecord +0x34): 0x01 resolved, 0x02 AT WAR, 0x08 pending
-//     grievance, 0x20 peace-pending, 0x40 met/contacted, 0x80 privateer
-//     hidden-attribution (set INSTEAD of the war bit when the attacker is a
-//     Privateer, so the aggression is not openly imputed);
-//   the TREATY matrix (PowerRecord +0x40), written SYMMETRICALLY: 0x02 hostile,
-//     0x20 peace-pending, 0x40 existing treaty.
+// spec/systems/diplomacy.md. ONE 4x4 per-pair byte row (PowerRecord +0x34,
+// bits below) plus the +0x40 per-pair GRACE TIMER row (not a second bit
+// matrix -- RULINGS 2026-09-02 par.7). The port keeps the row's 0x40 in a
+// separate treatyMatrix (written symmetrically) for its haveTreaty reads.
 // A treaty cooldown of turn + 0x10 is a 16-turn re-parley lockout.
-const REL = { RESOLVED: 0x01, WAR: 0x02, GRIEVANCE: 0x08, PEACE_PENDING: 0x20,
-              MET: 0x40, PRIVATEER: 0x80, TREATY: 0x40 };
+// The +0x34 war-row bits, BYTE-READ 2026-09-03 (RULINGS 2026-09-03a):
+//   0x01 RESOLVED  -- set only by the AI relation cycle @0x5318F; no reader.
+//   0x02 WAR.
+//   0x08 GRIEVANCE -- privateer identified vs a stronger target @0x3F0D7,
+//        the meeting tail @0x59AE9.
+//   0x20 CONTACT   -- tested at the first-meeting gate @0x57FD3, the
+//        native first-contact gate @0x56C8F, the report reader @0x21392
+//        and the AI-AI tick @0x57DF0; set by rel_or(.., 0x20) after the
+//        meeting handler @0x5A1C6 and at native first contact @0x56C9E.
+//        (The old PEACE_PENDING/MET=0x40 readings are withdrawn.)
+//   0x40 TREATY (RULINGS 2026-09-02 par.7).  0x80 PRIVATEER attribution.
+const REL = { RESOLVED: 0x01, WAR: 0x02, GRIEVANCE: 0x08, CONTACT: 0x20,
+              MET: 0x20, PRIVATEER: 0x80, TREATY: 0x40 };
+// Benjamin Franklin = @FATHERS row 19 = power_attribute_bit 0x13 (the
+// post-treaty grace halving @0x59B15..@0x59B21).
+const FATHER_FRANKLIN = 'Benjamin Franklin';
+// The post-treaty GRACE timer (+0x40 row): written into the AI's row toward
+// the human at the END of every meeting-handler run while a treaty stands
+// (@0x59AF4..@0x59B31): (6 - difficulty) * 2, halved under Franklin.
+function stampTreatyTimer(a, b) {
+  if (!(relTreaty(a, b) & REL.TREATY)) return;
+  let t = (6 - G.difficulty) * 2;
+  if (G.fathersOwned.includes(FATHER_FRANKLIN)) t >>= 1;
+  G.relTimer = G.relTimer || {};
+  G.relTimer[relKey(b, a)] = t;
+}
+// The AI power turn's RELATION CYCLE (func_052F7E @0x53152..@0x531AE), run
+// once per AI power p over the four European rows t = 0..3 in order:
+//   w = war[p][t]; if (w & GRIEVANCE) and timer[p][t] == 0 and
+//   random_int(0,3) == 0 -> war[p][t] = (w & 0xB7) | RESOLVED  (drops the
+//   grievance AND the treaty bit, one-way, the AI's own row only);
+//   then timer[p][t] decrements while nonzero (@0x5319C..@0x531A3).
+// RNG: exactly one random_int(0,3) per t passing both gates.  The engine
+// reseeds rand() from the BIOS tick just before this pass (@0x52F95); the
+// ports do NOT reseed the shared stream (RULINGS 2026-09-03b, the
+// 2026-09-02h precedent), so the draws here are JS-vs-C lockstep only.
+function relationCycle(p) {
+  G.relTimer = G.relTimer || {};
+  for (let t = 0; t < 4; t++) {
+    const k = relKey(p, t);
+    const w = G.warMatrix[k] || 0;
+    if ((w & REL.GRIEVANCE) && !(G.relTimer[k] || 0) &&
+        Math.floor(Math.random() * 4) === 0) {
+      G.warMatrix[k] = (w & 0xB7) | REL.RESOLVED;
+      // the treaty map mirrors the row's 0x40 (importSav keeps them paired)
+      G.treatyMatrix[k] = 0;
+    }
+    if (G.relTimer[k]) G.relTimer[k]--;
+  }
+}
 const PARLEY_LOCKOUT = 0x10;
 function relKey(a, b) { return `${a},${b}`; }
 const relWar = (a, b) => (G.warMatrix[relKey(a, b)] || 0);
@@ -11431,6 +11724,9 @@ function runMeeting(r, unitIn) {
   G.parleyLock[r.nation] = G.turn + PARLEY_LOCKOUT;   // stamp @0x58075
   showEvent(key, meetingSubs(r), myr);
   meetingTopic(r);
+  // the handler's tail @0x59AEE: the post-treaty grace timer into the AI's
+  // row toward the human whenever a treaty stands at the end of the run
+  stampTreatyTimer(G.nation, r.nation);
 }
 function meetingTopic(r) {
   const myr = `MYR${r.nation}`;
@@ -11441,8 +11737,11 @@ function meetingTopic(r) {
   // Rows: deny ("NEVER condoned piracy!") / withdraw -- withdrawal sends
   // the player's Privateers home. STRING3 = the @MEEKNESS request/demand
   // verb by B's tone (attitude>=8 reused, flagged).
-  if ((relWar(G.nation, r.nation) & REL.PRIVATEER) && !atWar(G.nation, r.nation)) {
-    setWar(G.nation, r.nation, REL.PRIVATEER, false);
+  // The bit lives in the AI's row toward the human: set @0x3F0A1 as
+  // war[target][mover], cleared by the handler @0x58BE1 as war[b][a] with
+  // b = the AI (si = [bp+8]*0x13C, bx = [bp+6]) -- read 2026-09-03.
+  if ((relWar(r.nation, G.nation) & REL.PRIVATEER) && !atWar(G.nation, r.nation)) {
+    setWar(r.nation, G.nation, REL.PRIVATEER, false);
     askEvent((G.flags & WOI_DECLARED) ? 'PIRACYUSA' : 'PIRACY',
              { STRING0: DATA.diplotext.GREATLEADER[r.nation],
                STRING1: DATA.nations[G.nation].adjective,
@@ -13915,6 +14214,12 @@ function importSav(bytes) {
     // settlement count for the Silver Miner weight (@0x492B8). Its writer
     // is unread -- imported verbatim, FLAGGED as "hoard".
     t.hoard = u16(tb + 0x0C);
+    // +0x03 bits (2026-09-03, RULINGS 2026-09-03e): 0x40 = the GRUDGE the
+    // human's razing of a size-1 settlement leaves (@0x5D69D..@0x5D6A1),
+    // 0x20 = the WAR COUNCIL latch (@0x48755) -- both read by the tribe
+    // turn func_0485F6 @0x48640/@0x48683 after the Declaration.
+    t.grudge = !!(d[tb + 3] & 0x40);
+    t.council = !!(d[tb + 3] & 0x20);
     t.stock = [];
     for (let g = 0; g < 16; g++) t.stock.push(u16(tb + 0x0E + g * 2));
   });
@@ -14719,17 +15024,18 @@ function step(u, nx, ny) {
   // branch before the step).
   if (u.type === 'Wagon Train' && G.units.includes(u) && colonyAt(nx, ny)) sfx(0x52);
   reveal(nx, ny, sightRadius(u));
-  // DISCOVERY ON FIRST SIGHTING: the woodcut + @LANDHO fire the moment
-  // land first enters a player ship's view (running-game observation,
-  // 2026-08-30 -- the top trust tier; the handler is func_020EFE, called
-  // from the ship-move chain func_03FDDE, its exact sighting predicate
-  // unread -- the any-land-within-sight scan here is FLAGGED). The old
-  // landfall-time trigger fired a whole voyage later.
-  if (!G.landHo && u.ship && u.nation === G.nation) {
-    const r = sightRadius(u);
+  // DISCOVERY: the predicate is BYTE-READ 2026-09-03 (func_03FDDE's
+  // post-move block @0x3FF81..@0x3FFEF, capstone over the desynced
+  // listing; RULINGS 2026-09-03f): after ANY successful move of the
+  // current nation's unit, while the nation's [0x543E] flag bit 0x80 is
+  // clear, the 3x3 box around the new tile is scanned (y then x) and the
+  // first NON-WATER tile (0x181F:0x768 == 0) sets the latch and calls
+  // func_020EFE (woodcut 1 + @LANDHO). No sight radius, no ship test --
+  // the ship case is just what reaches it first.
+  if (!G.landHo && u.nation === G.nation) {
     let land = false;
-    for (let dy = -r; dy <= r && !land; dy++)
-      for (let dx = -r; dx <= r && !land; dx++)
+    for (let dy = -1; dy <= 1 && !land; dy++)
+      for (let dx = -1; dx <= 1 && !land; dx++)
         if (!tileWater(at(nx + dx, ny + dy))) land = true;
     if (land) { G.landHo = true; woodcutOnce(1); }
   }
@@ -14961,7 +15267,17 @@ function moveSel(dx, dy) {
     const ruP = rival.units.find(x => x.x === nx && x.y === ny);
     if (!atWar(G.nation, rival.nation) && u.ship && u.type === 'Privateer' &&
         ruP && ruP.ship) {
-      setWar(G.nation, rival.nation, REL.PRIVATEER, true);
+      // func_03ECF0 @0x3F099..@0x3F0ED: the attribution lands in the
+      // TARGET's row (war[b][a] |= 0x80); then random_int(0,100) <
+      // difficulty+1 = the privateer is identified: the weaker target
+      // (strength census [0x941C]) declares WAR (war[b][a] |= 2
+      // @0x3F0E8), a stronger one holds a GRIEVANCE (|= 8 @0x3F0D7).
+      // The census is the ports' unitListStrength proxy (flagged).
+      setWar(rival.nation, G.nation, REL.PRIVATEER, true);
+      if (Math.floor(Math.random() * 101) < G.difficulty + 1) {
+        const sb = unitListStrength(rival.units), sa = unitListStrength(G.units);
+        setWar(rival.nation, G.nation, sb < sa ? REL.WAR : REL.GRIEVANCE, true);
+      }
       if (navalAttack(u, ruP)) advance();
       return;
     }

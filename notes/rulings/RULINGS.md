@@ -11999,3 +11999,311 @@ Each was run to a byte or to the JS/C bookkeeping and ruled:
 (the JS's own; the engine's per-power loop @0x75820 unread in that light);
 the AI founding sites' improvement bit (C3.10); the rival planting on an
 occupied colony tile.
+
+## 2026-09-03a — CORE-B: war-row bit 0x20 is CONTACT; the 2026-09-02 §7 "MET = 0x40 consistent" line is withdrawn
+
+**Conflict.** The diplomacy-residue research (2026-09-02, read-only) claims
+`+0x34` bit **0x20 = CONTACT ESTABLISHED**; RULINGS 2026-09-02 §7 rules
+0x40 = TREATY and adds "The JS REL.MET/TREATY both being 0x40 is
+consistent", and `spec/systems/diplomacy.md` (Amendment 2026-09-02) says
+"contact has no bit of its own in the row"; the older spec text called
+0x20 "peace-pending".
+
+**Bytes (all re-read this session).**
+- `func_057F4E @0x57FC5..@0x57FE4`: `rel_get(a,b); test al,0x20; jne
+  0x57FE7` — the CLEAR bit takes the "first meeting" branch
+  (`[bp-0xBA] = 1`, `push 0xA; lcall 0x181F:0x524`).
+- `func_059B90 @0x5A1BE..@0x5A1C6`: `push 0x20; push [bp-2]; push
+  [bp-0x4A]; lcall 0x181F:0xA06` — `rel_or(mover, neighbour, 0x20)` after
+  the meeting handler returns nonzero (the helper writes BOTH rows,
+  `@0x7FA7`/`@0x7FC8`).
+- `func_056C3E @0x56C84..@0x56C9E`: `rel_get(a, tribe); test al,0x20; je
+  0x56C96; jmp 0x56E32` — a set bit skips the @INDIANWELCOME greeting;
+  the clear bit runs `rel_or(a, tribe, 0x20)`.
+- Report reader `@0x21392..@0x2139E`: `rel_get(.., p+4); test al,0x20 →
+  [bp-4] = 1`.
+- `func_057DC0 @0x57DE2..@0x57DF4`: the AI-AI tick returns early on
+  `(a+turn+b) % 3 != 0` only when bit 0x20 is set.
+- `@0x5A450`: `test al,0x40` — the @TRADEATWAR gate reads TREATY, as §7
+  says.
+
+**Ruling.** The 2026-09-02 §7 reading of **0x40 = TREATY stands**. Its
+closing sentence ("MET/TREATY both 0x40 is consistent") and the
+diplomacy.md line "contact has no bit of its own" are **WRONG**: contact
+is **bit 0x20**, set both ways at the first European meeting and at
+native first contact, cleared only by the @OTHERGRANTED reset
+(`rel_clear(.., 0xBB)` `@0x2F769`). The old "0x20 = peace-pending" gloss
+was a misreading of the `@0x57DF0` gate (it tests contact, not a pending
+peace). Why the ruling erred: it read only the treaty writer/reader
+sites and inferred the port's 0x40 write at contact was harmless; it is
+not — every contacted rival was saved as an ALLY. Both ports now write
+0x20 at contact (`REL.CONTACT` / `REL_CONTACT`), and `REL.MET` is 0x20.
+
+**Also read and ported (same bytes).** The privateer attribution is
+written into the TARGET's row (`@0x3F0A1 or [bx+si-0x77C4],0x80` with
+`si = target*0x13C, bx = mover`) and cleared by the handler as
+`war[b][a]` (`@0x58BE1`, `si = [bp+8]*0x13C`) — the ports read the wrong
+cell before; after the write, `random_int(0,100) < difficulty+1`
+(`@0x3F0AA..@0x3F0BB`) identifies the privateer: the weaker target
+(`[0x941C]` strength census, `@0x3F0C5..@0x3F0D2`) declares WAR
+(`@0x3F0E8`), a stronger one holds a GRIEVANCE (`@0x3F0D7`). The
+`+0x40` grace timer: `timer[b][a] = (6-difficulty)*2 >> Franklin`
+(`@0x59B00..@0x59B31`, `power_attribute_bit(a, 0x13)` = @FATHERS row 19)
+at the tail of every meeting-handler run while `war[a][b] & 0x40`. The
+AI relation cycle `@0x53152..@0x531AE` (grievance → resolved on
+`random_int(0,3) == 0` with a zero timer, one-way `and 0xB7 / or 1`, then
+the timer decrement) now runs per AI power in both engines. The
+@OTHERGRANTED diplomacy reset `@0x2F741..@0x2F771` = `rel_or(p,q,0x40)`
++ `rel_clear(p,q,0xBB)` for every other q (both rows) — C1.15's last
+residue.
+
+**Still flagged.** The `[0x941C]` strength census stays the ports'
+attack+combat proxy; the meeting-side grievance setter `@0x59AE9`
+(`[bp-0xAE]` ← `[bp-0xA6]`, topic untraced) is not ported.
+
+## 2026-09-03b — CORE-B: the AI-turn / tribe-turn / raid clock reseeds are NOT mirrored on the shared stream
+
+`func_052F7E @0x52F91..@0x52F9A` (`push [0x83A6]; lcall 0x181F:0x4CA`),
+`func_0485F6 @0x48600..@0x48609` and `func_05BE84 @0x5BEED..@0x5BEF6` all
+call `0x181F:0x4CA` = `func_00C31C → @0xC2F8`: `lcall 0xC0C:0x12` (BIOS
+tick 0040:006C), `and ah,0x7F`, `srand` (`0xD1D:0xDF2` = `@0x103C2`); the
+pushed word is never read. So in the original every AI power turn, every
+tribe turn and every raid re-seeds the ONE `rand()` state the sim draws
+from. **Decision (follows 2026-09-02h, the audio track):** neither port
+reseeds the shared `Math.random`/`rng_next` stream at these sites. Reasons
+as before: a wall-clock reseed is an input no replay can reproduce and no
+oracle can compare; the JS reference reads no clock; the statistical
+effect is nil. Consequence, recorded so it is not re-litigated: nothing
+drawn after `@0x52F95` in an AI turn, after `@0x48604` in a tribe turn or
+after `@0x5BEF6` in a raid can be matched draw-for-draw against a DOS
+run — the draw lists in the CORE-B implementation are the JS-vs-C
+contract only. The sharing is REAL in the EXE; the isolation is a choice.
+
+## 2026-09-03c — CORE-B: the raid ladder `func_05BE84` re-read whole (C1.10 closed)
+
+Every site below was read this session (`asmr 05BE84 05C660`); the ports
+carried six readings that the bytes contradict.
+
+1. **Gate draw is `random_int(0,12)`** (`push 0xC; push 0` `@0x5BEF9`,
+   13 values, `dec ax` `@0x5BF05`), then `+ difficulty - 2` only for a
+   HUMAN owner (`@0x5BF09..@0x5BF21`); `K = 3*count + 1` with `count =
+   func_00864E(0)` (chain-0 tiers present); `roll < K` and not forced →
+   the raid does not happen (`@0x5BF32`). The ports drew 12 values.
+2. **The early softener is difficulty-gated**: `@0x5BF44..@0x5BF69` zeroes
+   the outcome only when `turn < 40*(2-difficulty)` AND `difficulty <= 1`
+   AND the outcome is 2 or 3. The ports subtracted one from every
+   outcome at every difficulty.
+3. **The "attribute gates" are BUILDING gates**: `0x181F:0x9FC` is
+   `func_00863E = has_building([0x8DC6], idx)` on the `+0x84` bitset.
+   Outcome 2: `random_int(0,8) > (human ? difficulty : 1) + 2` → 1
+   (`@0x5BF95..@0x5BFAA`), Fort (row 1) → 1 (`@0x5BFAF`); outcome 4:
+   Stockade → 1 (`@0x5BFC8`); outcome 3: Fortress → 0 (`@0x5BFE1`);
+   outcome 1: Stockade and `random_int(0,8) > difficulty` → 0
+   (`@0x5BFFA..@0x5C01E`). The ledger's "power attribute 0/2 bits" is
+   withdrawn.
+4. **Dispatch order is 1 STORES, 2 WREAK, 3 SHIP, 4 GOLD** (`@0x5C023..
+   @0x5C03B` and the payload switch `@0x5C32C..@0x5C344`: 3 → `@0x5C534`
+   RAIDSHIP, 4 → `@0x5C5C2` RAIDGOLD). The ports had 3 = gold, 4 = burn/
+   ship. natives.md §3's "3 → RAIDGOLD, 4 → RAIDBURN/RAIDSHIP" is wrong.
+5. **GOLD amount** `@0x5C29A..@0x5C31F`: `max = gold*size /
+   (pop_census[0x9410+owner] + 1) + 10` (long mul/div), clamped 0x7FFF;
+   `amount = random_int(0x32, max)`; `gold < amount` or `amount < 0x32` →
+   outcome 0. Credit is **−8** (`push -8` `@0x5C617`); **−16** is the SHIP
+   branch (`@0x5C5BC`), **−12** WREAK (`@0x5C52E`), **−4** STORES
+   (`@0x5C416`); each only when the tribe row lacks the war bit
+   (`rel_get & 2`, unmodeled in the ports — the credits always apply,
+   flagged). The ledger's "random(0x32, min(gold,0x7FFF)) with −16" is
+   withdrawn.
+6. **STORES**: the muskets register `@0x5C08F..@0x5C0A6`
+   (`random_int(0,200) - difficulty*tries`) is never read — a dead
+   computation that still draws; a zero stock at the payload (`@0x5C351`)
+   exits SILENTLY (no message, no credit); the message for a human is
+   `RAIDSTORES` (0x1B94, mode 5, sfx 0x4F).
+7. **WREAK** (`@0x5C0CA..@0x5C24F`): `random_int(0,0x29)` up to 100 tries;
+   invalid = 0x23 Carpenter's Shop, `root(b) == 9` (Town Hall chain via
+   `func_00975A`, the `+0x03` predecessor walk), the chain of the building
+   under construction (`0x181F:0xCC2 == 1`), or `b ∈ {0x27, 0x15, 0x18,
+   0x1B, 0, 1, 2, 0x20}`; retry while absent or invalid; then the CLIMB
+   `@0x5C214..@0x5C24F` follows the `+0x04` next link while present.
+   Payload `@0x5C42A..@0x5C52C`: Warehouse `dec +0x95` (a remaining level
+   names "Warehouse Expansion", `[0x9042]`), Capitol `dec +0x96` (name is
+   always `[0x90F6]` "Capitol Expansion"), a chain ROOT calls
+   `func_009818(b)` = the NUMBER of colonists working the root's job
+   (`DS:0x2CA` table via `func_009786`, count via `func_009626`; the
+   Stockade chain returns −soldiers and is skipped) and then moves every
+   colonist whose OCCUPATION EQUALS THAT COUNT to job 0xD Carpenter
+   (`@0x5C4B6..@0x5C4E1` — as bytes, a count compared to a job id; both
+   ports reproduce it literally and flag it); then `0x181F:0xBBE(b, 0)`
+   clears the bit; the human's message is `RAIDBURN` (0x1B9F, sfx 0x53).
+   `RAIDWREAK` (0x1B8A) is appended only for an AI-owned colony
+   (`@0x5C1C5..@0x5C1E6`) — it is never the human's message.
+8. **End**: the raider's home settlement zeroes its alarm word toward the
+   owner (`[0x54F6 + (settle*9 + owner)*2] = 0` `@0x5C642..@0x5C651`) —
+   a raid ENDS the war footing; the ports had the village raiding on
+   every turn while alarm ≥ 128.
+9. The chain table the ports use (consecutive @BUILDING families, Stable
+   and Capitol as their own roots) is ANCHOR: the link parser
+   (`func_07464C`, writes `@0x74661/@0x7466F`) is called through a path
+   the listing does not name; the Capitol case at `@0x5C46A` shows
+   `root(0x1E) != 9`.
+
+**Not ported, flagged**: the force flag (Braves vs a human colony
+defended by Artillery, `@0x5D1A6..@0x5D1D2`) and the combat that precedes
+the raid in the engine (the port's brave raids on arrival); `func_05B2C2`
+(the SHIP damage resolver, `0x1A1F:0x6E0`) — the ports mark the ship
+damaged; the `[0x9410]` population census (stand-in: units + colony
+population); the tribal-win massacre placements (`INDIANWINCOLONY` /
+`INDIANBURNCOLONY`) that rode the old case 4 are gone from the ladder —
+they belong to `func_05CA7E`'s aftermath (`@0x5D59A..@0x5D67A`), which
+the port's raid model never enters (open leaf, natives.md).
+
+## 2026-09-03d — CORE-B: the brave mover's leftover terms (C1.19 closed), and a lockstep bug the new draw order exposed
+
+`func_046FFA` slices read this session: `@0x47057..@0x4706E` and
+`@0x4741A..@0x47431` (the four flag setters: `0x181F:0x754 & 0xA` road/
+river-improve of the unit tile / candidate, `0x181F:0x72C & 0x40` the
+terrain river bit of each), `@0x47AB4..@0x47AC6` and `@0x47BB8..@0x47BD3`
+(the +4 pair: both improved → +4, else an EVEN candidate index
+(`test [bp-0x34],1`) with the river bit on both → +4 — the ring is
+DS:0xB4/0xBE at file 0x1DA54/0x1DA5E = N,E,S,W,NW,NE,SE,SW, so "even" is
+N/S/NW/SE, not "orthogonal"), `@0x47C9A..@0x47CAA` (the +5 for an
+UNCLAIMED candidate, `0x181F:0x6DC` → −1, in the PEACE branch only),
+`@0x4731A..@0x47365` (`[bp-0x86]` = the number of European powers with
+tension ≥ 0x4B or the home settlement's alarm word ≥ 0x80 — the war
+footing), `@0x471F5..@0x47309` (the BESIEGER `[bp-0x4C]`: ring tiles of the
+home settlement claimed by a European power holding ≥ 2 armed units in
+total, minus colony size >> 2), `@0x4744F..@0x474DF` (the hostility pair
+vs the claim owner; the `owner >= 4` arm leaves `[bp-0x14]` from the
+previous candidate — ported as the quirk), `@0x47D48..@0x47E7E` (the war
+block: +5, +10 with a prime resource (`0x181F:0x718 != -1`), +500 for a
+colony on the candidate (`0x181F:0x7BE`), else the stack contest whose
+type table at cs:0x1044 = file 0x47E24 decodes to Colonists +4, Soldiers
+−2, Pioneers/Missionaries/Scouts +8, Dragoons −1, types 6..9 +0,
+Treasure/Artillery/Wagon +0x10, then `score += enemy <= own ? own − enemy
++ 30 : 2·(own − enemy)`), `@0x47E78` (a non-hostile candidate holding a
+settlement is rejected), `@0x4737E` (a rumour tile, `0x181F:0x75E`, is
+skipped), `@0x479F1..@0x47A20` (an own-tribe stack of ≥ 2 with no
+settlement rejects, one costs −40). `func_00624E` (the class getter
+behind `0x181F:0x78C`): bit 0x20 → 0x1B Mountains / 0x1C Hills, else the
+id — so the candidate reject `@0x473C6` is Ocean/Sea Lane only and the
+hoard writer's `== 0x1B` (2026-09-03e) is Mountains.
+
+**Corrections.** The port's candidate ring (E,W,S,N,SE,NE,SW,NW) was its
+own; the engine's order is the tie-break order, both engines now walk
+N,E,S,W,NW,NE,SE,SW. The "war braves ride the raid mission" stand-in
+(a straight-line march to the raid scorer's colony) is withdrawn: a brave
+on a war footing scores its nine candidates through the same function
+with the war block, and the raid fires when the +500 colony candidate
+wins.
+
+**Not ported, flagged.** The foreign-STACK branch (`@0x4765A..@0x47A00`)
+and the contest — a brave-vs-unit attack is not modeled, an occupied
+candidate stays rejected; tension/alarm toward rival powers (the engine's
+four-power loop is the player only); the region gate of the colony-drift
+term; the own-tribe −40.
+
+**Lockstep bug found.** `news_tick`'s rival-vs-rival colony fall looked
+the ColonyRecord up by (x,y) alone: a ship-planted stub can stand on
+ANOTHER power's record-backed colony (the planting checks the planter's
+own list only), so burning the stub vanished the other power's record in
+the C while the JS dropped only the stub. The lookup now requires the
+stub's `full` flag and the victim's ownership (`colopy_rivals.c`).
+
+**Also corrected (same pass).** The leash `@0x47ACA..@0x47B39`: the
+distance is the `0x181F:0x370` metric (`func_004900`: max + (min >> 1)),
+not Chebyshev; `> 2` costs `3*d`, **halved on a war footing**
+(`[bp-0x86] != 0`, `@0x47B05..@0x47B0E`) before the armed (`0x902`) and
+mounted (`0x8D0`) halvings; and it applies only while the home settlement
+shares the unit tile's region nibble (`[bp-0x78]` is cleared `@0x47198`
+when `0x181F:0x6B4` differs). Both engines carry all three.
+
+**Oracle coverage.** No fixture turn - even under the `agitate` seeding -
+ever reaches the raid ladder (no war brave ends beside an ungarrisoned
+colony), so a dedicated `raid` oracle now exists (`tools/sim_compare.py
+raid` <-> `tools/sim_trace.py RAID` / `smoke --raid`): forty scripted raids
+on sav1653 with the fort tiers stripped, projecting gold, stock, the
+building set, every colonist's occupation, tensions, alarms, the tribe
+counters, damaged ships and the events; it covers RAIDSTORES, RAIDBURN
+(incl. the occupation quirk), RAIDGOLD and RAIDNOTHING (no ship stands in
+those colonies, so RAIDSHIP is exercised by inspection only).
+
+## 2026-09-03e — CORE-B: the grudge bit, the hoard writer, the @LEADERNAME triple; the leads left unverified
+
+**Grudge (TribeRecord +0x03 bit 0x40) — BYTE_VERIFIED, ported.** Writer
+`func_05CA7E @0x5D68A..@0x5D6A1`: in the size-1 settlement branch
+(`cmp [bx+4],1; jbe` `@0x5D674`), only when the winner `[bp-0x86] < 4` and
+`AIPersonality.controller == 0` — the HUMAN razes — `or [bx+3],0x40` on
+the tribe pointer `[0x8D4E]`. Reader `func_0485F6 @0x48632..@0x48759`
+(the per-tribe turn; clock reseed `@0x48604`, not mirrored): only while
+`[0x5382] & 1` (declared) and `+0x03 & 0x20` clear; `t = tension(tribe,
+[0x5398])`; `t >= 25` draws `random_int(1,400)` and the flag is `t >=
+roll`; the grudge bit forces the flag; `random_int(0, 2*(5-difficulty))`
+must be 0; then @INDIANGRUDGE (0x14F6), `tension_apply(tribe, [0x5398],
++100)`, `tension_apply(tribe, [0x53D2], −100)`, `func_045D00(tribe,
+[0x5398])` (every settlement with `+0x05 & 0xF == player` → `+0x05 =
+0xFF`), `+0x07 = min([0x962A+tribe], +0x07) << 2` (8-bit), `+0x08 =
+min(same, +0x08)`, `+0x0A = +0x08 * 25`, `+0x03 |= 0x20`. Both engines
+run it at the head of the native pass (`tribeWarCouncil` /
+`tribe_war_council`); the −100 toward `[0x53D2]` has no home in the
+ports' single-power tension (flagged); both harnesses project the bits
+(`tflags`).
+
+**Hoard (TribeRecord +0x0C) — BYTE_VERIFIED, ported.** Writers are the
+two newgame sites only: `mov [bx+0xC],0` `@0x65E71` (tribe init) and
+`add [bx+0xC],ax` `@0x6662A` with `ax = +0x02` (tech), for every in-bounds
+tile (`0x181F:0x302`) of the 5x5 box around each settlement (`@0x665E0..
+@0x6664B`) whose class (`0x181F:0x78C`, `func_00624E`) is 0x1B Mountains;
+`@0x6665D` re-selects the settlement so the sum lands in its owning
+tribe. Static after newgame, SAV-persisted. Both engines write it at the
+end of village seeding; the C1.6 "hoard writer" residue closes and the
+`villageSkill` FLAG on it is lifted; both harnesses project it.
+
+**The persisted triple `[0x9566 + p*3]` — BYTE_VERIFIED reading, no port
+consumer.** Loader `func_0749E0 @0x74C2F..@0x74C51` (key `LEADERNAME`
+0x2218): after the leader name, three integer reads per power into
+`[0x9566+3p]`, `+1`, `+2` — i.e. the three numeric columns of NAMES.TXT
+@LEADERNAME (England 1,−1,0; France 0,1,0; Spain 1,0,−1; Netherlands
+−1,0,1). Readers re-read this session: `+0 @0x547AB` (per-colony AI
+`func_053B7E`: `(v+2)*50 <= colony muskets` arming threshold), `+1
+@0x4C5F8` (`func_04C5C0`: recruit divisor `4 − v` over `pop_census −
+colonies`), `+2 @0x541D4` (the colony-AI score's war-tier term:
+`cx = 3*ax/2 − v − turn>>7`). Column roles (military readiness / expansion
+pace / war tier) are ANCHOR readings of those consumers. None of the three
+consumers is ported (rival colony AI, B3.6), so the triple is documented,
+not loaded: C1.17's "meaning TBD" leaf is resolved.
+
+**Leads NOT re-verified and NOT ported this session** (the research
+reports' claims stand as leads only): the tribe `+0x2E` per-power visit
+stamp (natives-ai report F/P7) and the adjacency-driven demand cadence
+`func_059B90 → func_056C3E` (the ports' per-turn demand roll stays the
+flagged stand-in — C1.9 narrowed, not closed); the AI-AI treaty/war tick
+`func_057DC0` and its evaluator `func_057AFC` (only their contact gate
+`@0x57DE2..@0x57DF4` was read here for 2026-09-03a; the rival-vs-rival
+war simulation in `newsTick`/`news_tick` stays FLAGGED — C1.17); the
+meeting-side grievance setter `@0x59AE9`; `func_046056`'s metric and the
+totem override; `func_061E10` and the sector waypoint chain; the
+discovery predicate `func_03FDDE`; @INDIANROAD; the AI Europe pass
+`func_051EF4`. Each remains a ledger residue with the report's offsets
+as its lead.
+
+## 2026-09-03f — CORE-B: the discovery (@LANDHO) predicate is a 3x3 non-water scan on any move
+
+`func_03FDDE`'s post-move block (file `@0x3FF5C..@0x3FFF6`; the annotated
+listing is desynced there — `func_03FF4C` is an empty header — so the
+bytes were disassembled with capstone via `tools/follow_thunk.py --at
+0x3FF5C`): `0x1A1F:0x142(unit, nx, ny)`, `0x181F:0xDB8(nx, ny)`, then
+`imul bx,[0x5394],0x34; test [bx+0x543E],0x80; jne exit` `@0x3FF81..
+@0x3FF8B` — while the current NATION's flag byte bit 0x80 is clear, the
+loop `@0x3FF8D..@0x3FFEF` walks `x = nx-1..nx+1` (outer, `[bp-8]`) and
+`y = ny-1..ny+1` (inner, `[bp-6]`), and the first tile with
+`0x181F:0x768(x,y) == 0` (not water) sets the bit (`or [bx+0x543E],0x80`
+`@0x3FFC5`), sets `[bp-0x10] = 1` and calls `0x181F:0xF6C = func_020EFE`
+(woodcut 1, the @LANDHO prompt). No sight radius, no ship test — the
+caller is the move handler for the selected unit `[0x5392]`, so any
+successful move of the current nation's unit qualifies; ships simply
+reach it first. The latch lives in the SAV-persisted `0x540E` block
+(flags byte +0x30). **Ruling**: the ports' "land within the ship's sight
+radius" reading (2026-08-30, running-game observation) is replaced by the
+byte predicate in both engines (`step()` / `cmd` move); the observation
+stands as consistent with it (the ship that sights land at radius 2
+reaches radius 1 a move later).

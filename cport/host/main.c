@@ -82,6 +82,64 @@ static void dump_market(void) {
     market_buy(8, 20);    dump_market_state("buy_horses_20");
 }
 
+/* --raid: the raid-ladder parity probe tools/sim_trace.py RAID mirrors —
+ * forty raids by village k % nv on player colony k % nc from the shared
+ * seed, one JSON state line each (CORE-B 2026-09-03: the turns oracles
+ * never reach a raid, so the ladder gets its own oracle). */
+static void dump_raid(void) {
+    colopy_load_sav(sav1653, sizeof(sav1653));
+    colopy_init(1653);
+    units_session_seed();
+    int npc = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation()) npc++;
+    for (int k = 0; k < 40 && CS.n_villages && npc; k++) {
+        int vi = k % CS.n_villages;
+        int want = k % npc, ci = -1;
+        for (int q = 0; q < CS.n_colonies && ci < 0; q++)
+            if ((CS.colonies[q].owner_power & 3) == cs_nation() && want-- == 0) ci = q;
+        CR.alarm[vi] = 0x90;
+        CS.villages[vi].alarm[cs_nation()] = 0x90;
+        /* adversarial seeding (mirrors the JS): the fort tiers come down */
+        colony_bld_remove_name(ci, "Stockade");
+        colony_bld_remove_name(ci, "Fort");
+        colony_bld_remove_name(ci, "Fortress");
+        natives_raid_probe(vi, ci);
+        const ColonyRecord *c = &CS.colonies[ci];
+        printf("{\"step\":\"raid%d\",\"rng\":%u,\"gold\":%d,\"stock\":[", k,
+               (unsigned)CS.rng, CS.powers[cs_nation()].gold);
+        for (int g = 0; g < N_GOODS; g++) printf("%s%d", g ? "," : "", c->stock[g]);
+        printf("],\"bld\":[");
+        {
+            uint64_t first = 0;
+            for (int q = 0; q < CR.col[ci].n_bld; q++)
+                first |= 1ull << bld_first_row(CR.col[ci].bld[q]);
+            int fb = 1;
+            for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
+                if ((first >> b) & 1) { printf("%s%d", fb ? "" : ",", b); fb = 0; }
+        }
+        printf("],\"jobs\":[");
+        for (int q = 0; q < c->population && q < 32; q++)
+            printf("%s%d", q ? "," : "",
+                   c->occupation[q] < DAT_JOBS_COUNT ? c->occupation[q] : -1);
+        printf("],\"tension\":[");
+        for (int t = 0; t < 8; t++) printf("%s%d", t ? "," : "", CR.tension[t]);
+        printf("],\"alarm\":[");
+        for (int v = 0; v < CS.n_villages; v++) printf("%s%d", v ? "," : "", CR.alarm[v]);
+        printf("],\"tribes\":[");
+        for (int t = 0; t < 8; t++)
+            printf("%s[%d,%d,%d]", t ? "," : "", CR.tribe_muskets_known[t],
+                   CR.tribe_horses_known[t], CR.tribe_herd[t]);
+        int dmg = 0;
+        for (int q = 0; q < CR.n_units_order; q++) dmg += CR.unit_damaged[CR.units_order[q]] ? 1 : 0;
+        printf("],\"damaged\":%d,\"events\":[", dmg);
+        colopy_event e;
+        int first = 1;
+        while (colopy_next_event(&e)) { printf("%s\"%s\"", first ? "" : ",", e.key); first = 0; }
+        printf("]}\n");
+    }
+}
+
 /* --movecost / --combat: read one case per stdin line, print one result
  * per line. The case lists are OWNED by tools/sim_compare.py, which feeds
  * the identical lists to the headless JS port. */
@@ -403,6 +461,13 @@ static void print_projection(int job_convert) {
                 printf("%s%u", b ? "," : "", CR.treaty_matrix[a][b]);
             printf("]");
         }
+        printf("],\"rtimer\":[");
+        for (int a = 0; a < 4; a++) {
+            printf("%s[", a ? "," : "");
+            for (int b = 0; b < 4; b++)
+                printf("%s%u", b ? "," : "", CR.rel_timer[a][b]);
+            printf("]");
+        }
         printf("],\"rcol\":[");
         {
             /* the rivals' FULL colonies, rival by rival in record order
@@ -478,6 +543,15 @@ static void print_projection(int job_convert) {
         printf("],\"frac\":[");
         for (int d = 0; d < 8; d++)
             printf("%s%u", d ? "," : "", CR.tribe_frac[d]);
+        /* the tribe +0x0C hoard word and the +0x03 grudge/council bits */
+        printf("],\"hoard\":[");
+        for (int d = 0; d < 8; d++)
+            printf("%s%d", d ? "," : "",
+                   (int)(int16_t)(CS.tribes[d * 0x4E + 0x0C] |
+                                  (CS.tribes[d * 0x4E + 0x0D] << 8)));
+        printf("],\"tflags\":[");
+        for (int d = 0; d < 8; d++)
+            printf("%s%u", d ? "," : "", CS.tribes[d * 0x4E + 3] & 0x60);
         /* villages [pop, growth, alarm, mission|-1, braveOwed] */
         printf("],\"villages\":[");
         for (int v = 0; v < CS.n_villages; v++) {
@@ -867,6 +941,10 @@ int main(int argc, char **argv) {
     }
     if (argc > 1 && strcmp(argv[1], "--market") == 0) {
         dump_market();
+        return 0;
+    }
+    if (argc > 1 && strcmp(argv[1], "--raid") == 0) {
+        dump_raid();
         return 0;
     }
     /* record strides are compile-time asserted; spot-check the data. */

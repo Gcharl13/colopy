@@ -631,6 +631,9 @@ static void attack_village(int vi, int ui) {
      * is destroyed (0x191F:0x248 @0x5D6A9) and 0x4A plays @0x5D6BC */
     if (v->population > 1) { v->population--; snd_play(0x48); return; }
     snd_play(0x4A);
+    /* the GRUDGE bit (TribeRecord +0x03 |= 0x40 @0x5D69D..@0x5D6A1): the
+     * size-1 removal by a HUMAN winner (controller == 0 @0x5D696) */
+    CS.tribes[tr * 0x4E + 3] |= 0x40;
     /* raze: the byte-verified payout, credited straight to gold */
     int sum = 0;
     for (int i = 0; i < 3; i++) sum += R(11 - cs_difficulty());

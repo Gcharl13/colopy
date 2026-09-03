@@ -195,3 +195,41 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
   verbatim into the war matrix and derive the treaty map from bit 0x40; the
   C folds both back into `+0x34` on save; the timers ride verbatim (the
   grievance cycle itself is still unported).
+
+## Amendment 2026-09-03 — bit 0x20 is CONTACT; the grace timer; the relation cycle (CORE-B)
+
+- **Bit `0x20` of the `+0x34` row = CONTACT ESTABLISHED** (RULINGS
+  2026-09-03a; the 2026-09-02 line "contact has no bit of its own" and the
+  §2 "peace-pending" gloss are withdrawn). Readers: the first-meeting gate
+  `@0x57FD3`, the native first-contact gate `@0x56C8F`, the report reader
+  `@0x2139A`, the AI-AI tick `@0x57DF0`. Writers: `rel_or(mover, other,
+  0x20)` `@0x5A1C6` (after the meeting handler returns nonzero) and
+  `rel_or(a, tribe, 0x20)` `@0x56C9E`; cleared only by the @OTHERGRANTED
+  reset `rel_clear(.., 0xBB)` `@0x2F769`.
+- **Bit `0x80` sits in the TARGET's row**: `@0x3F0A1` writes
+  `war[target][mover]`; the handler clears `war[b][a]` `@0x58BE1` (b = the
+  AI). After the write, `random_int(0,100) < difficulty+1` `@0x3F0AA..`
+  identifies the privateer: `strength[target] < strength[mover]`
+  (`[0x941C]` words `@0x3F0C5..@0x3F0D2`) → `war[target][mover] |= 2`
+  `@0x3F0E8`, else `|= 8` `@0x3F0D7`.
+- **The `+0x40` grace timer is written at the tail of every meeting-handler
+  run** (`@0x59AF4..@0x59B31`): while `war[a][b] & 0x40`, `timer[b][a] =
+  (6 - difficulty) * 2`, halved when `power_attribute_bit(a, 0x13)`
+  (Benjamin Franklin, @FATHERS row 19). Its consumer `@0x3F163`
+  (`war[a][b] & 0x40` and `timer[a][b] != 0` abort an attack on the
+  partner) is documented, not yet ported (the ports' AI attacks only the
+  human at war).
+- **The AI relation cycle** (`func_052F7E @0x53152..@0x531AE`, once per AI
+  power per turn, rows t = 0..3): `war[p][t] & 0x08` and `timer[p][t] == 0`
+  and `random_int(0,3) == 0` → `war[p][t] = (w & 0xB7) | 0x01` (one-way);
+  then `timer[p][t]--` while nonzero. The prologue's clock reseed
+  `@0x52F95` is not mirrored (RULINGS 2026-09-03b).
+- **@OTHERGRANTED reset** (`@0x2F741..@0x2F771`): for every other power q,
+  `rel_or(p,q,0x40)` then `rel_clear(p,q,0xBB)` — both rows keep only
+  TREATY (and 0x04).
+- **Port status**: both engines carry `REL.CONTACT`/`REL_CONTACT` = 0x20
+  (written at contact), the relation cycle in `rivalTurn`/`rival_turn`
+  after the colony pass, the timer stamp at the end of `runMeeting`/
+  `run_meeting`, the privateer identification roll, the OTHERGRANTED reset,
+  and the C imports/saves the `+0x40` row (`CR.rel_timer`); the `rtimer`
+  projection is in both harnesses.

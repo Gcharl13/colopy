@@ -474,3 +474,27 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    slots are *resume-points into the already-decoded state machine*, not a separate undecoded mechanic —
    mapping each slot to its exact interior offset is cosmetic labelling, with no missing game logic.
 7. **RNG jitter** `0x181F:0x4D4(1,5)` per-candidate score noise — runtime, non-static (R).
+
+
+## Amendment 2026-09-03 — `func_046FFA`: the +4 pair, the +5, the war block, the ring (CORE-B, RULINGS 2026-09-03d)
+
+- Candidate ring = DS:0xB4/0xBE (file 0x1DA54/0x1DA5E): N,E,S,W,NW,NE,SE,SW;
+  candidate 8 = stay. Rejects: class 0x19/0x1A (`func_00624E`: Ocean/Sea
+  Lane — hills are 0x1C, mountains 0x1B) `@0x473C6`, a rumour tile
+  (`0x181F:0x75E`) `@0x4737E`, Arctic `@0x473D2`.
+- `+4` `@0x47AC6`: candidate and unit tile both road/river-improved
+  (`0x754 & 0xA`), else an even candidate index with the terrain river bit
+  (`0x72C & 0x40`) on both (`@0x47BB8..@0x47BD3`).
+- `[bp-0x86]` war footing `@0x4731A..@0x47365`: count of powers p with
+  `tension(tribe,p) >= 75` or home alarm word `>= 0x80`. Zero → the peace
+  branch: `+5` for an unclaimed candidate (`@0x47CA4`) then the colony
+  drift; nonzero → the war block `@0x47D48`: hostile claim owner
+  (`[bp-0x14]`/`[bp-0x6E]`, `@0x4744F..@0x474DF`, incl. the besieger
+  `[bp-0x4C]` of `@0x471F5..@0x47309`) → +5, +10 prime, +500 colony, else
+  the stack contest (`@0x47D8C..@0x47E73`, type table file 0x47E24);
+  non-hostile with a settlement → reject (`@0x47E78`).
+- Port status: both engines run the ring, the +4 pair, the +5, the war
+  footing, the besieger, the hostility pair and the +5/+10/+500 block; a
+  war brave's raid fires on the +500 pick. Flagged: the foreign-stack
+  branch/contest (no brave-vs-unit combat), rival-power tension/alarm, the
+  region gate, the own-tribe stack −40.
