@@ -270,7 +270,9 @@ void cr_reset_from_load(void) {
             uint8_t w = CS.powers[a].war_rel[b];
             CR.war_matrix[a][b] = w;
             CR.treaty_matrix[a][b] = (w & 0x40) ? REL_TREATY : 0;
+            CR.rel_timer[a][b] = CS.powers[a].rel_timer[b];   /* +0x40 row */
         }
+    CR.met_anyone = 1;               /* importSav: G.metAnyone = true */
     CR.wc_show = -1;
     CR.ui_select = -1;
     CR.ff_show = -1;

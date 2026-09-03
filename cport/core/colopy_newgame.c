@@ -322,7 +322,11 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
      * t.met=false 5148 / seedRivals met:false 7307) --- */
     cr_reset_from_load();
     memset(CR.tribe_met, 0, sizeof(CR.tribe_met));
-    for (int n = 0; n < 4; n++) CR.rivals[n].met = 0;
+    for (int n = 0; n < 4; n++) {
+        CR.rivals[n].met = 0;
+        CR.rivals[n].gold_undef = 1;   /* seedRivals carries no gold */
+    }
+    CR.met_anyone = 0;               /* beginGame 910 */
     CR.land_ho = 0;                  /* beginGame 695: landfall + first
                                       * colony still ahead */
     CR.built_colony = 0;

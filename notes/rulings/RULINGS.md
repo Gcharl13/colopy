@@ -11948,3 +11948,82 @@ were re-read with capstone and agree with the lead; the clock is the ISR
 5. The tracker row 8 "OPENBORD decor @0x075B8E/B0/D2" is struck: those
    sites are `0x1A1F:0xDF8` rect fills and "OPENBORD" does not occur in
    VICEROY.EXE; the PIK is OPENING.EXE's (@0x1D10).
+
+## 2026-09-03a — CORE-B: war-row bit 0x20 is CONTACT; the 2026-09-02 §7 "MET = 0x40 consistent" line is withdrawn
+
+**Conflict.** The diplomacy-residue research (2026-09-02, read-only) claims
+`+0x34` bit **0x20 = CONTACT ESTABLISHED**; RULINGS 2026-09-02 §7 rules
+0x40 = TREATY and adds "The JS REL.MET/TREATY both being 0x40 is
+consistent", and `spec/systems/diplomacy.md` (Amendment 2026-09-02) says
+"contact has no bit of its own in the row"; the older spec text called
+0x20 "peace-pending".
+
+**Bytes (all re-read this session).**
+- `func_057F4E @0x57FC5..@0x57FE4`: `rel_get(a,b); test al,0x20; jne
+  0x57FE7` — the CLEAR bit takes the "first meeting" branch
+  (`[bp-0xBA] = 1`, `push 0xA; lcall 0x181F:0x524`).
+- `func_059B90 @0x5A1BE..@0x5A1C6`: `push 0x20; push [bp-2]; push
+  [bp-0x4A]; lcall 0x181F:0xA06` — `rel_or(mover, neighbour, 0x20)` after
+  the meeting handler returns nonzero (the helper writes BOTH rows,
+  `@0x7FA7`/`@0x7FC8`).
+- `func_056C3E @0x56C84..@0x56C9E`: `rel_get(a, tribe); test al,0x20; je
+  0x56C96; jmp 0x56E32` — a set bit skips the @INDIANWELCOME greeting;
+  the clear bit runs `rel_or(a, tribe, 0x20)`.
+- Report reader `@0x21392..@0x2139E`: `rel_get(.., p+4); test al,0x20 →
+  [bp-4] = 1`.
+- `func_057DC0 @0x57DE2..@0x57DF4`: the AI-AI tick returns early on
+  `(a+turn+b) % 3 != 0` only when bit 0x20 is set.
+- `@0x5A450`: `test al,0x40` — the @TRADEATWAR gate reads TREATY, as §7
+  says.
+
+**Ruling.** The 2026-09-02 §7 reading of **0x40 = TREATY stands**. Its
+closing sentence ("MET/TREATY both 0x40 is consistent") and the
+diplomacy.md line "contact has no bit of its own" are **WRONG**: contact
+is **bit 0x20**, set both ways at the first European meeting and at
+native first contact, cleared only by the @OTHERGRANTED reset
+(`rel_clear(.., 0xBB)` `@0x2F769`). The old "0x20 = peace-pending" gloss
+was a misreading of the `@0x57DF0` gate (it tests contact, not a pending
+peace). Why the ruling erred: it read only the treaty writer/reader
+sites and inferred the port's 0x40 write at contact was harmless; it is
+not — every contacted rival was saved as an ALLY. Both ports now write
+0x20 at contact (`REL.CONTACT` / `REL_CONTACT`), and `REL.MET` is 0x20.
+
+**Also read and ported (same bytes).** The privateer attribution is
+written into the TARGET's row (`@0x3F0A1 or [bx+si-0x77C4],0x80` with
+`si = target*0x13C, bx = mover`) and cleared by the handler as
+`war[b][a]` (`@0x58BE1`, `si = [bp+8]*0x13C`) — the ports read the wrong
+cell before; after the write, `random_int(0,100) < difficulty+1`
+(`@0x3F0AA..@0x3F0BB`) identifies the privateer: the weaker target
+(`[0x941C]` strength census, `@0x3F0C5..@0x3F0D2`) declares WAR
+(`@0x3F0E8`), a stronger one holds a GRIEVANCE (`@0x3F0D7`). The
+`+0x40` grace timer: `timer[b][a] = (6-difficulty)*2 >> Franklin`
+(`@0x59B00..@0x59B31`, `power_attribute_bit(a, 0x13)` = @FATHERS row 19)
+at the tail of every meeting-handler run while `war[a][b] & 0x40`. The
+AI relation cycle `@0x53152..@0x531AE` (grievance → resolved on
+`random_int(0,3) == 0` with a zero timer, one-way `and 0xB7 / or 1`, then
+the timer decrement) now runs per AI power in both engines. The
+@OTHERGRANTED diplomacy reset `@0x2F741..@0x2F771` = `rel_or(p,q,0x40)`
++ `rel_clear(p,q,0xBB)` for every other q (both rows) — C1.15's last
+residue.
+
+**Still flagged.** The `[0x941C]` strength census stays the ports'
+attack+combat proxy; the meeting-side grievance setter `@0x59AE9`
+(`[bp-0xAE]` ← `[bp-0xA6]`, topic untraced) is not ported.
+
+## 2026-09-03b — CORE-B: the AI-turn / tribe-turn / raid clock reseeds are NOT mirrored on the shared stream
+
+`func_052F7E @0x52F91..@0x52F9A` (`push [0x83A6]; lcall 0x181F:0x4CA`),
+`func_0485F6 @0x48600..@0x48609` and `func_05BE84 @0x5BEED..@0x5BEF6` all
+call `0x181F:0x4CA` = `func_00C31C → @0xC2F8`: `lcall 0xC0C:0x12` (BIOS
+tick 0040:006C), `and ah,0x7F`, `srand` (`0xD1D:0xDF2` = `@0x103C2`); the
+pushed word is never read. So in the original every AI power turn, every
+tribe turn and every raid re-seeds the ONE `rand()` state the sim draws
+from. **Decision (follows 2026-09-02h, the audio track):** neither port
+reseeds the shared `Math.random`/`rng_next` stream at these sites. Reasons
+as before: a wall-clock reseed is an input no replay can reproduce and no
+oracle can compare; the JS reference reads no clock; the statistical
+effect is nil. Consequence, recorded so it is not re-litigated: nothing
+drawn after `@0x52F95` in an AI turn, after `@0x48604` in a tribe turn or
+after `@0x5BEF6` in a raid can be matched draw-for-draw against a DOS
+run — the draw lists in the CORE-B implementation are the JS-vs-C
+contract only. The sharing is REAL in the EXE; the isolation is a choice.

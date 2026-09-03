@@ -167,7 +167,12 @@ int     market_bid_of(int power, int good);   /* the 0x84BC per-power bid byte *
 void    market_drift_of(int power);           /* func_0363A2's drift for one power */
 void    market_pool_move(int good, int32_t qty, int sign, int human);
 /* war/treaty relation bits (PowerRecord +0x34 row, spec diplomacy.md) */
+#define REL_RESOLVED  0x01   /* set only by the AI relation cycle @0x5318F */
 #define REL_WAR       0x02
+#define REL_GRIEVANCE 0x08   /* @0x3F0D7 / @0x59AE9 */
+#define REL_CONTACT   0x20   /* rel_or(.., 0x20) @0x5A1C6 / @0x56C9E; gates
+                              * @0x57FD3 / @0x56C8F / @0x21392 / @0x57DF0
+                              * (RULINGS 2026-09-03a) */
 #define REL_PRIVATEER 0x80
 #define REL_TREATY    0x40
 #define PARLEY_LOCKOUT 0x10
@@ -438,6 +443,8 @@ typedef struct { int16_t x, y; uint8_t level, pop, spared, sol;
                } rival_colony;
 typedef struct {
     uint8_t met, greeted;
+    uint8_t gold_undef;          /* JS r.gold === undefined (seedRivals sets
+                                  * no gold; checkContact rolls one) */
     uint8_t next_colony;         /* colony-name rotation counter */
     uint8_t n_col;
     rival_colony col[48];
@@ -481,6 +488,11 @@ typedef struct {
     uint16_t parley_lock[4];     /* G.parleyLock, per rival nation */
     uint8_t war_matrix[4][4];    /* REL bits, G.warMatrix — empty at load */
     uint8_t treaty_matrix[4][4]; /* REL bits, G.treatyMatrix */
+    /* the +0x40 per-pair GRACE timer row (G.relTimer): imported verbatim,
+     * folded back on save; the AI relation cycle decrements it
+     * (@0x531A3) and the meeting tail writes it (@0x59B31) */
+    uint8_t rel_timer[4][4];
+    uint8_t met_anyone;          /* G.metAnyone: woodcut-10 latch */
     uint8_t rival_wars[4][4];    /* the rival-vs-rival news-war flags */
     /* JS G.natives membership beyond braves: a rival-captured unit is
      * PUSHED TO G.NATIVES (applyDefeat game.js:7111 — its else-arm), so it

@@ -403,6 +403,13 @@ static void print_projection(int job_convert) {
                 printf("%s%u", b ? "," : "", CR.treaty_matrix[a][b]);
             printf("]");
         }
+        printf("],\"rtimer\":[");
+        for (int a = 0; a < 4; a++) {
+            printf("%s[", a ? "," : "");
+            for (int b = 0; b < 4; b++)
+                printf("%s%u", b ? "," : "", CR.rel_timer[a][b]);
+            printf("]");
+        }
         printf("],\"rcol\":[");
         {
             /* the rivals' FULL colonies, rival by rival in record order

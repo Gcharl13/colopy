@@ -878,7 +878,7 @@ function beginGame() {
   buildRegions();
   seedNatives();
   seedRivals();
-  G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
+  G.warMatrix = {}; G.treatyMatrix = {}; G.relTimer = {}; G.parleyLock = {};
   G.parley = null; G.attitude = 8;
   G.routes = []; G.trade = null;
   G.mercSeen = false; G.interventionWatch = false; G.succession = false;
@@ -10144,8 +10144,11 @@ function checkContact() {
     // Only the first meeting has a port site (checkContact); the
     // cooldown re-parley has none yet.
     sfx(0x8020 + r.nation);
-    setWar(G.nation, r.nation, REL.MET, true);
-    setWar(r.nation, G.nation, REL.MET, true);
+    // CONTACT = bit 0x20, written both ways by rel_or @0x5A1C6 once the
+    // meeting handler returns nonzero (RULINGS 2026-09-03a; the old MET
+    // = 0x40 write made every contacted rival an ALLY on the next save).
+    setWar(G.nation, r.nation, REL.CONTACT, true);
+    setWar(r.nation, G.nation, REL.CONTACT, true);
     if (r.attitude === undefined) r.attitude = 8;
     if (r.gold === undefined) r.gold = 1000 + Math.floor(Math.random() * 4000);
     G.msg = `We have made contact with the ${DATA.nations[r.nation].adjective}.`;
@@ -10223,6 +10226,16 @@ function newsTick() {
       if (v >= thr) {
         r.independent = true;
         showEvent('OTHERGRANTED', S2);
+        // The diplomacy RESET (@0x2F741..@0x2F771, read 2026-09-03): for
+        // every other power q, rel_or(p, q, 0x40) then rel_clear(p, q,
+        // 0xBB) -- both helpers write BOTH rows -- so the pair keeps only
+        // TREATY (and the 0x04 bit): the new nation is at peace with all.
+        for (let q = 0; q < 4; q++) {
+          if (q === r.nation) continue;
+          for (const k of [relKey(r.nation, q), relKey(q, r.nation)])
+            G.warMatrix[k] = ((G.warMatrix[k] || 0) | 0x40) & 0x44;
+          setTreaty(r.nation, q, REL.TREATY, true);
+        }
       } else if (v > (r.lastPct || 0)) {
         r.lastPct = v;
         showEvent('OTHERMIGHT', S2);
@@ -10375,6 +10388,10 @@ function rivalTurn() {
     // The pass's Europe update (func_0363A2 @0x2F218, after the colony
     // loop): the rival's own market drifts on its own pool.
     driftMarketOf(r.nation);
+    // The AI power turn func_052F7E: colony pass -> census -> the RELATION
+    // CYCLE (@0x53152) -> orders -> the Europe pass.  The cycle lands here,
+    // before the unit loop, in engine order.
+    relationCycle(r.nation);
     for (const c of r.colonies) if (c.colonists) c.pop = c.colonists.length;
     r.colonies = r.colonies.filter(c => !c.vanished);
     const war = atWar(G.nation, r.nation);
@@ -11245,16 +11262,61 @@ function retire() {
 }
 
 // ---------------------------------------------------------- diplomacy
-// spec/systems/diplomacy.md. Two 4x4 per-pair byte matrices, both byte-verified:
-//   the WAR matrix (PowerRecord +0x34): 0x01 resolved, 0x02 AT WAR, 0x08 pending
-//     grievance, 0x20 peace-pending, 0x40 met/contacted, 0x80 privateer
-//     hidden-attribution (set INSTEAD of the war bit when the attacker is a
-//     Privateer, so the aggression is not openly imputed);
-//   the TREATY matrix (PowerRecord +0x40), written SYMMETRICALLY: 0x02 hostile,
-//     0x20 peace-pending, 0x40 existing treaty.
+// spec/systems/diplomacy.md. ONE 4x4 per-pair byte row (PowerRecord +0x34,
+// bits below) plus the +0x40 per-pair GRACE TIMER row (not a second bit
+// matrix -- RULINGS 2026-09-02 par.7). The port keeps the row's 0x40 in a
+// separate treatyMatrix (written symmetrically) for its haveTreaty reads.
 // A treaty cooldown of turn + 0x10 is a 16-turn re-parley lockout.
-const REL = { RESOLVED: 0x01, WAR: 0x02, GRIEVANCE: 0x08, PEACE_PENDING: 0x20,
-              MET: 0x40, PRIVATEER: 0x80, TREATY: 0x40 };
+// The +0x34 war-row bits, BYTE-READ 2026-09-03 (RULINGS 2026-09-03a):
+//   0x01 RESOLVED  -- set only by the AI relation cycle @0x5318F; no reader.
+//   0x02 WAR.
+//   0x08 GRIEVANCE -- privateer identified vs a stronger target @0x3F0D7,
+//        the meeting tail @0x59AE9.
+//   0x20 CONTACT   -- tested at the first-meeting gate @0x57FD3, the
+//        native first-contact gate @0x56C8F, the report reader @0x21392
+//        and the AI-AI tick @0x57DF0; set by rel_or(.., 0x20) after the
+//        meeting handler @0x5A1C6 and at native first contact @0x56C9E.
+//        (The old PEACE_PENDING/MET=0x40 readings are withdrawn.)
+//   0x40 TREATY (RULINGS 2026-09-02 par.7).  0x80 PRIVATEER attribution.
+const REL = { RESOLVED: 0x01, WAR: 0x02, GRIEVANCE: 0x08, CONTACT: 0x20,
+              MET: 0x20, PRIVATEER: 0x80, TREATY: 0x40 };
+// Benjamin Franklin = @FATHERS row 19 = power_attribute_bit 0x13 (the
+// post-treaty grace halving @0x59B15..@0x59B21).
+const FATHER_FRANKLIN = 'Benjamin Franklin';
+// The post-treaty GRACE timer (+0x40 row): written into the AI's row toward
+// the human at the END of every meeting-handler run while a treaty stands
+// (@0x59AF4..@0x59B31): (6 - difficulty) * 2, halved under Franklin.
+function stampTreatyTimer(a, b) {
+  if (!(relTreaty(a, b) & REL.TREATY)) return;
+  let t = (6 - G.difficulty) * 2;
+  if (G.fathersOwned.includes(FATHER_FRANKLIN)) t >>= 1;
+  G.relTimer = G.relTimer || {};
+  G.relTimer[relKey(b, a)] = t;
+}
+// The AI power turn's RELATION CYCLE (func_052F7E @0x53152..@0x531AE), run
+// once per AI power p over the four European rows t = 0..3 in order:
+//   w = war[p][t]; if (w & GRIEVANCE) and timer[p][t] == 0 and
+//   random_int(0,3) == 0 -> war[p][t] = (w & 0xB7) | RESOLVED  (drops the
+//   grievance AND the treaty bit, one-way, the AI's own row only);
+//   then timer[p][t] decrements while nonzero (@0x5319C..@0x531A3).
+// RNG: exactly one random_int(0,3) per t passing both gates.  The engine
+// reseeds rand() from the BIOS tick just before this pass (@0x52F95); the
+// ports do NOT reseed the shared stream (RULINGS 2026-09-03b, the
+// 2026-09-02h precedent), so the draws here are JS-vs-C lockstep only.
+function relationCycle(p) {
+  G.relTimer = G.relTimer || {};
+  for (let t = 0; t < 4; t++) {
+    const k = relKey(p, t);
+    const w = G.warMatrix[k] || 0;
+    if ((w & REL.GRIEVANCE) && !(G.relTimer[k] || 0) &&
+        Math.floor(Math.random() * 4) === 0) {
+      G.warMatrix[k] = (w & 0xB7) | REL.RESOLVED;
+      // the treaty map mirrors the row's 0x40 (importSav keeps them paired)
+      G.treatyMatrix[k] = 0;
+    }
+    if (G.relTimer[k]) G.relTimer[k]--;
+  }
+}
 const PARLEY_LOCKOUT = 0x10;
 function relKey(a, b) { return `${a},${b}`; }
 const relWar = (a, b) => (G.warMatrix[relKey(a, b)] || 0);
@@ -11349,6 +11411,9 @@ function runMeeting(r, unitIn) {
   G.parleyLock[r.nation] = G.turn + PARLEY_LOCKOUT;   // stamp @0x58075
   showEvent(key, meetingSubs(r), myr);
   meetingTopic(r);
+  // the handler's tail @0x59AEE: the post-treaty grace timer into the AI's
+  // row toward the human whenever a treaty stands at the end of the run
+  stampTreatyTimer(G.nation, r.nation);
 }
 function meetingTopic(r) {
   const myr = `MYR${r.nation}`;
@@ -11359,8 +11424,11 @@ function meetingTopic(r) {
   // Rows: deny ("NEVER condoned piracy!") / withdraw -- withdrawal sends
   // the player's Privateers home. STRING3 = the @MEEKNESS request/demand
   // verb by B's tone (attitude>=8 reused, flagged).
-  if ((relWar(G.nation, r.nation) & REL.PRIVATEER) && !atWar(G.nation, r.nation)) {
-    setWar(G.nation, r.nation, REL.PRIVATEER, false);
+  // The bit lives in the AI's row toward the human: set @0x3F0A1 as
+  // war[target][mover], cleared by the handler @0x58BE1 as war[b][a] with
+  // b = the AI (si = [bp+8]*0x13C, bx = [bp+6]) -- read 2026-09-03.
+  if ((relWar(r.nation, G.nation) & REL.PRIVATEER) && !atWar(G.nation, r.nation)) {
+    setWar(r.nation, G.nation, REL.PRIVATEER, false);
     askEvent((G.flags & WOI_DECLARED) ? 'PIRACYUSA' : 'PIRACY',
              { STRING0: DATA.diplotext.GREATLEADER[r.nation],
                STRING1: DATA.nations[G.nation].adjective,
@@ -14855,7 +14923,17 @@ function moveSel(dx, dy) {
     const ruP = rival.units.find(x => x.x === nx && x.y === ny);
     if (!atWar(G.nation, rival.nation) && u.ship && u.type === 'Privateer' &&
         ruP && ruP.ship) {
-      setWar(G.nation, rival.nation, REL.PRIVATEER, true);
+      // func_03ECF0 @0x3F099..@0x3F0ED: the attribution lands in the
+      // TARGET's row (war[b][a] |= 0x80); then random_int(0,100) <
+      // difficulty+1 = the privateer is identified: the weaker target
+      // (strength census [0x941C]) declares WAR (war[b][a] |= 2
+      // @0x3F0E8), a stronger one holds a GRIEVANCE (|= 8 @0x3F0D7).
+      // The census is the ports' unitListStrength proxy (flagged).
+      setWar(rival.nation, G.nation, REL.PRIVATEER, true);
+      if (Math.floor(Math.random() * 101) < G.difficulty + 1) {
+        const sb = unitListStrength(rival.units), sa = unitListStrength(G.units);
+        setWar(rival.nation, G.nation, sb < sa ? REL.WAR : REL.GRIEVANCE, true);
+      }
       if (navalAttack(u, ruP)) advance();
       return;
     }

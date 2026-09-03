@@ -58,6 +58,41 @@ static int is_rival_unit(int ui, int rn) {
            !CR.unit_in_natives[ui];      /* captured units left r.units */
 }
 static int R(int n) { return (int)((rng_next() * (uint32_t)n) >> 15); }
+static int power_strength_units(void);
+static int power_strength_rival(int rn);
+
+/* Benjamin Franklin = @FATHERS row 19 = power_attribute_bit 0x13 */
+static int franklin_owned(void) {
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (strcmp(dat_fathers[i].name, "Benjamin Franklin") == 0)
+            return ((CS.powers[cs_nation()].founding_fathers >> i) & 1) != 0;
+    return 0;
+}
+/* The post-treaty GRACE timer (JS stampTreatyTimer): the meeting handler's
+ * tail @0x59AF4..@0x59B31 writes timer[b][a] = (6 - difficulty) * 2, halved
+ * under Franklin, whenever war[a][b] & 0x40 stands at the end of a run
+ * (a = the human, b = the AI). */
+static void stamp_treaty_timer(int a, int b) {
+    if (!(CR.treaty_matrix[a][b] & REL_TREATY)) return;
+    int t = (6 - (int)cs_difficulty()) * 2;
+    if (franklin_owned()) t >>= 1;
+    CR.rel_timer[b][a] = (uint8_t)t;
+}
+/* The AI power turn's RELATION CYCLE (func_052F7E @0x53152..@0x531AE, JS
+ * relationCycle): per European row t in order, a GRIEVANCE with a zero
+ * timer resolves on random_int(0,3) == 0 -- war[p][t] = (w & 0xB7) | 0x01,
+ * the AI's own row only -- then the timer decrements while nonzero.  The
+ * engine's clock reseed @0x52F95 is NOT mirrored (RULINGS 2026-09-03b). */
+static void relation_cycle(int p) {
+    for (int t = 0; t < 4; t++) {
+        uint8_t w = CR.war_matrix[p][t];
+        if ((w & REL_GRIEVANCE) && CR.rel_timer[p][t] == 0 && R(4) == 0) {
+            CR.war_matrix[p][t] = (uint8_t)((w & 0xB7) | REL_RESOLVED);
+            CR.treaty_matrix[p][t] = 0;      /* the row's 0x40 went too */
+        }
+        if (CR.rel_timer[p][t]) CR.rel_timer[p][t]--;
+    }
+}
 
 /* powerMetric (game.js:8237): FLAGGED proxy for the [0x941C] strength
  * word — total @UNIT combat over the side's units + 3 per colony. */
@@ -176,8 +211,10 @@ static void meeting_topic(int rn) {
      * Privateer sails for Europe (in G.units order — the crossing-list
      * order is part of the parity contract); either row then falls to
      * the peace hub. */
-    if ((CR.war_matrix[me][rn] & REL_PRIVATEER) && !at_war(me, rn)) {
-        CR.war_matrix[me][rn] &= (uint8_t)~REL_PRIVATEER;
+    /* the bit lives in the AI's row toward the human (set @0x3F0A1 as
+     * war[target][mover], cleared @0x58BE1 as war[b][a], b = the AI) */
+    if ((CR.war_matrix[rn][me] & REL_PRIVATEER) && !at_war(me, rn)) {
+        CR.war_matrix[rn][me] &= (uint8_t)~REL_PRIVATEER;
         ev_emit((CR.woi_flags & WOI_DECLARED) ? "PIRACYUSA" : "PIRACY",
                 0, 0, dat_nations[me].adjective, dat_regionname[rn]);
         int k = ask_choice();
@@ -333,6 +370,7 @@ void run_meeting(int rn, int via_ship) {
     CR.parley_lock[rn] = (uint16_t)(cs_turn() + PARLEY_LOCKOUT);
     ev_emit(key, 0, 0, dat_regionname[rn], 0);
     meeting_topic(rn);
+    stamp_treaty_timer(cs_nation(), rn);     /* the handler's tail @0x59AEE */
 }
 
 /* Relation accessors for the command layer (colopy_cmd.c) — the REL
@@ -341,18 +379,73 @@ int rel_at_war(int a, int b) { return at_war(a, b); }
 int rel_have_treaty(int a, int b) { return have_treaty(a, b); }
 int rel_parley_eligible(int rn) { return parley_eligible(rn); }
 void rel_declare_war(int a, int b) { declare_war_on(a, b); }
+/* func_03ECF0 @0x3F099..@0x3F0ED (a = the mover, b = the target): the
+ * attribution lands in the TARGET's row, war[b][a] |= 0x80; then
+ * random_int(0,100) < difficulty+1 = the privateer is identified, and the
+ * weaker target ([0x941C] strength census, the ports' attack+combat proxy)
+ * declares WAR while a stronger one holds a GRIEVANCE. */
 void rel_set_privateer(int a, int b) {
-    CR.war_matrix[a][b] |= REL_PRIVATEER;   /* setWar(.., PRIVATEER, true) */
+    CR.war_matrix[b][a] |= REL_PRIVATEER;
+    if (R(101) < (int)cs_difficulty() + 1) {
+        int sb = power_strength_rival(b), sa = power_strength_units();
+        CR.war_matrix[b][a] |= sb < sa ? REL_WAR : REL_GRIEVANCE;
+    }
 }
 
-/* checkContact (game.js:7317): every imported rival is already met
- * (importer game.js:10333 seeds met: true), so this is a no-op until
- * fresh-game seeding lands — kept for pipeline-order fidelity. */
+/* checkContact (game.js:10130): a rival is met once any of its units or
+ * colonies lies within the 5x5 box of one of ours; the CONTACT bit 0x20
+ * is written both ways (rel_or @0x5A1C6), the fanfare 0x8020+n plays and
+ * the first contact of all fires woodcut 10.  A seedRivals rival carries
+ * no gold: the JS rolls 1000 + floor(rand*4000) here. */
 static void check_contact(void) {
+    int me = cs_nation();
     for (int rn = 0; rn < 4; rn++) {
-        if (rn == (int)cs_nation()) continue;
-        if (CR.rivals[rn].met) continue;
-        /* TBD with seedRivals: the near-scan + REL.MET + woodcut 10 */
+        if (rn == me) continue;
+        rival_rt *r = &CR.rivals[rn];
+        if (r->met) continue;
+        int seen = 0;
+        for (int k = 0; k < CR.n_runits[rn] && !seen; k++) {
+            int ui = CR.runits_order[rn][k];
+            int x = CR.runit_x[ui], y = CR.runit_y[ui];
+            for (int q = 0; q < CR.n_units_order && !seen; q++) {
+                const UnitRecord *u = &CS.units[CR.units_order[q]];
+                if (abs(u->map_x - x) <= 2 && abs(u->map_y - y) <= 2) seen = 1;
+            }
+            for (int ci = 0; ci < CS.n_colonies && !seen; ci++) {
+                const ColonyRecord *c = &CS.colonies[ci];
+                if ((c->owner_power & 3) == me &&
+                    abs(c->map_x - x) <= 2 && abs(c->map_y - y) <= 2) seen = 1;
+            }
+        }
+        for (int k = 0; k < r->n_col && !seen; k++) {
+            int x = r->col[k].x, y = r->col[k].y;
+            for (int q = 0; q < CR.n_units_order && !seen; q++) {
+                const UnitRecord *u = &CS.units[CR.units_order[q]];
+                if (abs(u->map_x - x) <= 2 && abs(u->map_y - y) <= 2) seen = 1;
+            }
+            for (int ci = 0; ci < CS.n_colonies && !seen; ci++) {
+                const ColonyRecord *c = &CS.colonies[ci];
+                if ((c->owner_power & 3) == me &&
+                    abs(c->map_x - x) <= 2 && abs(c->map_y - y) <= 2) seen = 1;
+            }
+        }
+        if (!seen) continue;
+        r->met = 1;
+        snd_play(0x8020 + rn);
+        CR.war_matrix[me][rn] |= REL_CONTACT;
+        CR.war_matrix[rn][me] |= REL_CONTACT;
+        r->attitude = 8;
+        if (r->gold_undef) {
+            r->gold_undef = 0;
+            r->gold = 1000 + R(4000);
+        }
+        if (!CR.met_anyone) {
+            CR.met_anyone = 1;
+            if (!(CR.wc_seen & (1u << 10))) {
+                CR.wc_seen |= 1u << 10;
+                if (colopy_front_live) { CR.wc_show = 10; CR.wc_after = 0; }
+            }
+        }
     }
 }
 
@@ -367,6 +460,9 @@ void rival_turn(void) {
         /* the pass's Europe update (func_0363A2 @0x2F218, after the
          * colony loop): the rival's own market drifts on its own pool */
         market_drift_of(rn);
+        /* func_052F7E order: colony pass -> census -> the RELATION CYCLE
+         * (@0x53152) -> orders -> the Europe pass */
+        relation_cycle(rn);
         int war = at_war(cs_nation(), rn);
         /* r.units order (the CR list): ships-then-land at import, plus
          * succession appends.  JS iterates a slice() snapshot; the only
@@ -652,6 +748,16 @@ static void news_tick(void) {
             if (v >= thr) {
                 r->independent = 1;
                 ev_emit("OTHERGRANTED", v, pop, dat_nations[rn].country, 0);
+                /* the diplomacy RESET (@0x2F741..@0x2F771): rel_or(p, q,
+                 * 0x40) then rel_clear(p, q, 0xBB), both rows -- the new
+                 * nation keeps only TREATY (and 0x04) toward everyone */
+                for (int q = 0; q < 4; q++) {
+                    if (q == rn) continue;
+                    CR.war_matrix[rn][q] = (uint8_t)((CR.war_matrix[rn][q] | 0x40) & 0x44);
+                    CR.war_matrix[q][rn] = (uint8_t)((CR.war_matrix[q][rn] | 0x40) & 0x44);
+                    CR.treaty_matrix[rn][q] |= REL_TREATY;
+                    CR.treaty_matrix[q][rn] |= REL_TREATY;
+                }
             } else if (v > (int)r->last_pct) {
                 r->last_pct = (uint8_t)v;
                 ev_emit("OTHERMIGHT", v, pop, dat_nations[rn].country, 0);

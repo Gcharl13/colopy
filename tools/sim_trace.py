@@ -517,6 +517,8 @@ PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
       rgold: G.rivals.map(r => r.gold | 0),
       war: [0, 1, 2, 3].map(a => [0, 1, 2, 3].map(b => relWar(a, b))),
       treaty: [0, 1, 2, 3].map(a => [0, 1, 2, 3].map(b => relTreaty(a, b))),
+      rtimer: [0, 1, 2, 3].map(a => [0, 1, 2, 3].map(b =>
+        (G.relTimer && G.relTimer[relKey(a, b)]) | 0)),
       rcol: G.rivals.flatMap(r => r.colonies.filter(c => c.colonists).map(c => ({
         name: c.name, pop: c.colonists.length, hammers: c.hammers | 0,
         fe: c.dbgFE || [0, 0], stock: c.stock.slice() }))),
