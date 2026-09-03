@@ -12397,3 +12397,39 @@ open the colony screen but no building completes first — so the cue is
 byte-bound but unexercised by the oracles; all five input scenarios, the
 four sim oracles (incl. `raid`) and the render set stayed green across the
 change, i.e. it is verified not to fire when it should not.
+
+## 2026-09-03i4 — C1.19 residue narrowed: the STAY candidate's own terms, and where the foreign-stack branch goes
+
+Read this session while looking for portable leftovers in the brave
+mover `func_046FFA` (the C1.19 residue core-b flagged):
+
+1. **The STAY candidate (index 8) has two terms the ports do not carry.**
+   `cmp [bp-0x34],8 / je 0x47a26` @0x0479EB routes it to its own block:
+   `func_0073A8([bp+6], 2)` (thunk 0x181F:0x8BC) @0x047A26..0x047A2B, then
+   `dec ax / neg ax / imul ax,ax,0x28 / add [bp-0x24],ax`
+   @0x047A33..0x047A39 — i.e. **`(1 - q) * 40`** added to the score, so
+   q = 0 is +40, q = 1 is 0, q = 2 is -40. Then, when `[bp-0x6a] == 0`,
+   a wander roll `random_int(0, (tribe_level + 1) * 4) == 0` costs
+   **-25** (`sub [bp-0x24],0x19` @0x047A5E, tribe level from
+   `[0x8D4E]+2` @0x047A42..0x047A4C).
+2. **The own-tribe stack penalty is -40, and it does NOT reject.** With a
+   unit of the SAME owner on the candidate (`[bp-0x5e] >= 0` and
+   `[bp-0x94] == [bp-0x5e]` @0x0479F1..0x0479FE), two queries
+   (0x181F:0x7E0 then 0x181F:0x2E4) decide between `sub [bp-0x24],0x28`
+   @0x047A20 and a jump to 0x4738A. **Both ports instead REJECT every
+   occupied candidate outright**, so a brave can never stack — a real
+   behavioural difference, still unported.
+3. **The foreign-owner case falls straight through to the heading-continuity
+   block** (`jne 0x47a62` @0x0479FE → @0x047A62, the +4 / +3 / -6 terms the
+   ports already carry), so there is no separate "attack the stack" score
+   term here; the strength contest core-b flagged is elsewhere.
+
+**Blocker, named**: `func_0073A8` @0x0073A8 is a 15-way dispatcher on its
+second argument (`cmp ax,0xe / shl ax,1 / jmp word ptr cs:[bx+0xd78]`
+@0x0073D4..0x0073E2) over the tile's resolved unit chain
+(`unit_chain_resolve` @0x0073B6); case **2** is the stay-term's query and
+its arm must be decoded from the table at `cs:0xd78` — the listing is
+desynced there, so it needs capstone. `[bp-0x6a]`, `[bp-0x5c]` and the
+0x181F:0x7E0 / 0x2E4 queries are likewise unread. **Nothing was ported
+from this section**: adding the stay bias without case 2 would be a guess,
+and it moves every brave (a full turns re-baseline).
