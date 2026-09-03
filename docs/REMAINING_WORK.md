@@ -765,9 +765,18 @@ raid rows (the `RAIDSHIP` pair in order), `INDIANBURNCOLONY` 0x53 + tune 0x32,
 `0x8020 + power`** (@0x58040..0x58097) fires in the JS `checkContact`; the C
 `check_contact` is still a stub (B-track), so the C emits none — no scripted
 scenario meets a rival, which is why the oracle does not see the gap.
-**Still TBD, with the blocker named:** #6 colony-open 0x54 (gated on `[0x34A]`,
-which only the BUILT report's zoom arm sets @0x2D2F7 — neither port has that
-arm); #32 the native-attacker sound `0x3B + type` (no native unit attacks
+**#6 CLOSED 2026-09-03** (RULINGS 2026-09-03i3): `[0x34A]` is a BUILDING
+INDEX armed by construction completion (`mov [0x34a],ax` @0x02D2F7, guarded
+by `[bp-2]==1` @0x02D2E2 and the excluded indices 0x10/0x1F
+@0x02D2E8..0x02D2F2); the colony screen highlights that building twice while
+the slot is `>= 0` (@0x02C61E/@0x02C640) and sounds **0x54** at the tail
+(@0x02C65D..0x02C660); the teardown resets it (@0x02EAB2). Both engines now
+carry the arm, the cue on the shared screen edge (`screenEdge`/`screen_edge`,
+the B4.2 hook) and the reset. FLAGGED: `[bp-2]` is read as "a building
+completed in the human player's colony"; the zoom HIGHLIGHT is not drawn. No
+fixture arms the slot, so the cue is byte-bound but unexercised — the oracles
+confirm only that it does not fire when it should not.
+**Still TBD, with the blocker named:** #32 the native-attacker sound `0x3B + type` (no native unit attacks
 through either port's resolver); #3 the Sound Test (needs the `@CUP` cheat
 menu and DEBUG.TXT in the bundles — the engine entry is `au_cmd(n)`, §11);
 the cooldown re-parley of #23; #4's meaning. The fallback `sfx_play()` still

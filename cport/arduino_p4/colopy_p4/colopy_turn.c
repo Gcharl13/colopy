@@ -108,6 +108,7 @@ int rt_sol(int ci) { return CR.col[ci].sol; }
 void cr_reset_from_load(void) {
     memset(&CR, 0, sizeof(CR));
     memset(CR.unit_route, 0xFF, sizeof(CR.unit_route));   /* -1 = none */
+    CR.built_zoom = -1;                  /* [0x34A] starts empty (F4) */
     CR.zoom_colony = -1;
     CR.father_in_progress = -1;
     for (int n = 0; n < 4; n++) CR.king_war_stamp[n] = -1;
@@ -911,9 +912,31 @@ static void advance_construction(int ci, int hammers) {
                     dat_nations[cur_power()].adjective);
         }
     }
+    /* THE BUILT-ZOOM (F4, 2026-09-03): a completed BUILDING arms
+     * `[0x34A]` with its index -- `mov [0x34a],ax` @0x02D2F7, guarded by
+     * the answer flag `[bp-2] == 1` @0x02D2E2 and the two excluded
+     * indices 0x10 / 0x1F (@0x02D2E8..0x02D2F2).  The colony screen then
+     * runs its second draw pass only while `[0x34A] >= 0` (@0x02C61E /
+     * @0x02C640), highlighting that building twice (0x181F:0xBBE with
+     * flag 0 then 1), and plays sound 0x54 at the end
+     * (@0x02C65D..0x02C660); the screen's teardown resets it to -1
+     * (@0x02EAB2).  Ported: the arm, the exclusions, the cue and the
+     * reset.  FLAGGED: `[bp-2]` is set above this function's window and
+     * is read here as "the completed item is a BUILDING of the human
+     * player's colony" (the unit branch spawns at @0x02D224 instead);
+     * the two-frame zoom HIGHLIGHT itself is not drawn. */
+    if (cur_is_human() && bip != 0x10 && bip != 0x1F)
+        CR.built_zoom = (int8_t)bip;
     c->building_in_production = 0xFF;
     cev("BUILT", 0, 0, c->name, b->name);
 }
+
+/* The colony screen's BUILT-ZOOM edge: entering plays sound 0x54 when a
+ * building is armed, leaving resets the slot (@0x02C65D / @0x02EAB2). */
+void colony_screen_open(void) {
+    if (CR.built_zoom >= 0) snd_play(0x54);
+}
+void colony_screen_close(void) { CR.built_zoom = -1; }
 
 /* exported for the input layer's rushBuy mirror (game.js:3208) */
 void colony_advance_construction(int ci, int hammers) {

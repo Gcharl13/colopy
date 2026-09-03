@@ -332,6 +332,8 @@ void check_intervention(void);        /* checkIntervention (game.js:9327) */
 void refs_push(int ui);               /* G.refUnits.push */
 void end_game_sequence(void);         /* endGameSequence (game.js:8119) */
 int  score_panel(const score_parts_t *s);   /* func_03A9C0's band, -1 none */
+void colony_screen_open(void);        /* the BUILT-zoom cue (F4) */
+void colony_screen_close(void);       /* [0x34A] = -1 */
 void sav_tail_init(void);             /* a new game's zero tail (colopy_sav.c) */
 #define COLOPY_ATT_LOG 64
 int  colopy_att_log(int i, int16_t out[10]);   /* this turn's attacks */
@@ -536,6 +538,9 @@ typedef struct {
     uint8_t succession;          /* spanishSuccession latch */
     uint8_t retired, soon_warned;
     uint8_t scored;              /* G.scored (the SCORED answer latch) */
+    int8_t  built_zoom;          /* [0x34A]: the just-built BUILDING the
+                                  * colony screen zooms to and sounds
+                                  * (0x54); -1 = none (F4, 2026-09-03) */
     uint16_t boycotts;           /* G.boycotts — RUNTIME, [] at import
                                   * (game.js:10287); the record's +0x20
                                   * word is NOT what the JS reads */

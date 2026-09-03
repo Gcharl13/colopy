@@ -12356,3 +12356,44 @@ whether the DOS number is the type allowance, a different field, or a
 different label entirely. The search is narrowed: it is not the type-table
 block above, and it reads no move state. `[0x2E3C]`, `[0x2F24]`, `[0x2F26]`
 (the strings the type-table block appends) are unidentified.
+
+## 2026-09-03i3 — the BUILT-zoom: what `[0x34A]` is, and the colony screen's 0x54 cue (F4)
+
+**Conflict**: `spec/ui/options_dialogs.md` §10 row 6 carried "`0x54` TBD —
+neither port's `BUILT` notice has the zoom arm that sets `[0x34A]`", and
+the audio track left the colony-open cue unwired.
+
+**Read** (`data_extracted/disassembly/VICEROY_annotated.asm`):
+
+1. **`[0x34A]` is a BUILDING INDEX, armed by construction completion.**
+   The construction-completed handler stores `[bp-8]` into it — `mov
+   [0x34a],ax` @0x02D2F7 — guarded by `cmp [bp-2],1` @0x02D2E2 and by two
+   excluded indices, `0x10` and `0x1F` (@0x02D2E8..0x02D2F2). `[bp-8]` is
+   the completed BUILD TARGET (the same local the unit branch feeds to
+   `spawn_unit` 0x181F:0x95C @0x02D224, i.e. the `0x2A + u` encoding of
+   C3.7), so the arm is the BUILDING case only.
+2. **The colony screen consumes it twice, then sounds 0x54.** The second
+   draw pass runs only while `[0x34A] >= 0` (`jl` @0x02C61E and
+   @0x02C640): `0x181F:0xBBE([0x34A], 0)`, draw, `0x181F:0xBBE([0x34A],
+   1)`, draw, then `mov ax,0x54 / lcall 0x181F,0x4C0`
+   (@0x02C65D..0x02C660) — the sound is the TAIL of a two-frame highlight
+   of the building just built, not a generic colony-open cue.
+3. **The screen's teardown resets it** — `mov word [0x34a],0xFFFF`
+   @0x02EAB2, the last statement before that function's epilogue.
+
+**Ported** (both engines, on the screen edge the B4.2 tutorial hook
+already shares — `screenEdge` / `screen_edge`): the arm at the BUILT emit
+with both exclusions, `sfx(0x54)` / `snd_play(0x54)` on entering the
+colony screen with the slot armed, and the reset on leaving. The slot is
+`G.builtZoom` / `CR.built_zoom` (initialised to -1 after the CR memset —
+0 is a valid building index).
+
+**FLAGGED**: `[bp-2]` is set above the handler's window and is read here
+as "a building completed in the HUMAN player's colony"; the two-frame zoom
+HIGHLIGHT itself is not drawn (a render item, not an audio one).
+
+**Coverage (honest limit)**: no fixture arms the slot — the input scripts
+open the colony screen but no building completes first — so the cue is
+byte-bound but unexercised by the oracles; all five input scenarios, the
+four sim oracles (incl. `raid`) and the render set stayed green across the
+change, i.e. it is verified not to fire when it should not.

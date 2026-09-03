@@ -842,6 +842,8 @@ const G = {
   // external sound driver, which does not port; Pick Music still writes it.
   tune: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
+  builtZoom: -1,          // [0x34A]: the just-built building the colony
+                          // screen zooms to and sounds (0x54); -1 = none
   combat: null,            // the Combat Analysis panel's live figures
   combatAnalysis: true,    // Game Options bit 0x0200
   mapSeed: 0, rumoursDone: new Set(), rumourFloor: 1,
@@ -5011,6 +5013,11 @@ function advanceConstruction(c, hammers) {
                                   STRING1: DATA.nations[G.nation].adjective,
                                   NUMBER0: 1, NUMBER1: G.tax });
     }
+  }
+  // the BUILT-ZOOM arm ([0x34A] @0x02D2F7; see screenEdge for the chain)
+  {
+    const bi = DATA.buildings.findIndex(d => d.name === b.name);
+    if (bi !== 0x10 && bi !== 0x1F) G.builtZoom = bi;
   }
   c.building = null;
   // @BUILT: "%STRING0 colony produces {%STRING1}." (STRING0=colony, STRING1=the
@@ -11638,6 +11645,18 @@ function tutOnce(n, subs) {
 // at draw time (a headless harness never draws).
 function screenEdge(prev) {
   if (G.screen === prev) return;
+  // The BUILT-ZOOM cue rides the same edge (F4, 2026-09-03): a completed
+  // BUILDING arms [0x34A] with its index (`mov [0x34a],ax` @0x02D2F7, gated
+  // by the answer flag [bp-2]==1 @0x02D2E2 and the excluded indices 0x10 /
+  // 0x1F @0x02D2E8..0x02D2F2); the colony screen runs its second draw pass
+  // only while [0x34A] >= 0 (@0x02C61E/@0x02C640), highlighting that
+  // building twice, and plays sound 0x54 at the end (@0x02C65D..0x02C660);
+  // the teardown resets the slot to -1 (@0x02EAB2). FLAGGED: [bp-2] is set
+  // above that function's window and is read here as "a BUILDING completed
+  // in the human player's colony" (the unit branch spawns @0x02D224
+  // instead); the two-frame zoom HIGHLIGHT itself is not drawn.
+  if (G.screen === 'colony') { if (G.builtZoom >= 0) sfx(0x54); }
+  else if (prev === 'colony') G.builtZoom = -1;
   if (G.screen === 'colony')
     tutOnce(4, { STRING0: DATA.cargo[GOOD.FOOD].name,
                  STRING1: DATA.cargo[GOOD.LUMBER].name });

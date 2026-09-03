@@ -2190,6 +2190,11 @@ static void in_key_body(const char *k, int alt, int shift);
 static void in_click_body(int mx, int my, int right);
 static void screen_edge(int prev) {
     if (UI.screen == prev) return;
+    /* the BUILT-ZOOM cue rides the same edge (F4, 2026-09-03): entering
+     * the colony screen with [0x34A] armed sounds 0x54 (@0x02C65D), and
+     * the screen's teardown clears the slot (@0x02EAB2) */
+    if (UI.screen == SCR_COLONY) colony_screen_open();
+    else if (prev == SCR_COLONY) colony_screen_close();
     if (UI.screen == SCR_COLONY)
         tut_once(4, 0, 0, dat_cargo[FOOD].name, dat_cargo[LUMBER].name);
     else if (UI.screen == SCR_EUROPE)
