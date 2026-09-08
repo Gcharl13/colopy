@@ -12433,3 +12433,77 @@ desynced there, so it needs capstone. `[bp-0x6a]`, `[bp-0x5c]` and the
 0x181F:0x7E0 / 0x2E4 queries are likewise unread. **Nothing was ported
 from this section**: adding the stay bias without case 2 would be a guess,
 and it moves every brave (a full turns re-baseline).
+
+## 2026-09-08a — Sibling-port review: what was verified, what was adopted, what waits on its JS
+
+A parallel port of this tree (branched after 2026-09-03) was handed over
+as its generated P4 sketch plus three docs (`MEMORY_BUDGET.md`,
+`PORT_LEDGER.md`, `README.md`) — **without its `game.js` or its tools**.
+Reviewed against the disassembly and this tree's oracles:
+
+**Byte claims re-read here, and they hold:**
+1. **Six cargo quantity bytes at `UnitRecord +0x10..+0x15`.** The getter
+   `func_00B2F0` @0x00B2F0..0x00B303 and the setter `func_00B304`
+   @0x00B304..0x00B318 both index `[bx + si + 0x3154]` with
+   `si = unit * 0x1C` and `bx = slot` — one byte per slot from the record's
+   +0x10 (the unit table base is 0x3144), for any slot the caller passes.
+   Our `colopy_records.h` maps only `cargo_amount[2]` and keeps +0x12..+0x14
+   as `_pad` with +0x15 = tools; the sibling's union (six quantities for a
+   carrier, +0x15 aliased as a land unit's tools) is the byte-true shape.
+   **Not adopted yet**: the codec, the Europe fleet and the crossing state
+   fold through it, and those are sim-side — they land only in lockstep
+   with a JS that carries the same change (RULINGS 2026-09-02 lockstep
+   rule). Recorded as ledger row B4.8.
+2. **Four Customize-World selectors at DGROUP `0x1E7E..0x1E84`**, each
+   0..2: the customize screen's key handler cycles the axis in `[0xA60A]`
+   mod 4 (@0x070158..0x070164) and steps the value `(v+2)%3` / `(v+1)%3`
+   through `[bx + 0x1E7E]`, `bx = 2*axis` (@0x070198..0x0701AD,
+   @0x0701BA..0x0701C8); the generator reads them at @0x0644AE,
+   @0x06487C.., @0x0649FA/@0x0649FD (`[0x1E84] + [0x1E7E]`), @0x064AAD..
+   The sibling's `SCR_CUSTOMIZE` / `colopy_mapgen.c` build on that; its
+   README itself files the generator's helper details as reconstructions.
+   **Not adopted**: same lockstep reason — a map generator is the biggest
+   RNG consumer there is, and its JS twin is not in hand.
+
+**Adopted (board shell, no sim effect, all gates green):**
+- `COLOPY_EXTERNAL_FRAMEBUFFER` — `RD.fb` becomes a pointer on the P4
+  build (auto-selected by `ARDUINO_ESP32P4_DEV`), bound to a PSRAM buffer
+  with `rd_bind_framebuffer()` before `rd_init()`. ~75 KB of internal DRAM
+  back, the biggest single lever against the 2026-09-03 overflow
+  (`cport/MEMORY_BUDGET.md`). Host/Teensy unchanged (inline array).
+- `sd_read_file()` refuses a null buffer and an over-long name instead of
+  opening a clipped path; the serial shell rejects an over-long or
+  control-byte line whole instead of executing its prefix.
+- The audio banner in the generated sketch no longer invites an EMPTY
+  `#define COLOPY_AUDIO` (a compile error under `#if COLOPY_AUDIO`);
+  it documents `#define COLOPY_AUDIO 0` as the mute switch. The default
+  stays ON here — the sibling ships it off citing no physical acceptance,
+  and this tree has none on record either (`docs/AUDIO_PORT.md` "A/B
+  listen pass" is still empty); that is a user call, not a byte fact.
+- `sketch.yaml` (arduino-cli profile) written by the generator: the IDE
+  Tools-menu steps transcribed, `huge_app` partitions (the sketch is
+  ~1.03 MB, so the sibling's custom 4,000 KiB table is not needed).
+- `tools/ino_mock/check.sh` gains two passes: the sketch under the P4
+  board macro, and every C unit under the pointer layout.
+
+**Reviewed and NOT adopted, with the reason:**
+- Its pointer-phase input transport (`colopy_transport.h`,
+  `shell_pointer`, `IN_POINTER_DOWN/MOVE/UP/CANCEL`), the serial `p`
+  pointer command and the `debug` scenario console: all sit on an input
+  layer that diverged from ours (`ui_europe_dialog_buy`,
+  `ui_colony_transfer_destination`, `colopy_pending_events`, pager hit
+  tests on every screen). Adoptable only with its `colopy_input.c` AND the
+  JS that the input oracle compares it against.
+- `PowerRecord` field names (+0x00 flags, +0x02 immigrant pool, +0x0E..
+  +0x1A per-turn bells/crosses/father/count/razed/SoL/announced, +0x26
+  sales tally, +0x32 home x/y) and `AIPersonality +0x30/+0x32`: plausible
+  and partly matching our own readings, but the sibling cites no offsets
+  for them and none were re-read here — **TBD**, not copied.
+- `BLE` wording and `COLOPY_AUDIO 0` default: policy, left as ours.
+- `esp_ldo_channel_config_t` designated-initialiser rewrite, the
+  removed audio-off stubs: cosmetic / compiler-specific, no effect here.
+- Its docs cite tools this tree does not have (`tools/p4_release.py`,
+  `tools/verify_corrected.py`, `tools/gen_port_ledger.py`,
+  `tools/build_msvc_host.ps1`, `cport/p4/ACCEPTANCE.md`,
+  `spec/systems/map_generation.md`, `spec/ui/interaction_completion.md`);
+  nothing was written here to stand in for them.

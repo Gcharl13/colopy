@@ -30,6 +30,14 @@ __attribute__((section(".dmabuffers"), aligned(32)))
 #endif
 rd_state RD;
 
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+int rd_bind_framebuffer(uint8_t *buffer, size_t length) {
+    if (!buffer || length < (size_t)RD_W * RD_H) return 0;
+    RD.fb = buffer;
+    return 1;
+}
+#endif
+
 static uint32_t rd32(const uint8_t *p) {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
            ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
@@ -89,7 +97,15 @@ const uint8_t *rd_sheet_pal(const rd_entry *sheet) {
 }
 
 int rd_init(const uint8_t *pak_buf, uint32_t pak_len) {
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+    uint8_t *fb = RD.fb;              /* survives the memset below */
+    if (!fb) return 0;                /* rd_bind_framebuffer first */
+#endif
     memset(&RD, 0, sizeof(RD));
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+    RD.fb = fb;
+    memset(RD.fb, 0, (size_t)RD_W * RD_H);
+#endif
     if (!rd_pak_open(&RD.pak, pak_buf, pak_len)) return 0;
     if (!rd_pak_find(&RD.pak, "TERRAIN.SS", &RD.terrain)) return 0;
     if (!rd_pak_find(&RD.pak, "PHYS0.SS", &RD.phys0)) return 0;

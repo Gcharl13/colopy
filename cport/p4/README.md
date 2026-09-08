@@ -64,7 +64,16 @@ choice — the DOS game is 200 rows) is not shown here.
   | `v` | render the map view |
   | `k <name>` | inject a key as if typed on the board |
   | `w` | loop-task stack high-water mark — the diagnostic that caught the landing-ashore crash (`stack_report`) |
-  | `m` | memory census: internal SRAM and PSRAM free/total/largest block, our four PSRAM buffers, and the stack mark. Measured on the board, never quoted — see `cport/MEMORY_BUDGET.md` |
+  | `m` | memory census: internal SRAM and PSRAM free/total/largest block, our PSRAM buffers (panel fb, pak, save, and since 2026-09-08 the engine's indexed framebuffer — `COLOPY_EXTERNAL_FRAMEBUFFER`, `cport/MEMORY_BUDGET.md`), and the stack mark. Measured on the board, never quoted |
+
+  A line longer than the 159-byte buffer or carrying a control byte
+  is rejected whole at its newline (nothing executed) — the shell used
+  to clip and run the prefix.
+
+The generated sketch folder also carries a `sketch.yaml` build profile
+(`arduino-cli compile --profile colopy-p4`) that writes down the same
+Tools-menu choices as the IDE steps; it is the IDE settings transcribed,
+not an arduino-cli build this tree has run.
 - **No USB keyboard**: Elecrow's Arduino USB example is device-mode
   HID only (`elecrow_ref/lesson06_usb.ino`) — the P4 Arduino core has
   no host-keyboard path today, hence touch + serial.

@@ -115,6 +115,14 @@ static LCD *g_lcd = nullptr;
 static uint16_t *fbuf = nullptr;      /* 1024x600 RGB565, in PSRAM */
 static uint8_t *pakbuf = nullptr;     /* COLOPY.PAK from SD, in PSRAM */
 static uint8_t *savbuf = nullptr;     /* .SAV image buffer (~80 KB) */
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+/* the engine's 320x240 indexed framebuffer (RD.fb), in PSRAM: bound
+ * with rd_bind_framebuffer() before rd_init().  This was the largest
+ * single static in internal DRAM (76,800 B of the 320 KB) until the
+ * 2026-09-03 build overflowed it -- cport/MEMORY_BUDGET.md.  The panel
+ * flush reads it once per frame, so PSRAM speed is not on the hot path. */
+static uint8_t *game_fbuf = nullptr;
+#endif
 /* COLOPY.PAK is 3,148,409 B today. The old 3,500,000 cap left 10% headroom
  * and every asset still to ship (Part E of docs/REMAINING_WORK.md: 139 .SS
  * and 7 .PIK sheets) grows it. 8 MB of the P4's 32 MB PSRAM is cheap —
@@ -424,8 +432,14 @@ static void sd_mount(void) {
 
 /* read a whole SD file into buf; returns the byte count, 0 on error */
 static size_t sd_read_file(const char *name, uint8_t *buf, size_t cap) {
+    if (!name || !buf || !cap) return 0;      /* a failed PSRAM alloc */
     char path[96];
-    snprintf(path, sizeof(path), "/sdcard/%s", name);
+    int plen = snprintf(path, sizeof(path), "/sdcard/%s", name);
+    if (plen < 0 || (size_t)plen >= sizeof(path)) {
+        /* a clipped name would open SOME OTHER file, or none, silently */
+        Serial.println("SD: file name too long, nothing opened");
+        return 0;
+    }
     FILE *f = fopen(path, "rb");
     if (!f) return 0;
     /* Size it first. A plain fread(cap) on an oversize file returns a
@@ -1857,6 +1871,12 @@ static void mem_report(void) {
     Serial.printf("our PSRAM:     fbuf %u, pakbuf %u, savbuf %u\n",
                   (unsigned)((size_t)P4_W * P4_H * 2), (unsigned)PAKBUF_CAP,
                   (unsigned)SAVBUF_CAP);
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+    Serial.printf("game PSRAM:    indexed framebuffer %u, bound %s\n",
+                  (unsigned)((size_t)RD_W * RD_H), game_fbuf ? "yes" : "NO");
+#else
+    Serial.println("game fb:       inline in RD (internal DRAM)");
+#endif
     stack_report("now");
 }
 
@@ -2137,7 +2157,16 @@ void setup() {
                                         MALLOC_CAP_SPIRAM);
     pakbuf = (uint8_t *)heap_caps_malloc(PAKBUF_CAP, MALLOC_CAP_SPIRAM);
     savbuf = (uint8_t *)heap_caps_malloc(SAVBUF_CAP, MALLOC_CAP_SPIRAM);
-    if (!fbuf || !pakbuf || !savbuf)
+    bool game_fb_ready = true;
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+    /* MALLOC_CAP_8BIT: the renderer writes single bytes; PSRAM on the
+     * P4 is byte-addressable but say so rather than assume it */
+    game_fbuf = (uint8_t *)heap_caps_malloc((size_t)RD_W * RD_H,
+                                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    game_fb_ready = game_fbuf &&
+                    rd_bind_framebuffer(game_fbuf, (size_t)RD_W * RD_H);
+#endif
+    if (!fbuf || !pakbuf || !savbuf || !game_fb_ready)
         Serial.println("PSRAM alloc FAILED (is PSRAM enabled in Tools?)");
     if (fbuf && g_lcd) {                     /* black screen + pillarbox */
         memset(fbuf, 0, (size_t)P4_W * P4_H * 2);
@@ -2153,7 +2182,7 @@ void setup() {
     stack_report("boot");
     Serial.println("colopy shell ready (l/t/d/i/s/v/g/k)");
 
-    if (sd_ready && fbuf && g_lcd) {
+    if (sd_ready && fbuf && pakbuf && savbuf && game_fb_ready && g_lcd) {
 #ifdef COLOPY_AUTOBOOT
         /* skip the title: straight into the named save (banner config) */
         cmd_load(COLOPY_AUTOBOOT);
@@ -2232,19 +2261,38 @@ void loop() {
             }
         }
     }
-    static char line[64];
+    /* Serial line framing.  A line longer than the buffer, or one
+     * carrying a control byte (a pasted escape sequence, a dropped
+     * character), is REJECTED whole at its terminator -- the old code
+     * silently clipped the overflow and executed the prefix, which for
+     * `s <name>` writes a differently-named save.  CR, LF and CRLF all
+     * terminate; an empty line is ignored. */
+    static char line[160];
     static size_t len = 0;
+    static bool rejected = false;
     while (Serial.available()) {
         char c = (char)Serial.read();
         if (c != '\n' && c != '\r') {
-            if (len < sizeof(line) - 1) line[len++] = c;
+            if (rejected) continue;
+            if ((unsigned char)c < 32 && c != '\t') { rejected = true; continue; }
+            if ((unsigned char)c == 127 || len >= sizeof(line) - 1) {
+                rejected = true;
+                continue;
+            }
+            line[len++] = c;
             continue;
         }
         line[len] = 0;
         len = 0;
+        if (rejected) {
+            rejected = false;
+            Serial.println("serial: line too long or not plain text -- "
+                           "ignored, nothing executed");
+            continue;
+        }
         if (!line[0]) continue;
         const char *arg = line + 1;
-        while (*arg == ' ') arg++;
+        while (*arg == ' ' || *arg == '\t') arg++;
         switch (line[0]) {
         case 'l': cmd_load(arg); break;
         case 's': cmd_save(arg); break;

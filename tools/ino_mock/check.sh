@@ -27,3 +27,27 @@ if g++ -fsyntax-only -std=gnu++17 -DCOLOPY_BLE_MOUSE=1 $INC sketch_test.cpp \
 else
   echo "MOCK-COMPILE-FAILED (BLE on)"; head -25 /tmp/mockerr_ble; exit 1
 fi
+
+# Third pass: the board macro the real P4 core defines
+# (-DARDUINO_ESP32P4_DEV), which flips colopy_render.h to the external
+# PSRAM framebuffer (COLOPY_EXTERNAL_FRAMEBUFFER=1) -- the sketch's
+# rd_bind_framebuffer() path only exists under it.  The stub headers
+# above do not define it, so without this pass that code is never seen.
+if g++ -fsyntax-only -std=gnu++17 -DARDUINO_ESP32P4_DEV $INC sketch_test.cpp \
+     2> /tmp/mockerr_p4; then
+  echo "MOCK-COMPILE-OK (ESP32P4_DEV, external framebuffer)"
+else
+  echo "MOCK-COMPILE-FAILED (ESP32P4_DEV)"; head -25 /tmp/mockerr_p4; exit 1
+fi
+
+# ...and the C side of the same choice: every render/game/core unit of the
+# sketch must still compile with RD.fb a pointer (the host build only ever
+# sees the inline array).
+if gcc -fsyntax-only -std=c99 -Wall -Werror -DCOLOPY_EXTERNAL_FRAMEBUFFER=1 \
+     -I../../cport/arduino_p4/colopy_p4 ../../cport/arduino_p4/colopy_p4/*.c \
+     2> /tmp/mockerr_fb; then
+  echo "MOCK-COMPILE-OK (C units, external framebuffer)"
+else
+  echo "MOCK-COMPILE-FAILED (C units, external framebuffer)"
+  head -25 /tmp/mockerr_fb; exit 1
+fi

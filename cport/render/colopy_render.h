@@ -27,6 +27,22 @@ extern "C" {
 #define RD_GAME_H 200                 /* the Mode 13h logical screen */
 #define RD_TRANSPARENT 0xFD           /* .SS transparent index */
 
+/* Where the 320x240 indexed framebuffer lives.  0 = inline in RD (host,
+ * Teensy: 76,800 B of .bss).  1 = a caller-owned buffer bound with
+ * rd_bind_framebuffer() BEFORE rd_init() -- the ESP32-P4 shell puts it in
+ * PSRAM, which takes the single largest static off the board's 320 KB of
+ * internal DRAM (the 2026-09-03 "data section exceeds available space"
+ * build; cport/MEMORY_BUDGET.md).  Auto-selected for the P4 core's board
+ * macro because the Arduino IDE passes no -D flags: every translation
+ * unit must agree, since the choice changes rd_state's layout. */
+#ifndef COLOPY_EXTERNAL_FRAMEBUFFER
+#if defined(ARDUINO_ESP32P4_DEV)
+#define COLOPY_EXTERNAL_FRAMEBUFFER 1
+#else
+#define COLOPY_EXTERNAL_FRAMEBUFFER 0
+#endif
+#endif
+
 /* ---- pak access (buffer-backed; host mmaps/reads the whole file) ---- */
 typedef struct {
     const uint8_t *buf;
@@ -57,13 +73,25 @@ const uint8_t *rd_sheet_pal(const rd_entry *sheet);
 
 /* ---- framebuffer state ---- */
 typedef struct {
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+    uint8_t *fb;                      /* bound by rd_bind_framebuffer */
+#else
     uint8_t fb[RD_W * RD_H];
+#endif
     uint8_t pal[768];                 /* active RGB888 palette */
     rd_pak pak;
     rd_entry terrain, phys0, icons, woodtile;   /* hot sheets, cached */
 } rd_state;
 
 extern rd_state RD;
+
+#if COLOPY_EXTERNAL_FRAMEBUFFER
+/* Bind caller-owned storage of at least RD_W*RD_H bytes before rd_init;
+ * it must stay alive for as long as anything draws.  Returns 1 on
+ * success, 0 (binding unchanged) for a null or short buffer.  rd_init
+ * keeps the binding across its memset and clears the buffer. */
+int  rd_bind_framebuffer(uint8_t *buffer, size_t length);
+#endif
 
 /* Open the pak, cache the hot sheets, load VICEROY.PAL, clear the fb. */
 int  rd_init(const uint8_t *pak_buf, uint32_t pak_len);

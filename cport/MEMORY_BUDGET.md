@@ -149,6 +149,27 @@ reading it and refuses one that would not fit, because a plain `fread(cap)`
 returns a truncated prefix and `rd_init()` accepts a prefix whose header still
 parses — the pack would have come up quietly missing its tail assets.
 
+**The framebuffer moved to PSRAM on the P4 (2026-09-08).** `RD.fb` — the
+320x240 indexed framebuffer, 76,800 B and the single largest static in the
+`RD` row above — is now a pointer on the P4 build
+(`COLOPY_EXTERNAL_FRAMEBUFFER`, auto-selected in `render/colopy_render.h` by
+the core's `ARDUINO_ESP32P4_DEV` board macro, because the IDE passes no `-D`
+flags and every translation unit must agree on `rd_state`'s layout). The
+shell allocates the buffer with `heap_caps_malloc(..., MALLOC_CAP_SPIRAM |
+MALLOC_CAP_8BIT)` and binds it with `rd_bind_framebuffer()` before
+`rd_init()`, which now refuses to start unbound. That is roughly **75 KB of
+internal DRAM back** on top of the pedia fix — the board's globals line
+should drop from ~315 KB to ~240 KB, but that is a prediction from the
+object sizes until a real IDE build reports it; read the `m` census. The
+flush reads the buffer once per frame (`flush_fb`), so PSRAM speed is off
+the per-pixel path. Host and Teensy keep the inline array, so
+`tools/ram_budget.py` still charges the 76,800 B (it measures host objects
+— the ceiling is unchanged and the gate still holds where it did).
+`tools/ino_mock/check.sh` compiles the sketch a third time with the board
+macro set, and every C unit once with the pointer layout, so the external
+path can no longer rot unseen. This is one of the changes adopted from the
+sibling port reviewed 2026-09-08 (`notes/rulings/RULINGS.md`).
+
 ## Teensy 4.1
 
 Harness: `cport/teensy/` (PlatformIO). SD `.SAV` in, full turns,
