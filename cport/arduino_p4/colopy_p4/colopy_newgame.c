@@ -54,33 +54,75 @@ static int unit_row(const char *name) {
 static void build_regions(void);
 void colopy_build_regions(void) { build_regions(); }
 static void build_regions(void) {
+    /* func_063880 @0x063880 (0x1A1F:0x7DC), read whole 2026-09-09 and
+     * matched 4176/4176 against every fixture's region plane (RULINGS
+     * 2026-09-09e).  A raster labeller run TWICE ([bp-0x1C] 1 = water
+     * bodies, then 0 = land) over rows 1..h-2, columns w-2 down to 1
+     * (the border keeps id 0): per square the three squares of the row
+     * above (@0x063922) adopt or MERGE the run id -- the larger working
+     * id is relabelled to the smaller over every row so far (@0x0638C8),
+     * its size folded in and freed (@0x063973/@0x063978); a fresh
+     * component takes the LOWEST free working id (`[bp-0x2E]=0; inc;
+     * while size != 0` @0x063992..0x0639C9), from 0x11 for land on rows
+     * 1 / h-2 (@0x063997..0x0639AE); the run id [bp-0xC] is NOT reset at
+     * a row end, so a run ending at x=1 continues at (w-2, y+1) when that
+     * square is the same class -- the original's seam quirk, reproduced.
+     * Then the compaction @0x063A8B: working ids <= 15 stay, larger ones
+     * take the lowest free slot 1..15 at first appearance (row-major, all
+     * rows), any further component shares 0xF.  Each class restarts at 1
+     * (the fixtures: ocean 1, main continent 1).  The 16-word size table
+     * [0x85C8] holds the LAST class -- land -- which the builder's P1
+     * counts.  High nibble = territory owner, 0xF none (func_005DF0).
+     * Scratch: the working-id plane lives in a static int16 plane, the
+     * size table in CS.fog (free here: the builder wipes plane 4 at P6a
+     * and re-clears it before every walker; no loader calls this). */
+    static int16_t ids[COLOPY_PLANE];
+    int16_t *size = (int16_t *)CS.fog;             /* 2088 entries */
+    const int NSIZE = (int)(sizeof(CS.fog) / sizeof(int16_t));
     memset(CS.region, 0, sizeof(CS.region));
-    static int16_t stack[COLOPY_PLANE];
-    int next = 1;
-    for (int seed = 0; seed < COLOPY_PLANE; seed++) {
-        if (CS.region[seed] || tile_water(CS.terrain[seed])) continue;
-        /* hi nibble = the territory OWNER plane, 0xF = unclaimed (the
-         * fresh-map state; func_005DF0) */
-        CS.region[seed] = (uint8_t)(0xF0 | (next & 0x0F));
-        int sp = 0;
-        stack[sp++] = (int16_t)seed;
-        while (sp) {
-            int t = stack[--sp];
-            int x = t % COLOPY_MAP_W, y = t / COLOPY_MAP_W;
-            static const int D[4][2] = { {1,0}, {-1,0}, {0,1}, {0,-1} };
-            for (int d = 0; d < 4; d++) {
-                int nx = x + D[d][0], ny = y + D[d][1];
-                if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W ||
-                    ny >= COLOPY_MAP_H)
-                    continue;
-                int n = ny * COLOPY_MAP_W + nx;
-                if (CS.region[n] || tile_water(CS.terrain[n])) continue;
-                CS.region[n] = (uint8_t)(0xF0 | (next & 0x0F));
-                stack[sp++] = (int16_t)n;
+    for (int cls = 1; cls >= 0; cls--) {
+        memset(ids, 0, sizeof(ids));
+        memset(size, 0, sizeof(CS.fog));
+        int cur = 0;
+        for (int y = 1; y < COLOPY_MAP_H - 1; y++)
+            for (int x = COLOPY_MAP_W - 2; x >= 1; x--) {
+                int i = y * COLOPY_MAP_W + x;
+                if ((tile_water(CS.terrain[i]) != 0) != cls) { cur = 0; continue; }
+                for (int k = -1; k <= 1; k++) {
+                    int a = ids[(y - 1) * COLOPY_MAP_W + x + k];
+                    if (a == 0) continue;
+                    if (cur == 0) { cur = a; continue; }
+                    if (a == cur) continue;
+                    int big = a > cur ? a : cur, small = a > cur ? cur : a;
+                    size[small] = (int16_t)(size[small] + size[big]);
+                    size[big] = 0;
+                    for (int j = COLOPY_MAP_W; j < (y + 1) * COLOPY_MAP_W; j++)
+                        if (ids[j] == big) ids[j] = (int16_t)small;
+                    cur = small;
+                }
+                if (cur == 0) {
+                    int id = (cls == 0 && (y == 1 || y == COLOPY_MAP_H - 2)) ? 0x11 : 1;
+                    while (id < NSIZE - 1 && size[id] != 0) id++;
+                    cur = id;                      /* < 2088 for any 8-connected map */
+                }
+                ids[i] = (int16_t)cur;
+                size[cur]++;
             }
+        for (int i = 0; i < COLOPY_PLANE; i++) {
+            int w = ids[i], f;
+            if (w == 0) continue;
+            if (w <= 15) f = w;
+            else if (size[w] > 0) {
+                int s = 1;
+                while (s <= 15 && size[s] != 0) s++;
+                if (s > 15) f = 15;
+                else { size[s] = size[w]; size[w] = (int16_t)-s; f = s; }
+            } else f = -size[w];
+            CS.region[i] = (uint8_t)f;
         }
-        if (next < 15) next++;
     }
+    memset(CS.fog, 0, sizeof(CS.fog));
+    for (int i = 0; i < COLOPY_PLANE; i++) CS.region[i] |= 0xF0;
 }
 
 /* reveal (game.js:8586): the fog plane uses the engine's own

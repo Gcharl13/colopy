@@ -743,26 +743,55 @@ void resAt;
 // engine's own region builder is unread -- R-tier, flagged).
 const REGION = new Uint8Array(MAP.w * MAP.h);
 function buildRegions() {
+  // func_063880 @0x063880, read whole 2026-09-09 and matched 4176/4176
+  // against every fixture's region plane (RULINGS 2026-09-09e; the C
+  // build_regions carries the sites).  Two raster passes -- water bodies,
+  // then land -- over rows 1..h-2, columns w-2 down to 1: the three squares
+  // above adopt or merge the run id (the larger working id relabelled to
+  // the smaller, freed), a fresh component takes the lowest free id (from
+  // 0x11 for land on rows 1 / h-2), and the run id is NOT reset at a row
+  // end (the original's seam quirk).  Compaction: ids <= 15 stay, larger
+  // ones take the lowest free slot at first appearance, overflow shares 0xF.
+  const W = MAP.w, H = MAP.h, P = W * H;
+  const ids = new Int16Array(P), size = new Int32Array(2304);
   REGION.fill(0);
-  let next = 1;
-  const stack = [];
-  for (let seed = 0; seed < REGION.length; seed++) {
-    if (REGION[seed] || tileWater(MAP.tiles[seed])) continue;
-    REGION[seed] = next;
-    stack.length = 0;
-    stack.push(seed);
-    while (stack.length) {
-      const t = stack.pop(), x = t % MAP.w, y = (t / MAP.w) | 0;
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nx = x + dx, ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) continue;
-        const n = ny * MAP.w + nx;
-        if (REGION[n] || tileWater(MAP.tiles[n])) continue;
-        REGION[n] = next;
-        stack.push(n);
+  for (let cls = 1; cls >= 0; cls--) {
+    ids.fill(0); size.fill(0);
+    let cur = 0;
+    for (let y = 1; y < H - 1; y++)
+      for (let x = W - 2; x >= 1; x--) {
+        const i = y * W + x;
+        if ((tileWater(MAP.tiles[i]) ? 1 : 0) !== cls) { cur = 0; continue; }
+        for (let k = -1; k <= 1; k++) {
+          const a = ids[(y - 1) * W + x + k];
+          if (a === 0) continue;
+          if (cur === 0) { cur = a; continue; }
+          if (a === cur) continue;
+          const big = Math.max(a, cur), small = Math.min(a, cur);
+          size[small] += size[big]; size[big] = 0;
+          for (let j = W; j < (y + 1) * W; j++) if (ids[j] === big) ids[j] = small;
+          cur = small;
+        }
+        if (cur === 0) {
+          let id = (cls === 0 && (y === 1 || y === H - 2)) ? 0x11 : 1;
+          while (id < 2303 && size[id] !== 0) id++;
+          cur = id;
+        }
+        ids[i] = cur; size[cur]++;
       }
+    for (let i = 0; i < P; i++) {
+      const w = ids[i];
+      let f;
+      if (w === 0) continue;
+      if (w <= 15) f = w;
+      else if (size[w] > 0) {
+        let s = 1;
+        while (s <= 15 && size[s] !== 0) s++;
+        if (s > 15) f = 15;
+        else { size[s] = size[w]; size[w] = -s; f = s; }
+      } else f = -size[w];
+      REGION[i] = f;
     }
-    if (next < 15) next += 1;                 // the id lives in a nibble
   }
 }
 const ROAD_BIT = 0x08, PLOW_BIT = 0x40;

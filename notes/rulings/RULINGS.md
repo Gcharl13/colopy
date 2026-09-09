@@ -12787,3 +12787,36 @@ ids and size-ordered numbering (the original labels water bodies too —
 savstart's ocean is id 1 — ours labels land only, in scan order; the
 saved plane differs, play does not read it that way). No DOS-generated
 world has been diffed against this port; the premade tail has (above).
+
+## 2026-09-09e — The landmass labeller func_063880 read whole; both engines' region planes now match every fixture 4176/4176
+
+`func_063880` @0x063880 (0x1A1F:0x7DC), the builder's P1/P6a labeller and
+the writer of plane 3's low nibble, was read whole and the port matched
+byte for byte against the region planes of all four fixtures (savstart,
+sav1653, savraleigh, savnewcolony: 0 mismatches each). It is a raster
+connected-component labeller run TWICE — water bodies first, then land —
+over rows 1..h−2 and columns w−2 down to 1 (the border keeps 0):
+- per square the three squares of the row above (@0x063922) adopt or
+  MERGE the run id: the larger working id is relabelled to the smaller
+  over every row so far (@0x0638C8..0x0638FB), sizes folded and the
+  larger id freed (@0x063973/@0x063978);
+- a fresh component takes the LOWEST free working id (`[bp-0x2E] = 0;
+  inc; while size != 0` @0x063992..0x0639C9, cap 0x3FFF with an error
+  string), from 0x11 for LAND on rows 1 / h−2 (@0x063997..0x0639AE);
+- **the run id `[bp-0xC]` is not reset at a row end** (@0x063A56 only
+  ticks the card clock and re-enters at x = w−2), so a run ending at
+  (1, y) continues at (w−2, y+1) when that square is the same class —
+  a seam quirk of the original that the fixtures confirm (the last 24
+  mismatches vanished with it);
+- compaction @0x063A8B: working ids ≤ 15 keep their number, larger ones
+  take the lowest free slot 1..15 at first appearance in a row-major
+  scan of the whole plane, every further component shares 0xF
+  (@0x063AC1..0x063AFC); each class restarts at 1 — the fixtures' ocean
+  is id 1 and so is their main continent;
+- the 16-word size table [0x85C8] copied out at the end (@0x063BAC) holds
+  the LAST class — land — which is what the builder's P1 counts.
+Both engines carried a land-only 4-connected flood fill in scan order
+from tile 0 (so the Arctic row was id 1 and everything else off by one,
+water 0); that only ever mattered to saves written by the C, but it is
+byte-true now. The C keeps its working ids in the former flood stack and
+its size table in plane 4, free at both call sites.

@@ -63,6 +63,14 @@ decoded by matching their words to the case labels).
 | P5 | outline+fold | (both paths) hollow rects (0,0)–(w−1,h−1) and (1,0)–(w−2,h−1) Sea Lane, rows 0/h−1 Arctic; fold: `base ≥ 0x18` skip, hills bit → `(v&0xE0)|(base&7)`, 16..23 → −8 | `@0x65941..0x65AA0` |
 | P6 | tail | labels; planes 2 and 4 ← 0; **plane-2 `0x20`** on the western sea (row by row from x=1 to the first coast, x < w−16 premade / w/2 built); **plane-2 `0x04`** on water squares whose detail hash hits with no land in the 20-cell kernel (offshore fish suppressed); `[0x2174]==0`-gated `0xA0` at (1,21)/(43,68) (off in play); **starts**: the four H/5 bands dealt at random from the human (`random_int(1,2)` first on a built world, `random_int(0,3)` premade, redraws until free), each start = the first Sea Lane square east of the band row's coast → PowerRecord +0x32/+0x33 | `@0x65AA0..0x65D07` |
 
+**Landmass labeller `func_063880`** (`0x1A1F:0x7DC`, RULINGS 2026-09-09e): two raster
+passes (water bodies, then land) over rows 1..h−2 / columns w−2..1, the three squares
+above adopting or merging the run id (larger id relabelled to smaller, freed), a fresh
+component taking the lowest free working id (from 0x11 for land on rows 1/h−2), the run
+id carried across the row seam; compaction keeps ids ≤ 15, maps larger ones to the lowest
+free slot at first appearance, overflow → 0xF; each class restarts at 1. Matched 4176/4176
+against all four fixtures' region planes. **B.**
+
 The premade tail was diffed against the fresh-game fixture `savstart`: the 0x20
 bits 1309/1309, the 0x04 bits exactly (with the `func_00627A` edge-class rule),
 the start squares = rows 42/14/56/28 — **so the AMERICA new game's starts are the
