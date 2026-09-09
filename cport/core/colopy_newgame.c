@@ -107,11 +107,22 @@ static int add_unit(int type, int x, int y, int owner) {
     return CS.n_units++;
 }
 
-colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
-                              const char *leader_name) {
+colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
+                                 const char *leader_name,
+                                 const colopy_world_options *world) {
+    static const colopy_world_options AMERICA = {
+        COLOPY_WORLD_AMERICA, 1, 1, 1, 1
+    };
+    uint8_t starts[4][2];
     (void)leader_name;               /* the leader lives UI-side; no
                                       * record block carries the name */
     if (nation > 3 || difficulty > 4) return COLOPY_ERR_BAD_COMMAND;
+    if (!world) world = &AMERICA;
+    if (world->mode > COLOPY_WORLD_CUSTOM) return COLOPY_ERR_BAD_COMMAND;
+    for (int n = 0; n < 4; n++) {
+        starts[n][0] = (uint8_t)dat_starts[n][0];
+        starts[n][1] = (uint8_t)dat_starts[n][1];
+    }
 
     memset(&CS, 0, sizeof(CS));
 
@@ -177,6 +188,19 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
      * right after the .MP load, before any placement (G12; the JS draws
      * G.mapSeed at the same point) */
     uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
+    /* NEW WORLD / CUSTOMIZE: the builder runs here, where the original
+     * calls func_064A10 with premade=0 (AMERICA keeps the normalised
+     * shipped map above).  A FLAGGED reconstruction (colopy_mapgen.c),
+     * seeded from the [0x190] salt on its own stream, so the shared
+     * stream's draws below are unchanged — the JS does the same in
+     * beginGame (generateNewWorld). */
+    if (world->mode != COLOPY_WORLD_AMERICA) {
+        colopy_status ms = colopy_generate_world(mseed, world, CS.terrain, starts);
+        if (ms != COLOPY_OK) return ms;
+        memset(CS.improve, 0, sizeof(CS.improve));
+        memset(CS.fog, 0, sizeof(CS.fog));
+        build_regions();
+    }
 
     /* seedNatives (5146): tensions first (one draw per tribe, in
      * dat_tribes order), then the villages, then one brave each */
@@ -301,7 +325,7 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
      * carrying Soldiers then Pioneers, at the nation's start tile —
      * the riders are land units on the ship's water tile, exactly the
      * encoding the importer reads back as ship cargo (game.js:10451) */
-    int sx = (int)dat_starts[nation][0], sy = (int)dat_starts[nation][1];
+    int sx = starts[nation][0], sy = starts[nation][1];
     int ship_type = unit_row(nation == 3 ? "Merchantman" : "Caravel");
     add_unit(ship_type, sx, sy, nation);
     add_unit(unit_row("Soldiers"), sx, sy, nation);
@@ -312,7 +336,7 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
     for (int n = 0; n < 4; n++) {
         if (n == nation) continue;
         add_unit(unit_row(n == 3 ? "Merchantman" : "Caravel"),
-                 (int)dat_starts[n][0], (int)dat_starts[n][1], n);
+                 starts[n][0], starts[n][1], n);
     }
 
     /* spawnBrave (5951), a second pass in village order: the first of
@@ -394,4 +418,10 @@ colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
     for (int k = 0; k < 3; k++) roll_immigrant(&CR.dock[k]);
 
     return COLOPY_OK;
+}
+
+/* The pre-2026-09-09 entry point: the shipped America map. */
+colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
+                              const char *leader_name) {
+    return colopy_new_game_ex(nation, difficulty, leader_name, 0);
 }

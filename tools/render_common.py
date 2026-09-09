@@ -52,6 +52,10 @@ PALETTE_CEILING = {
     # the whole boot walk (render_boot_compare KINDS), frozen 2026-09-02:
     # every screen composes under ONE palette on both sides, so 0
     "boot difficulty 0": 0,
+    # CUSTOMIZE New World (2026-09-09): CUSTOMIZ.PIK + FONTTINY labels,
+    # both engines through the same palette -- frozen at 0
+    "boot customize 0": 0,
+    "boot customize 2": 0,
     "boot nation 0": 0,
     "boot name 1": 0,
     "boot king 0": 0,

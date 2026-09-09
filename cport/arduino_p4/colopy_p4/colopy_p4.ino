@@ -977,6 +977,9 @@ static void draw_screen(void) {
         rm_draw_title(UI.menu_row);
         draw_bt_row();               /* SHELL CHROME under the plaque */
         break;
+    case SCR_CUSTOMIZE:
+        rm_draw_customize(UI.custom_axis, UI.custom_value);
+        break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
     case SCR_NATION: rm_draw_nation(UI.nation); break;
     case SCR_NAME:

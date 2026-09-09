@@ -304,7 +304,7 @@ For axis-column `col` (0..3) and value-row `row` (0..2):
 - **x = col·`0x4C`(76) + `0x0A`(10)** (`@0x06FDF3`/`@0x06FDF7`) ⇒ x = 10, 86, 162, 238.
 - **y = row·`0x3C`(60) + `0x10`(16)**, **−1 when row>1** (`@0x06FDFF`/`@0x06FE0C`/`@0x06FE12`)
   ⇒ y = 16, 76, 135.
-- Cell box **w=`0x30`(48), h=`0x48`(72)** (fill `@0x06FE56`; hit `@0x070201`).
+- Cell box **w=`0x48`(72), h=`0x30`(48)** (fill `@0x06FE56`: bx=0x48 with 0x30 pushed; the highlight box `@0x06FEB1` runs (x,y)–(x+0x47,y+0x2F); hit `@0x070201` passes (x,y,0x48,0x30)). **Corrected 2026-09-09** — this line read "48×72" (w/h swapped); the PIK's own picture frames measure 72×48 (edges at x 14/86, y 16/62).
 
 | axis col | x | LABELS axis (@MISCELLANEOUS) | values (rows 0/1/2) |
 |----------|---|------------------------------|----------------------|
@@ -313,10 +313,10 @@ For axis-column `col` (0..3) and value-row `row` (0..2):
 | 2 | 162 | "Temperature" (idx 146) | Cool / Temperate / Warm |
 | 3 | 238 | "Climate" (idx 147) | Arid / Normal / Wet |
 
-(Rows at y=16/76/135; cell 48×72. Title "CUSTOMIZE NEW WORLD" = LABELS idx 160; finish
+(Rows at y=16/76/135; cell 72×48. Title "CUSTOMIZE NEW WORLD" = LABELS idx 160; finish
 "Click Here When Finished" = idx 161. **String literals are LABELS @MISCELLANEOUS runtime
 fetches** — index tables in BSS `[0x2EDA]`(4 axes)/`[0x2EE2]`(12 values)/`[0x2EFA]`(title)/
-`[0x2EFC]`(finish), populated at runtime ⇒ index→string binding **TBD**, layout B.)
+`[0x2EFC]`(finish), populated at runtime. **2026-09-09:** the table is 18 words and @MISC 144..161 is the matching 18-string run (144..147 axes — with `":"` from DGROUP 0x2020 strcat'd — 148..159 values incl. "Moderate"/"Continents", 160 title, 161 finish): consistent, the loader itself untraced — FLAGGED in both painters. Both engines draw the screen since 2026-09-09 (RULINGS 2026-09-09c).)
 
 ### 5.4 Per-cell draw `func@0x06FE1C` (B)
 - `@0x06FE61` fill cell (`0x181F:0x444`, 48×72).
@@ -335,14 +335,19 @@ fetches** — index tables in BSS `[0x2EDA]`(4 axes)/`[0x2EE2]`(12 values)/`[0x2
 - **Active-axis cursor = `[0xA60A]`** (init 0 @`0x070071`).
 - Keyboard (loop `@0x0700F5`, key via `0x181F:0x3E0`):
   - `0x1B` ESC (`@0x070121`) → exit `0x702AA`.
-  - up/left family (`@0x070158`): axis `(axis+3)%4`; value `(v+2)%3` (`@0x070198`).
-  - down/right family (`@0x070192`/`@0x0701CA`): axis `(axis+1)%4`; value `(v+1)%3`.
+  - **Corrected 2026-09-09 (the two lines below were crossed):** Backspace
+    `0x08` → axis `(axis+3)%4` (`@0x070158`), Tab `0x09` → axis `(axis+1)%4`
+    (`@0x070192`), Enter `0x0D` → finish (`[bp-6]=0` `@0x070137`), Space `0x20`
+    → value `(v+1)%3` (`@0x0701BA`); extended codes (`@0x0701CA..0x0701DB`):
+    `0x148` **Up → value `(v+2)%3`** (`@0x070198`), `0x14B` **Left → axis
+    prev**, `0x14D` **Right → axis next**, `0x150` **Down → value `(v+1)%3`**.
+    Arrows move the VALUE vertically and the AXIS horizontally.
   - On change → redraw old+new cell (`0x70C4B`).
 
 ### 5.6 Hit-rects — point-in-rect `0x181F:0x3CA` (B)
 | hit-id | rect (x,y,w,h) | action |
 |--------|----------------|--------|
-| grid cell (col,row) | (col·76+10, row·60+16[−1 if row>1], 48, 72) | set `[col·2+0x1E7E]=row`, focus `[0xA60A]=col`, redraw (test loop `@0x0701E0`–`@0x070269`, hit `@0x07020B`) |
+| grid cell (col,row) | (col·76+10, row·60+16[−1 if row>1], 72, 48) | set `[col·2+0x1E7E]=row`, focus `[0xA60A]=col`, redraw (test loop `@0x0701E0`–`@0x070269`, hit `@0x07020B`) |
 | **Click Here When Finished** | click `[0x7F4]` AND mouseY `[0x7EA]` ≥ `0xB9` (185) (`@0x07027E`) | `[bp-6]=0` → exit loop (finish) |
 
 The finish "button" is a **y-threshold** test (clicked AND below y=185, matching finish text

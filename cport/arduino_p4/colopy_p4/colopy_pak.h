@@ -2,7 +2,7 @@
  * COLOPY.PAK layout (little-endian). Codec provenance and the
  * per-kind payload formats are documented in the generator's
  * docstring; the container is the microSD asset pack for the
- * ESP32-P4 and Teensy builds (C-port Phase 6). */
+  * ESP32-P4 and Teensy builds (C-port Phase 6). */
 #ifndef COLOPY_PAK_H
 #define COLOPY_PAK_H
 
@@ -12,7 +12,7 @@ extern "C" {
 #include <stdint.h>
 
 #define COLOPY_PAK_MAGIC   "CPAK"
-#define COLOPY_PAK_COUNT   217
+#define COLOPY_PAK_COUNT   218
 #define COLOPY_PAK_NAMELEN 12
 #define COLOPY_PAK_HDRLEN  6           /* magic + u16 count */
 #define COLOPY_PAK_TOCENT  26          /* name[12] u32 off u32 len u16 w,h,frames */
@@ -85,16 +85,16 @@ static const char *const COLOPY_PAK_NAMES[COLOPY_PAK_COUNT] = {
     "WDCUT03.SS", "WDCUT04.SS", "WDCUT05.SS", "WDCUT07.SS",
     "WDCUT08.SS", "WDCUT09.SS", "WDCUT10.SS", "WDCUT11.SS",
     "WDCUT13.SS", "WOODFRAM.SS", "WOODTILE.SS", "CCBKGD.PIK",
-    "COLONY.PIK", "DECOIND.PIK", "DIFFICUL.PIK", "EUROPE.PIK",
-    "KINGLSS1.PIK", "KINGLSS2.PIK", "LEVN0001.PIK", "LEVN0002.PIK",
-    "LEVN0003.PIK", "LEVN0004.PIK", "LEVN0005.PIK", "LEVN0006.PIK",
-    "LEVN0007.PIK", "LEVN0008.PIK", "LEVN0009.PIK", "LEVN0010.PIK",
-    "NATIONS.PIK", "OPENMENU.PIK", "REPORT1.PIK", "REPORT2.PIK",
-    "REPORT3.PIK", "REPORT4.PIK", "REPORT5.PIK", "REPORT6.PIK",
-    "REPORT7.PIK", "REPORT8.PIK", "REPORT9.PIK", "WOODPAN2.PIK",
-    "WOODPANL.PIK", "FONT-NP.FF", "FONTINTR.FF", "FONTKING.FF",
-    "FONTSMAL.FF", "FONTTINY.FF", "VICEROY.PAL", "CYCLE",
-    "TEXT",
+    "COLONY.PIK", "CUSTOMIZ.PIK", "DECOIND.PIK", "DIFFICUL.PIK",
+    "EUROPE.PIK", "KINGLSS1.PIK", "KINGLSS2.PIK", "LEVN0001.PIK",
+    "LEVN0002.PIK", "LEVN0003.PIK", "LEVN0004.PIK", "LEVN0005.PIK",
+    "LEVN0006.PIK", "LEVN0007.PIK", "LEVN0008.PIK", "LEVN0009.PIK",
+    "LEVN0010.PIK", "NATIONS.PIK", "OPENMENU.PIK", "REPORT1.PIK",
+    "REPORT2.PIK", "REPORT3.PIK", "REPORT4.PIK", "REPORT5.PIK",
+    "REPORT6.PIK", "REPORT7.PIK", "REPORT8.PIK", "REPORT9.PIK",
+    "WOODPAN2.PIK", "WOODPANL.PIK", "FONT-NP.FF", "FONTINTR.FF",
+    "FONTKING.FF", "FONTSMAL.FF", "FONTTINY.FF", "VICEROY.PAL",
+    "CYCLE", "TEXT",
 };
 
 #ifdef __cplusplus

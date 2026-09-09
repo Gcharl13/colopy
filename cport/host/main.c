@@ -698,9 +698,18 @@ static void print_projection(int job_convert) {
     }
 }
 
-static void dump_newgame(int nation, int diff, int n) {
+/* mode/v: the world selection (0 NEW / 1 AMERICA / 2 CUSTOM + the four
+ * Customize words) -- the JS NEWGAME block takes the same tail */
+static void dump_newgame(int nation, int diff, int n, int mode,
+                         const int v[4]) {
+    colopy_world_options world;
+    world.mode = (uint8_t)mode;
+    world.land_mass = (uint8_t)v[0];
+    world.land_form = (uint8_t)v[1];
+    world.temperature = (uint8_t)v[2];
+    world.climate = (uint8_t)v[3];
     colopy_init(1653);                       /* the shared trace seed */
-    colopy_new_game((uint8_t)nation, (uint8_t)diff, 0);
+    colopy_new_game_ex((uint8_t)nation, (uint8_t)diff, 0, &world);
     int job_convert = -1;
     for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
         if (strcmp(dat_jobexpert[i], "Indian Converts") == 0) job_convert = i;
@@ -850,8 +859,11 @@ int main(int argc, char **argv) {
                                  argc > 8 ? argv[8] : 0);
     }
     if (argc > 3 && strcmp(argv[1], "--newgame") == 0) {
+        int v[4] = { 1, 1, 1, 1 };
+        for (int i = 0; i < 4; i++) if (argc > 6 + i) v[i] = atoi(argv[6 + i]);
         dump_newgame(atoi(argv[2]), atoi(argv[3]),
-                     argc > 4 ? atoi(argv[4]) : 0);
+                     argc > 4 ? atoi(argv[4]) : 0,
+                     argc > 5 ? atoi(argv[5]) : 1, v);
         return 0;
     }
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {

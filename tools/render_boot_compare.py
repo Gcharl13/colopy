@@ -15,8 +15,8 @@ from render_common import (ROOT, SCRATCH, c_frame, diff_frames, js_frame,
 
 # every boot screen the oracle covers, with its argument space -- the
 # default run walks all of them (each is one C/JS frame pair)
-KINDS = {"title": [0], "difficulty": [0], "nation": [0], "name": [1],
-         "king": [0, 3], "cards": [0, 1, 3, 6]}
+KINDS = {"title": [0], "difficulty": [0], "customize": [0, 2], "nation": [0],
+         "name": [1], "king": [0, 3], "cards": [0, 1, 3, 6]}
 NATION_STEM = ["ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1"]
 
 

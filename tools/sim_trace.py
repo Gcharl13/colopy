@@ -177,7 +177,7 @@ INPUT = """([save, events]) => {
                 hof: 5, map: 6, report: 7, colony: 8, europe: 9, woodcut: 10,
                 village: 11, king: 12, cards: 13, pedia: 14, options: 15,
                 trade: 16, congress: 17, declaration: 18, score: 19,
-                endking: 20, mpslogo: 21 };
+                endking: 20, mpslogo: 21, customize: 22 };
   if (save) {
     importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
                               savnewcolony: 'savNewColony' }[save]]));
@@ -357,6 +357,8 @@ RENDERBOOT = """([kind, arg]) => {
   G.dialog = null; G.popups = []; G.eventQueue = [];
   if (kind === 'title') { G.menuRow = arg; G.screen = 'title'; }
   else if (kind === 'difficulty') { G.difficulty = arg; G.screen = 'difficulty'; }
+  // customize ARG = the active column, values pinned [1,0,2,1] (the C mirrors)
+  else if (kind === 'customize') { G.customAxis = arg; G.customValues = [1, 0, 2, 1]; G.screen = 'customize'; }
   else if (kind === 'nation') { G.nation = arg; G.screen = 'nation'; }
   // king ARG = nation; cards ARG = the card 0..9 with the pinned nation 0
   // / difficulty 0 / leader 'Willem' the C --renderboot mirrors
@@ -368,6 +370,7 @@ RENDERBOOT = """([kind, arg]) => {
   const ctx = cv.getContext('2d');
   if (kind === 'title') drawTitle(ctx);
   else if (kind === 'difficulty') drawDifficulty(ctx);
+  else if (kind === 'customize') drawCustomize(ctx);
   else if (kind === 'nation') drawNation(ctx);
   else if (kind === 'king') drawKing(ctx);
   else if (kind === 'cards') drawCards(ctx);
@@ -610,8 +613,12 @@ PROJ_OBJ = """{ turn: G.turn, year: G.year, season: G.season,
 # market starts, the three dock rolls) comes from the shared stream —
 # colopy_new_game mirrors the exact order.  Projection = PROJ_OBJ, the
 # same shape the TURNS oracle diffs; entry 0 is the fresh state.
-NEWGAME = """([nation, diff, n]) => {
+NEWGAME = """([nation, diff, n, mode, v0, v1, v2, v3]) => {
   G.nation = nation; G.difficulty = diff;
+  // the world selection: 0 NEW / 1 AMERICA / 2 CUSTOM + the four Customize
+  // words (the C --newgame takes the same tail)
+  G.worldMode = ['new', 'america', 'custom'][mode == null ? 1 : mode];
+  G.customValues = [v0, v1, v2, v3].map(x => x == null ? 1 : x);
   let _s = 1653 >>> 0;
   Math.random = () => {
     const lo = (_s & 0xFFFF) * 214013;
@@ -1035,7 +1042,11 @@ def main():
         elif mode == "newgame":
             data = page.evaluate(NEWGAME, [int(sys.argv[2]), int(sys.argv[3]),
                                            int(sys.argv[4])
-                                           if len(sys.argv) > 4 else 0])
+                                           if len(sys.argv) > 4 else 0,
+                                           int(sys.argv[5])
+                                           if len(sys.argv) > 5 else 1] +
+                                 [int(sys.argv[6 + i]) if len(sys.argv) > 6 + i
+                                  else 1 for i in range(4)])
         elif mode == "turns":
             data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3]),
                                          "agitate" in sys.argv[4:],

@@ -276,7 +276,7 @@ def main():
     for e in pal_json:
         fallback += [e["r"], e["g"], e["b"]]
 
-    want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2",
+    want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "CUSTOMIZ", "WOODPANL", "WOODPAN2",
                 "KINGLSS1", "KINGLSS2", "COLONY", "EUROPE"] + \
         [f"REPORT{i}" for i in range(1, 10)] + \
         [f"LEVN{i:04d}" for i in range(1, 11)] + \

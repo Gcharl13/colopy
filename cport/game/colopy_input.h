@@ -16,12 +16,18 @@ enum {
     /* the Part E plate pages (numbered after trade in BOTH harnesses'
      * screen maps: sim_trace.py SCR / input_compare.py SCR_NAMES) */
     SCR_CONGRESS, SCR_DECLARATION, SCR_SCORE, SCR_ENDKING,
-    SCR_MPSLOGO                  /* the boot logo (OPENING.EXE's phase) */
+    SCR_MPSLOGO,                 /* the boot logo (OPENING.EXE's phase) */
+    SCR_CUSTOMIZE                /* CUSTOMIZE New World, func_070060 (the
+                                  * 4x3 selector grid; appended 2026-09-09) */
 };
 
 typedef struct {
     uint8_t screen;
     int8_t  menu_row;                /* boot menu (G.menuRow) */
+    int8_t  world_mode;              /* colopy_world_mode: the title row
+                                      * taken (G.worldMode) */
+    int8_t  custom_axis;             /* [0xA60A], the active column 0..3 */
+    uint8_t custom_value[4];         /* DGROUP 0x1E7E..0x1E84, each 0..2 */
     int8_t  difficulty, nation;
     char    leader[24];
     int8_t  brief_page;

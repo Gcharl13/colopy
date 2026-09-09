@@ -12627,3 +12627,73 @@ NativeSettlement +0x03 latches, globals +0x50 SoL word) — several carry
 addresses and may well be right, but each moves the sim and none was
 re-read here; they are the natural next byte-read batch, item by item.
 Its `text.c` mojibake (2026-09-09a) stands.
+
+## 2026-09-09c — New World generator + CUSTOMIZE screen ported as a FLAGGED reconstruction (user-approved); the screen itself re-read from the bytes
+
+**Decision.** The user, told that the sibling's generator is a self-declared
+reconstruction, chose to have it anyway ("do that"). It is in both engines
+as `cport/core/colopy_mapgen.c` / `game.js generateNewWorld`, under a
+header that says exactly what is evidence and what is not, and it is
+proved only against ITSELF: `sim_compare.py newgame` now walks four more
+configs (NEW WORLD ×2, CUSTOM [0,0,0,0] and [2,2,2,2]) — terrain hash and
+every unit square, 30 turns each, 0 disagreements — so the two engines
+cannot drift apart on it. Nothing in the generator may be cited as the
+engine's behaviour: the pass skeleton and its constants are the sibling's
+reading of `func_064A10` (UNVERIFIED here), the rules inside every pass
+are invented, the nation-start rotation is identity. Byte-verified inside
+it: only the `[0x190]` salt draw @0x064A16..0x064A23 (already ours, G12)
+and the P5 outline (@0x65941..0x659CA, the same loader pass
+`colopy_newgame.c` cites). The generator runs on a map-local MS-C rand
+seeded from that salt, so the shared stream's draws are unchanged — the
+eight classic newgame configs and every other oracle stayed green.
+**Lead unchanged**: read `func_064A10` whole before believing any world.
+
+**The CUSTOMIZE screen (`func_070060`) was re-read here and is byte-cited
+— with two corrections to the tree's own decode
+(`docs/FRONTEND_SCREENS_VICEROY_DECODE.md` §5, tracker row 12):**
+1. **Cells are 72 wide × 48 tall, not 48×72.** The rect helper
+   `func_06FDF0` gives x = col·0x4C+0x0A, y = row·0x3C+0x10 (−1 for
+   row > 1); the fill @0x06FE61 carries bx=0x48 with 0x30 pushed, the
+   highlight box @0x06FEB1 runs (x,y)–(x+0x47,y+0x2F), the hit-scan
+   @0x07020B passes (x,y,0x48,0x30) — and the PIK's picture frames
+   measure 72×48 (edges at x 14/86, y 16/62). The sibling's port had the
+   swap too (its cells overlapped the next row).
+2. **The key map** (@0x070114..0x0701DD): Esc leaves; Enter finishes
+   ([bp-6]=0); Backspace 0x08 → axis (a+3)%4, Tab 0x09 → (a+1)%4; Space
+   → value (v+1)%3; extended 0x148 Up → value (v+2)%3, 0x14B Left →
+   axis prev, 0x14D Right → axis next, 0x150 Down → value (v+1)%3. So
+   the arrows move the VALUE vertically and the AXIS horizontally — the
+   decode's "up/left family / down/right family" gloss and the sibling's
+   port (Up/Down = axis, Left/Right = value) both had it crossed. Mouse:
+   a value-cell hit writes it and moves the cursor to that column
+   (@0x070236/@0x07023A); mouse y ≥ 0xB9 (185) with a button finishes
+   (@0x07027E..0x07028D).
+3. **Strings.** The BSS id table `[0x2EDA..0x2EFC]` is 18 words; @MISC
+   144..161 is the matching 18-string run: 144..147 the axis names
+   (drawn with a ":" strcat'd from DGROUP 0x2020 @0x06FEDE), 148..159
+   the twelve values (note "Moderate", "Continents" — the GAME.TXT
+   @CLAND..@CCLIM sections are the LIST-MENU variants with "Normal" /
+   "Large Continents"), 160 "CUSTOMIZE NEW WORLD", 161 "Click Here When
+   Finished". Consistent, not traced through the table loader — FLAGGED
+   as such in both painters.
+4. **Draw model.** The PIK (push 0x2022 "CUSTOMIZ" @0x070085) carries the
+   twelve pictures and their frames and NO text; the code fills each
+   cell (0x181F:0x444 with the two sheet handles — a restore from the
+   PIK's own backing sheet), and only the SELECTED value cell of each
+   column gets the highlight box + its two labels (axis at
+   y+23−FONTTINY height, value at y+25, centred in 72, ink 0x0A / 0x0E
+   on the active column); the others get the frame sprite. TBD: the
+   0x181F:0xE2 sprites (the y=16 / y=183 bands and the cell frames —
+   sheet `[0x2DA8]`, identity unread; not drawn, the PIK has frames),
+   whether 0x181F:0xCE fills or outlines (drawn as an outline), and the
+   title verb 0x181F:0x1C8's "bg 0xFE" argument (the title is drawn in
+   ink 0xFD only, so it sits dark on the wood until that band is read).
+   **CUSTOMIZ.PIK now ships** (pak 4,572,319 → 4,637,113 B; E8 closes).
+
+**Both engines**: `UI.world_mode/custom_axis/custom_value[4]` ↔
+`G.worldMode/customAxis/customValues` (+ `G.mapStarts`), `SCR_CUSTOMIZE`
+appended (= 22 in both harness maps), `rm_draw_customize` ↔
+`drawCustomize`, `colopy_new_game_ex(..., world)` ↔ the world branch in
+`beginGame`; the boot render compare walks `customize 0` and `2` (frozen
+at 0). Title rows: 0 NEW WORLD, 1 AMERICA, 2 CUSTOMIZE (dispatch ladder
+@0x075C6D; CUSTOMIZE runs `func_070060` first @0x075CCB).

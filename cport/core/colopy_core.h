@@ -40,6 +40,38 @@ typedef enum {
 void          colopy_init(uint32_t seed);
 colopy_status colopy_new_game(uint8_t nation, uint8_t difficulty,
                               const char *leader_name);
+
+/* ---- world selection (the title's three new-game rows) -----------------
+ * @BEGINMENU rows 0..2 all enter the world-build setup path (dispatch
+ * ladder @0x075C6D; row 3 CUSTOMIZE runs func_070060 first @0x075CCB).
+ * The four Customize selectors are the 0..2 words at DGROUP 0x1E7E..0x1E84
+ * (static default [1,1,1,1]; key/click writers @0x0701AD/@0x07023A —
+ * RULINGS 2026-09-08a).  AMERICA = the shipped, normalised AMER2 map. */
+typedef enum {
+    COLOPY_WORLD_NEW = 0,
+    COLOPY_WORLD_AMERICA = 1,
+    COLOPY_WORLD_CUSTOM = 2
+} colopy_world_mode;
+typedef struct {
+    uint8_t mode;               /* colopy_world_mode */
+    uint8_t land_mass;          /* @MISC 148..150 Small / Moderate / Large */
+    uint8_t land_form;          /* 151..153 Archipelago / Normal / Continents */
+    uint8_t temperature;        /* 154..156 Cool / Temperate / Warm */
+    uint8_t climate;            /* 157..159 Arid / Normal / Wet */
+} colopy_world_options;
+colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
+                                 const char *leader_name,
+                                 const colopy_world_options *world);
+/* The procedural New World builder (cport/core/colopy_mapgen.c) — a
+ * FLAGGED RECONSTRUCTION: the pass skeleton and its constants are the
+ * sibling port's reading of func_064A10, the rules inside each pass are
+ * invented.  Deterministic on `seed` (the [0x190] map salt) with a map-
+ * local MS-C rand; shared draw-for-draw with game.js generateNewWorld.
+ * `starts` receives the four nations' ship squares. */
+colopy_status colopy_generate_world(uint16_t seed,
+                                    const colopy_world_options *world,
+                                    uint8_t terrain[58 * 72],
+                                    uint8_t starts[4][2]);
 colopy_status colopy_load_sav(const uint8_t *buf, size_t len);
 /* Returns bytes written, or 0 with status via colopy_last_error(). */
 size_t        colopy_save_sav(uint8_t *buf, size_t cap);

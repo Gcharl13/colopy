@@ -325,7 +325,7 @@ def main():
         " * COLOPY.PAK layout (little-endian). Codec provenance and the",
         " * per-kind payload formats are documented in the generator's",
         " * docstring; the container is the microSD asset pack for the",
-        " * Teensy build (C-port Phase 6). */",
+        "  * ESP32-P4 and Teensy builds (C-port Phase 6). */",
         "#ifndef COLOPY_PAK_H",
         "#define COLOPY_PAK_H",
         "",

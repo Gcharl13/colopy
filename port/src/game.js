@@ -636,6 +636,13 @@ const hasPlow = (x, y) => (impAt(x, y) & PLOW_BIT) !== 0;
 const G = {
   screen: 'title',
   menuRow: 0,
+  // the title row taken (rows 0..2 of @BEGINMENU: 'new' / 'america' /
+  // 'custom') and the CUSTOMIZE words -- [0xA60A] cursor, DGROUP 0x1E7E..
+  // 0x1E84 values (static default [1,1,1,1])
+  worldMode: 'america',
+  customAxis: 0,
+  customValues: [1, 1, 1, 1],
+  mapStarts: null,             // the four ship squares of the running world
   difficulty: 2,          // default 2 per §18.11
   nation: 0,
   leader: '',
@@ -856,6 +863,130 @@ function normalizeShippedMap() {
       else if (base >= 16) MAP.tiles[i] = b - 8;
     }
 }
+// The procedural New World builder -- a FLAGGED RECONSTRUCTION (2026-09-09,
+// RULINGS 2026-09-09c; user-approved as such).  The pass skeleton and its
+// constants are the sibling port's reading of func_064A10 (UNVERIFIED here;
+// only the [0x190] salt draw and the P5 sea-lane/Arctic outline are byte-
+// verified in this tree); every rule inside a pass is invented.  Worlds from
+// here are "a random New World", not the game's.  Deterministic on the salt
+// with a map-local MS-C rand so the shared stream is untouched, and shared
+// draw-for-draw with cport/core/colopy_mapgen.c (the newgame oracle compares
+// the terrain hash and every unit square on NEW and CUSTOM worlds).
+function generateNewWorld(seed, world) {
+  const OCEAN = 0x19, LANE = 0x1A, ARCTIC = 0x18;   // @OTHER 25/26/24
+  const tiles = new Uint8Array(MAP.w * MAP.h);
+  tiles.fill(OCEAN);
+  const rng = { s: (seed >>> 0) || 1 };
+  const next = () => {
+    rng.s = (Math.imul(rng.s, 214013) + 2531011) >>> 0;
+    return (rng.s >>> 16) & 0x7FFF;
+  };
+  const range = (lo, hi) => lo + Math.floor(next() * (hi - lo + 1) / 32768);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const p = new Array(5);
+  if (world.mode === 'custom') {
+    for (let i = 0; i < 4; i++) p[i] = clamp(world.values[i] | 0, 0, 2);
+    p[4] = 1;                                   // the fifth setup word, not exposed
+  } else {
+    // NEW WORLD: five random_int(0,3) setup words (sibling's cite
+    // @0x75C86..0x75CC2, UNVERIFIED here), drawn on the map-local stream
+    for (let i = 0; i < 5; i++) p[i] = range(0, 3);
+  }
+  const isLandMarker = (x, y) => x >= 0 && y >= 0 && x < MAP.w && y < MAP.h &&
+    tiles[y * MAP.w + x] === 0;
+  const countLand8 = (x, y) => {
+    let n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
+      if ((dx || dy) && isLandMarker(x + dx, y + dy)) n++;
+    return n;
+  };
+  // P1 (RECONSTRUCTED walkers; the target formula is the sibling's cite)
+  const dx8 = [0, 1, 1, 1, 0, -1, -1, -1];
+  const dy8 = [-1, -1, 0, 1, 1, 1, 0, -1];
+  const target = (p[0] + p[1] + 1) * 0x140;
+  const blobs = clamp(12 - 3 * p[1], 3, 12);
+  let made = 0;
+  for (let b = 0; b < blobs && made < target; b++) {
+    const quota = Math.floor((target - made + blobs - b - 1) / (blobs - b));
+    let x = range(3, MAP.w - 4), y = range(2, MAP.h - 3), got = 0;
+    for (let tries = 0; tries < quota * 80 && got < quota; tries++) {
+      const i = y * MAP.w + x;
+      if (tiles[i] === OCEAN) { tiles[i] = 0; got++; made++; }
+      const d = range(0, 7), nx = x + dx8[d], ny = y + dy8[d];
+      if (nx < 2 || nx >= MAP.w - 2 || ny < 2 || ny >= MAP.h - 2 ||
+          (tries && tries % 97 === 0)) {
+        x = range(3, MAP.w - 4); y = range(2, MAP.h - 3);
+      } else { x = nx; y = ny; }
+    }
+  }
+  // P3 relaxation (RECONSTRUCTED predicate; the budget is the sibling's cite)
+  for (let k = 0; k < (p[4] + 1) * 0x320; k++) {
+    const x = range(2, MAP.w - 3), y = range(2, MAP.h - 3), i = y * MAP.w + x;
+    const n = countLand8(x, y);
+    if (tiles[i] === OCEAN) {
+      if (n >= 5 - clamp(p[3], 0, 2)) tiles[i] = 0;
+    } else if (n <= 1 && range(0, 3) !== 0) tiles[i] = OCEAN;
+  }
+  // P2 latitude bands (RECONSTRUCTED jitter and rolls; the two six-entry
+  // tables are the sibling's cite): forest = +8 (ids 8..23), hills 0x20,
+  // mountains 0xA0 (formats/MP_FORMAT.md bits)
+  const north = [5, 4, 1, 3, 2, 2], south = [2, 3, 3, 4, 6, 7];
+  const eq = Math.floor(MAP.h / 2);
+  for (let y = 1; y < MAP.h - 1; y++) for (let x = 2; x < MAP.w - 2; x++) {
+    const i = y * MAP.w + x;
+    if (tiles[i] !== 0) continue;
+    const dist = y < eq ? eq - y : y - eq;
+    let band = Math.floor(dist * 6 / eq) + (1 - p[2]) + range(-1, 1);
+    band = clamp(band, 0, 5);
+    let base = (y < eq ? north : south)[band];
+    if (range(0, 3) < clamp(p[3] + 1, 1, 3)) base += 8;
+    let t = base, elev = range(0, 5);
+    if (elev >= 4) t |= 0x20;
+    if (elev === 5 && range(0, 2) === 0) t |= 0x80;
+    tiles[i] = t;
+  }
+  // P4 rivers (RECONSTRUCTED source roll; the 20-cell kernel is the
+  // sibling's cite): minor river 0x40 on enclosed land, western half
+  const kx = [0,1,0,-1,-1,1,1,-1,0,2,0,-2,-1,1,-1,1,-2,-2,2,2];
+  const ky = [-1,0,1,0,-1,-1,1,1,-2,0,2,0,-2,-2,2,2,-1,1,-1,1];
+  for (let y = 2; y < MAP.h - 2; y++) for (let x = 2; x < Math.floor(MAP.w / 2); x++) {
+    const i = y * MAP.w + x, base = tiles[i] & 0x1F;
+    if (base === OCEAN || base === LANE || range(0, 31)) continue;
+    let enclosed = true;
+    for (let k = 0; k < 20; k++) {
+      const b = tiles[(y + ky[k]) * MAP.w + x + kx[k]] & 0x1F;
+      if (b === OCEAN || b === LANE) { enclosed = false; break; }
+    }
+    if (enclosed) tiles[i] |= 0x40;
+  }
+  // P5 outline -- BYTE-VERIFIED (the loader's own pass @0x65941..0x659CA):
+  // rows 0/h-1 Arctic, columns 0,1,w-2,w-1 Sea Lane
+  for (let y = 0; y < MAP.h; y++) for (let x = 0; x < MAP.w; x++) {
+    const i = y * MAP.w + x;
+    if (y === 0 || y === MAP.h - 1) tiles[i] = ARCTIC;
+    else if (x <= 1 || x >= MAP.w - 2) tiles[i] = LANE;
+  }
+  // P6 (RECONSTRUCTED): east-to-west coast search on the H/5 bands, the
+  // start = the water square east of the first coast; nation order identity
+  const pickStart = bandY => {
+    for (let radius = 0; radius < MAP.h; radius++) {
+      const ys = radius ? [bandY - radius, bandY + radius] : [bandY];
+      for (const y of ys) {
+        if (y < 2 || y >= MAP.h - 2) continue;
+        for (let x = MAP.w - 4; x >= 2; x--) {
+          const here = tiles[y * MAP.w + x] & 0x1F;
+          const east = tiles[y * MAP.w + x + 1] & 0x1F;
+          if (here !== OCEAN && here !== LANE && (east === OCEAN || east === LANE))
+            return [x + 1, y];
+        }
+      }
+    }
+    return [MAP.w - 2, clamp(bandY, 2, MAP.h - 3)];
+  };
+  const starts = [0, 1, 2, 3].map(n => pickStart(Math.floor(MAP.h / 5) * (n + 1)));
+  return { tiles, starts, params: p };
+}
+
 function beginGame() {
   G.gold = START_GOLD[G.difficulty];
   G.tax = 0; G.year = 1492; G.season = 0; G.turn = 0;
@@ -886,7 +1017,20 @@ function beginGame() {
   // by a second placement pass"; that claim carries no function cite anywhere
   // in the tree and play shows one ship at every level -- see RULINGS.md
   // 2026-08-04. Difficulty scales starting gold, not hulls.)
-  const [sx, sy] = DATA.starts[G.nation];
+  // NEW WORLD / CUSTOMIZE build their map here, where the original calls
+  // func_064A10 with premade=0 right after the salt draw above; AMERICA
+  // keeps the shipped map (applied below with its loader normalisation).
+  // The builder runs on its own stream, so the shared draws are unchanged
+  // (the C does the same in colopy_new_game_ex).
+  let built = null;
+  if (G.worldMode === 'america') {
+    G.mapStarts = DATA.starts.map(p => p.slice());
+  } else {
+    built = generateNewWorld(G.mapSeed, { mode: G.worldMode,
+                                          values: G.customValues || [1, 1, 1, 1] });
+    G.mapStarts = built.starts.map(p => p.slice());
+  }
+  const [sx, sy] = G.mapStarts[G.nation];
   // Manifest order is Soldiers then Pioneers: the live opening turn lists
   // "Veteran" above "100 Tools" in the sidebar
   // (docs/screens/live_2026-08-05/07_map_opening_turn.png).
@@ -912,8 +1056,12 @@ function beginGame() {
   G.plates = []; G.plate = null; G.pediaOnce = false;
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
-  MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
-  normalizeShippedMap();
+  if (built) {
+    MAP.tiles.set ? MAP.tiles.set(built.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...built.tiles);
+  } else {
+    MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
+    normalizeShippedMap();
+  }
   IMPROVE.fill(0);
   buildRegions();
   seedNatives();
@@ -1232,6 +1380,41 @@ function drawTitle(ctx) {
     if (k === G.menuRow) { ctx.fillStyle = ink(SELECT_BOOT); ctx.fillRect(b.x + 4, oy - 1, 158, 7); }
     FONT.tiny.draw(ctx, opt, b.x + 9, oy, lut(k === G.menuRow ? 0xFC : 0xFE));
   });
+}
+
+// CUSTOMIZE New World -- func_070060 @0x070060 (docs/FRONTEND_SCREENS_
+// VICEROY_DECODE.md §5, re-read 2026-09-09; the C rm_draw_customize carries
+// the full citation list).  Byte-cited: CUSTOMIZ.PIK background (push 0x2022
+// @0x070085); title @MISC 160 y=4 ink 0xFD; footer @MISC 161 y=190 ink 0xFE;
+// cell rect func_06FDF0 x=col*76+10, y=row*60+16 (-1 for rows > 1), 72 wide x
+// 48 tall (the old "48x72" gloss had w/h swapped); ink 0x0A / 0x0E on the
+// active column [0xA60A]; the SELECTED value cell only gets the highlight box
+// (0x181F:0xCE, drawn as an outline -- fill/outline TBD) and its two labels:
+// "<@MISC 144+col>:" at y+23-height with a 1-px shadow, @MISC 148+col*3+row
+// at y+25, both centred in the 72-wide cell.  The @MISC binding is the
+// 18-word BSS table [0x2EDA..0x2EFC] against the 18-string run @MISC
+// 144..161 -- consistent, not traced through the loader (FLAGGED).
+const CUSTOM_CELL = (col, row) => ({
+  x: col * 76 + 10, y: row * 60 + 16 - (row > 1 ? 1 : 0), w: 72, h: 48,
+});
+function drawCustomize(ctx) {
+  usePalette('CUSTOMIZ');
+  ctx.drawImage(IMG.CUSTOMIZ, 0, 0);
+  FONT.tiny.center(ctx, DATA.text.misc[160], 160, 4, lut(0xFD));
+  FONT.tiny.center(ctx, DATA.text.misc[161], 160, 190, lut(0xFE));
+  const fh = FONT.tiny.height;
+  for (let col = 0; col < 4; col++) {
+    const ci = col === G.customAxis ? 0x0E : 0x0A;
+    for (let row = 0; row < 3; row++) {
+      if (G.customValues[col] !== row) continue;
+      const c = CUSTOM_CELL(col, row);
+      hollowRect(ctx, c.x, c.y, c.w, c.h, ci);
+      FONT.tiny.center(ctx, DATA.text.misc[144 + col] + ':', c.x + 36,
+                       c.y + 23 - fh, lut(ci), ink(0));
+      FONT.tiny.center(ctx, DATA.text.misc[148 + col * 3 + row], c.x + 36,
+                       c.y + 25, lut(ci), ink(0));
+    }
+  }
 }
 
 // §26.2 — cells (col*105+23, grp*96+7, 68, 90) with idx = n+1.
@@ -10440,7 +10623,7 @@ function seedRivals() {
   G.rivals = [];
   for (let n = 0; n < 4; n++) {
     if (n === G.nation) continue;
-    const [sx, sy] = DATA.starts[n];
+    const [sx, sy] = (G.mapStarts || DATA.starts)[n];
     G.rivals.push({
       nation: n, met: false,
       colonies: [], nextColony: 0,
@@ -16435,6 +16618,18 @@ function onClickBody(mx, my) {
       }
       break;
     }
+    case 'customize': {
+      // the mouse pass @0x0701E0..0x07026F: a hit on a value cell writes it
+      // and moves the cursor to that column; mouse y >= 185 (0xB9
+      // @0x070285) finishes
+      for (let col = 0; col < 4; col++) for (let row = 0; row < 3; row++) {
+        if (hit(mx, my, CUSTOM_CELL(col, row))) {
+          G.customAxis = col; G.customValues[col] = row; return;
+        }
+      }
+      if (my >= 185) G.screen = 'difficulty';
+      break;
+    }
     case 'difficulty': {
       for (let n = 0; n < 5; n++) if (hit(mx, my, DIFF_CELL(n))) { G.difficulty = n; return; }
       // Commit zone: click with mouseY<103 & mouseX<128 (§26.2)
@@ -16847,7 +17042,15 @@ function commitMenu() {
   // Real dispatch ladder @0x075C6D: rows 0-2 all enter the new-game setup path;
   // 3 = LOAD Game (browser save / the shipped 1653 save / a .SAV off disk);
   // 4 = View Hall of Fame.
-  if (G.menuRow <= 2) G.screen = 'difficulty';
+  // rows 0..2 = NEW WORLD / AMERICA / CUSTOMIZE; CUSTOMIZE runs
+  // func_070060 first (@0x075CCB): cursor [0xA60A] = 0 (@0x070071), the
+  // four words keep their static [1,1,1,1]
+  if (G.menuRow === 0) { G.worldMode = 'new'; G.screen = 'difficulty'; }
+  else if (G.menuRow === 1) { G.worldMode = 'america'; G.screen = 'difficulty'; }
+  else if (G.menuRow === 2) {
+    G.worldMode = 'custom'; G.customAxis = 0; G.customValues = [1, 1, 1, 1];
+    G.screen = 'customize';
+  }
   else if (G.menuRow === 3) openLoadMenu();
   else if (G.menuRow === 4) G.screen = 'hof';
 }
@@ -16878,6 +17081,20 @@ function onKeyBody(e) {
       if (k === 'ArrowUp') G.menuRow = (G.menuRow + MENU_OPTS.length - 1) % MENU_OPTS.length;
       if (k === 'ArrowDown') G.menuRow = (G.menuRow + 1) % MENU_OPTS.length;
       if (k === 'Enter' || k === ' ') commitMenu();
+      break;
+    case 'customize':
+      // func_070060's key ladder @0x070114..0x0701DD (mirrored in the C):
+      // Up 0x148 -> value (v+2)%3; Down 0x150 / Space -> (v+1)%3; Left
+      // 0x14B / Backspace -> axis (a+3)%4; Right 0x14D / Tab -> (a+1)%4;
+      // Enter finishes; Esc leaves to the title.
+      if (k === 'ArrowUp')
+        G.customValues[G.customAxis] = (G.customValues[G.customAxis] + 2) % 3;
+      if (k === 'ArrowDown' || k === ' ')
+        G.customValues[G.customAxis] = (G.customValues[G.customAxis] + 1) % 3;
+      if (k === 'ArrowLeft' || k === 'Backspace') G.customAxis = (G.customAxis + 3) % 4;
+      if (k === 'ArrowRight' || k === 'Tab') G.customAxis = (G.customAxis + 1) % 4;
+      if (k === 'Enter') G.screen = 'difficulty';
+      if (k === 'Escape') G.screen = 'title';
       break;
     case 'difficulty':
       // Keys (§26.2): up = (level+4)%5, down = (level+1)%5
@@ -17191,7 +17408,7 @@ function frameBody() {
   // on move, the way the engine's per-frame dispatcher does.
   if (G.dragArm && PTR.down) onPointerMove(PTR.x, PTR.y);
   ctx.clearRect(0, 0, W, H);
-  ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
+  ({ title: drawTitle, customize: drawCustomize, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards, hof: drawHof,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
@@ -17655,7 +17872,8 @@ dbgAddTab('Raw', () => {
     'refUnits', 'market', 'accum', 'colony', 'rivals', 'warMatrix', 'treatyMatrix',
     'rivalWars',
     'parley', 'tribes', 'villages', 'natives', 'europe', 'dock', 'dockUnits',
-    'euroShip', 'routes', 'marketSel', 'menuRow', 'briefPage', 'card', 'woodcut',
+    'euroShip', 'routes', 'marketSel', 'menuRow', 'worldMode', 'customAxis',
+    'customValues', 'mapStarts', 'briefPage', 'card', 'woodcut',
     'landHo', 'colonyView', 'colonyPopup', 'colonyPopupRow', 'colonistSel',
     'colonyShipSel', 'colonyNumbers',
     'pediaCat', 'pediaSel', 'pediaMode', 'euroRow', 'euroMenu', 'euroMenuRow',

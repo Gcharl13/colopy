@@ -264,14 +264,22 @@ def main():
         subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
         # TUTORIAL* events compared whole (B4.2 closed 2026-09-02)
         bad = 0
-        for nation in range(4):
-            for diff in (0, 2):
+        # the world selection rides as a tail: (mode, v0..v3) -- AMERICA for
+        # the eight classic configs, then NEW WORLD and two CUSTOM worlds
+        # (2026-09-09: the generator is a FLAGGED reconstruction, so this
+        # proves the two engines agree with EACH OTHER on it, nothing more)
+        configs = [(nation, diff, 1, 1, 1, 1, 1)
+                   for nation in range(4) for diff in (0, 2)]
+        configs += [(0, 0, 0, 1, 1, 1, 1), (2, 2, 0, 1, 1, 1, 1),
+                    (1, 1, 2, 0, 0, 0, 0), (3, 3, 2, 2, 2, 2, 2)]
+        for nation, diff, mode, v0, v1, v2, v3 in configs:
+                tail = [str(mode), str(v0), str(v1), str(v2), str(v3)]
                 js = json.loads(subprocess.run(
                     [sys.executable, ROOT / "tools/sim_trace.py", "newgame",
-                     str(nation), str(diff), str(n)],
+                     str(nation), str(diff), str(n)] + tail,
                     capture_output=True, text=True, check=True).stdout)
                 cc = [json.loads(l) for l in subprocess.run(
-                    ["./smoke", "--newgame", str(nation), str(diff), str(n)],
+                    ["./smoke", "--newgame", str(nation), str(diff), str(n)] + tail,
                     cwd=ROOT / "cport/host",
                     capture_output=True, text=True, check=True).stdout.splitlines()]
                 nbad = 0
@@ -280,14 +288,14 @@ def main():
                         continue
                     for f in j:
                         if j[f] != c.get(f):
-                            print("n%d d%d entry %d .%s:\n  JS %s\n  C  %s"
-                                  % (nation, diff, i, f, j[f], c.get(f)))
+                            print("n%d d%d w%d entry %d .%s:\n  JS %s\n  C  %s"
+                                  % (nation, diff, mode, i, f, j[f], c.get(f)))
                             nbad += 1
                     if nbad > 8:
                         print("...")
                         break
-                print("newgame n%d d%d: %d entries compared, %d disagreement(s)"
-                      % (nation, diff, len(cc), nbad))
+                print("newgame n%d d%d w%d: %d entries compared, %d disagreement(s)"
+                      % (nation, diff, mode, len(cc), nbad))
                 bad += nbad
         sys.exit(1 if bad else 0)
     if sys.argv[1:2] == ["turns"]:

@@ -36,6 +36,11 @@ uint32_t colopy_front_seed = 1653;   /* the front end's game seed (the DOS
 
 void ui_init(void) {
     memset(&UI, 0, sizeof(UI));
+    /* world selection defaults: the AMERICA row until the title picks;
+     * the four Customize words are the static [1,1,1,1] (DGROUP 0x1E7E,
+     * initialised data) */
+    UI.world_mode = COLOPY_WORLD_AMERICA;
+    for (int i = 0; i < 4; i++) UI.custom_value[i] = 1;
     UI.screen = SCR_TITLE;
     UI.open_menu = -1;
     UI.market_sel = -1;
@@ -330,11 +335,20 @@ static void begin_goto_page(int ui, int page) {
  * timer plays all ten (in_tick).  beginGame ends on centerOn(start) with
  * sel 0 (game.js:749). */
 static void brief_begin(void) {
+    colopy_world_options world;
+    world.mode = (uint8_t)UI.world_mode;
+    world.land_mass = UI.custom_value[0];
+    world.land_form = UI.custom_value[1];
+    world.temperature = UI.custom_value[2];
+    world.climate = UI.custom_value[3];
     colopy_init(colopy_front_seed);
-    colopy_new_game((uint8_t)UI.nation, (uint8_t)UI.difficulty, UI.leader);
+    colopy_new_game_ex((uint8_t)UI.nation, (uint8_t)UI.difficulty, UI.leader,
+                       &world);
     snprintf(CR.leader, sizeof(CR.leader), "%s", UI.leader);
     UI.sel = 0;
-    center_on((int)dat_starts[UI.nation][0], (int)dat_starts[UI.nation][1]);
+    /* the start square is the ship's (unit 0): the shipped @SCENARIO
+     * start on AMERICA, the builder's pick on a generated world */
+    center_on(CS.units[0].map_x, CS.units[0].map_y);
     UI.screen = SCR_MAP;
 }
 
@@ -1634,7 +1648,18 @@ static int is_fkey(const char *k, int *out) {
  * new-game path, 3 = LOAD, 4 = Hall of Fame — the load/new-game flows
  * are dialogs the harness scripts around, so only the screen moves. */
 static void commit_menu(void) {
-    if (UI.menu_row <= 2) UI.screen = SCR_DIFFICULTY;
+    /* rows 0..2 = NEW WORLD / AMERICA / CUSTOMIZE (@BEGINMENU order);
+     * CUSTOMIZE runs func_070060 first (@0x075CCB), then the shared
+     * setup path -- its cursor [0xA60A] starts at 0 (@0x070071) and the
+     * four words keep their static [1,1,1,1] */
+    if (UI.menu_row == 0) { UI.world_mode = COLOPY_WORLD_NEW; UI.screen = SCR_DIFFICULTY; }
+    else if (UI.menu_row == 1) { UI.world_mode = COLOPY_WORLD_AMERICA; UI.screen = SCR_DIFFICULTY; }
+    else if (UI.menu_row == 2) {
+        UI.world_mode = COLOPY_WORLD_CUSTOM;
+        UI.custom_axis = 0;
+        for (int i = 0; i < 4; i++) UI.custom_value[i] = 1;
+        UI.screen = SCR_CUSTOMIZE;
+    }
     else if (UI.menu_row == 4) UI.screen = SCR_HOF;
     else if (UI.menu_row == 3) UI.request = 'L';   /* the board shell's
                                                     * SD .SAV picker */
@@ -2252,6 +2277,26 @@ static void in_key_inner(const char *k, int alt, int shift) {
         if (key_is(k, "ArrowUp")) UI.menu_row = (int8_t)((UI.menu_row + 4) % 5);
         if (key_is(k, "ArrowDown")) UI.menu_row = (int8_t)((UI.menu_row + 1) % 5);
         if (key_is(k, "Enter") || key_is(k, " ")) commit_menu();
+        break;
+    case SCR_CUSTOMIZE:
+        /* func_070060's key ladder @0x070114..0x0701DD: Esc 0x1B leaves
+         * (@0x070121 -> 0x702AA); Enter 0x0D finishes ([bp-6]=0
+         * @0x070137); Backspace 0x08 -> axis (a+3)%4 (@0x070158),
+         * Tab 0x09 -> axis (a+1)%4 (@0x070192); Space 0x20 -> value
+         * (v+1)%3 (@0x0701BA); the extended codes: 0x148 Up -> value
+         * (v+2)%3 (@0x070198), 0x14B Left -> axis prev, 0x14D Right ->
+         * axis next, 0x150 Down -> value (v+1)%3 (@0x0701CA..0x0701DB).
+         * The JS onKey mirrors this map. */
+        if (key_is(k, "ArrowUp") )
+            UI.custom_value[UI.custom_axis] = (uint8_t)((UI.custom_value[UI.custom_axis] + 2) % 3);
+        if (key_is(k, "ArrowDown") || key_is(k, " "))
+            UI.custom_value[UI.custom_axis] = (uint8_t)((UI.custom_value[UI.custom_axis] + 1) % 3);
+        if (key_is(k, "ArrowLeft") || key_is(k, "Backspace"))
+            UI.custom_axis = (int8_t)((UI.custom_axis + 3) % 4);
+        if (key_is(k, "ArrowRight") || key_is(k, "Tab"))
+            UI.custom_axis = (int8_t)((UI.custom_axis + 1) % 4);
+        if (key_is(k, "Enter")) UI.screen = SCR_DIFFICULTY;
+        if (key_is(k, "Escape")) UI.screen = SCR_TITLE;
         break;
     case SCR_DIFFICULTY:
         if (key_is(k, "ArrowUp")) UI.difficulty = (int8_t)((UI.difficulty + 4) % 5);
@@ -2949,6 +2994,24 @@ static void in_click_inner(int mx, int my, int right) {
                 commit_menu();
                 return;
             }
+        break;
+    case SCR_CUSTOMIZE:
+        /* the mouse pass @0x0701E0..0x07026F: every cell's rect from
+         * func_06FDF0 (x = col*76+10, y = row*60+16, -1 for rows > 1)
+         * against the 72x48 box (hit-scan 0x181F:0x3CA @0x07020B); a
+         * hit on a NEW value writes it and moves the cursor to that
+         * column (@0x070236/@0x07023A); a click at mouse y >= 185
+         * (0xB9 @0x070285) finishes */
+        for (int col = 0; col < 4; col++)
+            for (int row = 0; row < 3; row++) {
+                int y = row * 60 + 16 - (row > 1 ? 1 : 0);
+                if (hit(mx, my, col * 76 + 10, y, 72, 48)) {
+                    UI.custom_axis = (int8_t)col;
+                    UI.custom_value[col] = (uint8_t)row;
+                    return;
+                }
+            }
+        if (my >= 185) UI.screen = SCR_DIFFICULTY;
         break;
     case SCR_DIFFICULTY:
         for (int n = 0; n < 5; n++) {

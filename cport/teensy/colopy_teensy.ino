@@ -352,6 +352,7 @@ static void draw_screen(void) {
                   UI.screen == SCR_OPTIONS || UI.screen == SCR_TRADE);
     switch (UI.screen) {
     case SCR_TITLE: rm_draw_title(UI.menu_row); break;
+    case SCR_CUSTOMIZE: rm_draw_customize(UI.custom_axis, UI.custom_value); break;
     case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
     case SCR_NATION: rm_draw_nation(UI.nation); break;
     case SCR_NAME: rm_draw_name(UI.leader); break;

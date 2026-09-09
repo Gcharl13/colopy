@@ -144,6 +144,63 @@ void rm_draw_title(int menu_row) {
     }
 }
 
+/* CUSTOMIZE New World — func_070060 @0x070060 (docs/FRONTEND_SCREENS_
+ * VICEROY_DECODE.md §5, re-read 2026-09-09).  Byte-cited:
+ *   background  CUSTOMIZ.PIK (push 0x2022 "CUSTOMIZ" @0x070085 -> the
+ *               PIK loader 0x181F:0x44E @0x070088); the PIK carries the
+ *               twelve pictures and their frames, no text;
+ *   title       @MISC 160 "CUSTOMIZE NEW WORLD" centred over x=0..320
+ *               at y=4, ink 0xFD (0x181F:0x1C8 @0x06FFBE: push 0xFD,
+ *               0xFE, 4, 0x140, 0);
+ *   footer      @MISC 161 "Click Here When Finished" centred at y=190,
+ *               ink 0xFE (0x181F:0x100 @0x070013: push 0xFE, 0xBE,
+ *               0x140, 0);
+ *   cell rect   func_06FDF0: x = col*76+10, y = row*60+16 (-1 when
+ *               row > 1); box 72 wide x 48 tall (fill 0x181F:0x444 with
+ *               bx=0x48/push 0x30 @0x06FE61, the highlight box 0x181F:
+ *               0xCE from (x,y) to (x+0x47,y+0x2F) @0x06FEB1, the
+ *               hit-scan 0x181F:0x3CA (x,y,0x48,0x30) @0x07020B) —
+ *               the earlier "48x72" gloss had w/h swapped; the PIK's
+ *               picture frames measure 72x48 too;
+ *   ink         0x0A, 0x0E for the active column ([0xA60A] @0x06FE72);
+ *   the SELECTED value cell only ([col*2+0x1E7E] == row @0x06FE7E):
+ *               the highlight box, then "<axis>:" — @MISC 144+col
+ *               strcat ":" (DGROUP 0x2020 @0x06FEDE) — centred in the
+ *               72-wide cell with a 1-px shadow at x+1 (ink 0), its
+ *               baseline row y+23-FONTTINY height ([0x89E] @0x06FEB6..
+ *               0x06FEC7), and the value @MISC 148+col*3+row at y+25
+ *               (@0x06FF26); other cells get only the frame sprite
+ *               (0x181F:0xE2 @0x06FF8C).
+ * The @MISC binding (the BSS id table [0x2EDA..0x2EFC] is 18 words and
+ * @MISC 144..161 is the matching 18-string run) is consistent, not
+ * traced through the table loader — FLAGGED.  The two 0x181F:0xE2 blits
+ * (y=16 and y=183 bands @0x06FFD2/@0x07002A, the cell frames) are
+ * sprites from the sheet [0x2DA8] whose identity is unread: not drawn
+ * (the PIK already carries the frames); the highlight box 0xCE is drawn
+ * as a 1-px outline (fill-vs-outline TBD). */
+void rm_draw_customize(int axis, const uint8_t value[4]) {
+    bresolve();
+    rd_use_palette("CUSTOMIZ.PIK");
+    rd_pik("CUSTOMIZ.PIK");
+    center_shadow(&B_TINY, dat_text_misc[160], 160, 4, blut(0xFD), 0);
+    center_shadow(&B_TINY, dat_text_misc[161], 160, 190, blut(0xFE), 0);
+    int fh = B_TINY.cell_h;               /* FONTTINY glyph height [0x89E] */
+    for (int col = 0; col < 4; col++) {
+        uint8_t ci = (uint8_t)(col == axis ? 0x0E : 0x0A);
+        int x = col * 76 + 10;
+        for (int row = 0; row < 3; row++) {
+            if (!value || value[col] != row) continue;
+            int y = row * 60 + 16 - (row > 1 ? 1 : 0);
+            rm_hollow_rect(x, y, 72, 48, ci);
+            char lab[40];
+            snprintf(lab, sizeof(lab), "%s:", dat_text_misc[144 + col]);
+            center_shadow(&B_TINY, lab, x + 36, y + 23 - fh, blut(ci), 1);
+            center_shadow(&B_TINY, dat_text_misc[148 + col * 3 + row],
+                          x + 36, y + 25, blut(ci), 1);
+        }
+    }
+}
+
 static const uint8_t DIFF_OUTLINE[5] = { 0x0A, 0x09, 0x0E, 0x0D, 0x0C };
 void rm_draw_difficulty(int diff) {
     bresolve();

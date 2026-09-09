@@ -400,6 +400,12 @@ int render_boot_main(const char *kind, const char *pak_path,
     if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
     if (strcmp(kind, "title") == 0) rm_draw_title(arg);
     else if (strcmp(kind, "difficulty") == 0) rm_draw_difficulty(arg);
+    /* customize ARG = the active column, values pinned [1,0,2,1] (one of
+     * each row) -- the JS RENDERBOOT block mirrors */
+    else if (strcmp(kind, "customize") == 0) {
+        static const uint8_t v[4] = { 1, 0, 2, 1 };
+        rm_draw_customize(arg, v);
+    }
     else if (strcmp(kind, "nation") == 0) rm_draw_nation(arg);
     /* king ARG = nation; cards ARG = card 0..9 with the pinned nation 0
      * / difficulty 0 / leader "Willem" the JS RENDERBOOT block mirrors */

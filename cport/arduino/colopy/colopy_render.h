@@ -160,6 +160,10 @@ void rm_count_badge(int value, int x, int y, uint8_t colour);
 void rm_draw_report(const char *fkey);        /* colopy_report_render.c */
 void rm_draw_woodcut(int n);                  /* colopy_report_render.c */
 void rm_draw_title(int menu_row);             /* colopy_boot_render.c */
+/* CUSTOMIZE New World (func_070060 / draw-all func_06FF94 / cell
+ * func_06FE1C): CUSTOMIZ.PIK + the 4x3 selector grid; axis = the active
+ * column [0xA60A], value[4] = the DGROUP 0x1E7E words */
+void rm_draw_customize(int axis, const uint8_t value[4]);
 void rm_draw_difficulty(int diff);
 void rm_draw_nation(int nation);
 void rm_draw_name(const char *leader);
