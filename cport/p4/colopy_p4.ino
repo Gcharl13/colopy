@@ -94,6 +94,7 @@ extern "C" {
 #include "colopy_sim.h"
 #include "colopy_render.h"
 #include "colopy_input.h"
+#include "colopy_serial_line.h"  /* the serial reader's framing (host-tested) */
 #include "colopy_data.h"
 #include "colopy_sfx.h"          /* the byte-decoded COLDIG index */
 #if COLOPY_AUDIO
@@ -2261,36 +2262,26 @@ void loop() {
             }
         }
     }
-    /* Serial line framing.  A line longer than the buffer, or one
-     * carrying a control byte (a pasted escape sequence, a dropped
-     * character), is REJECTED whole at its terminator -- the old code
-     * silently clipped the overflow and executed the prefix, which for
-     * `s <name>` writes a differently-named save.  CR, LF and CRLF all
-     * terminate; an empty line is ignored. */
-    static char line[160];
-    static size_t len = 0;
-    static bool rejected = false;
+    /* Serial line framing (colopy_serial_line.h, host-tested): a line
+     * longer than the buffer, or one carrying a control byte (a pasted
+     * escape sequence, a dropped character), is REJECTED whole at its
+     * terminator -- the old code silently clipped the overflow and
+     * executed the prefix, which for `s <name>` writes a differently-
+     * named save.  CR, LF and CRLF all terminate; an empty line is
+     * ignored. */
+    static colopy_serial_line serial_in = {{0}, 0, 0};
     while (Serial.available()) {
-        char c = (char)Serial.read();
-        if (c != '\n' && c != '\r') {
-            if (rejected) continue;
-            if ((unsigned char)c < 32 && c != '\t') { rejected = true; continue; }
-            if ((unsigned char)c == 127 || len >= sizeof(line) - 1) {
-                rejected = true;
-                continue;
-            }
-            line[len++] = c;
-            continue;
-        }
-        line[len] = 0;
-        len = 0;
-        if (rejected) {
-            rejected = false;
+        int got = colopy_serial_feed(&serial_in, (unsigned char)Serial.read());
+        if (got < 0) {
             Serial.println("serial: line too long or not plain text -- "
                            "ignored, nothing executed");
             continue;
         }
-        if (!line[0]) continue;
+        if (got != 1) continue;
+        /* a command may enter board_ask, whose pump drains Serial itself;
+         * work from a copy so the framing state is free to be reused */
+        char line[COLOPY_SERIAL_LINE_CAP];
+        memcpy(line, serial_in.text, sizeof(line));
         const char *arg = line + 1;
         while (*arg == ' ' || *arg == '\t') arg++;
         switch (line[0]) {

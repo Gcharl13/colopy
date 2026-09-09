@@ -30,7 +30,7 @@ smoke: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 %.o: %.c $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@
-test: smoke budget ram records mock assets
+test: smoke render-storage serial-framing budget ram records mock assets
 	./smoke
 # The depth gate.  Self-locating, so the cwd here does not matter.
 budget:
@@ -66,5 +66,18 @@ census:
 census-capture:
 	python3 ../../tools/screen_census.py --capture
 clean:
-	rm -f smoke $(OBJ)
+	rm -f smoke render_storage_test serial_line_test $(OBJ)
 .PHONY: test budget ram records mock assets census census-capture clean
+# The external-framebuffer contract (the P4 layout, RD.fb a pointer bound
+# by the shell): every unit rebuilt from source with the define, then the
+# bind/init/rebind rules and the whole render smoke through that storage.
+render-storage:
+	$(CC) $(CFLAGS) -DCOLOPY_EXTERNAL_FRAMEBUFFER=1 -o render_storage_test \
+	    render_storage_test.c $(filter-out main.c,$(OBJ:.o=.c))
+	./render_storage_test ../pak/COLOPY.PAK /tmp/colopy_render_storage.ppm
+# The serial framing contract: an over-long or corrupted line is rejected
+# whole, never executed as its prefix (cport/game/colopy_serial_line.h).
+serial-framing:
+	$(CC) $(CFLAGS) -o serial_line_test serial_line_test.c
+	./serial_line_test
+.PHONY: render-storage serial-framing

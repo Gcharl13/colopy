@@ -167,7 +167,10 @@ the per-pixel path. Host and Teensy keep the inline array, so
 — the ceiling is unchanged and the gate still holds where it did).
 `tools/ino_mock/check.sh` compiles the sketch a third time with the board
 macro set, and every C unit once with the pointer layout, so the external
-path can no longer rot unseen. This is one of the changes adopted from the
+path can no longer rot unseen; `make render-storage` (in `make test`,
+2026-09-09) goes further and LINKS every unit with the pointer layout,
+then proves the bind/init/rebind contract and runs the whole render smoke
+through caller-owned storage with guard bytes on both ends. This is one of the changes adopted from the
 sibling port reviewed 2026-09-08 (`notes/rulings/RULINGS.md`).
 
 ## Teensy 4.1

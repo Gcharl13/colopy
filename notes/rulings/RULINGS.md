@@ -12507,3 +12507,54 @@ Reviewed against the disassembly and this tree's oracles:
   `tools/build_msvc_host.ps1`, `cport/p4/ACCEPTANCE.md`,
   `spec/systems/map_generation.md`, `spec/ui/interaction_completion.md`);
   nothing was written here to stand in for them.
+
+## 2026-09-09a — Sibling-port bundle 2 (`audio.zip` = its whole `cport/`): still no JS; three more shell items adopted
+
+The second hand-over is the sibling's complete `cport/` tree (core, data,
+game, audio, debug, host tests, an MSVC build directory). Despite the
+name, its `cport/audio/` is **byte-identical** to ours (all four `.c`, the
+internal header, `audio_smoke.c`, `audio_pak_check.c`, `audio_fixture.h`
+— zero changed lines); only `colopy_audio.h` differs, by a comment. It
+still contains **no `game.js` and no `tools/`**, so the lockstep bar of
+2026-09-08a is unchanged: its core (`colopy_sav.c` +425 lines,
+`colopy_europe.c` +383, `colopy_rivals.c` +381, `colopy_turn.c` +345,
+`colopy_resolve.c` +140, `colopy_mapgen.c` new, `colopy_sim.h` +126,
+`colopy_records.h` +75) and `colopy_input.c` (+1,475) stay out.
+
+**Adopted:**
+- `cport/host/render_storage_test.c` + `make render-storage` (now in
+  `make test`): every unit linked with `COLOPY_EXTERNAL_FRAMEBUFFER=1`,
+  the bind/init/rebind contract (unbound init fails, short/null buffers
+  refused, a repeated init keeps the binding, a failed pak init keeps it,
+  guard bytes on both ends survive a full-screen fill and the whole render
+  smoke). 28/28 on our 2026-09-08 implementation, unmodified.
+- `cport/game/colopy_serial_line.h` (their `debug/colopy_serial_line.h`,
+  placed under `game/` so both sketch generators pick it up) +
+  `cport/host/serial_line_test.c` + `make serial-framing`: the P4 shell's
+  reader now uses the header instead of the equivalent inline loop
+  committed 2026-09-08, so the framing rule is host-proved (19/19).
+- Two comment corrections (`colopy_pak.h`: the pak serves the P4 too;
+  `colopy_audio.h`: the two shells' gate styles).
+
+**Not adopted, and why:**
+- `colopy_transport.h` + `transport_test.c` (touch state machine, pointer
+  phases, `p` command parser): pure and tested, but it replaces a touch
+  path the user verified on hardware 2026-08-16 with one nobody here can
+  try on the panel, and its DOWN/MOVE/CANCEL phases only pay off with
+  their pointer-phase input layer. Left for when that layer comes with its
+  JS.
+- `debug/colopy_debug.c` (+ `debug_command_test.c`): the scenario console
+  reaches into their core (`colopy_pending_events`, their SoL/father
+  setters). Out with the core.
+- `mapgen_test.c`, `sav_load_transaction_test.c`, `rival_navigation_test.c`,
+  `colony_interaction_test.c`, `pointer_interaction_test.c`,
+  `colony_review_probe.c`, `pointer_menu_review_probe.c`: all test the
+  unadopted core/input.
+- `data/colopy_text.c`: their copy has the pedia bullets "∙" (U+2219) as
+  the mojibake "âˆ™" in `tx_s270..272` (SCHOOLHOUSE/COLLEGE/UNIVERSITY) —
+  a Windows-side re-encoding regression, NOT a fix. Ours is correct; theirs
+  should be regenerated from the bundle.
+- `host/Makefile` `docs` target (`check_markdown_links.py`, `linkcheck.py`)
+  and `host/README_WINDOWS.md` / `build-msvc/`: the tools are not in this
+  tree; the MSVC pack pragmas in `records.h` come with their records
+  change, not before it.

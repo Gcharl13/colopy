@@ -11,7 +11,9 @@
  * Layering: platform-free C11, static buffers only, no malloc, no I/O
  * (streaming reaches it through the shell-provided read callback). Never
  * touches core state and is absent from colopy_digest() — the fidelity
- * oracles cannot move. Shells guard all calls with #ifdef COLOPY_AUDIO.
+ * oracles cannot move. Shells guard all calls behind COLOPY_AUDIO: the P4
+ * shell with the numeric `#if COLOPY_AUDIO` (0/1, default 1), the older
+ * Teensy shell with an `#ifdef` presence gate (undefined by default).
  *
  * Original id namespace (byte-cited):
  *   id < 0x10           driver commands (ASOUND dispatcher file 0x1C35):
