@@ -12558,3 +12558,72 @@ still contains **no `game.js` and no `tools/`**, so the lockstep bar of
   and `host/README_WINDOWS.md` / `build-msvc/`: the tools are not in this
   tree; the MSVC pack pragmas in `records.h` come with their records
   change, not before it.
+
+## 2026-09-09b — Sibling-port bundle 3 (its `game.js` + `port/tools`): NOT in lockstep with its own C; six-slot cargo ported here in lockstep; its map generator declined as a reconstruction
+
+With the sibling's `game.js` (19,018 lines; 166 functions differ from ours,
+`importSav` alone +354 lines) and `port/tools/` in hand, its whole tree was
+rebuilt in a scratch worktree at its base commit (`82e7e45`, found by
+minimum diff) and run through THIS tree's oracles:
+
+- **It does not compile under our `-Werror`** (two misleading-indentation
+  sites in `colopy_input.c`, eight `immigrant` initialisers in `main.c`
+  short of the struct's seven fields — it was built with MSVC).
+- **Its JS and its C disagree from turn 1** on all three fixtures:
+  `turns 100` 14/15/? field disagreements (sav1653: colony `sol` 0/1/3 vs
+  2/20/13, `bellsTotal` 11 vs 41, `fip` 2 vs 10, `woi[2]` 1062 vs 0, rival
+  unit lists, the natives' positions — i.e. the RNG stream splits inside
+  turn 1), `newgame 30` 10–11 per config; `input boot` 0; `input sav1653`
+  the JS harness dies in `atob` (its bundle's fixture decoding changed).
+  Its own tests pass (transport 208, sav-transaction 88, debug 2376,
+  rival-navigation 11), but none of them is a JS-vs-C oracle — its README's
+  "C-versus-JavaScript parity" is `tools/verify_corrected.py`, which was
+  not supplied. **A wholesale merge is rejected**: it would trade a green
+  lockstep tree for a red one.
+
+**Ported here, in lockstep (RULINGS 2026-09-08a's byte finding, all
+oracles green — turns 100 ×3 + agitate, newgame 30 ×8, market, raid,
+five input scenarios, twelve renders, make test):**
+- `UnitRecord +0x10..+0x15` is `cargo_amount[6]` (union: `tools` aliases
+  +0x15 for a land unit; +0x10..+0x14 of a land unit stay unread/TBD).
+- Both importers read all six quantity bytes (`game.js` `importSav`,
+  `cport/core/colopy_europe.c` seed loop); slots 2..5 no longer load as
+  full holds. The JS sets `u.tools` only for land units (a ship's +0x15 is
+  slot 5), and the C harness projects `tools` as 0 for ships to match.
+- **The C save now folds a changed hold back into the record** (count,
+  kind nibbles, six quantities; a merged entry over 100 splits into slots
+  of 100), for the human's on-map ships — the set the load seeds into
+  `CR.unit_hold`. An untouched ship's record goes out verbatim (the fold
+  first decodes the record the way the load did and skips it if equal), so
+  the fixtures' byte-exact round-trips still hold; `smoke` gains the
+  `sixslot` checks (250+37+100+12 → 6 slots → reload re-merges). Residue:
+  ships in Europe / mid-crossing keep their off-map record's cargo bytes
+  (the crossing mirror has no record index); wagon trains and rival
+  carriers were never seeded and are untouched — both flagged in the code.
+  The JS has no `.SAV` writer (browser saves are JSON), so the fold is
+  C-only by construction, not a lockstep gap.
+- `port/tools/bundle.py`: every JSON open passes `encoding="utf-8"` (their
+  Windows fix; a no-op here).
+
+**Declined — `colopy_mapgen.c` / `generateNewWorld` / Customize World.**
+Its own header says it: "the compact rules below are RECONSTRUCTED". What
+it cites from `func_064A10` is the skeleton — pass order, the land target
+`(land_mass+land_form+1)*0x140`, the smoothing budget `(p_iter+1)*0x320`,
+the six-entry north/south terrain tables, the four-column lane / two-row
+Arctic outline, H/5 start bands, and the boot dispatcher's five
+`random_int(0,3)` seeds @0x75C86..0x75CC2 — while the blob walkers, the
+restart rule, the relaxation predicate, the latitude jitter, the hill /
+mountain / river rolls and the start rotation are invented. Porting that
+would ship worlds that are not the game's under a "byte-verified" banner
+(CLAUDE.md prime directive). The four selectors at DGROUP 0x1E7E..0x1E84
+ARE byte-verified (2026-09-08a) and have no consumer without a generator.
+**Lead recorded**: read `func_064A10` @0x064A10 whole (the 0x0644AE..
+0x0650E7 readers of the selectors are inside it) before any generator
+lands; its cited constants above are UNVERIFIED here until then.
+
+**Also declined**: the rest of its `importSav` (PowerRecord +0x0E..+0x1A,
+`+0x00` flags, dock pool +0x02, globals +0x48 parley/king-war stamps,
+NativeSettlement +0x03 latches, globals +0x50 SoL word) — several carry
+addresses and may well be right, but each moves the sim and none was
+re-read here; they are the natural next byte-read batch, item by item.
+Its `text.c` mojibake (2026-09-09a) stands.

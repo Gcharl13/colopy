@@ -43,7 +43,7 @@ fi
 # ...and the C side of the same choice: every render/game/core unit of the
 # sketch must still compile with RD.fb a pointer (the host build only ever
 # sees the inline array).
-if gcc -fsyntax-only -std=c99 -Wall -Werror -DCOLOPY_EXTERNAL_FRAMEBUFFER=1 \
+if gcc -fsyntax-only -std=gnu11 -Wall -Werror -DCOLOPY_EXTERNAL_FRAMEBUFFER=1 \
      -I../../cport/arduino_p4/colopy_p4 ../../cport/arduino_p4/colopy_p4/*.c \
      2> /tmp/mockerr_fb; then
   echo "MOCK-COMPILE-OK (C units, external framebuffer)"

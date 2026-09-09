@@ -87,9 +87,20 @@ typedef struct COLOPY_PACKED {
     uint8_t  _pad_0B[1];
     uint8_t  cargo_slot_count;      /* +0x0C */
     uint8_t  cargo_kind_packed[3];  /* +0x0D  nibble per slot */
-    uint8_t  cargo_amount[2];       /* +0x10  slots 0..1 (rest unmapped) */
-    uint8_t  _pad_12[3];
-    uint8_t  tools;                 /* +0x15 */
+    /* +0x10..+0x15: the six cargo QUANTITY bytes, one per slot — the
+     * engine's getter func_00B2F0 @0x00B2FB and setter func_00B304
+     * @0x00B312 both index `[bx + si + 0x3154]` with si = unit*0x1C and
+     * bx = the slot (unit table base 0x3144; RULINGS 2026-09-08a).  The
+     * same bytes are CONTEXTUAL for a non-carrier: +0x15 is a land unit's
+     * tools count (SAV-validated, game.js importer); what +0x12..+0x14
+     * hold for a land unit is unread — TBD, not guessed. */
+    union {
+        uint8_t cargo_amount[6];    /* +0x10  carrier: slots 0..5 */
+        struct {
+            uint8_t _land_10[5];    /* +0x10..+0x14 land unit: unread */
+            uint8_t tools;          /* +0x15  land unit: tools */
+        };
+    };
     uint8_t  turns_worked;          /* +0x16 */
     uint8_t  profession;            /* +0x17  @JOB row (SAV_PROFESSION) */
     uint16_t chain_prev;            /* +0x18 */

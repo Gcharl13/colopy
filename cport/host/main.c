@@ -594,7 +594,12 @@ static void print_projection(int job_convert) {
              * first refresh (no u.moves on the JS object) — JSON null */
             if (CR.unit_moves_undef[ui]) printf("null");
             else printf("%u", CR.unit_moves[ui]);
-            printf(",%u,%d]", CS.units[ui].tools,
+            /* +0x15 is tools on a LAND unit only; on a ship it is cargo
+             * slot 5's quantity (six-slot union) and the JS has no
+             * u.tools there */
+            printf(",%u,%d]",
+                   dat_units[CS.units[ui].type].hull > 0 ? 0u
+                       : (unsigned)CS.units[ui].tools,
                    /* 0 = Expert Farmers counts; 28 = none (C4.26) */
                    CS.units[ui].profession < DAT_JOBEXPERT_COUNT
                        ? CS.units[ui].profession : -1);
@@ -994,6 +999,55 @@ int main(int argc, char **argv) {
                "villages %2u  tax %2u%%  digest %08X\n",
                savs[i].name, ov.year, ov.season, ov.turn, ov.n_units,
                ov.n_colonies, ov.n_settlements, ov.tax_rate, colopy_digest());
+    }
+
+    /* Six-slot cargo (2026-09-09, RULINGS 2026-09-08a): a hold changed in
+     * play folds back into the record's +0x0C count / +0x0D..+0x0F kinds /
+     * +0x10..+0x15 quantities on save, one byte per slot, merged entries
+     * above 100 split across slots -- and an UNTOUCHED ship's record still
+     * goes out verbatim (the byte-exact loop above already proves that). */
+    {
+        colopy_status st = colopy_load_sav(sav1653, sizeof(sav1653));
+        CHECK(st == COLOPY_OK, "sixslot: sav1653 load");
+        int si = -1;
+        for (int i = 0; i < CS.n_units && si < 0; i++) {
+            const UnitRecord *u = &CS.units[i];
+            if ((u->owner_flags & 0x0F) == cs_nation() &&
+                u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0 &&
+                u->map_x < COLOPY_MAP_W && u->map_y < COLOPY_MAP_H) si = i;
+        }
+        CHECK(si >= 0, "sixslot: an on-map player ship in sav1653");
+        if (si >= 0) {
+            CR.unit_n_hold[si] = 0;
+            hold_add(CR.unit_hold[si], &CR.unit_n_hold[si], 4, 250);  /* 3 slots */
+            hold_add(CR.unit_hold[si], &CR.unit_n_hold[si], 9, 37);
+            hold_add(CR.unit_hold[si], &CR.unit_n_hold[si], 14, 100);
+            hold_add(CR.unit_hold[si], &CR.unit_n_hold[si], 1, 12);
+            size_t n = colopy_save_sav(out, sizeof(out));
+            CHECK(n == sizeof(sav1653), "sixslot: save size");
+            const UnitRecord *u = &CS.units[si];
+            CHECK(u->cargo_slot_count == 6 && u->cargo_amount[0] == 100 &&
+                  u->cargo_amount[1] == 100 && u->cargo_amount[2] == 50 &&
+                  u->cargo_amount[3] == 37 && u->cargo_amount[4] == 100 &&
+                  u->cargo_amount[5] == 12,
+                  "sixslot: quantities folded per slot (250 -> 100,100,50)");
+            CHECK((u->cargo_kind_packed[0] & 0x0F) == 4 &&
+                  (u->cargo_kind_packed[0] >> 4) == 4 &&
+                  (u->cargo_kind_packed[1] & 0x0F) == 4 &&
+                  (u->cargo_kind_packed[1] >> 4) == 9 &&
+                  (u->cargo_kind_packed[2] & 0x0F) == 14 &&
+                  (u->cargo_kind_packed[2] >> 4) == 1,
+                  "sixslot: kind nibbles folded per slot");
+            st = colopy_load_sav(out, n);
+            CHECK(st == COLOPY_OK, "sixslot: reload");
+            /* the reload re-merges the split slots: 250 sugar, 37, 100, 12 */
+            CHECK(CR.unit_n_hold[si] == 4 &&
+                  CR.unit_hold[si][0].good == 4 && CR.unit_hold[si][0].qty == 250 &&
+                  CR.unit_hold[si][1].good == 9 && CR.unit_hold[si][1].qty == 37 &&
+                  CR.unit_hold[si][2].good == 14 && CR.unit_hold[si][2].qty == 100 &&
+                  CR.unit_hold[si][3].good == 1 && CR.unit_hold[si][3].qty == 12,
+                  "sixslot: all six quantity bytes read back (slot 5 too)");
+        }
     }
 
     /* C3.7 (2026-09-02): the unit-build target and the trade-route table

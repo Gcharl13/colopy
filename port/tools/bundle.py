@@ -51,10 +51,10 @@ def uri(p: Path) -> str:
 
 def build_data():
     D = {}
-    pal = json.load(open(ROOT / "data_extracted/palette.json"))
+    pal = json.load(open(ROOT / "data_extracted/palette.json", encoding="utf-8"))
     D["palette"] = [[e["r"], e["g"], e["b"]] for e in pal]
 
-    nt = json.load(open(ROOT / "data_extracted/tables/names_tables.json"))
+    nt = json.load(open(ROOT / "data_extracted/tables/names_tables.json", encoding="utf-8"))
     rows = lambda k: nt[k]["rows"]
     D["difficulty"] = [r["name"] for r in rows("@DIFFICULTY")]
     D["seasons"] = [r["name"] for r in rows("@SEASONS")]
@@ -92,7 +92,7 @@ def build_data():
     # builder needs @width; @default is the highlighted row, or the pre-filled
     # text for an entry field). Body and tail are split on the blank line the
     # parser treats as a paragraph break.
-    full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
+    full = json.load(open(ROOT / "data_extracted/text/GAME.full.json", encoding="utf-8"))["sections"]
     D["dialogs"] = {}
     for key in ("@LANDHO", "@LANDFALL", "@LANDFALL2", "@COLONY", "@RECRUIT",
                 "@PURCHASE", "@RENAMECOLONY", "@SAILAWAY", "@SAILHOME",
@@ -112,12 +112,12 @@ def build_data():
 
     # Woodcut captions: the single @WOODCUT section, one caption per line, index
     # = woodcut number (1 = DISCOVERY OF THE NEW WORLD, the first-landfall plate).
-    wc = json.load(open(ROOT / "data_extracted/text/WOODCUT_sections.json"))
+    wc = json.load(open(ROOT / "data_extracted/text/WOODCUT_sections.json", encoding="utf-8"))
     D["woodcuts"] = wc["@WOODCUT"].split("\n")
 
     # Colony names: COLONY.TXT carries one list per nation, "<name>[,<year>]"
     # per line, used in order as colonies are founded.
-    col = json.load(open(ROOT / "data_extracted/text/COLONY_sections.json"))
+    col = json.load(open(ROOT / "data_extracted/text/COLONY_sections.json", encoding="utf-8"))
     D["colonynames"] = [[ln.split(",")[0] for ln in col[k].split("\n") if ln.strip()]
                         for k in ("@ENGLISH", "@FRENCH", "@SPANISH", "@DUTCH")]
 
@@ -200,13 +200,13 @@ def build_data():
     # GAME.TXT @SCORE: the endgame joke-name lines ("%STRING0 Fever" ...),
     # one drawn on the @EXPLOITS rating card.
     D["scorenames"] = [l for l in
-                       json.load(open(ROOT / "data_extracted/text/GAME.full.json"))
+                       json.load(open(ROOT / "data_extracted/text/GAME.full.json", encoding="utf-8"))
                        ["sections"]["@SCORE"]["body"].split("\n") if l.strip()]
     D["levelname"] = [r["settlement_singular"] for r in rows("@LEVELS")]
     D["regionname"] = [r["name"] for r in rows("@COLONYNAME")]
 
-    game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
-    labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
+    game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json", encoding="utf-8"))
+    labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json", encoding="utf-8"))
     D["eurolabel"] = labels["@EUROLABEL"].split("\n")
     # @TRADENAMES: a leading count then the five route-name nouns the engine
     # picks from when naming a route (Run / Ferry / Cargo / Transport / Triangle).
@@ -214,14 +214,14 @@ def build_data():
 
     # PEDIA.TXT: @PEDIA lists the seven category names; the rest are entry
     # bodies keyed @<CATEGORY><index>. Comment lines (@;) are already stripped.
-    ped = json.load(open(ROOT / "data_extracted/text/PEDIA_sections.json"))
+    ped = json.load(open(ROOT / "data_extracted/text/PEDIA_sections.json", encoding="utf-8"))
     D["pedia"] = {"categories": [l for l in ped["@PEDIA"].split("\n") if l.strip()],
                   "entries": {k.lstrip("@"): v for k, v in ped.items() if k != "@PEDIA"}}
     # @FATHERS: name, category (0..4 over @FOUNDING), then three ERA WEIGHT
     # bytes -- year <1600 / 1600-1699 / >=1700. A father with weight 0 in the
     # current era cannot be drawn (§17.3).
     fath_raw = [l for l in json.load(
-        open(ROOT / "data_extracted/text/NAMES_sections.json"))["@FATHERS"].split("\n")
+        open(ROOT / "data_extracted/text/NAMES_sections.json", encoding="utf-8"))["@FATHERS"].split("\n")
         if l.strip()]
     D["fathers"] = []
     for line in fath_raw:
@@ -234,7 +234,7 @@ def build_data():
     # @INDEPENDENT: the four per-nation republic names the Hall of Fame's
     # "President, <republic>" line uses (capture hof_02_round2.png).
     D["independent"] = [l for l in json.load(
-        open(ROOT / "data_extracted/text/NAMES_sections.json"))["@INDEPENDENT"].split("\n")
+        open(ROOT / "data_extracted/text/NAMES_sections.json", encoding="utf-8"))["@INDEPENDENT"].split("\n")
         if l.strip()]
     # @TRIBES' `value` column is the tribe's MAP COLOUR -- a palette index, the
     # native counterpart of @COUNTRY.color for the European powers. The eight
@@ -246,7 +246,7 @@ def build_data():
 
     # TRIBE.TXT is the native-settlement coordinate list: one @<TRIBE> section
     # per tribe, "x,y" per line. @STOP is a terminator, not a tribe.
-    tribe_txt = json.load(open(ROOT / "data_extracted/text/TRIBE_sections.json"))
+    tribe_txt = json.load(open(ROOT / "data_extracted/text/TRIBE_sections.json", encoding="utf-8"))
     D["tribesites"] = {}
     for key, body in tribe_txt.items():
         if key == "@STOP":
@@ -264,7 +264,7 @@ def build_data():
     # rest are rows. "~" marks the accelerator letter -- the menu engine parses
     # it out and matches it against the typed key (§27.1), so the letters are
     # data, not a hardcoded table. "#" marks a row the shipped build greys out.
-    menu = json.load(open(ROOT / "data_extracted/text/MENU_sections.json"))
+    menu = json.load(open(ROOT / "data_extracted/text/MENU_sections.json", encoding="utf-8"))
 
     def parse_row(line):
         raw = line.strip()
@@ -554,10 +554,10 @@ def build_data():
     # the terrain layer of AMER2.MP as tools/extract_mp.py reads it (6-byte
     # header, func_071106 @0x7113E-0x71167): the old data_extracted/map/
     # AMER2_tiles.json had read the version word as two tiles (G11)
-    mp = json.load(open(ROOT / "assets/maps/amer2.json"))
+    mp = json.load(open(ROOT / "assets/maps/amer2.json", encoding="utf-8"))
     D["map"] = {"w": mp["width"], "h": mp["height"], "tiles": mp["layers"]["terrain"]}
 
-    man = json.load(open(ASSETS / "manifest.json"))
+    man = json.load(open(ASSETS / "manifest.json", encoding="utf-8"))
     D["sheets"] = {k: {"frames": v["frames"]} for k, v in man["sheets"].items()}
     # VGA colour cycling: the band, its step period, and which atlases carry a
     # mask the renderer can re-tint per phase (CYCLE.DAT, build_assets.CYCLE).

@@ -14555,15 +14555,20 @@ function importSav(bytes) {
       // are untouched by an Expert Farmers profession.
       const prof = SAV_PROFESSION0(d[b + 0x17]);
       if (prof) u.profession = prof;
-      if (d[b + 0x15]) u.tools = d[b + 0x15];
+      // +0x15 is a LAND unit's tools; on a ship the same byte is cargo
+      // slot 5's quantity (six-slot union, RULINGS 2026-09-08a).
+      if (!isShip && d[b + 0x15]) u.tools = d[b + 0x15];
       if (isShip) {
         u.hold = [];
         const n = Math.min(6, d[b + 0x0C]);
         for (let k = 0; k < n; k++) {
           const good = (d[b + 0x0D + (k >> 1)] >> ((k & 1) ? 4 : 0)) & 0x0F;
-          // Only the first two quantity bytes are mapped; further slots load
-          // as full holds. Flagged.
-          const qty = k < 2 ? d[b + 0x10 + k] : 100;
+          // +0x10..+0x15 are the six per-slot quantity bytes: the engine's
+          // getter func_00B2F0 @0x00B2FB / setter func_00B304 @0x00B312
+          // index [0x3154 + slot] off the record (RULINGS 2026-09-08a).
+          // Until 2026-09-09 slots 2..5 loaded as full holds (100); the
+          // real byte is read now, in lockstep with the C.
+          const qty = d[b + 0x10 + k];
           if (qty) holdAdd(u, good, qty);
         }
       }

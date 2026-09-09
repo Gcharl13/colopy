@@ -262,7 +262,10 @@ void europe_seed_from_load(void) {
             for (int k = 0; k < n; k++) {
                 int good = (u->cargo_kind_packed[k >> 1] >>
                             ((k & 1) ? 4 : 0)) & 0x0F;
-                int qty = k < 2 ? u->cargo_amount[k] : 100;
+                /* all six quantity bytes are real (func_00B2F0/func_00B304
+                 * index [0x3154+slot]; RULINGS 2026-09-08a) -- slots 2..5
+                 * were assumed full until 2026-09-09 */
+                int qty = u->cargo_amount[k];
                 if (qty) hold_add(e->hold, &e->n_hold, good, qty);
             }
             /* A ship IN EUROPE unloads: its riders disembark to the dock
@@ -283,7 +286,10 @@ void europe_seed_from_load(void) {
             for (int k = 0; k < n; k++) {
                 int good = (u->cargo_kind_packed[k >> 1] >>
                             ((k & 1) ? 4 : 0)) & 0x0F;
-                int qty = k < 2 ? u->cargo_amount[k] : 100;
+                /* all six quantity bytes are real (func_00B2F0/func_00B304
+                 * index [0x3154+slot]; RULINGS 2026-09-08a) -- slots 2..5
+                 * were assumed full until 2026-09-09 */
+                int qty = u->cargo_amount[k];
                 if (qty) hold_add(CR.unit_hold[i], &CR.unit_n_hold[i],
                                   good, qty);
             }

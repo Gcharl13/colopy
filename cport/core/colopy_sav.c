@@ -300,6 +300,60 @@ size_t colopy_save_sav(uint8_t *buf, size_t cap) {
      * record goes out verbatim (C3.7, 2026-09-02). */
     memcpy(p, CS.colonies, (size_t)CS.n_colonies * sizeof(ColonyRecord));
     p += (size_t)CS.n_colonies * sizeof(ColonyRecord);
+    /* Fold each ON-MAP carrier's live hold (CR.unit_hold, the JS hold
+     * list with its holdAdd merge) back into the record's cargo bytes:
+     * +0x0C slot count, +0x0D..+0x0F kind nibbles, +0x10..+0x15 one
+     * quantity per slot (getter/setter func_00B2F0/func_00B304 index
+     * [0x3154+slot]; RULINGS 2026-09-08a).  A merged entry above 100
+     * splits across slots of 100, the engine's per-slot cap.  Until
+     * 2026-09-09 the record kept its LOAD-time cargo, so goods loaded in
+     * play vanished from a save.  Ships in Europe / mid-crossing keep
+     * their off-map record untouched (the crossing mirror carries no
+     * record index -- residue, ledger B4.8).  Unused slots are zeroed:
+     * the engine reads slot k only below the count, so a stale byte is
+     * inert there, but a clean record is what a fresh load expects
+     * (a port choice, FLAGGED). */
+    for (int i = 0; i < CS.n_units; i++) {
+        UnitRecord *u = &CS.units[i];
+        /* only what the load seeded into CR.unit_hold: the human's SHIPS
+         * on the map (colopy_europe.c seed loop; wagon trains and rival
+         * carriers keep their record bytes verbatim, as before) */
+        if ((u->owner_flags & 0x0F) != cs_nation()) continue;
+        if (u->type >= DAT_UNITS_COUNT || dat_units[u->type].hull <= 0) continue;
+        if (u->map_x >= COLOPY_MAP_W || u->map_y >= COLOPY_MAP_H) continue;
+        /* unchanged since the load?  Decode the record the way the seed
+         * did and compare: an untouched ship's bytes go out verbatim, so a
+         * clean load->save round-trip stays byte-exact (two same-good
+         * slots merge on load and would otherwise re-split differently). */
+        {
+            hold_slot dec[EURO_HOLD_MAX]; uint8_t nd = 0;
+            int n = u->cargo_slot_count < 6 ? u->cargo_slot_count : 6;
+            for (int k = 0; k < n; k++) {
+                int good = (u->cargo_kind_packed[k >> 1] >> ((k & 1) ? 4 : 0)) & 0x0F;
+                if (u->cargo_amount[k]) hold_add(dec, &nd, good, u->cargo_amount[k]);
+            }
+            int same = nd == CR.unit_n_hold[i];
+            for (int k = 0; same && k < nd; k++)
+                same = dec[k].good == CR.unit_hold[i][k].good &&
+                       dec[k].qty == CR.unit_hold[i][k].qty;
+            if (same) continue;
+        }
+        int slot = 0;
+        uint8_t kinds[3] = {0, 0, 0}, amts[6] = {0, 0, 0, 0, 0, 0};
+        for (int k = 0; k < CR.unit_n_hold[i] && slot < 6; k++) {
+            int left = CR.unit_hold[i][k].qty, good = CR.unit_hold[i][k].good;
+            while (left > 0 && slot < 6) {
+                int q = left > 100 ? 100 : left;
+                kinds[slot >> 1] |= (uint8_t)((good & 0x0F) << ((slot & 1) ? 4 : 0));
+                amts[slot] = (uint8_t)q;
+                left -= q;
+                slot++;
+            }
+        }
+        u->cargo_slot_count = (uint8_t)slot;
+        memcpy(u->cargo_kind_packed, kinds, 3);
+        memcpy(u->cargo_amount, amts, 6);
+    }
     memcpy(p, CS.units, (size_t)CS.n_units * sizeof(UnitRecord));
     p += (size_t)CS.n_units * sizeof(UnitRecord);
     /* fold the runtime relation matrices back into the +0x34 rows
