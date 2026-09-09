@@ -543,13 +543,24 @@ function detailId(mx, my, v) {
   // The pre-gate func_005F82 (@0x0060B3-@0x0060C4): improvement bit 2 with
   // the TERRITORY plane's high nibble >= 4 (a tribe owner; func_005DF0 =
   // [0x164] byte >> 4, 0xF none) suppresses the detail outright.
-  const imp = impAt(mx, my), owner = resAt(mx, my);
-  if ((imp & 2) && owner !== 0x0F && owner >= 4) return -1;
+  // Re-read 2026-09-09 (RULINGS 2026-09-09d): func_005F82 answers -1
+  // OUTSIDE the 1..w-2 / 1..h-2 bounds (no gate); inside, with improve
+  // bit 2 (a settlement) it returns the territory nibble when that owner
+  // is a EUROPEAN power (< 4, `cmp ax,4; jge` @0x005FC4), and the hash
+  // @0x0060C0 gives up on any non-negative answer -- a European colony's
+  // tile loses its detail, a native settlement's keeps it (the port had
+  // it the other way round).
+  const inb = mx >= 1 && my >= 1 && mx <= MAP.w - 2 && my <= MAP.h - 2;
+  const imp = impAt(mx, my);
+  if (inb && (imp & 2) && resAt(mx, my) < 4) return -1;
   const forest = forestConnects(v) || isScrub(v) ? 1 : 0;
   const q = (mx & 3) * 4 + (my & 3);
   const h = ((my >> 2) * 3 + (mx >> 2) + (G.mapSeed & 0xF) - forest) & 0xF;
   if (h !== q && (h ^ 0xA) !== q) return -1;
-  const d = DTAB[detailClass(v)];
+  // the class lookup func_00627A answers Ocean OUTSIDE the same bounds
+  // (`mov si,0x19` before its bounds test), so an edge-column Sea Lane
+  // square can carry fish -- the fresh-game fixture has plane-2 bit 4 there
+  const d = DTAB[inb ? detailClass(v) : 0x19];
   if (d < 0) return -1;
   // Improve bit 4 suppresses the detail EXCEPT table entry 0xC, which
   // becomes id 0 (@0x00616A-@0x00617E: test al,4 -> only 0xC survives).
@@ -851,140 +862,434 @@ function mkUnit(spec, x, y, cargo) {
 // else 16 <= base < 24 -> b - 8. Layer 2 and the fog plane are zeroed
 // (@0x65AA5..0x65ACE) -- IMPROVE.fill(0) / SEEN.fill(0) below. Saves are
 // untouched: the engine wrote their planes post-fold.
-function normalizeShippedMap() {
-  for (let y = 0; y < MAP.h; y++)
-    for (let x = 0; x < MAP.w; x++) {
-      const i = y * MAP.w + x;
-      if (y === 0 || y === MAP.h - 1) { MAP.tiles[i] = 0x18; continue; }
-      if (x <= 1 || x >= MAP.w - 2) { MAP.tiles[i] = 0x1A; continue; }
-      const b = MAP.tiles[i], base = b & 0x1F;
-      if (base >= 0x18) continue;
-      if (b & 0x20) MAP.tiles[i] = (b & 0xE0) | (base & 7);
-      else if (base >= 16) MAP.tiles[i] = b - 8;
-    }
-}
-// The procedural New World builder -- a FLAGGED RECONSTRUCTION (2026-09-09,
-// RULINGS 2026-09-09c; user-approved as such).  The pass skeleton and its
-// constants are the sibling port's reading of func_064A10 (UNVERIFIED here;
-// only the [0x190] salt draw and the P5 sea-lane/Arctic outline are byte-
-// verified in this tree); every rule inside a pass is invented.  Worlds from
-// here are "a random New World", not the game's.  Deterministic on the salt
-// with a map-local MS-C rand so the shared stream is untouched, and shared
-// draw-for-draw with cport/core/colopy_mapgen.c (the newgame oracle compares
-// the terrain hash and every unit square on NEW and CUSTOM worlds).
-function generateNewWorld(seed, world) {
-  const OCEAN = 0x19, LANE = 0x1A, ARCTIC = 0x18;   // @OTHER 25/26/24
-  const tiles = new Uint8Array(MAP.w * MAP.h);
-  tiles.fill(OCEAN);
-  const rng = { s: (seed >>> 0) || 1 };
-  const next = () => {
-    rng.s = (Math.imul(rng.s, 214013) + 2531011) >>> 0;
-    return (rng.s >>> 16) & 0x7FFF;
+// The New World builder -- func_064A10 @0x064A10..0x065D07, read whole
+// 2026-09-09 (RULINGS 2026-09-09d) and ported pass for pass, draw for draw on
+// the SHARED random stream (the C cport/core/colopy_mapgen.c carries the full
+// citation list; every `ri` here is one `lcall 0x181F:0x4D4`).  In place on
+// MAP.tiles (plane 1), IMPROVE (plane 2, the elevation scratch until P6a),
+// REGION (plane 3, buildRegions = func_063880) and a local scratch for plane
+// 4.  premade = the AMERICA path (the shipped map already in MAP.tiles):
+// outline, fold, labels, the plane-2 bits, the start squares.  Returns the
+// four powers' start squares: the H/5 bands dealt at random from the human
+// -- NOT @SCENARIO (the fresh-game fixture savstart has England at (56,42)).
+// FLAGGED, named: (1) a hills/mountain relaxation visit before the first
+// flat visit rolls with stack garbage in the original, modelled as 0;
+// (2) landmass count = distinct region ids 1..15; (3) the river pass's
+// out-of-plane kernel reads are skipped; (4) the two [0x2174]-gated 0xA0
+// writes are not applied (savstart shows them off).
+function generateNewWorld(premade, world) {
+  const W = MAP.w, H = MAP.h, P = W * H;
+  const OCEAN = 0x19, LANE = 0x1A, ARCTIC = 0x18;
+  const T = MAP.tiles, E = IMPROVE, F = new Uint8Array(P);
+  const ri = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const DX8 = [0, 1, 1, 1, 0, -1, -1, -1, 0, 0], DY8 = [-1, -1, 0, 1, 1, 1, 0, -1, 0, 0];
+  const DX4 = [0, 1, 0, -1], DY4 = [-1, 0, 1, 0];
+  const KX = [0, 1, 0, -1, -1, 1, 1, -1, 0, 2, 0, -2, -1, 1, -1, 1, -2, -2, 2, 2];
+  const KY = [-1, 0, 1, 0, -1, -1, 1, 1, -2, 0, 2, 0, -2, -2, 2, 2, -1, 1, -1, 1];
+  const v = world.values || [1, 1, 1, 1];
+  const p0 = v[0] | 0, p1 = v[1] | 0, p2 = v[2] | 0, p3 = v[3] | 0, p4 = 1;
+  const inb = (x, y) => x >= 1 && y >= 1 && x <= W - 2 && y <= H - 2;
+  const isWater = (x, y) => { const b = T[y * W + x] & 0x1F; return b === OCEAN || b === LANE; };
+  const cls = (x, y) => { const t = T[y * W + x]; return (t & 0x20) ? ((t & 0x80) ? 27 : 28) : (t & 0x1F); };
+  let xmin = 3, xmax = W - 6, ymin = 0, ymax = H, count = 0, north = 0;
+  const walkerIn = (x, y) => xmin < x && x < xmax && ymin < y && y < ymax;
+  const stamp = (x, y) => {
+    if (x === 0 || y === 0 || x >= W || y >= H) return;
+    F[y * W + x] = 1;
+    if (x < W - 1) F[y * W + x + 1] = 1;
+    if (y < H - 1) F[(y + 1) * W + x] = 1;
   };
-  const range = (lo, hi) => lo + Math.floor(next() * (hi - lo + 1) / 32768);
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const p = new Array(5);
-  if (world.mode === 'custom') {
-    for (let i = 0; i < 4; i++) p[i] = clamp(world.values[i] | 0, 0, 2);
-    p[4] = 1;                                   // the fifth setup word, not exposed
-  } else {
-    // NEW WORLD: five random_int(0,3) setup words (sibling's cite
-    // @0x75C86..0x75CC2, UNVERIFIED here), drawn on the map-local stream
-    for (let i = 0; i < 5; i++) p[i] = range(0, 3);
-  }
-  const isLandMarker = (x, y) => x >= 0 && y >= 0 && x < MAP.w && y < MAP.h &&
-    tiles[y * MAP.w + x] === 0;
-  const countLand8 = (x, y) => {
-    let n = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
-      if ((dx || dy) && isLandMarker(x + dx, y + dy)) n++;
+  const walker1 = (x, y) => {                       // func_0641EC
+    let n = ri(1, 0x40) + 2;
+    while (n-- > 0) {
+      if (!walkerIn(x, y)) break;
+      stamp(x, y);
+      const d = 2 * ri(1, 4) - 1; x += DX8[d]; y += DY8[d];
+    }
+  };
+  const walker2 = (x, y) => {                       // func_064266
+    let n = ri(1, 0x30) + 2;
+    while (n-- > 0) {
+      if (!walkerIn(x, y)) break;
+      stamp(x, y);
+      if (ri(1, 4) === 1) stamp(x + 1, y + 1);
+      if (ri(1, 4) === 1) stamp(x - 1, y + 1);
+      if (ri(1, 4) === 1) stamp(x + 1, y - 1);
+      if (ri(1, 4) === 1) stamp(x - 1, y - 1);
+      const d = 2 * ri(1, 4) - 1; x += DX8[d]; y += DY8[d];
+    }
+  };
+  const walker3 = (x, y) => {                       // func_06436C
+    let n = ri(1, 0x10) + 2;
+    while (n-- > 0) {
+      if (!walkerIn(x, y)) break;
+      F[y * W + x] = 1;
+      const d = 2 * (ri(1, 4) - 1); x += DX8[d]; y += DY8[d];
+    }
+  };
+  const grow = (island) => {                        // func_0643F8
+    F.fill(0);
+    let x, y;
+    for (;;) {
+      x = ri(1, W - 16) + 7; y = ri(1, H - 8) + 3;
+      if (!island || E[y * W + x] === 0) break;
+    }
+    if (island) {
+      const k = ri(1, 10);
+      walker3(x, y);
+      if (k >= 7) walker3(x, y);
+      if (k >= 8) walker3(x, y);
+    } else if (p1 >= 2) walker2(x, y);
+    else walker1(x, y);
+    for (let i = 0; i < P; i++) if (F[i]) { E[i]++; count++; }
+  };
+  const flatten = (x, y) => {                       // func_064534
+    if (!inb(x, y)) return 0;
+    if (T[(y - 1) * W + x - 1] === OCEAN || T[(y + 1) * W + x - 1] === OCEAN ||
+        T[(y - 1) * W + x + 1] === OCEAN || T[(y + 1) * W + x + 1] === OCEAN) return 0;
+    T[y * W + x] = OCEAN;
+    return 1;
+  };
+  const coast = (x, y) => {                         // func_008352
+    for (let k = 0; k < 8; k++) {
+      const nx = x + DX8[k], ny = y + DY8[k];
+      if (inb(nx, ny) && isWater(nx, ny)) return 1;
+    }
+    return 0;
+  };
+  const landmassCount = () => {
+    const seen = new Set();
+    for (let i = 0; i < P; i++) seen.add(REGION[i] & 0x0F);
+    let n = 0; for (let k = 1; k < 16; k++) if (seen.has(k)) n++;
     return n;
   };
-  // P1 (RECONSTRUCTED walkers; the target formula is the sibling's cite)
-  const dx8 = [0, 1, 1, 1, 0, -1, -1, -1];
-  const dy8 = [-1, -1, 0, 1, 1, 1, 0, -1];
-  const target = (p[0] + p[1] + 1) * 0x140;
-  const blobs = clamp(12 - 3 * p[1], 3, 12);
-  let made = 0;
-  for (let b = 0; b < blobs && made < target; b++) {
-    const quota = Math.floor((target - made + blobs - b - 1) / (blobs - b));
-    let x = range(3, MAP.w - 4), y = range(2, MAP.h - 3), got = 0;
-    for (let tries = 0; tries < quota * 80 && got < quota; tries++) {
-      const i = y * MAP.w + x;
-      if (tiles[i] === OCEAN) { tiles[i] = 0; got++; made++; }
-      const d = range(0, 7), nx = x + dx8[d], ny = y + dy8[d];
-      if (nx < 2 || nx >= MAP.w - 2 || ny < 2 || ny >= MAP.h - 2 ||
-          (tries && tries % 97 === 0)) {
-        x = range(3, MAP.w - 4); y = range(2, MAP.h - 3);
-      } else { x = nx; y = ny; }
-    }
-  }
-  // P3 relaxation (RECONSTRUCTED predicate; the budget is the sibling's cite)
-  for (let k = 0; k < (p[4] + 1) * 0x320; k++) {
-    const x = range(2, MAP.w - 3), y = range(2, MAP.h - 3), i = y * MAP.w + x;
-    const n = countLand8(x, y);
-    if (tiles[i] === OCEAN) {
-      if (n >= 5 - clamp(p[3], 0, 2)) tiles[i] = 0;
-    } else if (n <= 1 && range(0, 3) !== 0) tiles[i] = OCEAN;
-  }
-  // P2 latitude bands (RECONSTRUCTED jitter and rolls; the two six-entry
-  // tables are the sibling's cite): forest = +8 (ids 8..23), hills 0x20,
-  // mountains 0xA0 (formats/MP_FORMAT.md bits)
-  const north = [5, 4, 1, 3, 2, 2], south = [2, 3, 3, 4, 6, 7];
-  const eq = Math.floor(MAP.h / 2);
-  for (let y = 1; y < MAP.h - 1; y++) for (let x = 2; x < MAP.w - 2; x++) {
-    const i = y * MAP.w + x;
-    if (tiles[i] !== 0) continue;
-    const dist = y < eq ? eq - y : y - eq;
-    let band = Math.floor(dist * 6 / eq) + (1 - p[2]) + range(-1, 1);
-    band = clamp(band, 0, 5);
-    let base = (y < eq ? north : south)[band];
-    if (range(0, 3) < clamp(p[3] + 1, 1, 3)) base += 8;
-    let t = base, elev = range(0, 5);
-    if (elev >= 4) t |= 0x20;
-    if (elev === 5 && range(0, 2) === 0) t |= 0x80;
-    tiles[i] = t;
-  }
-  // P4 rivers (RECONSTRUCTED source roll; the 20-cell kernel is the
-  // sibling's cite): minor river 0x40 on enclosed land, western half
-  const kx = [0,1,0,-1,-1,1,1,-1,0,2,0,-2,-1,1,-1,1,-2,-2,2,2];
-  const ky = [-1,0,1,0,-1,-1,1,1,-2,0,2,0,-2,-2,2,2,-1,1,-1,1];
-  for (let y = 2; y < MAP.h - 2; y++) for (let x = 2; x < Math.floor(MAP.w / 2); x++) {
-    const i = y * MAP.w + x, base = tiles[i] & 0x1F;
-    if (base === OCEAN || base === LANE || range(0, 31)) continue;
-    let enclosed = true;
-    for (let k = 0; k < 20; k++) {
-      const b = tiles[(y + ky[k]) * MAP.w + x + kx[k]] & 0x1F;
-      if (b === OCEAN || b === LANE) { enclosed = false; break; }
-    }
-    if (enclosed) tiles[i] |= 0x40;
-  }
-  // P5 outline -- BYTE-VERIFIED (the loader's own pass @0x65941..0x659CA):
-  // rows 0/h-1 Arctic, columns 0,1,w-2,w-1 Sea Lane
-  for (let y = 0; y < MAP.h; y++) for (let x = 0; x < MAP.w; x++) {
-    const i = y * MAP.w + x;
-    if (y === 0 || y === MAP.h - 1) tiles[i] = ARCTIC;
-    else if (x <= 1 || x >= MAP.w - 2) tiles[i] = LANE;
-  }
-  // P6 (RECONSTRUCTED): east-to-west coast search on the H/5 bands, the
-  // start = the water square east of the first coast; nation order identity
-  const pickStart = bandY => {
-    for (let radius = 0; radius < MAP.h; radius++) {
-      const ys = radius ? [bandY - radius, bandY + radius] : [bandY];
-      for (const y of ys) {
-        if (y < 2 || y >= MAP.h - 2) continue;
-        for (let x = MAP.w - 4; x >= 2; x--) {
-          const here = tiles[y * MAP.w + x] & 0x1F;
-          const east = tiles[y * MAP.w + x + 1] & 0x1F;
-          if (here !== OCEAN && here !== LANE && (east === OCEAN || east === LANE))
-            return [x + 1, y];
+  const hollow = (x0, y0, x1, y1, val) => {
+    for (let x = x0; x <= x1; x++) { T[y0 * W + x] = val; T[y1 * W + x] = val; }
+    for (let y = y0; y <= y1; y++) { T[y * W + x0] = val; T[y * W + x1] = val; }
+  };
+  const band = (x0, y0, w, val, rows) => {
+    for (let y = y0; y < y0 + rows; y++) for (let x = x0; x < x0 + w; x++) T[y * W + x] = val;
+  };
+  const rivers = () => {                            // func_0645F6
+    // MAP.tiles may be a plain Array (no .set): copy by index
+    const restore = () => { for (let i = 0; i < P; i++) T[i] = F[i]; };
+    let attempts = 0, made = 0;
+    do {
+      F.set(T);
+      attempts++;
+      let steps = 0, x, y, tv;
+      for (;;) {
+        x = ri(1, W - 2); y = ri(1, H - 2); tv = F[y * W + x];
+        if (tv & 0x20) continue;
+        if (isWater(x, y)) continue;
+        break;
+      }
+      const sx = x, sy = y;
+      let dir = 2 * ri(0, 3), turn = ri(0, 1), reached = 0, lx = x, ly = y;
+      for (;;) {
+        T[y * W + x] = tv | 0x40;
+        steps++;
+        for (let k = 0; k < 4 && !reached; k++) {
+          const nx = x + DX4[k], ny = y + DY4[k];
+          if (!isWater(nx, ny) && !(F[ny * W + nx] & 0x40)) continue;
+          reached = 1;
+          T[ny * W + nx] |= 0x40;
+          lx = x; ly = y;
+        }
+        const roll = ri(0, 0x63);
+        let nd;
+        if (roll < 0x3C) nd = dir;
+        else {
+          if (roll > 0x5F) turn = turn ? 0 : 1;
+          nd = turn ? (dir + 2) % 8 : (dir + 6) % 8;
+          turn = turn ? 0 : 1;
+        }
+        dir = nd;
+        y += DY8[dir]; x += DX8[dir];
+        tv = F[y * W + x];
+        if (reached) break;
+        if (inb(x, y) && !(tv & 0x40) && !(tv & 0x20)) continue;
+        break;
+      }
+      if (!reached && !(tv & 0x40)) { restore(); continue; }
+      if (steps < 3) { restore(); continue; }
+      made++;
+      if (reached && ri(1, 2 * (p3 + 6)) > 6) {
+        let n = ri(1, 2 * p3 + 3), cx = lx, cy = ly;
+        for (;;) {
+          T[cy * W + cx] |= 0x80;
+          let found = -1;
+          for (let k = 0; k < 4 && found < 0; k++) {
+            const nx = cx + DX4[k], ny = cy + DY4[k], w2 = T[ny * W + nx];
+            if ((w2 & 0x40) && !(w2 & 0x80)) { found = k; cx = nx; cy = ny; }
+          }
+          if (--n <= 0 || found < 0) break;
         }
       }
-    }
-    return [MAP.w - 2, clamp(bandY, 2, MAP.h - 3)];
+      for (let k = 0; k < 20; k++) {
+        const idx = (sy + KY[k]) * W + sx + KX[k];
+        if (idx < 0 || idx >= P) continue;
+        const w2 = T[idx];
+        if ((w2 & 0x1F) >= 0x10) continue;
+        if (ri(0, 1) !== 0) T[idx] = w2 + 8;
+      }
+    } while (attempts < 0x200 && (p3 + p0 + 2) * 8 > made);
   };
-  const starts = [0, 1, 2, 3].map(n => pickStart(Math.floor(MAP.h / 5) * (n + 1)));
-  return { tiles, starts, params: p };
+
+  if (!premade) {
+    // P0 @0x064A35
+    T.fill(OCEAN); E.fill(0);
+    north = ri(0, 1);
+    if (north) ymin = 5; else ymax = H - 6;
+    // P1 @0x064AA4
+    count = 0;
+    do grow(0); while ((p1 + p0 + 1) * 0x140 > count);
+    buildRegions();
+    let islands = 15 - landmassCount();
+    if (islands > 0 && p1 > 0) islands -= ri(0, islands);
+    for (let i = 0; i < islands; i++) grow(1);
+    // P1b @0x064B28
+    {
+      let y = 1;
+      while (y < H - 1) {
+        let x = 1;
+        while (x < W - 1) {
+          const bits = (E[y * W + x] !== 0 ? 1 : 0) | (E[y * W + x + 1] !== 0 ? 2 : 0) |
+                       (E[(y + 1) * W + x] !== 0 ? 4 : 0) | (E[(y + 1) * W + x + 1] !== 0 ? 8 : 0);
+          if (bits === 6 || bits === 9) {
+            E[y * W + x + 1] = 1; E[(y + 1) * W + x] = 1; E[(y + 1) * W + x + 1] = 1;
+            if (x) x--;
+            if (y) y--;
+          }
+          x++;
+        }
+        y++;
+      }
+    }
+    // P2 @0x064C6E
+    const BAND_BASE = [5, 4, 1, 3, 2, 2];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const m = E[y * W + x];
+      const c = (H >> 1) - ri(1, 16) - y + 8;
+      let b = c > 0 ? (H >> 1) - ri(1, 16) - y + 8 : -((H >> 1) - ri(1, 16) - y + 8);
+      b += 2 * (1 - p2);
+      if (b < 0) b = 0;
+      b >>= 2;
+      let tt = b > 5 ? 0 : BAND_BASE[b];
+      if (m === 0) tt = OCEAN;
+      if (m >= 2) tt |= 0x20;
+      if (m >= 3) tt |= 0x80;
+      T[y * W + x] = tt;
+    }
+    // P2b @0x064DCC
+    for (let y = 0; y < H; y++) {
+      let dist = (H >> 1) - y; if (dist < 0) dist = -dist;
+      let a = (H >> 2) - dist; if (a <= 0) a = -a;
+      let cnt = ri(0, a + 4 * p3);
+      for (let x = 0; x < W; x++) {
+        let tv = T[y * W + x], base = tv & 0x1F;
+        if (tv === OCEAN) {
+          let cap = (H >> 2) - dist; if (cap <= 0) cap = -cap;
+          if (cap + 4 * p3 > cnt) cnt++;
+          continue;
+        }
+        if (tv & 0x80) cnt -= 3;
+        else if (tv & 0x20) tv &= 0x5F;
+        else if (cnt < 0) {
+          if (base === 0) E[y * W + x] = 2;
+          else if (base === 2) base = 0;
+          else if (base === 3) { if (ri(0, -cnt) !== 0) base = 1; else { base = 2; cnt--; } }
+          else if (base === 4) base = 3;
+        } else if (cnt > 0) {
+          if (base === 0) base = 2;
+          else if (base === 2) base = 3;
+          else if (base === 3) base = 4;
+          else if (base === 4) { cnt -= 2; if (ri(0, 3) === 0) base = 6; }
+          else if (base === 5) { cnt -= 2; if (ri(0, 3) === 0) base = 7; }
+        }
+        if (cnt > 0) cnt -= ri(1, 7 - 2 * p3);
+        else if (cnt < 0) cnt++;
+        T[y * W + x] = (tv & 0xE0) | base;
+      }
+      cnt = 0;
+      for (let x = W - 1; x >= 0; x--) {
+        let tv = T[y * W + x], base = tv & 0x1F;
+        if (tv === OCEAN) {
+          if ((dist >> 1) + p3 > cnt) cnt++;
+          continue;
+        }
+        if (tv & 0x80) cnt -= 3;
+        else if (tv & 0x20) tv &= 0x5F;
+        else if (cnt > 0 && base <= 5) {               // cs:0xEFE
+          if (base === 0) base = 2;
+          else if (base === 1) base = 3;
+          else if (base === 2) base = 3;
+          else if (base === 3) base = 4;
+          else if (base === 4) { cnt -= 2; if (ri(0, 1) === 0) base = 6; }
+          else if (base === 5) { cnt -= 2; base = 7; }
+        }
+        if (cnt > 0) cnt -= ri(1, 7 - 2 * p3);
+        else if (cnt < 0) cnt++;
+        T[y * W + x] = (tv & 0xE0) | base;
+      }
+    }
+    // P3 @0x065114
+    {
+      let x = 0, y = 0, p20 = 0, p26 = 0;
+      for (let it = 0; (p4 + 1) * 0x320 > it; it++) {
+        if (it & 1) { const d = ri(0, 8); x += DX8[d]; y += DY8[d]; }
+        else { x = ri(1, W - 2); y = ri(1, H - 2); }
+        let tv = T[y * W + x], base = tv & 0x1F;
+        if (tv & 0x80) {
+          if (flatten(x, y)) tv &= 0x5F;
+        } else if (tv & 0x20) {
+          tv |= 0x80; E[y * W + x] = 1;
+        } else {
+          p20 = 0; p26 = 0;
+          switch (base) {                               // cs:0x11CE
+            case 0: p20 = 1; p26 = 0; if (ri(0, 1) === 0) base = 2; break;
+            case 1: p20 = 1; p26 = 1; if (ri(0, 1) === 0) base = 3; break;
+            case 2: case 3:
+              if (base === 3 && ri(0, 2) === 0) base = 2;
+              p26 = 2; p20 = 2;
+              if (ri(0, 1) === 0) E[y * W + x] = 2;
+              break;
+            case 4: p20 = 3; p26 = 1;
+              if (ri(0, 1) === 0) base = 6;
+              if (ri(0, 1) === 0) { tv |= 0x80; E[y * W + x] = 1; }
+              break;
+            case 5: p20 = 3; p26 = 2;
+              if (ri(0, 1) === 0) base = 7;
+              if (ri(0, 1) === 0) { tv |= 0x80; E[y * W + x] = 1; }
+              break;
+            case 6: p20 = 5; p26 = 3;
+              if (ri(0, 1) === 0) base = 4;
+              if (ri(0, 1) === 0) E[y * W + x] = 2;
+              break;
+            case 7: p20 = 5; p26 = 3;
+              if (ri(0, 1) !== 0) base = 5;
+              if (ri(0, 1) !== 0) E[y * W + x] = 2;
+              break;
+            default: break;
+          }
+        }
+        if (p20 !== 0 && ri(0, p20) === 0) {
+          tv |= 0x20;
+          if (p26 !== 0 && ri(0, p26) === 0) tv |= 0x80;
+        }
+        T[y * W + x] = (tv & 0xE0) | base;
+      }
+    }
+    // P3b @0x0653C8
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let tv = T[y * W + x];
+      if (tv === OCEAN) continue;
+      if (E[y * W + x] === 1) tv += ri(0, 8) === 0 ? 8 : 0x10;
+      else if (coast(x, y)) {
+        if (ri(0, 1) === 0) tv += 8;
+        else if (ri(0, 4) !== 0) tv += 0x10;
+      }
+      T[y * W + x] = tv;
+    }
+    // P3c @0x0654BA
+    rivers();
+    // P3d
+    band(0, north ? 0 : H - 4, W, OCEAN, 4);
+    hollow(2, 0, W - 3, H - 1, OCEAN);
+    for (let k = 0; k < 0x28; k++) {
+      T[1 * W + ri(1, W) - 1] = ARCTIC;
+      T[(H - 2) * W + ri(1, W) - 1] = ARCTIC;
+    }
+    // P4a @0x065590
+    for (let y = 1; y < H - 1; y++)
+      for (let x = W - 1; x >= (W >> 1); x--) {
+        if (!isWater(x, y)) break;
+        T[y * W + x] = (T[y * W + x] & 0xE0) | LANE;
+      }
+    // P4b @0x06562A
+    for (let y = 1; y < H - 1; y++) {
+      let cx = -1;
+      for (let x = W - 2; x >= 1 && cx < 0; x--) if (!isWater(x, y)) cx = x;
+      if (cx < 0) continue;
+      let x = cx + 3; if (x > W - 2) x = W - 2;
+      for (let yy = y - 3; yy <= y + 3; yy++) {
+        if (!inb(x, yy)) continue;
+        while (!isWater(x, yy) && x < W - 2) x++;
+        if (!isWater(x, yy)) continue;
+        T[yy * W + x] = (T[yy * W + x] & 0xE0) | OCEAN;
+      }
+    }
+    // P4c @0x06573C
+    for (let y = 1; y < H - 1; y++) {
+      let inLane = 1;
+      for (let x = W - 2; x >= 1; x--) {
+        if (inLane) {
+          if ((T[y * W + x] & 0x1F) === LANE) continue;
+          inLane = 0;
+          continue;
+        }
+        if (isWater(x, y)) T[y * W + x] = (T[y * W + x] & 0xE0) | OCEAN;
+      }
+    }
+    // P4d @0x0657F4
+    for (let pass = 0; pass < 2; pass++) for (let x = 0; x < W; x++) {
+      let y = pass ? 1 : H - 2;
+      if (!isWater(x, y)) T[y * W + x] = ARCTIC;
+      y = pass ? 2 : H - 3;
+      if (!isWater(x, y)) T[y * W + x] = ri(0, 1) === 1 ? ARCTIC : 0;
+      y = pass ? 3 : H - 4;
+      if (ri(0, 1) !== 0 && !isWater(x, y)) T[y * W + x] = 0;
+    }
+  }
+  // P5 @0x065941 (both paths)
+  hollow(0, 0, W - 1, H - 1, LANE);
+  hollow(1, 0, W - 2, H - 1, LANE);
+  band(0, 0, W, ARCTIC, 1);
+  band(0, H - 1, W, ARCTIC, 1);
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+    const tv = T[y * W + x], base = tv & 0x1F;
+    if (base >= 0x18) continue;
+    if (tv & 0x20) T[y * W + x] = (tv & 0xE0) | (base & 7);
+    else if (base >= 16) T[y * W + x] = tv - 8;
+  }
+  // P6a @0x065AA0
+  buildRegions();
+  E.fill(0); F.fill(0);
+  // P6b @0x065AD3
+  {
+    const limit = premade ? W - 16 : (W >> 1);
+    for (let y = 1; y < H - 1; y++)
+      for (let x = 1; x < limit && isWater(x, y); x++) E[y * W + x] |= 0x20;
+  }
+  // P6c @0x065B32
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!isWater(x, y)) continue;
+    if (detailId(x, y, T[y * W + x]) === -1) continue;
+    let land = 0;
+    for (let k = 0; k < 20 && !land; k++) {
+      const nx = x + KX[k], ny = y + KY[k];
+      if (inb(nx, ny) && !isWater(nx, ny)) land = 1;
+    }
+    if (!land) E[y * W + x] |= 4;
+  }
+  // P6e @0x065C25
+  const slot = [-1, -1, -1, -1];
+  for (let i = 0; i < 4; i++) {
+    const nation = (i + G.nation) % 4;
+    for (;;) {
+      const s = (i === 0 && !premade) ? ri(1, 2) : ri(0, 3);
+      if (slot[s] < 0) { slot[s] = nation; break; }
+    }
+  }
+  const starts = [null, null, null, null];
+  for (let si = 0; si < 4; si++) {
+    const y = Math.floor(H / 5) * (si + 1);
+    let x = W - 2;
+    while (x > 2 && cls(x, y) === LANE) x--;
+    x++;
+    starts[slot[si]] = [x, y];
+  }
+  return starts;
 }
 
 function beginGame() {
@@ -1022,14 +1327,16 @@ function beginGame() {
   // keeps the shipped map (applied below with its loader normalisation).
   // The builder runs on its own stream, so the shared draws are unchanged
   // (the C does the same in colopy_new_game_ex).
-  let built = null;
+  // Both planes the builder works on start from the shipped state: AMERICA
+  // puts AMER2 in the terrain plane and runs the builder's premade tail
+  // (outline, fold, labels, plane-2 bits, start squares); NEW WORLD and
+  // CUSTOMIZE build from scratch.  The improvement plane is zero from the
+  // builder's own wipe (P6a), NOT refilled below -- its P6b/P6c bits stay.
   if (G.worldMode === 'america') {
-    G.mapStarts = DATA.starts.map(p => p.slice());
-  } else {
-    built = generateNewWorld(G.mapSeed, { mode: G.worldMode,
-                                          values: G.customValues || [1, 1, 1, 1] });
-    G.mapStarts = built.starts.map(p => p.slice());
+    MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
   }
+  G.mapStarts = generateNewWorld(G.worldMode === 'america',
+                                 { values: G.customValues || [1, 1, 1, 1] });
   const [sx, sy] = G.mapStarts[G.nation];
   // Manifest order is Soldiers then Pioneers: the live opening turn lists
   // "Veteran" above "100 Tools" in the sidebar
@@ -1056,14 +1363,7 @@ function beginGame() {
   G.plates = []; G.plate = null; G.pediaOnce = false;
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
-  if (built) {
-    MAP.tiles.set ? MAP.tiles.set(built.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...built.tiles);
-  } else {
-    MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
-    normalizeShippedMap();
-  }
-  IMPROVE.fill(0);
-  buildRegions();
+  // (the terrain / improvement / region planes were built above)
   seedNatives();
   seedRivals();
   G.warMatrix = {}; G.treatyMatrix = {}; G.relTimer = {}; G.parleyLock = {};

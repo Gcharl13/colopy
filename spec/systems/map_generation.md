@@ -37,45 +37,43 @@ wired from new-game `func_0755CC @0x7579E` via `lcall 0x1a1f:0x83e` (resolves to
 
 ## 3. Formulas & rules
 
-### Random-map generator — **`func_064A10`** (file `0x064A10..0x065D25`, ~4.9 KB, ENTER 0x3C, overlay page 0x14). BYTE_VERIFIED control flow (2026-06-19, verified vs EXE)
-The single procedural map builder. Arg `[bp+6]`: **`0` = generate a random
-continental map**; nonzero = a premade scenario is already in memory, skip the fill
-(`@0x64A2C cmp [bp+6],0; jne 0x65941`). It seeds the RNG `[0x190] = random_int(1, 0x7FFF)`
-(`@0x64A1B`; the seed is stored `[0x190]`, `[0x192]=0`). Map dims: **`g_map_width =
-[0x853A]`, `g_map_height = [0x853C]`** — the random-map defaults **58×72**
-(`0x3A`×`0x48`) are set in the caller `func_0755CC` (`@0x75702 mov [0x853a],0x3A`,
-`@0x75708 mov [0x853c],0x48`) just before the generator call at `@0x7579E`
-(`lcall 0x1a1f:0x83e` → `func_064A10`, arg `[bp+6]`); the loaded-scenario path uses
-the `@SCENARIO`/`.MP`-header dims instead. The loop bounds confirm the globals
-(x `< [0x853a] @0x64D48`, y `< [0x853c] @0x64DBC`);
-4 layers via far ptrs `[0x15C]` terrain / `[0x160]` elevation-scratch / `[0x164]`
-resource / `[0x168]` fog. Passes, in execution order (all byte-verified):
+### Random-map generator — **`func_064A10`** (file `0x064A10..0x065D07`, ENTER 0x3C, overlay page 0x14, cs base file `0x64150`). **READ WHOLE 2026-09-09 (RULINGS 2026-09-09d) and ported pass for pass** — `cport/core/colopy_mapgen.c` / `game.js generateNewWorld` carry every site; this section is the map of it.
+Arg `[bp+6]`: `0` = build a world; nonzero = a premade map is in memory, jump to P5
+(`@0x64A2C`). First act: `[0x190] = random_int(1, 0x7FFF)` (`@0x64A1B`), the map
+salt. Every `lcall 0x181F:0x4D4` below is the sim's **shared** `random_int`. Dims
+`[0x853A]`×`[0x853C]` = 58×72 (set in `func_0755CC @0x75702/@0x75708`). Layers:
+`[0x85A8]` = plane 1 terrain, `[0x85B0]` = plane 2 (the ELEVATION scratch until P6a,
+then the improvement plane), `[0x85C0]` = plane 4 (walker stamps; the river pass's
+backup), `[0x85B8]` = plane 3 regions (labeller `func_063880`, `0x1A1F:0x7DC`).
+Tables: DS:`0xB4`/`0xBE` 8-ring N,NE,E,SE,S,SW,W,NW + two zero pads; DS:`0xA8`/`0xAE`
+N,E,S,W; DS:`0xC8`/`0xDE` the 20-cell kernel. Switches (cs:`0xBAC`/`0xEFE`/`0x11CE`,
+decoded by matching their words to the case labels).
 
-| # | Pass | What it does | site |
+| # | Pass | What it does (all B) | site |
 |---|------|--------------|------|
-| P0 | init | fill terrain+elev layers with **`0x19` = Ocean (id 25)** (region fill `0x181F:0x484`) — the all-sea background before landmass growth | `@0x64A4B` |
-| P1 | landmass | blob-growth: seed `≈(p1+p2+1)·0x140` land tiles (`@0x64AAD`), random-walk each with the **8-dir compass table `DS:0xB4`(dx)/`0xBE`(dy)** carrying a 4-neighbour land mask (mask 6/9 triggers fill) | `@0x64B5A..0x64BD1` |
-| P2 | climate | latitude sweeps: N half (`y<H/2`) maps the climate-band index (`[bp-6]>>2`, 0..5) → base terrain via an **inline jump table** `jmp word ptr cs:[bx+0xBAC]` (table at file `0x64CFC`, cs-base file `0x64150`) → cases set `[bp-0x2e]`; S half uses `cs:[bx+0xEFE]` (table `0x6504E`) → `[bp-0x12]`. Then sets **hills bit `0x20`** (`@0x64D19`) / **forest bit `0x80`** (`@0x64D23`); elevation-0 default = `0x19` Ocean (`@0x64D0E`) | `@0x64CF6,0x65048` |
-| P3 | smoothing | relaxation budgeted `(p_iter+1)·0x320`; folds unforested→forested ids (**`+8`/`+0x10`**, `@0x653F8/0x6540E`); converts stray interior Ocean | `@0x64DD4,0x65318` |
-| P4 | rivers | feature spread over the 20-cell kernel `DS:0xC8/0xDE` via thunk `0x181F:0x718`; river occupies the runtime-board flag **bit `0x40`** — verified by elimination: the generator's only direct `or`-immediates are **hills `0x20`** (`@0x64D19`) and **forest `0x80`** (`@0x64D23`), so river takes the remaining high bit; the river bit-set itself is inside the thunk, not a literal `or …,0x40` in the body (2026-06-23 disasm) | `@0x65BC2` |
-| P5 | borders | **right two columns → Sea Lane `0x1A` (26)** (`@0x65941`/`@0x65975`, line-fill `0x181F:0xCE` at `x=W-1` then `x=W-2`); **top/bottom rows → Arctic `0x18` (24)** (`@0x6582A`) | `@0x65941` |
-| P6 | starts | seed the 4 European powers' `(x,y)` into `PowerRecord +0x32/+0x33` (stride `0x13C`): `y = (H/5)·(p+1)` band, `x` walked inland from the east sea lane | `@0x65C9C` |
+| P0 | init | terrain ← Ocean `0x19`, plane 2 ← 0; walker box x 3..w−6, y 0..h or 5..h−6 on `random_int(0,1)` (the pole side left empty) | `@0x64A35..0x64AA4` |
+| P1 | land | repeat `grow(0)` until stamps ≥ `(land_mass+land_form+1)·0x140`; `grow`: clear plane 4, pick `x=random_int(1,w−16)+7, y=random_int(1,h−8)+3`, walk — `func_0641EC` (2+random_int(1,0x40) diagonal steps stamping a 2×2 `func_064154`) or, land_form ≥ 2, `func_064266` (2+random_int(1,0x30) steps with four 1-in-4 side stamps); merge: plane 2 += 1 per stamped square (1 flat, 2 hills, ≥3 mountains). Then label, count landmasses (the labeller tests TERRAIN — still all ocean — so 0), `15 − n` islands, minus `random_int(0,·)` when land_form > 0, each `grow(1)` = 1–3 runs of `func_06436C` (2+random_int(1,16) cardinal single squares, seeded on open water). Then the diagonal-gap fill (2×2 patterns 6/9 → filled, cursor steps back) | `@0x64AA4..0x64C6E` |
+| P2 | latitude | per square (ocean too, the draws are unconditional): `c = h/2 − random_int(1,16) − y + 8`, band = `|h/2 − random_int(1,16) − y + 8| + 2·(1−temperature)`, clamp ≥ 0, `>> 2` → cs:`0xBAC` **{5,4,1,3,2,2}**, > 5 → 0 (Tundra); elevation 2 → `|0x20`, 3 → `|0x80` | `@0x64C6E..0x64DCC` |
+| P2b | moisture | per row a counter `random_int(0, |h/4 − dist| + 4·climate)` swept west→east: ocean regains toward that cap; mountains −3; **hills are flattened** (`and 0x5F`); dry (< 0) Grassland→Prairie→(Desert or Plains)→Plains→Tundra (Tundra → elevation 2); wet (> 0) Tundra→Plains→Prairie→Grassland→Marsh/Savannah→Swamp on 1-in-4; counter −random_int(1, 7−2·climate) while wet, +1 while dry. Then east→west from 0 with the cs:`0xEFE` ladder {0→2,1→3,2→3,3→4,4→6 on a coin,5→7} and an ocean cap `dist/2 + climate` | `@0x64DCC..0x65114` |
+| P3 | relaxation | `(p_iter+1)·0x320` visits (`[0x1E86]`, not exposed): even = a random square, odd = an 8-ring(+pad) step; mountains: `func_064534` flattens when all four diagonals are land; hills → mountains, elevation 1; flat: the cs:`0x11CE` ladder per base (coins that shift the base, set elevation 2, or raise a mountain), then hills on `random_int(0,p20)==0` and mountains on `random_int(0,p26)==0` with the ladder's odds | `@0x65114..0x653C8` |
+| P3b | forest | flat (elevation 1): `+8` on 1-in-9 else `+0x10`; elevated: if coastal (`func_008352`) `+8` on a coin else `+0x10` on 4-in-5 | `@0x653C8..0x654BA` |
+| P3c | rivers | `func_0645F6`: up to 0x200 attempts for `(climate+land_mass+2)·8` rivers; backup plane 1 → 4; a random flat land source; 4-direction walk (turn on a 60/36/4 % roll), each square `|0x40`, stops at water or an old river; < 3 squares → restored; on reaching water `random_int(1,2·(climate+6)) > 6` → `random_int(1,2·climate+3)` squares upstream `|0x80` (major); the 20-cell kernel round the source `+8` on coins (base < 0x10) | `@0x0645F6..0x064A0F` |
+| P3d | poles/ring | the 4-row pole band ← Ocean; hollow ring (2,0)–(w−3,h−1) Ocean; 40× Arctic at `(random_int(1,w)−1, 1)` and `(…, h−2)` | `@0x654BA..0x65590` |
+| P4 | sea lane | (a) each row from the east: water → Sea Lane down to the first coast or x < w/2; (b) three columns east of each row's first coast, in rows y±3, the next water square east of land → Ocean; (c) west of the lane run every water square → Ocean; (d) rows 1/h−2 land → Arctic, 2/h−3 → Arctic or Tundra on a coin, 3/h−4 → Tundra on a coin | `@0x65590..0x657F4` |
+| P5 | outline+fold | (both paths) hollow rects (0,0)–(w−1,h−1) and (1,0)–(w−2,h−1) Sea Lane, rows 0/h−1 Arctic; fold: `base ≥ 0x18` skip, hills bit → `(v&0xE0)|(base&7)`, 16..23 → −8 | `@0x65941..0x65AA0` |
+| P6 | tail | labels; planes 2 and 4 ← 0; **plane-2 `0x20`** on the western sea (row by row from x=1 to the first coast, x < w−16 premade / w/2 built); **plane-2 `0x04`** on water squares whose detail hash hits with no land in the 20-cell kernel (offshore fish suppressed); `[0x2174]==0`-gated `0xA0` at (1,21)/(43,68) (off in play); **starts**: the four H/5 bands dealt at random from the human (`random_int(1,2)` first on a built world, `random_int(0,3)` premade, redraws until free), each start = the first Sea Lane square east of the band row's coast → PowerRecord +0x32/+0x33 | `@0x65AA0..0x65D07` |
 
-Base-terrain immediates the generator literally writes: **Arctic `0x18`(24),
-Ocean `0x19`(25), Sea Lane `0x1A`(26)**; **runtime-board** flag bits **hills `0x20`
-(`@0x64D19`) / river `0x40` (thunk, by elimination) / forest `0x80` (`@0x64D23`)**.
-⚠ This runtime-board layout differs from the **`.MP` *file* format** (`formats/MP_FORMAT.md`:
-bit 5 `0x20` = river, bit 6 `0x40` = forest) — the file packing and the in-memory board
-are **different representations** of the same features; the `.MP`→board remap (in the
-`.MP` loader) is the remaining residual. The runtime river bit is `0x40` (this spec +
-the render trace `map_system.md` §3; hills `0x20`/forest `0x80` are byte-confirmed here).
-These id↔name bindings are confirmed by the byte-verified `@OTHER`
-ordering + hard rule 2 (Sea Lane = 26) — see `notes/rulings/RULINGS.md` 2026-06-20;
-they reconcile the generator (fill 0x19=Ocean → grow land → poles 0x18=Arctic →
-right edge 0x1A=Sea Lane) with the coast renderer (`@0x67FD0 cmp al,0x18`). The
-generator builds **only the terrain layer + European starts** — native settlements,
-prime resources, and Lost-City rumours are placed by separate (largely data-driven)
-new-game passes — **BYTE_VERIFIED entry functions** (§6 Q4): native settlements `func_065D26` (`func_0755CC @0x7596A lcall 0x1a1f:0x87c`), resource/land-value layer `func_063F3C` (`@0x757BA lcall 0x1a1f:0x7f8`), and Lost-City rumour features written inline in the generator tail (`func_064A10 @0x65C0D/@0x65C21 or byte es:[bx],0xa0`).
+The premade tail was diffed against the fresh-game fixture `savstart`: the 0x20
+bits 1309/1309, the 0x04 bits exactly (with the `func_00627A` edge-class rule),
+the start squares = rows 42/14/56/28 — **so the AMERICA new game's starts are the
+bands, not `@SCENARIO`** (the loader stores those; the builder overwrites them).
+Base-terrain immediates: Arctic `0x18`, Ocean `0x19`, Sea Lane `0x1A`; the terrain
+byte's bits are the `.MP` bits (`formats/MP_FORMAT.md`): `0x20` hills, `0xA0`
+mountains, `0x40` river, `0xC0` major river, forest = base+8 (the earlier
+"runtime board differs from the file" gloss here was wrong — the builder writes the
+file layout). The earlier "S table {2,3,3,4,6,7}" gloss was the cs:`0xEFE` moisture
+ladder, not a hemisphere. Native settlements, the resource/land-value layer and Lost
+City rumours remain separate passes (§6 Q4).
 
 ### Starting units per power — **BYTE_VERIFIED (2026-06-20)**
 After the generator returns, the new-game setup `func_0755CC` loops each power

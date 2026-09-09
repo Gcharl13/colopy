@@ -51,6 +51,8 @@ static int unit_row(const char *name) {
 
 /* buildRegions (game.js:483): 4-connected land flood fill; ids cap at
  * the nibble (next stops growing at 15). */
+static void build_regions(void);
+void colopy_build_regions(void) { build_regions(); }
 static void build_regions(void) {
     memset(CS.region, 0, sizeof(CS.region));
     static int16_t stack[COLOPY_PLANE];
@@ -145,17 +147,9 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
      * bit 0x20 set -> (b & 0xE0) | (base & 7); else 16 <= base < 24 ->
      * b - 8.  Layer 2 and the fog plane are zeroed (@0x65AA5..0x65ACE) --
      * CS.improve is already zero here, fog is CR runtime. */
-    for (int y = 0; y < COLOPY_MAP_H; y++)
-        for (int x = 0; x < COLOPY_MAP_W; x++) {
-            uint8_t *t = &CS.terrain[y * COLOPY_MAP_W + x];
-            if (y == 0 || y == COLOPY_MAP_H - 1) { *t = 0x18; continue; }
-            if (x <= 1 || x >= COLOPY_MAP_W - 2) { *t = 0x1A; continue; }
-            int base = *t & 0x1F;
-            if (base >= 0x18) continue;
-            if (*t & 0x20) *t = (uint8_t)((*t & 0xE0) | (base & 7));
-            else if (base >= 16) *t = (uint8_t)(*t - 8);
-        }
-    build_regions();
+    /* the outline / fold / landmass labels of the loader's own pass are
+     * func_064A10's premade path, run below right after the salt draw
+     * (2026-09-09; it also writes the plane-2 bits and the start squares) */
 
     /* globals: year 1492 s0 turn 0 (beginGame 670), tutorial mask 0x0E
      * (725), REF seeds (seedREF 8869) */
@@ -188,18 +182,16 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
      * right after the .MP load, before any placement (G12; the JS draws
      * G.mapSeed at the same point) */
     uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
-    /* NEW WORLD / CUSTOMIZE: the builder runs here, where the original
-     * calls func_064A10 with premade=0 (AMERICA keeps the normalised
-     * shipped map above).  A FLAGGED reconstruction (colopy_mapgen.c),
-     * seeded from the [0x190] salt on its own stream, so the shared
-     * stream's draws below are unchanged — the JS does the same in
-     * beginGame (generateNewWorld). */
-    if (world->mode != COLOPY_WORLD_AMERICA) {
-        colopy_status ms = colopy_generate_world(mseed, world, CS.terrain, starts);
+    CR.map_seed = mseed;             /* the builder's detail pass hashes on it */
+    /* func_064A10 continues here on the SHARED stream (2026-09-09, RULINGS
+     * 2026-09-09d): the whole builder for NEW WORLD / CUSTOMIZE, the
+     * premade tail (outline, fold, labels, plane-2 bits, the H/5-band
+     * start squares dealt at random) for AMERICA -- the JS beginGame
+     * runs generateNewWorld at the same point */
+    {
+        colopy_status ms = colopy_generate_world(
+            world, world->mode == COLOPY_WORLD_AMERICA, starts);
         if (ms != COLOPY_OK) return ms;
-        memset(CS.improve, 0, sizeof(CS.improve));
-        memset(CS.fog, 0, sizeof(CS.fog));
-        build_regions();
     }
 
     /* seedNatives (5146): tensions first (one draw per tribe, in

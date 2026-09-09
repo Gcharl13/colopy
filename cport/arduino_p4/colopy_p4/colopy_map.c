@@ -46,17 +46,30 @@ int map_detail_id(int mx, int my, uint8_t v) {
         return -1;
     int idx = my * COLOPY_MAP_W + mx;
     int imp = CS.improve[idx];
-    /* the pre-gate func_005F82 (@0x0060B3-@0x0060C4): improvement bit 2
-     * with the TERRITORY plane's high nibble >= 4 (a tribe owner;
-     * func_005DF0 = [0x164] byte >> 4, 0xF none) suppresses the detail */
-    int owner = CS.region[idx] >> 4;
-    if ((imp & 2) && owner != 0x0F && owner >= 4) return -1;
+    /* the pre-gate func_005F82 @0x005F82 (re-read 2026-09-09): out of
+     * the 1..w-2 / 1..h-2 bounds it returns -1 (no gate); inside, with
+     * improvement bit 2 (a settlement) it returns the TERRITORY plane's
+     * high nibble (func_005DF0, 0xF none) when that owner is a EUROPEAN
+     * power (< 4, `cmp ax,4; jge` @0x005FC4) -- and the detail hash
+     * @0x0060C0 gives up (`jl` continues only on a NEGATIVE result) when
+     * the gate returned an owner.  So a European colony's tile loses its
+     * detail; a native settlement's keeps it.  (The port had this the
+     * other way round until 2026-09-09.) */
+    int inb = mx >= 1 && my >= 1 && mx <= COLOPY_MAP_W - 2 && my <= COLOPY_MAP_H - 2;
+    if (inb && (imp & 2)) {
+        int owner = CS.region[idx] >> 4;
+        if (owner < 4) return -1;
+    }
     int t = v & 0x1F;
     int forest = (t >= 8 && t <= 0x17);
     int q = (mx & 3) * 4 + (my & 3);
     int h = ((my >> 2) * 3 + (mx >> 2) + (CR.map_seed & 0xF) - forest) & 0xF;
     if (h != q && (h ^ 0xA) != q) return -1;
-    int cls = tile_mountains(v) ? 27 : tile_hills(v) ? 28 : t;
+    /* the class lookup 0x3E4:0x3A = func_00627A: OUT of the same bounds
+     * it answers for Ocean (`mov si,0x19` before the bounds test), so an
+     * edge column's Sea Lane square can carry fish (the fresh-game fixture
+     * has plane-2 bit 4 on such squares, RULINGS 2026-09-09d) */
+    int cls = !inb ? 0x19 : tile_mountains(v) ? 27 : tile_hills(v) ? 28 : t;
     int d = MAP_DTAB[cls];
     if (d < 0) return -1;
     /* improve bit 4 suppresses the detail EXCEPT table entry 0xC, which

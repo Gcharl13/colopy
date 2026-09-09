@@ -710,6 +710,19 @@ static void dump_newgame(int nation, int diff, int n, int mode,
     world.climate = (uint8_t)v[3];
     colopy_init(1653);                       /* the shared trace seed */
     colopy_new_game_ex((uint8_t)nation, (uint8_t)diff, 0, &world);
+    if (getenv("COLOPY_DUMP_MAP")) {         /* an ASCII look at the world */
+        static const char GLYPH[32] = "tdpPgsmw" "TDQRGSMW" "TDQRGSMW" "^~=MH???";
+        for (int y = 0; y < COLOPY_MAP_H; y++) {
+            for (int x = 0; x < COLOPY_MAP_W; x++) {
+                uint8_t v = CS.terrain[y * COLOPY_MAP_W + x];
+                char c = GLYPH[v & 0x1F];
+                if (v & 0x20) c = (v & 0x80) ? 'A' : 'h';
+                else if (v & 0x40) c = (v & 0x1F) >= 0x18 ? c : '#';
+                fputc(c, stderr);
+            }
+            fputc('\n', stderr);
+        }
+    }
     int job_convert = -1;
     for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
         if (strcmp(dat_jobexpert[i], "Indian Converts") == 0) job_convert = i;

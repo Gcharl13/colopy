@@ -12697,3 +12697,93 @@ appended (= 22 in both harness maps), `rm_draw_customize` ↔
 `beginGame`; the boot render compare walks `customize 0` and `2` (frozen
 at 0). Title rows: 0 NEW WORLD, 1 AMERICA, 2 CUSTOMIZE (dispatch ladder
 @0x075C6D; CUSTOMIZE runs `func_070060` first @0x075CCB).
+
+## 2026-09-09d — func_064A10 read whole: the New World builder is now byte-true in both engines; two premade-path findings corrected the AMERICA new game too
+
+The 2026-09-09c reconstruction lasted one commit. `func_064A10`
+@0x064A10..0x065D07 was read whole with its helpers (walkers
+`func_0641EC`/`func_064266`/`func_06436C`, stamp `func_064154`, grower
+`func_0643F8`, flatten `func_064534`, rivers `func_0645F6`, the labeller
+`func_063880`'s land test, the tile/layer primitives 0x181F:0x302/0x768/
+0x78C/0x718/0x68C/0xBA/0xCE/0x484 and their targets), the three inline
+switch tables decoded against the overlay's code-segment base 0x64150
+(found by matching table words to the case labels), and the direction
+tables DS:0xB4/0xBE (8-ring + two zero pads), DS:0xA8/0xAE (N,E,S,W) and
+DS:0xC8/0xDE (the 20-cell kernel) read from DGROUP (file base 0x1D9A0).
+`cport/core/colopy_mapgen.c` / `game.js generateNewWorld` now carry it
+pass for pass on the SHARED random stream (every `lcall 0x181F:0x4D4` in
+the function is the sim's random_int; the [0x190] salt @0x064A16 is its
+first draw — already ours since G12). The newgame oracle's twelve configs
+(AMERICA ×8, NEW WORLD ×2, CUSTOM ×2, 30 turns each) are 0/0, and a NEW
+WORLD dump reads like the game's own maps (latitude zones, scattered
+polar tiles, rivers, the eastern sea lane hugging the coast).
+
+**What the reconstruction had wrong (for the record):** its "south
+latitude table {2,3,3,4,6,7}" is the cs:0xEFE MOISTURE ladder of the
+east-to-west sweep (base 0→2, 1→3, 2→3, 3→4, 4→6 on a coin, 5→7), not a
+hemisphere; the real latitude table cs:0xBAC is {5,4,1,3,2,2} for BOTH
+hemispheres (band = |dist to a jittered equator| >> 2, jitter
+random_int(1,16) drawn twice per tile, temperature shifting it by
+2·(1−t)), band > 5 → Tundra; land is grown by random walkers stamping
+2×2 blocks into plane 4 and merged into plane 2 as an ELEVATION count
+(1 flat, 2 hills, ≥3 mountains), to the target (land_mass+land_form+1)·
+0x140 stamps, then `15 − landmasses` islands (all 15 when the terrain
+is still all-ocean at that point, which it is — the labeller tests
+terrain, not the mask; land_form > 0 knocks a random number off);
+moisture is a per-row counter walked west→east and back, converting
+terrain up and down a wet/dry ladder (mountains −3, ocean regains toward
+a latitude/climate cap) and, on the way, FLATTENING every hills tile
+(`and 0x5F` @0x064E52/@0x064FF0 — the relaxation pass re-raises
+hills → mountains and rolls new ones); relaxation is (p_iter+1)·0x320
+visits alternating a random square with an 8-ring (+2 zero-pad) step
+from the previous one, with a per-base ladder (cs:0x11CE) and a hills /
+mountain roll whose odds the ladder sets; forest is `+8` or `+0x10`
+(both fold to 8..15 at the end; hills lose forest at the fold);
+rivers are 4-direction walks from a random flat land square toward
+water (turning on a 60/36/4 % roll), kept when ≥ 3 squares, upgraded to
+major (0x80) upstream on a climate roll, and forest the 20-cell kernel
+round their source on coins; then the pole band the walkers avoided,
+an ocean ring at columns 2 / w−3, forty random Arctic squares on rows
+1 / h−2, the east Sea Lane laid west to the first coast and pushed back
+three columns from any coast in the seven rows around it, the polar
+rows (1/h−2 → Arctic, 2/h−3 → Arctic or Tundra on a coin, 3/h−4 →
+Tundra on a coin). Nothing in the old file survives.
+
+**Two findings that change the AMERICA new game (the premade path
+@0x065941 onward runs for it too):**
+1. **The start squares are the H/5 bands, not `@SCENARIO`.** After the
+   labels, the four powers are dealt the band slots at random starting
+   from the human (`(i + [0x5398]) % 4`; the human draws random_int(1,2)
+   on a generated world, random_int(0,3) premade, then random_int(0,3)
+   with redraws until a free slot), and each start is the first Sea Lane
+   square east of the band row's coast (@0x065CA4..0x065CD2, written to
+   PowerRecord +0x32/+0x33). The fresh-game fixture savstart PROVES it:
+   PowerRecord starts (56,42)/(37,14)/(51,56)/(47,28) = rows 42/14/56/28,
+   England's untouched ship at (56,42). Both engines used `@SCENARIO`
+   (34,20)… — the loader stores those, the builder overwrites them.
+   These draws also sit on the shared stream before the tribe pass.
+2. **Plane 2 gets two bits at new game**: 0x20 on every water square of
+   the western sea (from x=1 to the first coast of the row, x < w−16 on
+   AMERICA, x < w/2 generated — savstart: 1309/1309 squares match) and
+   0x04 (the detail-suppression bit) on water squares whose detail hash
+   hits but whose 20-cell kernel holds no land — offshore fish only near
+   coasts (savstart: 143 ocean squares match exactly; the 16 remaining
+   are the edge-column Sea Lane squares, finding 3).
+3. **`func_005F82` / `func_00627A` corrections to the detail id** (both
+   engines): the pre-gate returns the territory owner only for a
+   EUROPEAN owner (< 4, `cmp ax,4; jge` @0x005FC4) and the hash gives
+   up on any non-negative answer — a European colony's square loses its
+   detail, a native settlement's keeps it (the ports had it reversed);
+   and the class lookup answers OCEAN outside the 1..w−2 / 1..h−2 bounds
+   (`mov si,0x19` before the bounds test @0x006282), so edge-column Sea
+   Lane squares can carry fish — exactly the 16 squares above.
+
+**FLAGGED, named:** the relaxation tail's hill/mountain rolls on a hills /
+mountain visit use the previous flat visit's odds (stack locals; 0 before
+any flat visit); the labeller past 15 landmasses; out-of-plane kernel
+reads in the river pass (skipped); the two fixed 0xA0 writes gated on
+[0x2174] (off in savstart, not applied); the region plane's water-body
+ids and size-ordered numbering (the original labels water bodies too —
+savstart's ocean is id 1 — ours labels land only, in scan order; the
+saved plane differs, play does not read it that way). No DOS-generated
+world has been diffed against this port; the premade tail has (above).

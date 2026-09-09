@@ -62,16 +62,19 @@ typedef struct {
 colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                                  const char *leader_name,
                                  const colopy_world_options *world);
-/* The procedural New World builder (cport/core/colopy_mapgen.c) — a
- * FLAGGED RECONSTRUCTION: the pass skeleton and its constants are the
- * sibling port's reading of func_064A10, the rules inside each pass are
- * invented.  Deterministic on `seed` (the [0x190] map salt) with a map-
- * local MS-C rand; shared draw-for-draw with game.js generateNewWorld.
- * `starts` receives the four nations' ship squares. */
-colopy_status colopy_generate_world(uint16_t seed,
-                                    const colopy_world_options *world,
-                                    uint8_t terrain[58 * 72],
-                                    uint8_t starts[4][2]);
+/* The New World builder func_064A10 (cport/core/colopy_mapgen.c), read
+ * whole 2026-09-09 (RULINGS 2026-09-09d) and ported pass for pass on the
+ * SHARED random stream, in place on CS.terrain / CS.improve / CS.fog /
+ * CS.region.  premade != 0 is the AMERICA path (the shipped map is already
+ * in CS.terrain): the outline, the fold, the landmass labels, the plane-2
+ * bits and the start squares only.  `starts` receives the four powers'
+ * ship squares — the H/5 bands dealt at random, NOT @SCENARIO (the
+ * fresh-game fixture savstart proves it: England's ship at (56,42)). */
+colopy_status colopy_generate_world(const colopy_world_options *world,
+                                    int premade, uint8_t starts[4][2]);
+/* The landmass labeller (this tree's port of func_063880), also used by
+ * the builder's P1 and P6a. */
+void colopy_build_regions(void);
 colopy_status colopy_load_sav(const uint8_t *buf, size_t len);
 /* Returns bytes written, or 0 with status via colopy_last_error(). */
 size_t        colopy_save_sav(uint8_t *buf, size_t cap);
