@@ -151,6 +151,92 @@ static int add_unit(int type, int x, int y, int owner) {
     return CS.n_units++;
 }
 
+/* the 8-direction tables at DS:0xB4 / DS:0xBE (file 0x1DA54 / 0x1DA5E):
+ * N, NE, E, SE, S, SW, W, NW, then two (0,0) entries -- the natives
+ * placer walks entries 0..7 and scans 0..8 */
+static const int8_t NDX[10] = { 0, 1, 1, 1, 0, -1, -1, -1, 0, 0 };
+static const int8_t NDY[10] = { -1, -1, 0, 1, 1, 1, 0, -1, 0, 0 };
+
+/* func_00624E (behind 0x181F:0x78C = func_00627A, which answers 0x19
+ * Ocean off the 1..W-2 / 1..H-2 interior): 0x1B Mountains / 0x1C Hills
+ * for a relief tile, else the id */
+static int terrain_class(uint8_t v) {
+    if (v & 0x20) return (v & 0x80) ? 0x1B : 0x1C;
+    return v & 0x1F;
+}
+/* func_004900 (0x181F:0x370): max(|dx|,|dy|) + (min >> 1) */
+static int engine_dist(int dx, int dy) {
+    int a = dx < 0 ? -dx : dx, b = dy < 0 ? -dy : dy;
+    return b < a ? (b >> 1) + a : (a >> 1) + b;
+}
+/* func_046056 (0x181F:0xD84) called as (x, y, -1, -1): the nearest
+ * settlement by engine_dist -- a later equal distance wins (`jg` skips
+ * only strictly farther, @0x460C5), 0x270F / -1 with none.  The engine
+ * also selects the winner (0x181F:0xA4C) so [0x8D50] holds its tribe. */
+static int nearest_settlement(int x, int y, int *dist) {
+    int best = -1, bd = 0x270F;
+    for (int i = 0; i < CS.n_villages; i++) {
+        int d = engine_dist(CS.villages[i].map_x - x,
+                            CS.villages[i].map_y - y);
+        if (d > bd) continue;
+        best = i;
+        bd = d;
+    }
+    *dist = bd;
+    return best;
+}
+/* 0x181F:0x302 (func_005BFA): the 1..W-2 / 1..H-2 interior */
+static int in_bounds(int x, int y) {
+    return x >= 1 && y >= 1 && x <= COLOPY_MAP_W - 2 && y <= COLOPY_MAP_H - 2;
+}
+
+/* settlement creation func_046E18 (0x1A1F:0x440) plus the port's record
+ * model: owner tribe ti (0..7), population by the capital flag, the
+ * mission/trade bytes 0xFF, the human's alarm from the tribe tension,
+ * and the HOMELAND CLAIM.  Returns the index, -1 at the 84 cap
+ * (@0x46E21). */
+static int create_village(int ti, int px, int py, int capital,
+                          int nation, uint8_t tension) {
+    int lv = dat_tribes[ti].level;
+    if (CS.n_villages >= COLOPY_MAX_SETTLEMENTS) return -1;
+    NativeSettlement *v = &CS.villages[CS.n_villages];
+    memset(v, 0, sizeof(*v));
+    v->map_x = (uint8_t)px;
+    v->map_y = (uint8_t)py;
+    v->owner_tribe = (uint8_t)(ti + 4);
+    v->flags = (uint8_t)(capital ? 0x04 : 0);
+    v->population = (uint8_t)(capital ? 3 * lv + 4 : 2 * lv + 3);
+    v->mission = 0xFF;                          /* none */
+    v->alarm[nation] = tension;                 /* v.alarm (5167) */
+    v->walked_good = 0xFF;
+    v->last_bought = 0xFF;
+    v->last_sold = 0xFF;
+    /* HOMELAND CLAIM: settlement creation writes the tribe into
+     * the plane-3 owner nibble via the claim writer func_005E18
+     * ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create
+     * path calls it on the village tile @0x46E9E).  The RADIUS
+     * is the engine's own getter func_00822A: 1/1/2/3 by
+     * TRIBE TECH (byte-read 2026-08-30; the manual's "1/2" was
+     * short).  First claim wins here, FLAGGED.  This keeps
+     * rumour medallions (and details) off native country: the
+     * marker predicate requires an UNCLAIMED nibble
+     * (func_006188 @0x61BC). */
+    {
+        static const int HRAD[4] = { 1, 1, 2, 3 };
+        int rad = HRAD[lv & 3];          /* func_00822A */
+        for (int cy = py - rad; cy <= py + rad; cy++)
+            for (int cx = px - rad; cx <= px + rad; cx++) {
+                if (cx < 0 || cy < 0 || cx >= COLOPY_MAP_W ||
+                    cy >= COLOPY_MAP_H) continue;
+                int mi = cy * COLOPY_MAP_W + cx;
+                if ((CS.region[mi] >> 4) != 0x0F) continue;
+                CS.region[mi] = (uint8_t)
+                    ((CS.region[mi] & 0x0F) | ((ti + 4) << 4));
+            }
+    }
+    return CS.n_villages++;
+}
+
 colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                                  const char *leader_name,
                                  const colopy_world_options *world) {
@@ -236,101 +322,231 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
         if (ms != COLOPY_OK) return ms;
     }
 
-    /* seedNatives (5146): tensions first (one draw per tribe, in
-     * dat_tribes order), then the villages, then one brave each */
+    /* [0x53A7] = 0 and [0x53A8] = random_int(1, 8) (@0x0757D3..
+     * @0x0757E4, new_game_state_init): the wedding counter and the
+     * REMEMBERED @KINGWAR country the tax cycle rerolls against
+     * (king_war_cycle) -- one draw on the shared stream between the
+     * builder and the natives (the JS beginGame draws at the same
+     * point).  The four calls between the builder and this draw
+     * (func_06892E, func_036574, func_063C58, func_063F3C @0x0757AB..
+     * @0x0757BA) are unread for draws, FLAGGED. */
+    g[0x27] = 0;
+    g[0x28] = (uint8_t)rng_range(1, 8);   /* cr_reset_from_load reads it */
+
+    /* func_065D26 (0x1A1F:0x87C, called @0x07596A after the starting
+     * units): the natives.  Per-tribe init @0x65E1D..@0x65E78 -- the
+     * tribe selected (0x181F:0xA42), the @TRIBES NAMES.TXT row read
+     * (four tokens, the fourth = +0x02 TECH @0x65E4D), +0x00/+0x01 = 1,
+     * +0x04..+0x08 = 0, +0x0A/+0x0C = 0, then per POWER 0..3 the
+     * tension word +0x46+2p = random_int(0, 14) + (controller == 0 ?
+     * 2 * difficulty : 0) (@0x65D86..@0x65DD9: FOUR draws per tribe,
+     * 32 in all) and +0x36+p = 0; then +0x3A..+0x45 and the sixteen
+     * words at +0x0E zeroed.  The controller test [0x543F]: the human
+     * power is 0 (@0x0745B6); the AI powers hold whatever the last game
+     * left (@0x075AB9 sets them 1 AFTER this call; the EXE data image
+     * seeds them 206/25/0/150) -- the port grants the bonus to the human
+     * only, FLAGGED. */
     uint8_t tension[8];
     for (int ti = 0; ti < 8; ti++) {
-        tension[ti] = (uint8_t)(rng_range(0, 14) + 2 * difficulty);
-        int off = ti * 0x4E + 0x46 + nation * 2;
-        put16(CS.tribes + off, tension[ti]);
-        /* the record's +0x02 TECH byte (the JS t.level = @TRIBES column,
-         * read back from the SAV by tribe_level()) — was never written
-         * on a fresh C game (found 2026-09-03 by the hoard projection:
-         * tribe_level() read 0 while the JS held the data level) */
-        CS.tribes[ti * 0x4E + 2] = (uint8_t)dat_tribes[ti].level;
+        uint8_t *tr = CS.tribes + ti * 0x4E;
+        tr[0] = 1;
+        tr[1] = 1;
+        tr[2] = (uint8_t)dat_tribes[ti].level;    /* +0x02 TECH */
+        for (int p = 0; p < 4; p++) {
+            int t = rng_range(0, 14) + (p == (int)nation ? 2 * difficulty : 0);
+            put16(tr + 0x46 + 2 * p, (uint16_t)t);
+            tr[0x36 + p] = 0;
+        }
+        tension[ti] = (uint8_t)(tr[0x46 + 2 * nation] | (tr[0x47 + 2 * nation] << 8));
     }
-    /* placement = func_065D26's TRIBE.TXT mode (@0x660C4..@0x66246,
-     * 2026-08-29): per site a triangular +-2 jitter (random_int(-1,1) +
-     * random_int(-1,1) per axis), up to 100 tries against passable,
-     * improve & 3 clear, terrain < 0x18 with (id & 7) not Desert/Swamp,
-     * nearest-settlement distance > 3/2/1 by tries; the FIRST placed
-     * site is the capital (byte-confirmed).  Mirrors game.js
-     * draw-for-draw. */
-    for (int ti = 0; ti < 8; ti++) {
-        int lv = dat_tribes[ti].level;
-        int placed_first = 0;
-        for (int k = 0; k < SITES_N[ti]; k++) {
-            int bx = (int)SITES[ti][k][0] + TRIBE_SITE_DX;
-            int by = (int)SITES[ti][k][1] + TRIBE_SITE_DY;
-            int px = -1, py = -1;
-            for (int tries = 1; tries <= 100; tries++) {
-                int dx = ((int)((rng_next() * 3u) >> 15) - 1) +
-                         ((int)((rng_next() * 3u) >> 15) - 1);
-                int dy = ((int)((rng_next() * 3u) >> 15) - 1) +
-                         ((int)((rng_next() * 3u) >> 15) - 1);
-                int x = bx + dx, y = by + dy;
-                if (x < 0 || y < 0 || x >= COLOPY_MAP_W ||
-                    y >= COLOPY_MAP_H)
-                    continue;
-                uint8_t tv = map_at(x, y);
-                int tt = tile_terrain(tv);
-                if (tile_water(tv) || tt >= 0x18) continue;
-                if ((tt & 7) == 1 || (tt & 7) == 7) continue;
-                if (map_improve(x, y) & 3) continue;
-                int need = tries < 0x21 ? 3 : tries < 0x42 ? 2 : 1;
-                int near_d = 99;
-                for (int w = 0; w < CS.n_villages; w++) {
-                    int ddx = CS.villages[w].map_x - x;
-                    int ddy = CS.villages[w].map_y - y;
-                    if (ddx < 0) ddx = -ddx;
-                    if (ddy < 0) ddy = -ddy;
-                    int d = ddx > ddy ? ddx : ddy;
-                    if (d < near_d) near_d = d;
+
+    if (world->mode == COLOPY_WORLD_AMERICA) {
+        /* the TRIBE.TXT mode (@0x65E87: [0x5388] != 0 -> the file;
+         * @0x660C4..@0x66246): per site a triangular +-2 jitter
+         * (random_int(-1,1) + random_int(-1,1) per axis), up to 100
+         * tries against passable, improve & 3 clear, terrain < 0x18
+         * with (id & 7) not Desert/Swamp, nearest-settlement distance
+         * (engine_dist, func_046056 @0x661A5) > 3/2/1 by tries; the
+         * FIRST placed site is the capital (flags |= 4 @0x66225).
+         * Mirrors game.js draw-for-draw. */
+        for (int ti = 0; ti < 8; ti++) {
+            int placed_first = 0;
+            for (int k = 0; k < SITES_N[ti]; k++) {
+                int bx = (int)SITES[ti][k][0] + TRIBE_SITE_DX;
+                int by = (int)SITES[ti][k][1] + TRIBE_SITE_DY;
+                int px = -1, py = -1;
+                for (int tries = 1; tries <= 100; tries++) {
+                    int dx = rng_range(-1, 1) + rng_range(-1, 1);
+                    int dy = rng_range(-1, 1) + rng_range(-1, 1);
+                    int x = bx + dx, y = by + dy;
+                    if (!in_bounds(x, y)) continue;
+                    uint8_t tv = map_at(x, y);
+                    if (map_improve(x, y) & 3) continue;
+                    int tt = terrain_class(tv);
+                    if (tt >= 0x18) continue;
+                    tt &= 7;
+                    if (!((tt >= 2 && tt <= 6) || tt == 0)) continue;
+                    int near_d;
+                    nearest_settlement(x, y, &near_d);
+                    int need = tries < 0x21 ? 3 : tries < 0x42 ? 2 : 1;
+                    if (near_d <= need) continue;
+                    px = x;
+                    py = y;
+                    break;
                 }
-                if (near_d <= need) continue;
-                px = x;
-                py = y;
-                break;
+                if (px < 0) continue;
+                if (create_village(ti, px, py, !placed_first, nation,
+                                   tension[ti]) < 0)
+                    continue;
+                placed_first = 1;
             }
-            if (px < 0) continue;
-            if (CS.n_villages >= COLOPY_MAX_SETTLEMENTS) continue;
-            NativeSettlement *v = &CS.villages[CS.n_villages++];
-            memset(v, 0, sizeof(*v));
-            v->map_x = (uint8_t)px;
-            v->map_y = (uint8_t)py;
-            v->owner_tribe = (uint8_t)(ti + 4);
-            v->flags = (uint8_t)(placed_first ? 0 : 0x04);
-            v->population = (uint8_t)(placed_first ? 2 * lv + 3
-                                                   : 3 * lv + 4);
-            placed_first = 1;
-            v->mission = 0xFF;                          /* none */
-            v->alarm[nation] = tension[ti];             /* v.alarm (5167) */
-            v->walked_good = 0xFF;
-            v->last_bought = 0xFF;
-            v->last_sold = 0xFF;
-            /* HOMELAND CLAIM: settlement creation writes the tribe into
-             * the plane-3 owner nibble via the claim writer func_005E18
-             * ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create
-             * path calls it on the village tile @0x46E9E).  The RADIUS
-             * is the engine's own getter func_00822A: 1/1/2/3 by
-             * TRIBE TECH (byte-read 2026-08-30; the manual's "1/2" was
-             * short).  First claim wins here, FLAGGED.  This keeps
-             * rumour medallions (and details) off native country: the
-             * marker predicate requires an UNCLAIMED nibble
-             * (func_006188 @0x61BC). */
-            {
-                static const int HRAD[4] = { 1, 1, 2, 3 };
-                int rad = HRAD[lv & 3];          /* func_00822A */
-                for (int cy = py - rad; cy <= py + rad; cy++)
-                    for (int cx = px - rad; cx <= px + rad; cx++) {
-                        if (cx < 0 || cy < 0 || cx >= COLOPY_MAP_W ||
-                            cy >= COLOPY_MAP_H) continue;
-                        int mi = cy * COLOPY_MAP_W + cx;
-                        if ((CS.region[mi] >> 4) != 0x0F) continue;
-                        CS.region[mi] = (uint8_t)
-                            ((CS.region[mi] & 0x0F) | ((ti + 4) << 4));
+        }
+    } else {
+        /* the RANDOM mode (no file: @0x65F50..@0x660C0 the capitals,
+         * @0x6624A..@0x664AF the satellites).  A 15x18 cell grid of
+         * 5x5 squares at DS:0x9FAA (memset @0x65D53, x-stride 0x12),
+         * per-tribe counts at DS:0x962A (@0x65D6C). */
+        uint8_t grid[15][18];
+        uint8_t tcount[8];
+        int placed = 0;                            /* [bp-0xAA] */
+        memset(grid, 0, sizeof(grid));
+        memset(tcount, 0, sizeof(tcount));
+        for (int ti = 0; ti < 8; ti++) {
+            /* one CAPITAL per tribe: x = random_int(8, W-8), y =
+             * random_int(12, H-12) (@0x65F5D..@0x65F83), rejected while
+             * water (0x181F:0x768), relief (raw & 0x20, 0x181F:0x72C),
+             * a settlement ON the square (nearest distance 0), nearest
+             * distance < 90 - tries/4 (@0x65FD5..@0x65FE5), distance
+             * < 8 until tries >= (8 - d) * 1000 (@0x65FE7..@0x65FFD),
+             * for tribes 0/1 (Inca, Aztec) x * 8 > tries (@0x65FFF..
+             * @0x66011: the west), and a taken cell until tries >=
+             * 10000 (@0x66013..@0x66036); up to 12000 tries
+             * (@0x66043), else the tribe gets no capital. */
+            int tries = 0, ok = 0, x = 0, y = 0;
+            do {
+                tries++;
+                x = rng_range(8, COLOPY_MAP_W - 8);
+                y = rng_range(12, COLOPY_MAP_H - 12);
+                ok = 0;
+                do {
+                    uint8_t tv = map_at(x, y);
+                    int d;
+                    if (tile_water(tv)) break;
+                    if (tv & 0x20) break;
+                    nearest_settlement(x, y, &d);
+                    if (d == 0) break;
+                    if (0x5A - (tries >> 2) > d) break;
+                    if (d < 8 && (8 - d) * 1000 > tries) break;
+                    if (ti < 2 && x * 8 > tries) break;
+                    if (grid[x / 5][y / 5] != 0 && tries < 10000) break;
+                    ok = 1;
+                } while (0);
+            } while (!ok && tries < 12000);
+            if (!ok) continue;
+            CS.tribes[ti * 0x4E + 0] = (uint8_t)x;   /* +0x00/+0x01: the
+                                                      * capital square */
+            CS.tribes[ti * 0x4E + 1] = (uint8_t)y;
+            if (create_village(ti, x, y, 1, nation, tension[ti]) < 0)
+                continue;
+            tcount[ti]++;
+            grid[x / 5][y / 5] = 1;
+            placed++;
+        }
+        /* the SATELLITES: while placed < 0x10E (the grid size) and
+         * tries < 0x10E * 8 and the count < 84: pick a tribe with a
+         * capital (random_int(0,7) rerolled), walk its capital's cell
+         * by random_int(0,7) steps (NDX/NDY) until a free cell (a step
+         * off the 15x18 grid abandons the pass); scan the cell's 3x3
+         * interior (yy = Y+1..Y+3 outer, xx = X+1..X+3 inner) for
+         * in-bounds squares with improve & 3 clear, class < 0x18 and
+         * (id & 7) in {0, 2..6}, and no improve & 3 on the 9-square
+         * neighbourhood; place ONE at random_int(0, n-1) for the
+         * NEAREST settlement's tribe ([0x8D50] after func_046056),
+         * then mark the cell and count it placed even with no
+         * candidate (@0x66497..@0x6649C). */
+        {
+            int tries = 0;
+            int any = 0;
+            for (int ti = 0; ti < 8; ti++) any |= tcount[ti];
+            while (any && placed < 0x10E) {
+                if (0x10E * 8 <= tries) break;
+                if (CS.n_villages >= COLOPY_MAX_SETTLEMENTS) break;
+                int ti;
+                do { ti = rng_range(0, 7); } while (tcount[ti] == 0);
+                int cx = CS.tribes[ti * 0x4E + 0] / 5;
+                int cy = CS.tribes[ti * 0x4E + 1] / 5;
+                int ok = 0;
+                for (;;) {
+                    tries++;
+                    int d = rng_range(0, 7);
+                    cx += NDX[d];
+                    cy += NDY[d];
+                    if (cx < 0 || cx >= 15 || cy < 0 || cy >= 18) break;
+                    if (grid[cx][cy] == 0) { ok = 1; break; }
+                }
+                if (!ok) continue;
+                uint8_t cand[9][2];
+                int n = 0;
+                int X = cx * 5, Y = cy * 5;
+                for (int yy = Y + 1; yy < Y + 4; yy++)
+                    for (int xx = X + 1; xx < X + 4; xx++) {
+                        if (!in_bounds(xx, yy)) continue;
+                        if (map_improve(xx, yy) & 3) continue;
+                        int tt = terrain_class(map_at(xx, yy));
+                        if (tt >= 0x18) continue;
+                        tt &= 7;
+                        if (!((tt >= 2 && tt <= 6) || tt == 0)) continue;
+                        int hit = 0;
+                        for (int k = 0; k < 9 && !hit; k++)
+                            if (map_improve(xx + NDX[k], yy + NDY[k]) & 3)
+                                hit = 1;
+                        if (hit) continue;
+                        cand[n][0] = (uint8_t)xx;
+                        cand[n][1] = (uint8_t)yy;
+                        n++;
                     }
+                if (n > 0) {
+                    int i = rng_range(0, n - 1);
+                    int d;
+                    int near = nearest_settlement(cand[i][0], cand[i][1], &d);
+                    int owner = CS.villages[near].owner_tribe - 4;
+                    create_village(owner, cand[i][0], cand[i][1], 0, nation,
+                                   tension[owner]);
+                }
+                grid[cx][cy] = 1;
+                placed++;
             }
+        }
+    }
+
+    /* the BRAVES (@0x664B2..@0x665D3, both modes, before the hoard):
+     * per settlement in order, up to 100 tries of x = sx +
+     * random_int(-2, 2), y = sy + random_int(-2, 2) (@0x664DF..
+     * @0x66512) accepted when in bounds, the SAME landmass nibble
+     * (0x181F:0x6B4), not water and improve & 3 clear; spawn_unit(0x13
+     * Braves, the settlement's tribe, x, y) with +0x06 = the home
+     * settlement (@0x665A5..@0x665BE).  No unit check: braves may
+     * stack. */
+    {
+        int braves = unit_row("Braves");     /* @UNIT row 0x13 */
+        for (int vi = 0; vi < CS.n_villages; vi++) {
+            int sx = CS.villages[vi].map_x, sy = CS.villages[vi].map_y;
+            int reg = CS.region[sy * COLOPY_MAP_W + sx] & 0x0F;
+            int tries = 0, ok = 0, x = 0, y = 0;
+            do {
+                x = sx + rng_range(-2, 2);
+                y = sy + rng_range(-2, 2);
+                ok = in_bounds(x, y);
+                if (ok) {
+                    if ((CS.region[y * COLOPY_MAP_W + x] & 0x0F) != reg) ok = 0;
+                    if (tile_water(map_at(x, y))) ok = 0;
+                    if (map_improve(x, y) & 3) ok = 0;
+                }
+                tries++;
+            } while (!ok && tries < 100);
+            if (!ok) continue;
+            int bi = add_unit(braves, x, y, CS.villages[vi].owner_tribe);
+            if (bi >= 0) CS.units[bi].home_settlement = (uint8_t)vi;
         }
     }
 
@@ -371,35 +587,6 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
         if (n == nation) continue;
         add_unit(unit_row(n == 3 ? "Merchantman" : "Caravel"),
                  starts[n][0], starts[n][1], n);
-    }
-
-    /* spawnBrave (5951), a second pass in village order: the first of
-     * E,W,S,N that is land with no village and no earlier brave */
-    int braves = unit_row("Braves");
-    for (int vi = 0; vi < CS.n_villages; vi++) {
-        static const int SPOT[4][2] = { {1,0}, {-1,0}, {0,1}, {0,-1} };
-        for (int s = 0; s < 4; s++) {
-            int bx = CS.villages[vi].map_x + SPOT[s][0];
-            int by = CS.villages[vi].map_y + SPOT[s][1];
-            if (tile_water(map_at(bx, by))) continue;
-            int taken = 0;
-            for (int w = 0; w < CS.n_villages && !taken; w++)
-                if (CS.villages[w].map_x == bx && CS.villages[w].map_y == by)
-                    taken = 1;
-            for (int u = 0; u < CS.n_units && !taken; u++)
-                if ((CS.units[u].owner_flags & 0x0F) >= 4 &&
-                    CS.units[u].map_x == bx && CS.units[u].map_y == by)
-                    taken = 1;
-            if (taken) continue;
-            {
-                int bi = add_unit(braves, bx, by,
-                                  4 + (CS.villages[vi].owner_tribe - 4));
-                /* +0x06 = the home village (spawn @0x006ED2, C3.9) --
-                 * the leash cr_reset_from_load reads back */
-                if (bi >= 0) CS.units[bi].home_settlement = (uint8_t)vi;
-            }
-            break;
-        }
     }
 
     /* counts + their globals mirrors */

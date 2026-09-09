@@ -44,7 +44,11 @@ DIRS = ("cport/core", "cport/render", "cport/game", "cport/audio", "cport/data")
 
 # Frozen 2026-09-03 at 229,576 B measured, with ~1 KB of slack for
 # incidental growth.  Raise deliberately, never to make a red gate green.
-CEILING = 230_600
+# 2026-09-09: COLOPY_MAX_SETTLEMENTS 64 -> 84 (the engine's byte-verified
+# cap, @0x46E21/@0x6626E -- the random-world placer fills it): +1,080 B
+# across CS.villages and the CR per-village tables, measured 230,676 B;
+# the ceiling moves by the same +1,080 to keep the slack it had.
+CEILING = 231_680
 
 
 def main() -> int:

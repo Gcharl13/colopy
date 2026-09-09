@@ -129,6 +129,14 @@ gate on the shared core, which is where this growth came from, not as a
 prediction of the board's number. Raise its `CEILING` deliberately, in the
 same commit as the change that needs it, with the reason written down.
 
+**2026-09-09: ceiling 230,600 → 231,680.** `COLOPY_MAX_SETTLEMENTS` went
+from 64 to the engine's byte-verified 84 (`func_046E18` @0x46E21,
+`func_065D26` @0x6626E — the random-world placer fills it), which grows
+`CS.villages` and the CR per-village tables (`alarm`, `brave_owed`,
+`village_flags`, `village_demand[][16]`, `village_demand_set`) by 1,080 B
+on the host measure (230,676 B). The ceiling moved by exactly that, so
+the slack is what it was.
+
 **Measure, do not quote.** How much internal SRAM is actually free after the
 IDF, the DPI driver and the Arduino runtime have taken their share is a
 hardware fact, so the sketch reads it out rather than asserting it:

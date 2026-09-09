@@ -12820,3 +12820,84 @@ from tile 0 (so the Arctic row was id 1 and everything else off by one,
 water 0); that only ever mattered to saves written by the C, but it is
 byte-true now. The C keeps its working ids in the former flood stack and
 its size table in plane 4, free at both call sites.
+
+## 2026-09-09f — func_065D26 (the natives placer) read whole: the random-world mode, four tension draws per tribe, the byte-read brave jitter, and the 84 cap — both engines in lockstep
+
+`func_065D26` @0x065D26 (0x1A1F:0x87C, called from `new_game_state_init`
+@0x07596A after the starting units) was read from ENTER to RETF
+(@0x066678). What the ports had modelled was its TRIBE.TXT branch only;
+the generated-world branch, the brave pass and the tension init were
+reconstructions. Findings, all byte-cited in `cport/core/colopy_newgame.c`
+and `game.js seedNatives`:
+
+- **Tension init draws FOUR times per tribe, once per POWER** (@0x65D86..
+  @0x65DD9: `[tribe+0x46+2p] = random_int(0,14) + (controller[p] == 0 ?
+  2·difficulty : 0)`, `[tribe+0x36+p] = 0`), 32 draws in all before any
+  placement. Both engines drew once per tribe. The controller test
+  `[0x543F+0x34p]`: the human power is 0 (@0x0745B6); the AI powers hold
+  whatever the previous game left (@0x075AB9 sets all four to 1 only
+  AFTER this call; the EXE data image seeds them 206/25/0/150) — the
+  ports grant the bonus to the human only, **FLAGGED** (values for the
+  AI powers only; the draw count is exact). The earlier `random_int(0,13)`
+  gloss in REMAINING_WORK C1.5 was a misread of `push 0xE` — it is
+  (0,14), and the JS `floor(rand·15)` was never off.
+- **Mode select** @0x65E87: `[0x5388] != 0` (the premade-map flag set
+  @0x0755E2) opens TRIBE.TXT (or AMER2.MP-derived when `[0x2174]`); a
+  failed open (@0x65ED4) or a generated world falls to the RANDOM mode.
+- **Random mode, capitals** (@0x65F50..@0x660C0), per tribe 0..7: up to
+  12000 tries of `x = random_int(8, W−8)`, `y = random_int(12, H−12)`,
+  rejected while water (0x181F:0x768), relief (`raw & 0x20`,
+  0x181F:0x72C), a settlement on the square (func_046056's distance 0),
+  nearest distance < `90 − tries/4`, distance < 8 until
+  `tries >= (8−d)·1000`, for tribes 0/1 (Inca, Aztec) `x·8 > tries`, and a
+  taken 5×5 cell until `tries >= 10000`. The accepted square goes to the
+  tribe record +0x00/+0x01, the settlement is created (0x1A1F:0x440 =
+  func_046E18), selected and flagged capital (`or [bx+3],4` @0x66095),
+  the per-tribe count at DS:0x962A and the 15×18 cell grid at DS:0x9FAA
+  (memset 0x10E @0x65D53, x-stride 0x12) are marked.
+- **Random mode, satellites** (@0x6624A..@0x664AF): while placed < 0x10E,
+  tries < 0x10E·8 and the count < 84: a tribe with a capital
+  (`random_int(0,7)` rerolled), a walk of its capital's cell by
+  `random_int(0,7)` steps over the DS:0xB4/0xBE direction tables until a
+  free cell (off-grid abandons the pass, tries already counted), a scan of
+  the cell's 3×3 interior (yy outer, xx inner) for in-bounds squares with
+  `improve & 3` clear, class < 0x18 and `(id & 7)` in {0, 2..6}, and no
+  `improve & 3` on the 9-square neighbourhood (tables 0..8); ONE
+  candidate at `random_int(0, n−1)` is created for the NEAREST
+  settlement's tribe (`[0x8D50]` after func_046056's select), and the cell
+  is marked and counted placed even with no candidate (@0x66497..@0x6649C).
+- **Braves** (@0x664B2..@0x665D3, both modes, BEFORE the hoard): per
+  settlement, up to 100 tries of `sx + random_int(−2,2)`,
+  `sy + random_int(−2,2)`, accepted when in bounds (0x181F:0x302), the
+  same landmass nibble (0x181F:0x6B4), not water and `improve & 3` clear;
+  `spawn_unit(0x13 Braves, tribe, x, y)` with +0x06 = the home settlement.
+  No unit check — braves may stack. Both engines had an RNG-free E/W/S/N
+  pick (the in-game respawn's rule) here.
+- **Nearest-settlement distance** is func_046056's `engine_dist`
+  (max + min/2, func_004900), a later equal distance winning (`jg` skips
+  only strictly farther @0x460C5). The TRIBE.TXT branch used Chebyshev in
+  both ports; now the byte metric.
+- **The settlement cap is 84** (`0x54`): the create path refuses more
+  (func_046E18 @0x46E21) and the placer stops there (@0x6626E).
+  `COLOPY_MAX_SETTLEMENTS` 64 → 84 (+1,080 B of CS/CR tables; the RAM
+  ceiling moves by the same amount, `tools/ram_budget.py`).
+- **`[0x53A7] = 0`, `[0x53A8] = random_int(1, 8)`** (@0x0757D3..@0x0757E4,
+  between the builder and the starting units): the wedding counter and
+  the REMEMBERED @KINGWAR country the tax cycle rerolls against. Both
+  engines now draw it at that point of a new game AND read the two bytes
+  from a loaded file (importSav / cr_reset_from_load; the C save folds
+  them back) — the JS importer's own beginGame had leaked a native-RNG
+  value into loaded games, which the sav1653 turns oracle caught as a
+  1-in-8 extra reroll. The four calls between the builder and this draw
+  (func_06892E, func_036574, func_063C58, func_063F3C @0x0757AB..
+  @0x0757BA) are unread for draws, **FLAGGED**.
+
+Oracle: `sim_compare.py newgame 30` 12/12 configs at 0 disagreements
+(generated worlds now carry 64–84 settlements and a brave each; AMERICA
+56 as before, relocated by the metric and the extra draws); the full
+suite green. The population model (capital 3·tech+4, else 2·tech+3) and
+the per-village alarm = the human's tension stay the ports' model — note
+func_046E18 computes +0x04 through 0x1A1F:0x410 BEFORE clearing +0x03
+(@0x46E66/@0x46EA7), so whether a fresh capital opens at the capital
+size is not settled by this read, **FLAGGED**.
+

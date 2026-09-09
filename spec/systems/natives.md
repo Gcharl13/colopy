@@ -462,3 +462,58 @@ mirrored, RULINGS 2026-09-03b).
   meetings through `func_059B90 → func_056C3E`, the per-power visit stamp
   0/1/2) is recorded in RULINGS 2026-09-03e as UNVERIFIED and unported;
   the ports' per-turn roll stays flagged.
+
+## Amendment 2026-09-09 — `func_065D26` read whole: the natives placer (RULINGS 2026-09-09f)
+
+The new-game natives routine `func_065D26` @0x065D26 (0x1A1F:0x87C, called
+from `new_game_state_init` @0x07596A after the starting units) is read
+from ENTER to RETF and ported in both engines (`cport/core/colopy_newgame.c`,
+`game.js seedNatives`). **B** throughout unless flagged.
+
+1. **Tribe init** (@0x65E1D..@0x65E78, tribes 0..7): the @TRIBES NAMES.TXT
+   row (four tokens, the fourth = `+0x02` TECH), `+0x00/+0x01 = 1`,
+   `+0x04..+0x08 = 0`, `+0x0A/+0x0C = 0`, `+0x0E..` sixteen words 0,
+   `+0x3A..+0x45` 0; then **per POWER p = 0..3**: `+0x46+2p =
+   random_int(0,14) + (controller[p] == 0 ? 2·difficulty : 0)` and
+   `+0x36+p = 0` (@0x65D86..@0x65DD9) — four draws per tribe, 32 before
+   any placement (item 5 of §6 above described one). The controller bytes
+   of the AI powers are stale at that point (@0x075AB9 sets them AFTER;
+   the EXE image seeds 206/25/0/150): the ports give the bonus to the
+   human only — **FLAGGED** for the AI powers' values.
+2. **Mode** (@0x65E87): `[0x5388] != 0` (premade map) → TRIBE.TXT (AMER2.MP-
+   derived when `[0x2174]`); open failure or a generated world → RANDOM.
+3. **TRIBE.TXT mode** (@0x660C4..@0x66246) as C1.5, with the
+   nearest-settlement distance being `func_046056`'s `engine_dist`
+   (max + min/2, `func_004900`; a later equal distance wins @0x460C5).
+4. **Random mode, capitals** (@0x65F50..@0x660C0), per tribe: up to 12000
+   tries of `x = random_int(8, W−8)`, `y = random_int(12, H−12)`; reject
+   water (0x181F:0x768), relief (`raw & 0x20`), a settlement on the square,
+   nearest distance `< 90 − tries/4`, distance `< 8` until `tries >=
+   (8−d)·1000`, Inca/Aztec (tribes 0/1) `x·8 > tries`, a taken 5×5 cell
+   until `tries >= 10000`. Then tribe `+0x00/+0x01 = (x, y)`, create
+   (0x1A1F:0x440 = `func_046E18`), select, `flags |= 4` (capital), the
+   per-tribe count DS:0x962A and the 15×18 cell grid DS:0x9FAA (x-stride
+   0x12, memset 0x10E @0x65D53) marked.
+5. **Random mode, satellites** (@0x6624A..@0x664AF): while placed < 0x10E,
+   tries < 0x10E·8, count < 84: a tribe with a capital (`random_int(0,7)`
+   rerolled); walk its capital's cell by `random_int(0,7)` steps over the
+   DS:0xB4/0xBE direction tables until a free cell (off-grid abandons the
+   pass); scan the cell's 3×3 interior (yy outer, xx inner) for in-bounds
+   squares with `improve & 3` clear, class < 0x18, `(id & 7)` ∈ {0, 2..6}
+   and no `improve & 3` on the 9-square neighbourhood; one candidate at
+   `random_int(0, n−1)` is created for the NEAREST settlement's tribe
+   (`[0x8D50]`); the cell is marked and counted placed even without a
+   candidate.
+6. **Braves** (@0x664B2..@0x665D3, both modes, before the hoard): per
+   settlement up to 100 tries of `±random_int(−2,2)` per axis; accept when
+   in bounds, same landmass nibble (0x181F:0x6B4), not water, `improve & 3`
+   clear; `spawn_unit(0x13, tribe, x, y)`, `+0x06` = the settlement. No
+   unit check (braves may stack). The E/W/S/N rule the ports had here is
+   the in-game respawn's, not this pass's.
+7. **Hoard** (@0x665D8..@0x66676): as Amendment 2026-09-03b.
+8. **Cap 84** (`0x54`, `func_046E18` @0x46E21 / @0x6626E).
+9. Open: `func_046E18` computes `+0x04` (population) through 0x1A1F:0x410
+   BEFORE clearing `+0x03` (@0x46E66 / @0x46EA7), so the fresh capital's
+   opening size is not settled by this read — the ports keep
+   3·tech+4 / 2·tech+3, **FLAGGED**.
+

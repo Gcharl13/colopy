@@ -210,6 +210,13 @@ BEGINMENU `0x1FCE5`→`0x2345`, AMERICA `0x1FCEF`→`0x234f`). **B.**
    - **Native settlements** `func_065D26` (`@0x7596A`): allocates up to **84** (`0x54`)
      settlement records (stride `0x12` @ `0x54EC`, counter `[0x539A]`; per-tribe data
      `0x5AD6` stride `0x4E`, tribe type byte = `tribe+4` for tribes 4..11). **B.**
+     **READ WHOLE 2026-09-09 (RULINGS 2026-09-09f) and ported in both engines:** the
+     TRIBE.TXT branch (premade maps), the RANDOM branch (generated worlds: one capital
+     per tribe on a 90−tries/4 distance schedule with a west bias for Inca/Aztec, then
+     satellites by a random walk over a 15×18 grid of 5×5 cells, the cell's 3×3
+     interior scanned), the brave pass (±2 jitter, same landmass, 100 tries) and the
+     four-per-tribe tension draws — `cport/core/colopy_newgame.c` / `game.js
+     seedNatives` carry every site; `spec/systems/natives.md` Amendment 2026-09-09 has the rules.
    - **Resource / land-value layer** `func_063F3C` (`@0x757BA`; body `0x063F3C`): per-tile value byte
      write (`0x181F:0x736` → `func_005ED0`, store `@0x064130`) into **map-layer #4** `[0x168]/[0x16a]`
      **low nibble** = `clamp(land-value/10, 0, 15)`. This low nibble is exactly what the **"Show Colony

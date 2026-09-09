@@ -1495,6 +1495,14 @@ function beginGame() {
   G.mapStarts = generateNewWorld(G.worldMode === 'america',
                                  { values: G.customValues || [1, 1, 1, 1] });
   const [sx, sy] = G.mapStarts[G.nation];
+  // [0x53A7] = 0 and [0x53A8] = random_int(1, 8) (@0x0757D3..@0x0757E4,
+  // new_game_state_init): the wedding counter and the REMEMBERED @KINGWAR
+  // country kingWarCycle rerolls against -- one draw on the shared stream
+  // between the builder and the natives. The four calls between the
+  // builder and this draw (func_06892E, func_036574, func_063C58,
+  // func_063F3C @0x0757AB..@0x0757BA) are unread for draws, FLAGGED.
+  G.kingWeddings = 0;
+  G.kingWarCountry = Math.floor(Math.random() * 8) + 1;
   // Manifest order is Soldiers then Pioneers: the live opening turn lists
   // "Veteran" above "100 Tools" in the sidebar
   // (docs/screens/live_2026-08-05/07_map_opening_turn.png).
@@ -8166,81 +8174,238 @@ function adjustTension(tribe, delta, cause) {
 // tiles (the old extract_mp.py read the .MP version word as tiles).
 const TRIBE_SITE_DX = 0, TRIBE_SITE_DY = 0;
 function seedNatives() {
+  // func_065D26 (0x1A1F:0x87C, called from new_game_state_init @0x07596A):
+  // the natives. Read 2026-09-09 (RULINGS 2026-09-09f); the C
+  // colopy_newgame.c carries the same citations draw-for-draw.
+  const ri = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const W = MAP.w, H = MAP.h;
+  const inb = (x, y) => x >= 1 && y >= 1 && x <= W - 2 && y <= H - 2;
+  // the 8-direction tables at DS:0xB4 / DS:0xBE (file 0x1DA54 / 0x1DA5E)
+  const NDX = [0, 1, 1, 1, 0, -1, -1, -1, 0, 0], NDY = [-1, -1, 0, 1, 1, 1, 0, -1, 0, 0];
+  // Per-tribe init @0x65E1D..@0x65E78: the @TRIBES row (fourth token =
+  // +0x02 TECH), then per POWER 0..3 the tension word +0x46+2p =
+  // random_int(0,14) + (controller == 0 ? 2 * difficulty : 0)
+  // (@0x65D86..@0x65DD9: FOUR draws per tribe, 32 in all). The controller
+  // test [0x543F]: the human power is 0 (@0x0745B6); the AI powers hold
+  // whatever the last game left (@0x075AB9 sets them 1 AFTER this call) --
+  // the port grants the bonus to the human only, FLAGGED. t.tension stays
+  // the human's word.
   G.tribes = DATA.tribes.map(t => ({
     name: t.name, singular: t.singular, level: t.level, color: t.color,
-    tension: Math.floor(Math.random() * 15) + 2 * G.difficulty,
+    tensions: [0, 0, 0, 0], tension: 0, hoard: 0,
   }));
+  for (const t of G.tribes) {
+    for (let p = 0; p < 4; p++)
+      t.tensions[p] = ri(0, 14) + (p === G.nation ? 2 * G.difficulty : 0);
+    t.tension = t.tensions[G.nation];
+  }
   G.villages = [];
   G.natives = [];
-  G.tribes.forEach((t, ti) => {
-    const sites = DATA.tribesites[t.singular.toUpperCase()] || [];
-    // Placement is the BYTE MODEL of func_065D26's TRIBE.TXT mode
-    // (@0x660C4..@0x66246, read 2026-08-29): each file site scatters by a
-    // TRIANGULAR +-2 jitter (random_int(-1,1) + random_int(-1,1) per
-    // axis), retried up to 100 times against: passable tile, improve
-    // bits & 3 clear, terrain < 0x18 with (id & 7) not Desert(1) and not
-    // Swamp(7) (@0x6618B..@0x661A3), and a nearest-settlement distance
-    // over 3 (tries < 0x21), 2 (< 0x42), then 1 (@0x661BB..@0x661E4).
-    // The FIRST placed site is the capital (flags |= 4, @0x66222) --
-    // byte-confirmed, no longer flagged. TRIBE_SITE_DX/DY stays the
-    // port's coordinate calibration, flagged as before.
-    let placedFirst = false;
-    sites.forEach(([sx, sy]) => {
-      const bx = sx + TRIBE_SITE_DX, by = sy + TRIBE_SITE_DY;
-      let px = -1, py = -1;
-      for (let tries = 1; tries <= 100; tries++) {
-        const dx = (Math.floor(Math.random() * 3) - 1) +
-                   (Math.floor(Math.random() * 3) - 1);
-        const dy = (Math.floor(Math.random() * 3) - 1) +
-                   (Math.floor(Math.random() * 3) - 1);
-        const x = bx + dx, y = by + dy;
-        if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
-        const tv = at(x, y), tt = tileTerrain(tv);
-        if (tileWater(tv) || tt >= 0x18) continue;
-        if ((tt & 7) === 1 || (tt & 7) === 7) continue;   // Desert, Swamp
-        if (impAt(x, y) & 3) continue;
-        const need = tries < 0x21 ? 3 : tries < 0x42 ? 2 : 1;
-        const nearD = G.villages.reduce((m, w) =>
-          Math.min(m, Math.max(Math.abs(w.x - x), Math.abs(w.y - y))), 99);
-        if (nearD <= need) continue;
-        px = x; py = y;
-        break;
-      }
-      if (px < 0) return;                    // 100 tries exhausted: skip
-      // mission: null, or {power, expert} -- settlement +0x05.
-      // Starting population is not in the evidence -- villages open at
-      // their target size (func_046DE0: 2*level+3, capital 3*level+4).
-      const v = { x: px, y: py, tribe: ti, name: t.name, level: t.level,
-                  alarm: t.tension, mission: null, tributePaid: false,
-                  capital: !placedFirst, growth: 0, taught: false,
-                  chiefSeen: false, braveOwed: false, pop: 1 };
-      placedFirst = true;
-      v.pop = settlementCap(v);
-      G.villages.push(v);
-      // HOMELAND CLAIM: settlement creation writes the tribe into the
-      // plane-3 owner nibble via the claim writer func_005E18
-      // ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create path
-      // calls it on the village tile @0x46E9E). The RADIUS is the
-      // engine's own getter func_00822A: 1/1/2/3 by TRIBE TECH
-      // (byte-read 2026-08-30; the manual's "1/2" was short). First
-      // claim wins, FLAGGED. This keeps rumour medallions off native
-      // country: the
-      // marker predicate needs an UNCLAIMED nibble (func_006188 @0x61BC).
-      {
-        const rad = [1, 1, 2, 3][(t.level || 0) & 3];   // func_00822A
-        for (let cy = py - rad; cy <= py + rad; cy++)
-          for (let cx = px - rad; cx <= px + rad; cx++) {
-            if (cx < 0 || cy < 0 || cx >= MAP.w || cy >= MAP.h) continue;
-            const mi = cy * MAP.w + cx;
-            if (RESOURCE[mi] !== 0x0F) continue;
-            RESOURCE[mi] = ti + 4;
-          }
-      }
+  // func_046056 (0x181F:0xD84) as (x, y, -1, -1): the nearest settlement by
+  // engineDist -- a later equal distance wins (`jg` skips only strictly
+  // farther, @0x460C5); 0x270F with none. The engine also selects the
+  // winner, so [0x8D50] holds its tribe.
+  const nearest = (x, y) => {
+    let best = -1, bd = 0x270F;
+    G.villages.forEach((w, i) => {
+      const d = engineDist(w.x - x, w.y - y);
+      if (d > bd) return;
+      best = i; bd = d;
     });
-  });
-  // §19.11: map creation spawns exactly ONE brave per village, linked to it;
-  // a village only builds another when its own dies. Done in a second pass so a
-  // brave never lands on a site that has not been placed yet.
+    return [best, bd];
+  };
+  // settlement creation func_046E18 (0x1A1F:0x440) plus the port's record
+  // model. mission: null, or {power, expert} -- settlement +0x05. Starting
+  // population is not in the evidence -- villages open at their target
+  // size (func_046DE0: 2*level+3, capital 3*level+4). Returns false at
+  // the 84 cap (@0x46E21).
+  const placeVillage = (ti, px, py, capital) => {
+    if (G.villages.length >= 84) return false;
+    const t = G.tribes[ti];
+    const v = { x: px, y: py, tribe: ti, name: t.name, level: t.level,
+                alarm: t.tension, mission: null, tributePaid: false,
+                capital, growth: 0, taught: false,
+                chiefSeen: false, braveOwed: false, pop: 1 };
+    v.pop = settlementCap(v);
+    G.villages.push(v);
+    // HOMELAND CLAIM: settlement creation writes the tribe into the
+    // plane-3 owner nibble via the claim writer func_005E18
+    // ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create path
+    // calls it on the village tile @0x46E9E). The RADIUS is the
+    // engine's own getter func_00822A: 1/1/2/3 by TRIBE TECH
+    // (byte-read 2026-08-30; the manual's "1/2" was short). First
+    // claim wins, FLAGGED. This keeps rumour medallions off native
+    // country: the marker predicate needs an UNCLAIMED nibble
+    // (func_006188 @0x61BC).
+    const rad = [1, 1, 2, 3][(t.level || 0) & 3];   // func_00822A
+    for (let cy = py - rad; cy <= py + rad; cy++)
+      for (let cx = px - rad; cx <= px + rad; cx++) {
+        if (cx < 0 || cy < 0 || cx >= MAP.w || cy >= MAP.h) continue;
+        const mi = cy * MAP.w + cx;
+        if (RESOURCE[mi] !== 0x0F) continue;
+        RESOURCE[mi] = ti + 4;
+      }
+    return true;
+  };
+  if (G.worldMode === 'america') {
+    // The TRIBE.TXT mode (@0x65E87: [0x5388] != 0 -> the file;
+    // @0x660C4..@0x66246): per file site a TRIANGULAR +-2 jitter
+    // (random_int(-1,1) + random_int(-1,1) per axis), up to 100 tries
+    // against: in bounds (0x181F:0x302), improve & 3 clear, terrain class
+    // < 0x18 with (id & 7) not Desert(1) / Swamp(7) (@0x6618B..@0x661A3),
+    // and a nearest-settlement engineDist over 3 (tries < 0x21), 2
+    // (< 0x42), then 1 (@0x661BB..@0x661E4). The FIRST placed site is
+    // the capital (flags |= 4, @0x66225). TRIBE_SITE_DX/DY stays the
+    // port's coordinate calibration, flagged as before.
+    G.tribes.forEach((t, ti) => {
+      const sites = DATA.tribesites[t.singular.toUpperCase()] || [];
+      let placedFirst = false;
+      sites.forEach(([sx, sy]) => {
+        const bx = sx + TRIBE_SITE_DX, by = sy + TRIBE_SITE_DY;
+        let px = -1, py = -1;
+        for (let tries = 1; tries <= 100; tries++) {
+          const dx = ri(-1, 1) + ri(-1, 1);
+          const dy = ri(-1, 1) + ri(-1, 1);
+          const x = bx + dx, y = by + dy;
+          if (!inb(x, y)) continue;
+          if (impAt(x, y) & 3) continue;
+          let tt = terrainClass(at(x, y));
+          if (tt >= 0x18) continue;
+          tt &= 7;
+          if (!((tt >= 2 && tt <= 6) || tt === 0)) continue;
+          const need = tries < 0x21 ? 3 : tries < 0x42 ? 2 : 1;
+          if (nearest(x, y)[1] <= need) continue;
+          px = x; py = y;
+          break;
+        }
+        if (px < 0) return;                    // 100 tries exhausted: skip
+        if (!placeVillage(ti, px, py, !placedFirst)) return;
+        placedFirst = true;
+      });
+    });
+  } else {
+    // The RANDOM mode (no file: @0x65F50..@0x660C0 the capitals,
+    // @0x6624A..@0x664AF the satellites). A 15x18 cell grid of 5x5
+    // squares at DS:0x9FAA (memset @0x65D53, x-stride 0x12), per-tribe
+    // counts at DS:0x962A (@0x65D6C).
+    const grid = new Uint8Array(15 * 18);
+    const gi = (cx, cy) => cx * 18 + cy;
+    const tcount = [0, 0, 0, 0, 0, 0, 0, 0];
+    const capital = [];
+    let placed = 0;                                  // [bp-0xAA]
+    for (let ti = 0; ti < 8; ti++) {
+      // one CAPITAL per tribe: x = random_int(8, W-8), y = random_int(12,
+      // H-12) (@0x65F5D..@0x65F83), rejected while water (0x181F:0x768),
+      // relief (raw & 0x20, 0x181F:0x72C), a settlement ON the square
+      // (nearest distance 0), nearest distance < 90 - tries/4
+      // (@0x65FD5..@0x65FE5), distance < 8 until tries >= (8 - d) * 1000
+      // (@0x65FE7..@0x65FFD), for tribes 0/1 (Inca, Aztec) x * 8 > tries
+      // (@0x65FFF..@0x66011: the west), and a taken cell until tries >=
+      // 10000 (@0x66013..@0x66036); up to 12000 tries (@0x66043), else
+      // the tribe gets no capital.
+      let tries = 0, ok = false, x = 0, y = 0;
+      do {
+        tries++;
+        x = ri(8, W - 8);
+        y = ri(12, H - 12);
+        ok = false;
+        do {
+          const tv = at(x, y);
+          if (tileWater(tv)) break;
+          if (tv & 0x20) break;
+          const d = nearest(x, y)[1];
+          if (d === 0) break;
+          if (0x5A - (tries >> 2) > d) break;
+          if (d < 8 && (8 - d) * 1000 > tries) break;
+          if (ti < 2 && x * 8 > tries) break;
+          if (grid[gi(Math.floor(x / 5), Math.floor(y / 5))] !== 0 && tries < 10000) break;
+          ok = true;
+        } while (false);
+      } while (!ok && tries < 12000);
+      if (!ok) continue;
+      capital[ti] = [x, y];                          // tribe +0x00/+0x01
+      if (!placeVillage(ti, x, y, true)) continue;
+      tcount[ti]++;
+      grid[gi(Math.floor(x / 5), Math.floor(y / 5))] = 1;
+      placed++;
+    }
+    // the SATELLITES: while placed < 0x10E (the grid size) and tries <
+    // 0x10E * 8 and the count < 84: pick a tribe with a capital
+    // (random_int(0,7) rerolled), walk its capital's cell by random_int(0,7)
+    // steps (NDX/NDY) until a free cell (a step off the 15x18 grid abandons
+    // the pass); scan the cell's 3x3 interior (yy = Y+1..Y+3 outer, xx =
+    // X+1..X+3 inner) for in-bounds squares with improve & 3 clear, class
+    // < 0x18 and (id & 7) in {0, 2..6}, and no improve & 3 on the 9-square
+    // neighbourhood; place ONE at random_int(0, n-1) for the NEAREST
+    // settlement's tribe ([0x8D50] after func_046056), then mark the cell
+    // and count it placed even with no candidate (@0x66497..@0x6649C).
+    let tries = 0;
+    const any = tcount.some(c => c > 0);
+    while (any && placed < 0x10E) {
+      if (0x10E * 8 <= tries) break;
+      if (G.villages.length >= 84) break;
+      let ti;
+      do { ti = ri(0, 7); } while (tcount[ti] === 0);
+      let cx = Math.floor(capital[ti][0] / 5), cy = Math.floor(capital[ti][1] / 5);
+      let ok = false;
+      for (;;) {
+        tries++;
+        const d = ri(0, 7);
+        cx += NDX[d]; cy += NDY[d];
+        if (cx < 0 || cx >= 15 || cy < 0 || cy >= 18) break;
+        if (grid[gi(cx, cy)] === 0) { ok = true; break; }
+      }
+      if (!ok) continue;
+      const cand = [];
+      const X = cx * 5, Y = cy * 5;
+      for (let yy = Y + 1; yy < Y + 4; yy++)
+        for (let xx = X + 1; xx < X + 4; xx++) {
+          if (!inb(xx, yy)) continue;
+          if (impAt(xx, yy) & 3) continue;
+          let tt = terrainClass(at(xx, yy));
+          if (tt >= 0x18) continue;
+          tt &= 7;
+          if (!((tt >= 2 && tt <= 6) || tt === 0)) continue;
+          let hit = false;
+          for (let k = 0; k < 9 && !hit; k++)
+            if (impAt(xx + NDX[k], yy + NDY[k]) & 3) hit = true;
+          if (hit) continue;
+          cand.push([xx, yy]);
+        }
+      if (cand.length > 0) {
+        const [qx, qy] = cand[ri(0, cand.length - 1)];
+        const owner = G.villages[nearest(qx, qy)[0]].tribe;
+        placeVillage(owner, qx, qy, false);
+      }
+      grid[gi(cx, cy)] = 1;
+      placed++;
+    }
+  }
+  // The BRAVES (@0x664B2..@0x665D3, both modes, before the hoard): per
+  // settlement in order, up to 100 tries of x = sx + random_int(-2, 2),
+  // y = sy + random_int(-2, 2) (@0x664DF..@0x66512) accepted when in
+  // bounds, the SAME landmass nibble (0x181F:0x6B4), not water and improve
+  // & 3 clear; spawn_unit(0x13 Braves, the settlement's tribe, x, y) with
+  // +0x06 = the home settlement (@0x665A5..@0x665BE). No unit check:
+  // braves may stack. (§19.11's one-brave-per-village rule holds.)
+  for (const v of G.villages) {
+    const reg = REGION[v.y * W + v.x] & 0x0F;
+    let tries = 0, ok = false, x = 0, y = 0;
+    do {
+      x = v.x + ri(-2, 2);
+      y = v.y + ri(-2, 2);
+      ok = inb(x, y);
+      if (ok) {
+        if ((REGION[y * W + x] & 0x0F) !== reg) ok = false;
+        if (tileWater(at(x, y))) ok = false;
+        if (impAt(x, y) & 3) ok = false;
+      }
+      tries++;
+    } while (!ok && tries < 100);
+    if (!ok) continue;
+    G.natives.push({ type: 'Braves', icon: unit('Braves').icon, x, y,
+                     tribe: v.tribe, orders: 0, nation: -1, home: v });
+  }
   // The tribe +0x0C HOARD word (RULINGS 2026-09-03e): zeroed at tribe init
   // (@0x65E71) and, once every settlement stands, += the tribe's tech for
   // every in-bounds tile (0x181F:0x302: 1..W-2, 1..H-2) of the 5x5 box
@@ -8257,7 +8422,6 @@ function seedNatives() {
         if (terrainClass(at(x, y)) === 0x1B) t.hoard += t.level || 0;
       }
   }
-  for (const v of G.villages) spawnBrave(v);
 }
 
 // §19.5 -- what a village wants. The engine's village_supply_demand is a
@@ -14717,6 +14881,12 @@ function importSav(bytes) {
   beginGame();
   G.year = year; G.season = season; G.turn = turn; G.difficulty = diff;
   G.landHo = true; G.builtColony = true; G.metAnyone = true;
+  // [0x53A7] the wedding counter and [0x53A8] the REMEMBERED @KINGWAR
+  // country (globals +0x27/+0x28; the new-game seeds @0x0757D3/@0x0757E4,
+  // the tax cycle's readers @0x3630B..@0x3631F) -- read from the file so
+  // the reroll `while (pick === last)` draws as the saving session's would
+  // (2026-09-09: beginGame's own draw leaked into imports before this).
+  G.kingWeddings = d[g + 0x27]; G.kingWarCountry = d[g + 0x28];
   // The [0x190] map-detail salt is not among the save's 43 serialized
   // blocks; the load pins it like the C's cr_reset_from_load does. The LOW
   // NIBBLE places the fish/detail sprites and is MEASURED against the MAP

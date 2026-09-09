@@ -274,6 +274,8 @@ size_t colopy_save_sav(uint8_t *buf, size_t cap) {
     CS.globals[0x1D] = (uint8_t)(CS.n_units >> 8);
     CS.globals[0x1E] = (uint8_t)CS.n_colonies;
     CS.globals[0x1F] = (uint8_t)(CS.n_colonies >> 8);
+    CS.globals[0x27] = CR.king_weddings;        /* [0x53A7] */
+    CS.globals[0x28] = CR.king_war_country;     /* [0x53A8] */
     routes_to_sav();
     /* the map-detail salt [0x190] rides in the tail (C3.8, offset 612):
      * a new game's draw and a loaded word both go back where the engine

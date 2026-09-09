@@ -207,7 +207,10 @@ COLOPY_SIZE_CHECK(AIPersonality, 0x34);
  * engine fact (four European powers). */
 #define COLOPY_MAX_COLONIES     48
 #define COLOPY_MAX_UNITS        256
-#define COLOPY_MAX_SETTLEMENTS  64
+/* SETTLEMENTS: the engine's own cap is byte-verified -- 0x54 = 84, the
+ * create path refuses more (func_046E18 @0x46E21) and the natives placer
+ * stops there (func_065D26 @0x6626E); the random-world placer fills it. */
+#define COLOPY_MAX_SETTLEMENTS  84
 #define COLOPY_POWERS           4
 
 #ifdef __cplusplus

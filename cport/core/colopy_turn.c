@@ -113,6 +113,12 @@ void cr_reset_from_load(void) {
     CR.father_in_progress = -1;
     for (int n = 0; n < 4; n++) CR.king_war_stamp[n] = -1;
     CR.screen_map = 1;               /* importSav ends on the map screen */
+    /* [0x53A7]/[0x53A8] (globals +0x27/+0x28): the wedding counter and
+     * the REMEMBERED @KINGWAR country the tax cycle rerolls against --
+     * taken from the file (the JS importer reads the same bytes) and
+     * folded back by colopy_save_sav */
+    CR.king_weddings = CS.globals[0x27];
+    CR.king_war_country = CS.globals[0x28];
     for (int i = 0; i < CS.n_colonies; i++) {
         CR.col[i].sol = (uint8_t)colony_sol(&CS.colonies[i]);
         CR.col[i].sol_band = 0xFF;
