@@ -517,3 +517,26 @@ from ENTER to RETF and ported in both engines (`cport/core/colopy_newgame.c`,
    opening size is not settled by this read — the ports keep
    3·tech+4 / 2·tech+3, **FLAGGED**.
 
+### Addendum 2026-09-10 — measured against the original (RULINGS 2026-09-10a)
+
+The DOS world oracle (`tools/dos_world_oracle.py`) reproduced the placer's
+settlements on three captured worlds -- **84/84, 64/64 and 58/58 in record
+order**, tension words exact -- after one fix: the satellite pass counts
+**one try per walk** (`inc [bp-0xC0]` @0x662B5 precedes the step loop, which
+re-enters at the draw @0x662B9). Settled by it: item 9 -- **every settlement
+opens at 2·tech+3, the capital included** (a pristine capture: 9/7/5/3 for
+tech 3/2/1/0; a capture a few turns on showed the capitals at 3·tech+4, so
+that is the cap growth reaches, and the growth rate toward it is a new
+lead); the tension bonus is the HUMAN's only (item 1's flag narrows to the
+AI words' values, which the Viceroy captures show unbonused); the start
+squares (the human's ship on the port's start; the AI ships one turn of
+westward moves on); **the homeland claim at creation is the village TILE
+only** (@0x46E9E; the pristine capture has one claimed square per village
+and the scattered radius-2 claims arrive with the tribes' first turn, the
+per-tribe turn's writer call @0x0489E5 -- func_00822A's 1/1/2/3 is a roaming
+radius, not a claim, so the ports' radius fill is gone); **creation sets
+plane-2 bit 2 on the tile** (@0x46E91) -- the ports had not, and the C's
+masked `map_improve()` hid it from the placer's `improve & 3` tests, which
+read the raw byte now. Still open: the brave pass -- see the note appended
+below once compared.
+

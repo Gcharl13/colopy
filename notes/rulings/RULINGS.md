@@ -12901,3 +12901,102 @@ func_046E18 computes +0x04 through 0x1A1F:0x410 BEFORE clearing +0x03
 (@0x46E66/@0x46EA7), so whether a fresh capital opens at the capital
 size is not settled by this read, **FLAGGED**.
 
+## 2026-09-10a — The DOS world oracle: the port's builder and natives placer measured against worlds the ORIGINAL built (three captures, byte-exact after six fixes)
+
+Every gate before this one proved C == JS. `tools/dos_world_capture.py`
+dumps a running DOSBox game's emulated RAM (planes through the far
+pointers `[0x15C..0x16B]`, the salt `[0x190]`, the five Customize words,
+the settlement / unit / tribe / AIPersonality records) and
+`tools/dos_world_oracle.py` asks whether the port builds the same world.
+What makes it exact: VICEROY reseeds its C-runtime LCG from a 15-BIT clock
+word (`0x181F:0x4CA` = `func_00C31C` -> `srand(time & 0x7FFF)`, the pushed
+argument `[0x83A6]` ignored) right before the builder (@0x075793), again
+after the `[0x53A8]` draw (@0x07580F) and at the natives placer's entry
+(@0x065D2F, `push [0x83A6]; lcall 0x181F:0x4CA`) -- so the builder's seed is
+pinned by the salt (its first draw, @0x64A16) and the natives' by a
+32768-candidate search against the settlement records.  Three worlds were
+captured: a NEW WORLD at Viceroy (words [1,3,0,0,3]), a CUSTOMIZE at
+Discoverer ([1,1,1,1,1]) and a pristine NEW WORLD at Viceroy ([0,2,1,0,2],
+captured before any turn passed).  **All three builders reproduce byte
+for byte** (terrain, plane-2 bits, landmass ids: 0/4176 each) and the
+natives placer reproduces **84/84, 64/64 and 58/58 settlements in record
+order** with the tension words exact.  Six port faults surfaced, each
+then confirmed in the bytes and fixed in both engines:
+
+1. **The five Customize words are DRAWN for NEW WORLD and AMERICA.** The
+   title dispatcher (@0x075C86..@0x075CC2) fills `[0x1E7E..0x1E86]` with
+   five `random_int(0, 3)` draws for rows 1/2 and with 1s for CUSTOMIZE
+   (@0x075CBC; the dialog then edits the first four, mod 3 @0x0701AD).
+   So a generated world's words run 0..3 (land form 3 is legal, the
+   builder's tests are `>= 2` / `> 0`) and the FIFTH word -- the
+   relaxation count `(p+1)*0x320` @0x06538D, never player-exposed and
+   never written elsewhere (the data image holds 0) -- is random too.
+   The ports had [1,1,1,1] and a hard-coded 1.  `colopy_world_options`
+   grew `iterations`; the new game draws all five first.
+2. **The P1 landmass count is the LAND class's** (@0x064AC4..@0x064AE4
+   counts the non-zero words of the 16-word size table the labeller copies
+   out @0x063BAC -- the last class it ran, land).  Counting every id
+   present gave 1 at P1 (the terrain plane is still all ocean then and
+   the ocean is id 1), so `15 - count` drew one island fewer than the
+   original.  Both captured worlds lacked exactly one blob.
+3. **Relaxation ladder cases 4 and 5 do not raise a mountain**: their
+   second coin jumps to @0x65198 (`jmp` @0x0652B5 / @0x06530D), PAST the
+   `or [bp-0x16],0x80` @0x065194 -- elevation 1 only.  The ports or'd 0x80,
+   leaving lone-0x80 squares the original never has (47 / 32 per world).
+4. **The tail's first roll IS guarded** (`cmp [bp-0x20],0; je` @0x06532E):
+   the listing mis-decodes those bytes behind the cs:0x11CE jump table
+   (the table's 16 bytes end @0x06532D); the raw bytes `83 7E E0 00 74 2E`
+   settle it.  Tried unguarded first -- the ocean visits then took hills
+   bits and the world fell apart -- and reverted.  FLAGGED (1) stays: the
+   locals are stack garbage before the first flat visit; an ocean visit
+   zeroes them (@0x0651BA), so only a hill/mountain FIRST visit can roll
+   on garbage.  No captured world reached it.
+5. **P4b's coast scan starts on column w-1** (`mov [bp-0x1E], w-1`
+   @0x065736), where a P3d arctic dot on row 1 counts as the coast; the
+   port started at w-2 and kept three lane squares the original turned
+   to ocean.
+6. **The satellite pass counts ONE try per walk**: `inc [bp-0xC0]`
+   @0x662B5 sits before the step loop, which re-enters at the draw
+   @0x662B9.  Counting steps ended the pass a walk early (63/64 on the
+   CUSTOMIZE world).
+
+Confirmed as they stood: the P0/P1 walkers and stamps, P2/P2b, the
+forest, river and polar passes, P4a/c/d, P5/P6 (all byte-exact through
+the dumps), the natives' tension model (four draws per tribe, the
++2*difficulty bonus for the HUMAN only -- the AI powers' words on the
+Viceroy captures are all <= 14), the capitals' schedule and west bias,
+the satellite walk and its 3x3 scan, the owner of a satellite = the
+nearest settlement's tribe, the 84 cap, and the four start squares (the
+human's ship sits exactly on the port's start; each AI ship on the
+pristine capture is its start plus one turn of westward moves -- the AI
+powers take a turn before the human's first).
+
+**Corrected by the pristine capture: the opening population is 2*tech+3
+for every settlement, capitals included** (9/7/5/3 for tech 3/2/1/0 --
+`func_046E18` sizes +0x04 through 0x1A1F:0x410 before the caller sets the
+capital bit; the FLAG in 2026-09-09f is closed).  A capture taken after a
+few turns showed the capitals at 3*tech+4 and the rest at 2*tech+3, so
+3*tech+4 is the cap growth reaches; how fast the original grows a fresh
+capital to it is a new lead (`village growth`).  The plane-2 bit 0x01 is
+the unit-occupancy bit (every unit square, nothing else); the placer's
+input masks bits 0x03 accordingly.
+
+**Corrected by the pristine capture, too: settlement creation claims the
+village TILE only.** The owner nibbles of a fresh world carry exactly one
+claimed square per village (all 58 tiles), and the further claims --
+scattered squares within two of a village, never a filled radius -- appear
+only after the tribes' first turn (the per-tribe turn calls the claim
+writer @0x0489E5).  The ports had filled a tech radius (func_00822A's
+1/1/2/3, which is a roaming radius) at creation; now the tile only, as
+@0x46E9E writes it.  Creation also sets plane-2 bit 2 on the tile
+(`or byte es:[bx],2` @0x46E91) -- the ports never had, and the C's
+`map_improve()` masks bits 0x03 off (roads/plow/depleted), which had hidden
+the omission from every placer test; the placer reads the raw byte now.
+The 90 squares the pristine capture shows claimed by the European powers
+lie along the AI ships' first-turn paths (the writer's callers @0x05DBE7 /
+@0x05DCE4 -- a unit-move claim, unported, new lead).
+
+Not settled by these captures: the brave pass (a capture taken mid-run,
+before the tribes' first turn, is compared below); `[0x2174]` (all worlds
+had it 0, so the two fixed 0xA0 writes stay gated off).
+

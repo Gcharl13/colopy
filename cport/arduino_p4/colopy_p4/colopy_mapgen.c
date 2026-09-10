@@ -25,21 +25,30 @@
  * 0x64150): cs:0xBAC latitude band -> base {5,4,1,3,2,2}; cs:0xEFE the
  * east-west moisture ladder; cs:0x11CE the relaxation ladder.
  *
+ * DOS CAPTURE ORACLE (2026-09-10, tools/dos_world_capture.py +
+ * tools/dos_world_oracle.py): two worlds the original built under DOSBox
+ * (a NEW WORLD with words [1,3,0,0,3] and a CUSTOMIZE with [1,1,1,1,1]) are
+ * reproduced by this port BYTE FOR BYTE -- terrain, the plane-2 bits, the
+ * landmass labels -- from the 15-bit clock seed the salt [0x190] pins.
+ * Three port faults it found and the bytes confirmed: the P1 landmass
+ * count is the LAND class's size table (counting the ocean's id drew one
+ * island too few); the relaxation ladder's cases 4/5 jump PAST the
+ * `or 0x80` (@0x0652B5 -> 0x65198: elevation 1, no mountain bit); the
+ * P4b coast scan starts on column w-1 (@0x065736), where a polar arctic
+ * dot counts as the coast.
+ *
  * FLAGGED (named, small): (1) the relaxation tail's hill/mountain rolls
  * read two locals ([bp-0x20]/[bp-0x26]) that only the flat-land cases
- * set — an ocean/hill/mountain tile visited BEFORE the first flat case
- * rolls with whatever the stack held; modelled as 0 (no roll).  (2) The
- * landmass count is the number of region ids 1..15 present after the
- * labeller; the original's 16-word size table [0x85C8] is read the same
- * way, but how its labeller behaves past 15 landmasses is unread.
- * (3) Out-of-plane kernel reads in the river pass (a source on row 1 or
- * h-2) are skipped; the original reads past the plane.  (4) The two
+ * set -- a hill/mountain tile visited BEFORE the first flat case rolls
+ * with whatever the stack held (an ocean visit zeroes them first
+ * @0x0651BA); modelled as 0 (no roll).  Neither captured world reached
+ * it.  (3) Out-of-plane kernel reads in the river pass (a source on row 1
+ * or h-2) are skipped; the original reads past the plane.  (4) The two
  * fixed 0xA0 writes @0x65C0D/@0x65C21 are gated on [0x2174] == 0, which
  * a normal new game does not satisfy (the fresh-game fixture savstart has
- * T(1,21) untouched) — not applied.  No DOS-generated world has been
- * diffed against this port; the premade path's plane-2 bits and start
- * squares ARE diffed against savstart (1309/1309 western-sea tiles, the
- * H/5-band starts). */
+ * T(1,21) untouched) -- not applied.  The premade path's plane-2 bits and
+ * start squares are diffed against savstart (1309/1309 western-sea tiles,
+ * the H/5-band starts). */
 #include <string.h>
 
 #include "colopy_core.h"
@@ -172,10 +181,17 @@ static int coast(int x, int y) {
     }
     return 0;
 }
-/* the number of landmass ids present (region ids 1..15) */
+/* the P1 count @0x064AC4..@0x064AE4: the non-zero entries of the 16-word
+ * size table [0x85C8] the labeller copies out (@0x063BAC), which is the
+ * LAND class's -- the number of land-class ids 1..15 present.  (Counting
+ * every id, water bodies included, gave 1 at P1 -- when the terrain plane
+ * is still all ocean and the ocean is id 1 -- so the port drew one island
+ * fewer than the original: the DOS capture oracle found the missing blob
+ * on both worlds it saw, 2026-09-10.) */
 static int landmass_count(void) {
     int seen[16] = {0}, n = 0;
-    for (int i = 0; i < COLOPY_PLANE; i++) seen[CS.region[i] & 0x0F] = 1;
+    for (int i = 0; i < COLOPY_PLANE; i++)
+        if (!tile_water(CS.terrain[i])) seen[CS.region[i] & 0x0F] = 1;
     for (int k = 1; k < 16; k++) n += seen[k];
     return n;
 }
@@ -261,15 +277,39 @@ static void rivers(int climate, int land_mass) {
     } while (attempts < 0x200 && (climate + land_mass + 2) * 8 > made);
 }
 
+
+#if COLOPY_ORACLE
+#include <stdio.h>
+#include <stdlib.h>
+/* COLOPY_MAPGEN_DUMP=prefix: the terrain plane after each pass, for the
+ * DOS capture oracle's pass-by-pass triage (tools/dos_world_oracle.py) */
+static void mg_dump(const char *tag) {
+    const char *pre = getenv("COLOPY_MAPGEN_DUMP");
+    if (!pre) return;
+    char path[512];
+    snprintf(path, sizeof(path), "%s_%s.bin", pre, tag);
+    FILE *f = fopen(path, "wb");
+    if (!f) return;
+    fwrite(CS.terrain, 1, COLOPY_PLANE, f);
+    fwrite(CS.improve, 1, COLOPY_PLANE, f);
+    fclose(f);
+}
+#define MG_DUMP(tag) mg_dump(tag)
+#else
+#define MG_DUMP(tag) ((void)0)
+#endif
+
 colopy_status colopy_generate_world(const colopy_world_options *world,
                                     int premade, uint8_t starts[4][2]) {
     static const uint8_t BAND_BASE[6] = { 5, 4, 1, 3, 2, 2 };   /* cs:0xBAC */
     if (!world || !starts) return COLOPY_ERR_BAD_COMMAND;
     int p0 = world->land_mass, p1 = world->land_form,
         p2 = world->temperature, p3 = world->climate;
-    int p4 = 1;                                     /* [0x1E86], not exposed */
+    int p4 = world->iterations;                     /* [0x1E86] */
     int north = 0;
-    if (p0 > 2 || p1 > 2 || p2 > 2 || p3 > 2) return COLOPY_ERR_BAD_COMMAND;
+    /* the title dispatcher draws each word as random_int(0, 3) for NEW
+     * WORLD / AMERICA (@0x075C8E..@0x075CA0), so 3 is a legal value */
+    if (p0 > 3 || p1 > 3 || p2 > 3 || p3 > 3 || p4 > 3) return COLOPY_ERR_BAD_COMMAND;
 
     if (!premade) {
         /* P0 @0x064A35 */
@@ -304,6 +344,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                 y++;
             }
         }
+        MG_DUMP("p1");
         /* P2 @0x064C6E: latitude bands -> base terrain, elevation -> bits */
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++) {
@@ -320,6 +361,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                 if (m >= 3) t |= 0x80;
                 AT(T, x, y) = (uint8_t)t;
             }
+        MG_DUMP("p2");
         /* P2b @0x064DCC: the moisture sweeps, west->east then east->west */
         for (int y = 0; y < H; y++) {
             int dist = H / 2 - y; if (dist < 0) dist = -dist;
@@ -382,6 +424,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                 AT(T, x, y) = (uint8_t)((v & 0xE0) | base);
             }
         }
+        MG_DUMP("p2b");
         /* P3 @0x065114: relaxation, (p4+1)*0x320 visits */
         {
             int x = 0, y = 0, p20 = 0, p26 = 0;    /* FLAGGED (1) */
@@ -411,11 +454,11 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                         break;
                     case 4: p20 = 3; p26 = 1;
                         if (r(0, 1) == 0) base = 6;
-                        if (r(0, 1) == 0) { v |= 0x80; AT(E, x, y) = 1; }
+                        if (r(0, 1) == 0) AT(E, x, y) = 1;   /* -> @0x65198, past the or 0x80 */
                         break;
                     case 5: p20 = 3; p26 = 2;
                         if (r(0, 1) == 0) base = 7;
-                        if (r(0, 1) == 0) { v |= 0x80; AT(E, x, y) = 1; }
+                        if (r(0, 1) == 0) AT(E, x, y) = 1;   /* -> @0x65198, past the or 0x80 */
                         break;
                     case 6: p20 = 5; p26 = 3;
                         if (r(0, 1) == 0) base = 4;
@@ -427,7 +470,11 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                         break;
                     }
                 }
-                /* the shared tail @0x06532E -- runs for every visit; a hills /
+                /* the shared tail @0x06532E -- runs for every visit: with p20
+                 * != 0 (`cmp [bp-0x20],0; je` @0x06532E -- the bytes sit right
+                 * after the cs:0x11CE jump table, where the listing mis-decodes
+                 * them) it rolls random_int(0, p20) for hills, then with p26 != 0
+                 * random_int(0, p26) for a mountain (@0x065349); a hills /
                  * mountain visit rolls with the PREVIOUS flat visit's p20/p26
                  * (FLAGGED (1): before any flat visit they are stack garbage,
                  * modelled as 0) */
@@ -438,6 +485,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                 AT(T, x, y) = (uint8_t)((v & 0xE0) | base);
             }
         }
+        MG_DUMP("p3");
         /* P3b @0x0653C8: forest */
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++) {
@@ -451,8 +499,10 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
                 }
                 AT(T, x, y) = (uint8_t)v;
             }
+        MG_DUMP("p3b");
         /* P3c @0x0654BA */
         rivers(p3, p0);
+        MG_DUMP("p3c");
         /* P3d: the pole band the walkers were kept out of, the ocean ring
          * at columns 2 / w-3, forty scattered Arctic tiles on rows 1 / h-2 */
         band(0, north ? 0 : H - 4, W, OCEAN, 4);
@@ -461,6 +511,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
             AT(T, r(1, W) - 1, 1) = ARCTIC;
             AT(T, r(1, W) - 1, H - 2) = ARCTIC;
         }
+        MG_DUMP("p3d");
         /* P4a @0x065590: the east sea lane, west to the first coast */
         for (int y = 1; y < H - 1; y++)
             for (int x = W - 1; x >= W / 2; x--) {
@@ -471,7 +522,10 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
          * seven rows around it, goes back to ocean */
         for (int y = 1; y < H - 1; y++) {
             int cx = -1;
-            for (int x = W - 2; x >= 1 && cx < 0; x--)
+            /* the scan starts on the LAST column (@0x065736: x = w-1), where
+             * a P3d arctic dot on row 1 counts as the coast -- the DOS capture
+             * oracle (2026-09-10) caught the port starting at w-2 */
+            for (int x = W - 1; x >= 1 && cx < 0; x--)
                 if (!is_water(x, y)) cx = x;
             if (cx < 0) continue;
             int x = cx + 3; if (x > W - 2) x = W - 2;
@@ -512,6 +566,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
             }
     }
 
+    MG_DUMP("p4");
     /* P5 @0x065941 (both paths): the outline, then the fold */
     hollow(0, 0, W - 1, H - 1, LANE);
     hollow(1, 0, W - 2, H - 1, LANE);
@@ -524,6 +579,7 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
             if (v & 0x20) AT(T, x, y) = (uint8_t)((v & 0xE0) | (base & 7));
             else if (base >= 16) AT(T, x, y) = (uint8_t)(v - 8);
         }
+    MG_DUMP("p5");
     /* P6a @0x065AA0: landmasses, then planes 2 and 4 wiped */
     colopy_build_regions();
     memset(E, 0, COLOPY_PLANE);

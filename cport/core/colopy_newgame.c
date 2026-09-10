@@ -15,6 +15,8 @@
  * blocks, blocks 11-43, the tail) are zeroed — FLAGGED: their engine
  * new-game contents are unmodeled; the C loader/saver preserve
  * whatever is here, and nothing in the ported sim reads them. */
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "colopy_core.h"
@@ -191,7 +193,7 @@ static int in_bounds(int x, int y) {
 }
 
 /* settlement creation func_046E18 (0x1A1F:0x440) plus the port's record
- * model: owner tribe ti (0..7), population by the capital flag, the
+ * model: owner tribe ti (0..7), population 2*tech+3 (see below), the
  * mission/trade bytes 0xFF, the human's alarm from the tribe tension,
  * and the HOMELAND CLAIM.  Returns the index, -1 at the 84 cap
  * (@0x46E21). */
@@ -205,134 +207,48 @@ static int create_village(int ti, int px, int py, int capital,
     v->map_y = (uint8_t)py;
     v->owner_tribe = (uint8_t)(ti + 4);
     v->flags = (uint8_t)(capital ? 0x04 : 0);
-    v->population = (uint8_t)(capital ? 3 * lv + 4 : 2 * lv + 3);
+    /* the opening population is 2*tech+3 for EVERY settlement, the capital
+     * included: func_046E18 sizes +0x04 through 0x1A1F:0x410 BEFORE the
+     * caller sets the capital bit (+0x03 is cleared @0x46EA7, the bit lands
+     * @0x66095 / @0x66225), so the capital size 3*tech+4 is only the cap
+     * growth aims for.  Read off a pristine DOS capture (dos_world_oracle,
+     * 2026-09-10: capitals 9/7/5/3 for tech 3/2/1/0). */
+    v->population = (uint8_t)(2 * lv + 3);
     v->mission = 0xFF;                          /* none */
     v->alarm[nation] = tension;                 /* v.alarm (5167) */
     v->walked_good = 0xFF;
     v->last_bought = 0xFF;
     v->last_sold = 0xFF;
-    /* HOMELAND CLAIM: settlement creation writes the tribe into
-     * the plane-3 owner nibble via the claim writer func_005E18
-     * ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create
-     * path calls it on the village tile @0x46E9E).  The RADIUS
-     * is the engine's own getter func_00822A: 1/1/2/3 by
-     * TRIBE TECH (byte-read 2026-08-30; the manual's "1/2" was
-     * short).  First claim wins here, FLAGGED.  This keeps
-     * rumour medallions (and details) off native country: the
-     * marker predicate requires an UNCLAIMED nibble
-     * (func_006188 @0x61BC). */
+    /* the tile: plane-2 bit 2 (`or byte es:[bx],2` @0x46E91 -- the
+     * SETTLEMENT bit the placer's own `improve & 3` tests and the
+     * detail gate read) and the HOMELAND CLAIM, the tribe into the
+     * plane-3 owner nibble via the claim writer func_005E18
+     * ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B) on the village tile
+     * ONLY (@0x46E9E).  The pristine DOS capture (2026-09-10) shows every
+     * village tile claimed and the further claims -- scattered squares
+     * within two of a village, never a filled radius -- written by the
+     * tribes' first turn (the per-tribe turn calls the writer @0x0489E5),
+     * so the port's earlier tech-radius fill (func_00822A's 1/1/2/3 is a
+     * roaming radius, not a claim) is gone.  The marker predicate still
+     * needs an UNCLAIMED nibble (func_006188 @0x61BC). */
     {
-        static const int HRAD[4] = { 1, 1, 2, 3 };
-        int rad = HRAD[lv & 3];          /* func_00822A */
-        for (int cy = py - rad; cy <= py + rad; cy++)
-            for (int cx = px - rad; cx <= px + rad; cx++) {
-                if (cx < 0 || cy < 0 || cx >= COLOPY_MAP_W ||
-                    cy >= COLOPY_MAP_H) continue;
-                int mi = cy * COLOPY_MAP_W + cx;
-                if ((CS.region[mi] >> 4) != 0x0F) continue;
-                CS.region[mi] = (uint8_t)
-                    ((CS.region[mi] & 0x0F) | ((ti + 4) << 4));
-            }
+        int mi = py * COLOPY_MAP_W + px;
+        CS.improve[mi] |= 0x02;
+        CS.region[mi] = (uint8_t)((CS.region[mi] & 0x0F) | ((ti + 4) << 4));
     }
     return CS.n_villages++;
 }
 
-colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
-                                 const char *leader_name,
-                                 const colopy_world_options *world) {
-    static const colopy_world_options AMERICA = {
-        COLOPY_WORLD_AMERICA, 1, 1, 1, 1
-    };
-    uint8_t starts[4][2];
-    (void)leader_name;               /* the leader lives UI-side; no
-                                      * record block carries the name */
-    if (nation > 3 || difficulty > 4) return COLOPY_ERR_BAD_COMMAND;
-    if (!world) world = &AMERICA;
-    if (world->mode > COLOPY_WORLD_CUSTOM) return COLOPY_ERR_BAD_COMMAND;
-    for (int n = 0; n < 4; n++) {
-        starts[n][0] = (uint8_t)dat_starts[n][0];
-        starts[n][1] = (uint8_t)dat_starts[n][1];
-    }
-
-    memset(&CS, 0, sizeof(CS));
-
-    /* prelude: "COLONIZE" 00 1A + u16 (unread; FLAGGED 0) + w,h */
-    memcpy(CS.prelude, "COLONIZE", 8);
-    CS.prelude[8] = 0x00;
-    CS.prelude[9] = 0x1A;
-    put16(CS.prelude + 0x0C, COLOPY_MAP_W);
-    put16(CS.prelude + 0x0E, COLOPY_MAP_H);
-
-    /* planes: the shipped map, no improvements, regions rebuilt */
-    memcpy(CS.terrain, dat_map_tiles, COLOPY_PLANE);
-    /* VICEROY's load-time normalisation of a file map (G12, 2026-09-03;
-     * formats/MP_FORMAT.md "VICEROY loader behavior"): new_game_state_init
-     * fills rows 0 and h-1 with Arctic 0x18 (@0x75746..0x75785), then
-     * func_064A10(1) outlines (0,0)-(w-1,h-1) and (1,0)-(w-2,h-1) with
-     * Sea Lane 0x1A (@0x65941..0x65986 -- columns 0, 1, w-2, w-1),
-     * re-fills rows 0/h-1 Arctic (@0x6598B..0x659CA), then folds every
-     * tile (@0x659D8..0x65A85): base = b & 0x1F; base >= 0x18 untouched;
-     * bit 0x20 set -> (b & 0xE0) | (base & 7); else 16 <= base < 24 ->
-     * b - 8.  Layer 2 and the fog plane are zeroed (@0x65AA5..0x65ACE) --
-     * CS.improve is already zero here, fog is CR runtime. */
-    /* the outline / fold / landmass labels of the loader's own pass are
-     * func_064A10's premade path, run below right after the salt draw
-     * (2026-09-09; it also writes the plane-2 bits and the start squares) */
-
-    /* globals: year 1492 s0 turn 0 (beginGame 670), tutorial mask 0x0E
-     * (725), REF seeds (seedREF 8869) */
-    uint8_t *g = CS.globals;
-    put16(g + 0x0A, 1492);
-    put16(g + 0x0C, 0);
-    put16(g + 0x0E, 0);
-    put16(g + 0x14, nation);
-    g[0x26] = difficulty;
-    put16(g + 0x06, 0x0E);
-    /* the game-options word [0x5382]: 0xC600 (@0x0755E5), then
-     * func_07431E turns Tutorial Hints (0x80) ON iff Discoverer
-     * (@0x074341..0x074348); cr_reset_from_load mirrors it into
-     * CR.game_options (beginGame, game.js) */
-    put16(g + 0x02, (uint16_t)(0xC600 | (difficulty == 0 ? 0x80 : 0)));
-    int d = difficulty;
-    put16(g + 0x5A, (uint16_t)(8 * d + 15));   /* Regulars */
-    put16(g + 0x5C, (uint16_t)(5 * d + 5));    /* Cavalry */
-    put16(g + 0x5E, (uint16_t)(3 * d + 2));    /* Man-O-War */
-    put16(g + 0x60, (uint16_t)(6 * d + 2));    /* Artillery */
-
-    CS.powers[nation].gold = START_GOLD[difficulty];
-
-    /* --- the seeded draws, in beginGame order --- */
-    /* G.plotSeedBase = (random * 2^32) >>> 0 (677): with the shared
-     * 15-bit stream that is exactly r * 131072 */
-    uint32_t plot = rng_next() * 131072u;
-    /* [0x190] = random_int(1, 0x7FFF) @0x64A16..0x64A23 -- the map
-     * generator's first act, called from new_game_state_init @0x7579B
-     * right after the .MP load, before any placement (G12; the JS draws
-     * G.mapSeed at the same point) */
-    uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
-    CR.map_seed = mseed;             /* the builder's detail pass hashes on it */
-    /* func_064A10 continues here on the SHARED stream (2026-09-09, RULINGS
-     * 2026-09-09d): the whole builder for NEW WORLD / CUSTOMIZE, the
-     * premade tail (outline, fold, labels, plane-2 bits, the H/5-band
-     * start squares dealt at random) for AMERICA -- the JS beginGame
-     * runs generateNewWorld at the same point */
-    {
-        colopy_status ms = colopy_generate_world(
-            world, world->mode == COLOPY_WORLD_AMERICA, starts);
-        if (ms != COLOPY_OK) return ms;
-    }
-
-    /* [0x53A7] = 0 and [0x53A8] = random_int(1, 8) (@0x0757D3..
-     * @0x0757E4, new_game_state_init): the wedding counter and the
-     * REMEMBERED @KINGWAR country the tax cycle rerolls against
-     * (king_war_cycle) -- one draw on the shared stream between the
-     * builder and the natives (the JS beginGame draws at the same
-     * point).  The four calls between the builder and this draw
-     * (func_06892E, func_036574, func_063C58, func_063F3C @0x0757AB..
-     * @0x0757BA) are unread for draws, FLAGGED. */
-    g[0x27] = 0;
-    g[0x28] = (uint8_t)rng_range(1, 8);   /* cr_reset_from_load reads it */
-
+/* the natives: the whole of func_065D26 (tensions, the two placement
+ * modes, the braves, the hoard) on the stream as it stands -- the C
+ * host exposes it to the DOS capture oracle (tools/dos_world_oracle.py)
+ * through colopy_oracle_place_natives */
+static void place_natives(uint8_t nation, uint8_t difficulty,
+                          const colopy_world_options *world) {
+    /* every `improve & 3` below reads the RAW plane-2 byte (0x181F:0x754):
+     * bit 1 = a colony, bit 2 = a settlement -- map_improve() masks those
+     * off (roads/plow/depleted only), which hid the settlement bit the
+     * creator sets @0x46E91 from the placer (JS/C lockstep, 2026-09-10) */
     /* func_065D26 (0x1A1F:0x87C, called @0x07596A after the starting
      * units): the natives.  Per-tribe init @0x65E1D..@0x65E78 -- the
      * tribe selected (0x181F:0xA42), the @TRIBES NAMES.TXT row read
@@ -381,7 +297,7 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                     int x = bx + dx, y = by + dy;
                     if (!in_bounds(x, y)) continue;
                     uint8_t tv = map_at(x, y);
-                    if (map_improve(x, y) & 3) continue;
+                    if (map_improve_raw(x, y) & 3) continue;
                     int tt = terrain_class(tv);
                     if (tt >= 0x18) continue;
                     tt &= 7;
@@ -476,8 +392,11 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                 int cx = CS.tribes[ti * 0x4E + 0] / 5;
                 int cy = CS.tribes[ti * 0x4E + 1] / 5;
                 int ok = 0;
+                tries++;              /* ONE try per walk: `inc [bp-0xC0]` @0x662B5
+                                       * sits before the step loop, which re-enters
+                                       * at the draw @0x662B9 (DOS oracle, 2026-09-10:
+                                       * counting steps ended the pass a walk early) */
                 for (;;) {
-                    tries++;
                     int d = rng_range(0, 7);
                     cx += NDX[d];
                     cy += NDY[d];
@@ -491,14 +410,14 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                 for (int yy = Y + 1; yy < Y + 4; yy++)
                     for (int xx = X + 1; xx < X + 4; xx++) {
                         if (!in_bounds(xx, yy)) continue;
-                        if (map_improve(xx, yy) & 3) continue;
+                        if (map_improve_raw(xx, yy) & 3) continue;
                         int tt = terrain_class(map_at(xx, yy));
                         if (tt >= 0x18) continue;
                         tt &= 7;
                         if (!((tt >= 2 && tt <= 6) || tt == 0)) continue;
                         int hit = 0;
                         for (int k = 0; k < 9 && !hit; k++)
-                            if (map_improve(xx + NDX[k], yy + NDY[k]) & 3)
+                            if (map_improve_raw(xx + NDX[k], yy + NDY[k]) & 3)
                                 hit = 1;
                         if (hit) continue;
                         cand[n][0] = (uint8_t)xx;
@@ -513,9 +432,18 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                     create_village(owner, cand[i][0], cand[i][1], 0, nation,
                                    tension[owner]);
                 }
+#if COLOPY_ORACLE
+                if (getenv("COLOPY_NATIVES_TRACE"))
+                    fprintf(stderr, "sat tries %d placed %d tribe %d cell %d,%d cand %d -> %d villages\n",
+                            tries, placed, ti, cx, cy, n, CS.n_villages);
+#endif
                 grid[cx][cy] = 1;
                 placed++;
             }
+#if COLOPY_ORACLE
+            if (getenv("COLOPY_NATIVES_TRACE"))
+                fprintf(stderr, "sat end: tries %d placed %d villages %d\n", tries, placed, CS.n_villages);
+#endif
         }
     }
 
@@ -540,7 +468,7 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                 if (ok) {
                     if ((CS.region[y * COLOPY_MAP_W + x] & 0x0F) != reg) ok = 0;
                     if (tile_water(map_at(x, y))) ok = 0;
-                    if (map_improve(x, y) & 3) ok = 0;
+                    if (map_improve_raw(x, y) & 3) ok = 0;
                 }
                 tries++;
             } while (!ok && tries < 100);
@@ -570,6 +498,132 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
             }
         put16(hp, (uint16_t)hoard);
     }
+}
+
+#if COLOPY_ORACLE
+void colopy_oracle_place_natives(uint8_t nation, uint8_t difficulty, int mode) {
+    colopy_world_options w;
+    memset(&w, 0, sizeof(w));
+    w.mode = (uint8_t)mode;
+    place_natives(nation, difficulty, &w);
+}
+#endif
+
+colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
+                                 const char *leader_name,
+                                 const colopy_world_options *world) {
+    static const colopy_world_options AMERICA = {
+        COLOPY_WORLD_AMERICA, 1, 1, 1, 1, 1
+    };
+    uint8_t starts[4][2];
+    (void)leader_name;               /* the leader lives UI-side; no
+                                      * record block carries the name */
+    if (nation > 3 || difficulty > 4) return COLOPY_ERR_BAD_COMMAND;
+    if (!world) world = &AMERICA;
+    if (world->mode > COLOPY_WORLD_CUSTOM) return COLOPY_ERR_BAD_COMMAND;
+    for (int n = 0; n < 4; n++) {
+        starts[n][0] = (uint8_t)dat_starts[n][0];
+        starts[n][1] = (uint8_t)dat_starts[n][1];
+    }
+
+    memset(&CS, 0, sizeof(CS));
+
+    /* prelude: "COLONIZE" 00 1A + u16 (unread; FLAGGED 0) + w,h */
+    memcpy(CS.prelude, "COLONIZE", 8);
+    CS.prelude[8] = 0x00;
+    CS.prelude[9] = 0x1A;
+    put16(CS.prelude + 0x0C, COLOPY_MAP_W);
+    put16(CS.prelude + 0x0E, COLOPY_MAP_H);
+
+    /* planes: the shipped map, no improvements, regions rebuilt */
+    memcpy(CS.terrain, dat_map_tiles, COLOPY_PLANE);
+    /* VICEROY's load-time normalisation of a file map (G12, 2026-09-03;
+     * formats/MP_FORMAT.md "VICEROY loader behavior"): new_game_state_init
+     * fills rows 0 and h-1 with Arctic 0x18 (@0x75746..0x75785), then
+     * func_064A10(1) outlines (0,0)-(w-1,h-1) and (1,0)-(w-2,h-1) with
+     * Sea Lane 0x1A (@0x65941..0x65986 -- columns 0, 1, w-2, w-1),
+     * re-fills rows 0/h-1 Arctic (@0x6598B..0x659CA), then folds every
+     * tile (@0x659D8..0x65A85): base = b & 0x1F; base >= 0x18 untouched;
+     * bit 0x20 set -> (b & 0xE0) | (base & 7); else 16 <= base < 24 ->
+     * b - 8.  Layer 2 and the fog plane are zeroed (@0x65AA5..0x65ACE) --
+     * CS.improve is already zero here, fog is CR runtime. */
+    /* the outline / fold / landmass labels of the loader's own pass are
+     * func_064A10's premade path, run below right after the salt draw
+     * (2026-09-09; it also writes the plane-2 bits and the start squares) */
+
+    /* globals: year 1492 s0 turn 0 (beginGame 670), tutorial mask 0x0E
+     * (725), REF seeds (seedREF 8869) */
+    uint8_t *g = CS.globals;
+    put16(g + 0x0A, 1492);
+    put16(g + 0x0C, 0);
+    put16(g + 0x0E, 0);
+    put16(g + 0x14, nation);
+    g[0x26] = difficulty;
+    put16(g + 0x06, 0x0E);
+    /* the game-options word [0x5382]: 0xC600 (@0x0755E5), then
+     * func_07431E turns Tutorial Hints (0x80) ON iff Discoverer
+     * (@0x074341..0x074348); cr_reset_from_load mirrors it into
+     * CR.game_options (beginGame, game.js) */
+    put16(g + 0x02, (uint16_t)(0xC600 | (difficulty == 0 ? 0x80 : 0)));
+    int d = difficulty;
+    put16(g + 0x5A, (uint16_t)(8 * d + 15));   /* Regulars */
+    put16(g + 0x5C, (uint16_t)(5 * d + 5));    /* Cavalry */
+    put16(g + 0x5E, (uint16_t)(3 * d + 2));    /* Man-O-War */
+    put16(g + 0x60, (uint16_t)(6 * d + 2));    /* Artillery */
+
+    CS.powers[nation].gold = START_GOLD[difficulty];
+
+    /* --- the seeded draws, in beginGame order --- */
+    /* the five Customize words [0x1E7E..0x1E86] (the title dispatcher
+     * @0x075C86..@0x075CC2, read 2026-09-10 off the DOS capture oracle):
+     * NEW WORLD and AMERICA draw EACH as random_int(0, 3) -- five draws,
+     * the fifth the relaxation count the builder reads @0x06538D, so a
+     * generated world's words run 0..3, not the dialog's 0..2 -- while
+     * CUSTOMIZE sets all five to 1 (@0x075CBC) and its dialog then edits
+     * the first four.  The JS beginGame draws at the same point. */
+    colopy_world_options drawn = *world;
+    if (world->mode != COLOPY_WORLD_CUSTOM) {
+        drawn.land_mass = (uint8_t)rng_range(0, 3);
+        drawn.land_form = (uint8_t)rng_range(0, 3);
+        drawn.temperature = (uint8_t)rng_range(0, 3);
+        drawn.climate = (uint8_t)rng_range(0, 3);
+        drawn.iterations = (uint8_t)rng_range(0, 3);
+    } else {
+        drawn.iterations = 1;
+    }
+    world = &drawn;
+    /* G.plotSeedBase = (random * 2^32) >>> 0 (677): with the shared
+     * 15-bit stream that is exactly r * 131072 */
+    uint32_t plot = rng_next() * 131072u;
+    /* [0x190] = random_int(1, 0x7FFF) @0x64A16..0x64A23 -- the map
+     * generator's first act, called from new_game_state_init @0x7579B
+     * right after the .MP load, before any placement (G12; the JS draws
+     * G.mapSeed at the same point) */
+    uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
+    CR.map_seed = mseed;             /* the builder's detail pass hashes on it */
+    /* func_064A10 continues here on the SHARED stream (2026-09-09, RULINGS
+     * 2026-09-09d): the whole builder for NEW WORLD / CUSTOMIZE, the
+     * premade tail (outline, fold, labels, plane-2 bits, the H/5-band
+     * start squares dealt at random) for AMERICA -- the JS beginGame
+     * runs generateNewWorld at the same point */
+    {
+        colopy_status ms = colopy_generate_world(
+            world, world->mode == COLOPY_WORLD_AMERICA, starts);
+        if (ms != COLOPY_OK) return ms;
+    }
+
+    /* [0x53A7] = 0 and [0x53A8] = random_int(1, 8) (@0x0757D3..
+     * @0x0757E4, new_game_state_init): the wedding counter and the
+     * REMEMBERED @KINGWAR country the tax cycle rerolls against
+     * (king_war_cycle) -- one draw on the shared stream between the
+     * builder and the natives (the JS beginGame draws at the same
+     * point).  The four calls between the builder and this draw
+     * (func_06892E, func_036574, func_063C58, func_063F3C @0x0757AB..
+     * @0x0757BA) are unread for draws, FLAGGED. */
+    g[0x27] = 0;
+    g[0x28] = (uint8_t)rng_range(1, 8);   /* cr_reset_from_load reads it */
+
+    place_natives(nation, difficulty, world);
 
     /* the player's starting force (682): ONE ship (Dutch = Merchantman)
      * carrying Soldiers then Pioneers, at the nation's start tile —

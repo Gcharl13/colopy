@@ -38,6 +38,8 @@ wired from new-game `func_0755CC @0x7579E` via `lcall 0x1a1f:0x83e` (resolves to
 ## 3. Formulas & rules
 
 ### Random-map generator — **`func_064A10`** (file `0x064A10..0x065D07`, ENTER 0x3C, overlay page 0x14, cs base file `0x64150`). **READ WHOLE 2026-09-09 (RULINGS 2026-09-09d) and ported pass for pass** — `cport/core/colopy_mapgen.c` / `game.js generateNewWorld` carry every site; this section is the map of it.
+
+> **DOS-EXACT since 2026-09-10 (RULINGS 2026-09-10a).** Three worlds the original built under DOSBox (`tools/dos_world_capture.py` + `tools/dos_world_oracle.py`) are reproduced by the port byte for byte from the 15-bit clock seed the salt `[0x190]` pins — terrain, plane-2 bits and landmass ids, 0/4176 each. Corrections the oracle forced: the five words `[0x1E7E..0x1E86]` are **drawn** (`random_int(0,3)` ×5 by the title dispatcher @0x075C86..@0x075CC2 for NEW WORLD / AMERICA; all 1 for CUSTOMIZE @0x075CBC, the dialog then editing the first four), so a generated world's words run 0..3 and the fifth — the P3 budget — is random; the P1 count is the LAND class's size table (@0x064AC4); ladder cases 4/5 write elevation 1 only (@0x0652B5 → 0x65198, past the `or 0x80`); the tail's first roll is guarded (`cmp [bp-0x20],0; je` @0x06532E — bytes the listing mis-decodes behind the cs:0x11CE table); P4b's coast scan starts at column w−1 (@0x065736).
 Arg `[bp+6]`: `0` = build a world; nonzero = a premade map is in memory, jump to P5
 (`@0x64A2C`). First act: `[0x190] = random_int(1, 0x7FFF)` (`@0x64A1B`), the map
 salt. Every `lcall 0x181F:0x4D4` below is the sim's **shared** `random_int`. Dims
@@ -205,6 +207,10 @@ BEGINMENU `0x1FCE5`→`0x2345`, AMERICA `0x1FCEF`→`0x234f`). **B.**
    Arid/Normal/Wet"; `GAME_sections.json`). **idx 4 (`0x1E86`, smoothing iterations) is
    NOT player-exposed** — it is read only by the generator. **B** (array+target+idx-4
    site + 4-row menu + strings).
+   **2026-09-10: idx 4 is not a constant** — the title dispatcher draws all five words
+   `random_int(0,3)` for NEW WORLD / AMERICA (@0x075C8E..@0x075CA0) and sets all five to 1
+   for CUSTOMIZE (@0x075CBC), so the relaxation budget is `(r+1)·0x320` with r in 0..3 on a
+   generated world and 2·0x320 under CUSTOMIZE. The data image's 0 is never what runs.
 4. ~~Post-mapgen placement passes.~~ **Done — BYTE_VERIFIED entry functions (2026-06-20):**
    all orchestrated by `func_0755CC` after the generator call `@0x7579E`:
    - **Native settlements** `func_065D26` (`@0x7596A`): allocates up to **84** (`0x54`)

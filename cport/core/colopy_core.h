@@ -58,6 +58,10 @@ typedef struct {
     uint8_t land_form;          /* 151..153 Archipelago / Normal / Continents */
     uint8_t temperature;        /* 154..156 Cool / Temperate / Warm */
     uint8_t climate;            /* 157..159 Arid / Normal / Wet */
+    uint8_t iterations;         /* [0x1E86]: the builder's relaxation
+                                 * count (p+1)*0x320 @0x06538D -- never
+                                 * player-exposed; 1 under CUSTOMIZE,
+                                 * random_int(0,3) otherwise (2026-09-10) */
 } colopy_world_options;
 colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
                                  const char *leader_name,

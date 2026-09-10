@@ -682,6 +682,7 @@ const G = {
   worldMode: 'america',
   customAxis: 0,
   customValues: [1, 1, 1, 1],
+  customIter: 1,                     // [0x1E86], drawn with the four above
   mapStarts: null,             // the four ship squares of the running world
   difficulty: 2,          // default 2 per §18.11
   nation: 0,
@@ -916,7 +917,8 @@ function generateNewWorld(premade, world) {
   const KX = [0, 1, 0, -1, -1, 1, 1, -1, 0, 2, 0, -2, -1, 1, -1, 1, -2, -2, 2, 2];
   const KY = [-1, 0, 1, 0, -1, -1, 1, 1, -2, 0, 2, 0, -2, -2, 2, 2, -1, 1, -1, 1];
   const v = world.values || [1, 1, 1, 1];
-  const p0 = v[0] | 0, p1 = v[1] | 0, p2 = v[2] | 0, p3 = v[3] | 0, p4 = 1;
+  const p0 = v[0] | 0, p1 = v[1] | 0, p2 = v[2] | 0, p3 = v[3] | 0;
+  const p4 = world.iterations == null ? 1 : world.iterations | 0;   // [0x1E86]
   const inb = (x, y) => x >= 1 && y >= 1 && x <= W - 2 && y <= H - 2;
   const isWater = (x, y) => { const b = T[y * W + x] & 0x1F; return b === OCEAN || b === LANE; };
   const cls = (x, y) => { const t = T[y * W + x]; return (t & 0x20) ? ((t & 0x80) ? 27 : 28) : (t & 0x1F); };
@@ -986,9 +988,16 @@ function generateNewWorld(premade, world) {
     }
     return 0;
   };
+  // the P1 count @0x064AC4..@0x064AE4: the non-zero entries of the 16-word
+  // size table [0x85C8] the labeller copies out (@0x063BAC), which is the
+  // LAND class's -- the number of land-class ids 1..15 present. (Counting
+  // every id, water bodies included, gave 1 at P1 -- the terrain plane is
+  // still all ocean then and the ocean is id 1 -- so the port drew one
+  // island fewer than the original: the DOS capture oracle found the
+  // missing blob on both worlds it saw, 2026-09-10.)
   const landmassCount = () => {
     const seen = new Set();
-    for (let i = 0; i < P; i++) seen.add(REGION[i] & 0x0F);
+    for (let i = 0; i < P; i++) if (!tileWater(T[i])) seen.add(REGION[i] & 0x0F);
     let n = 0; for (let k = 1; k < 16; k++) if (seen.has(k)) n++;
     return n;
   };
@@ -1185,11 +1194,11 @@ function generateNewWorld(premade, world) {
               break;
             case 4: p20 = 3; p26 = 1;
               if (ri(0, 1) === 0) base = 6;
-              if (ri(0, 1) === 0) { tv |= 0x80; E[y * W + x] = 1; }
+              if (ri(0, 1) === 0) E[y * W + x] = 1;   // -> @0x65198, past the or 0x80
               break;
             case 5: p20 = 3; p26 = 2;
               if (ri(0, 1) === 0) base = 7;
-              if (ri(0, 1) === 0) { tv |= 0x80; E[y * W + x] = 1; }
+              if (ri(0, 1) === 0) E[y * W + x] = 1;   // -> @0x65198, past the or 0x80
               break;
             case 6: p20 = 5; p26 = 3;
               if (ri(0, 1) === 0) base = 4;
@@ -1202,6 +1211,10 @@ function generateNewWorld(premade, world) {
             default: break;
           }
         }
+        // the shared tail @0x06532E: with p20 != 0 (`cmp [bp-0x20],0; je` --
+        // bytes the listing mis-decodes behind the cs:0x11CE jump table) roll
+        // random_int(0, p20) for hills, then with p26 != 0 random_int(0, p26)
+        // for a mountain (@0x065349)
         if (p20 !== 0 && ri(0, p20) === 0) {
           tv |= 0x20;
           if (p26 !== 0 && ri(0, p26) === 0) tv |= 0x80;
@@ -1238,7 +1251,9 @@ function generateNewWorld(premade, world) {
     // P4b @0x06562A
     for (let y = 1; y < H - 1; y++) {
       let cx = -1;
-      for (let x = W - 2; x >= 1 && cx < 0; x--) if (!isWater(x, y)) cx = x;
+      // the scan starts on the LAST column (@0x065736: x = w-1), where a P3d
+      // arctic dot on row 1 counts as the coast (DOS capture oracle, 2026-09-10)
+      for (let x = W - 1; x >= 1 && cx < 0; x--) if (!isWater(x, y)) cx = x;
       if (cx < 0) continue;
       let x = cx + 3; if (x > W - 2) x = W - 2;
       for (let yy = y - 3; yy <= y + 3; yy++) {
@@ -1330,6 +1345,18 @@ function beginGame() {
   // between two launches of the same save. The port draws it once per game and
   // keeps it in G, which round-trips through save/load -- a deliberate
   // difference, and the friendlier one.
+  // the five Customize words [0x1E7E..0x1E86] (the title dispatcher
+  // @0x075C86..@0x075CC2, read 2026-09-10 off the DOS capture oracle): NEW
+  // WORLD and AMERICA draw EACH as random_int(0, 3) -- five draws, the fifth
+  // the relaxation count the builder reads @0x06538D, so a generated
+  // world's words run 0..3, not the dialog's 0..2 -- while CUSTOMIZE sets
+  // all five to 1 (@0x075CBC) and its dialog then edits the first four.
+  if (G.worldMode !== 'custom') {
+    G.customValues = [0, 1, 2, 3].map(() => Math.floor(Math.random() * 4));
+    G.customIter = Math.floor(Math.random() * 4);
+  } else {
+    G.customIter = 1;
+  }
   G.plotSeedBase = (Math.random() * 0x100000000) >>> 0;
   // The map generator's first act is to store the seed the rumour hash reads.
   // func_064A10 @0x64A16 is `push 0x7fff; push 1; lcall random_int`, so the
@@ -1365,7 +1392,8 @@ function beginGame() {
     MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
   }
   G.mapStarts = generateNewWorld(G.worldMode === 'america',
-                                 { values: G.customValues || [1, 1, 1, 1] });
+                                 { values: G.customValues || [1, 1, 1, 1],
+                                   iterations: G.customIter == null ? 1 : G.customIter });
   const [sx, sy] = G.mapStarts[G.nation];
   // [0x53A7] = 0 and [0x53A8] = random_int(1, 8) (@0x0757D3..@0x0757E4,
   // new_game_state_init): the wedding counter and the REMEMBERED @KINGWAR
@@ -8087,10 +8115,8 @@ function seedNatives() {
     return [best, bd];
   };
   // settlement creation func_046E18 (0x1A1F:0x440) plus the port's record
-  // model. mission: null, or {power, expert} -- settlement +0x05. Starting
-  // population is not in the evidence -- villages open at their target
-  // size (func_046DE0: 2*level+3, capital 3*level+4). Returns false at
-  // the 84 cap (@0x46E21).
+  // model. mission: null, or {power, expert} -- settlement +0x05. Returns
+  // false at the 84 cap (@0x46E21).
   const placeVillage = (ti, px, py, capital) => {
     if (G.villages.length >= 84) return false;
     const t = G.tribes[ti];
@@ -8098,25 +8124,26 @@ function seedNatives() {
                 alarm: t.tension, mission: null, tributePaid: false,
                 capital, growth: 0, taught: false,
                 chiefSeen: false, braveOwed: false, pop: 1 };
-    v.pop = settlementCap(v);
+    // the opening population is 2*tech+3 for EVERY settlement, the capital
+    // included: func_046E18 sizes +0x04 through 0x1A1F:0x410 BEFORE the caller
+    // sets the capital bit (+0x03 cleared @0x46EA7, the bit lands @0x66095 /
+    // @0x66225), so settlementCap's 3*tech+4 is only the cap growth aims for.
+    // Read off a pristine DOS capture (dos_world_oracle, 2026-09-10).
+    v.pop = 2 * (t.level || 0) + 3;
     G.villages.push(v);
-    // HOMELAND CLAIM: settlement creation writes the tribe into the
-    // plane-3 owner nibble via the claim writer func_005E18
-    // ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B; the create path
-    // calls it on the village tile @0x46E9E). The RADIUS is the
-    // engine's own getter func_00822A: 1/1/2/3 by TRIBE TECH
-    // (byte-read 2026-08-30; the manual's "1/2" was short). First
-    // claim wins, FLAGGED. This keeps rumour medallions off native
-    // country: the marker predicate needs an UNCLAIMED nibble
-    // (func_006188 @0x61BC).
-    const rad = [1, 1, 2, 3][(t.level || 0) & 3];   // func_00822A
-    for (let cy = py - rad; cy <= py + rad; cy++)
-      for (let cx = px - rad; cx <= px + rad; cx++) {
-        if (cx < 0 || cy < 0 || cx >= MAP.w || cy >= MAP.h) continue;
-        const mi = cy * MAP.w + cx;
-        if (RESOURCE[mi] !== 0x0F) continue;
-        RESOURCE[mi] = ti + 4;
-      }
+    // the tile: plane-2 bit 2 (`or byte es:[bx],2` @0x46E91 -- the SETTLEMENT
+    // bit the placer's own `improve & 3` tests and the detail gate read) and
+    // the HOMELAND CLAIM, the tribe into the plane-3 owner nibble via the claim
+    // writer func_005E18 ((byte & 0xF) | owner<<4, @0x5E7E..@0x5E8B) on the
+    // village tile ONLY (@0x46E9E). The pristine DOS capture (2026-09-10)
+    // shows every village tile claimed and the further claims -- scattered
+    // squares within two of a village, never a filled radius -- written by
+    // the tribes' first turn (the per-tribe turn calls the writer @0x0489E5),
+    // so the earlier tech-radius fill (func_00822A's 1/1/2/3 is a roaming
+    // radius, not a claim) is gone. The marker predicate still needs an
+    // UNCLAIMED nibble (func_006188 @0x61BC).
+    IMPROVE[py * MAP.w + px] |= 2;
+    RESOURCE[py * MAP.w + px] = ti + 4;
     return true;
   };
   if (G.worldMode === 'america') {
@@ -8220,8 +8247,9 @@ function seedNatives() {
       do { ti = ri(0, 7); } while (tcount[ti] === 0);
       let cx = Math.floor(capital[ti][0] / 5), cy = Math.floor(capital[ti][1] / 5);
       let ok = false;
+      tries++;   // ONE try per walk: `inc [bp-0xC0]` @0x662B5 sits before the step
+                 // loop, which re-enters at the draw @0x662B9 (DOS oracle, 2026-09-10)
       for (;;) {
-        tries++;
         const d = ri(0, 7);
         cx += NDX[d]; cy += NDY[d];
         if (cx < 0 || cx >= 15 || cy < 0 || cy >= 18) break;

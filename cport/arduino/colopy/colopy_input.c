@@ -341,6 +341,8 @@ static void brief_begin(void) {
     world.land_form = UI.custom_value[1];
     world.temperature = UI.custom_value[2];
     world.climate = UI.custom_value[3];
+    world.iterations = 1;            /* CUSTOMIZE's [0x1E86] (@0x075CBC);
+                                      * the other modes draw it */
     colopy_init(colopy_front_seed);
     colopy_new_game_ex((uint8_t)UI.nation, (uint8_t)UI.difficulty, UI.leader,
                        &world);

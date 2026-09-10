@@ -30,3 +30,21 @@ gives SDL no input focus, so `twm` is started by `boot.sh`.
 Escape quits the game rather than skipping the intro.
 
 See `docs/LIVE_UI_CHECK_2026-08-05.md` for what a run of this found.
+
+## The world capture oracle (2026-09-10)
+
+`tools/dos_world_capture.py PREFIX` reads the emulated RAM of the running
+DOSBox (the anonymous 33.7 MB mapping that holds the `UNIT\0ORDERS\0ACTIONS`
+section-name table; DGROUP's live segment is found by aligning the terrain
+plane's Arctic/Sea-Lane border) and files a fresh game's four map planes,
+the builder's salt `[0x190]`, the five Customize words, the settlement,
+unit, tribe and AIPersonality records.  `tools/dos_world_oracle.py PREFIX`
+then asks whether the port builds the SAME world: VICEROY reseeds its LCG
+from a 15-bit clock word right before the builder (`srand` @0x075793) and
+again at the natives placer (@0x065D2F), so the builder's seed is pinned by
+the salt (its first draw) and the natives' seed by a 32768-candidate search
+against the settlement records.  Drive to the map with the recipe in
+`drive_game.sh` (NEW WORLD: `Return`, the difficulty `Down`s, `Return` x5,
+then `space` until the menu-bar signature shows) and capture BEFORE ending a
+turn -- braves and the AI's ships move the moment a turn passes.
+

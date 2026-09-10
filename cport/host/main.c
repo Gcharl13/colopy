@@ -708,6 +708,7 @@ static void dump_newgame(int nation, int diff, int n, int mode,
     world.land_form = (uint8_t)v[1];
     world.temperature = (uint8_t)v[2];
     world.climate = (uint8_t)v[3];
+    world.iterations = 1;
     colopy_init(1653);                       /* the shared trace seed */
     colopy_new_game_ex((uint8_t)nation, (uint8_t)diff, 0, &world);
     if (getenv("COLOPY_DUMP_MAP")) {         /* an ASCII look at the world */
@@ -734,6 +735,98 @@ static void dump_newgame(int nation, int diff, int n, int mode,
         turn_step5();
         print_projection(job_convert);
     }
+}
+
+/* --worldcheck SEED MODE V0 V1 V2 V3 V4 OUT: the DOS capture oracle's builder
+ * half (tools/dos_world_oracle.py).  The stream is seeded with the 15-bit
+ * clock word srand() @0x075793 hands the builder; the builder's own first
+ * draw is the salt [0x190] (@0x64A16).  Writes the four planes, the four
+ * start squares, the salt and the stream state. */
+static int world_check(uint32_t seed, int mode, const int v[5], const char *out) {
+    colopy_world_options world;
+    uint8_t starts[4][2];
+    world.mode = (uint8_t)mode;
+    world.land_mass = (uint8_t)v[0];
+    world.land_form = (uint8_t)v[1];
+    world.temperature = (uint8_t)v[2];
+    world.climate = (uint8_t)v[3];
+    world.iterations = (uint8_t)v[4];
+    memset(&CS, 0, sizeof(CS));
+    memcpy(CS.prelude, "COLONIZE", 8);
+    CS.prelude[8] = 0x00;
+    CS.prelude[9] = 0x1A;
+    CS.prelude[0x0C] = (uint8_t)COLOPY_MAP_W;
+    CS.prelude[0x0E] = (uint8_t)COLOPY_MAP_H;
+    if (mode == COLOPY_WORLD_AMERICA) memcpy(CS.terrain, dat_map_tiles, COLOPY_PLANE);
+    colopy_init(seed);
+    uint16_t mseed = (uint16_t)rng_range(1, 0x7FFF);
+    CR.map_seed = mseed;
+    colopy_generate_world(&world, mode == COLOPY_WORLD_AMERICA, starts);
+    FILE *f = fopen(out, "wb");
+    if (!f) return 1;
+    fwrite(CS.terrain, 1, COLOPY_PLANE, f);
+    fwrite(CS.improve, 1, COLOPY_PLANE, f);
+    fwrite(CS.region, 1, COLOPY_PLANE, f);
+    fwrite(CS.fog, 1, COLOPY_PLANE, f);
+    fwrite(starts, 1, 8, f);
+    fwrite(&mseed, 1, 2, f);
+    fwrite(&CS.rng, 1, 4, f);
+    fclose(f);
+    printf("mseed %u rng %lu\n", (unsigned)mseed, (unsigned long)CS.rng);
+    return 0;
+}
+
+/* --nativescheck IN SEED NATION DIFF MODE [OUT]: the oracle's natives half -- the
+ * four planes come from a DOS dump (tools/dos_world_capture.py), the
+ * stream from the 15-bit clock word srand() @0x065D2F hands the placer.
+ * Prints the settlements, the units and the tribe tension words. */
+extern void colopy_oracle_place_natives(uint8_t nation, uint8_t difficulty, int mode);
+static int natives_check(const char *in, uint32_t seed, int nation, int diff, int mode,
+                         const char *out) {
+    FILE *f = fopen(in, "rb");
+    if (!f) return 1;
+    memset(&CS, 0, sizeof(CS));
+    if (fread(CS.terrain, 1, COLOPY_PLANE, f) != COLOPY_PLANE ||
+        fread(CS.improve, 1, COLOPY_PLANE, f) != COLOPY_PLANE ||
+        fread(CS.region, 1, COLOPY_PLANE, f) != COLOPY_PLANE ||
+        fread(CS.fog, 1, COLOPY_PLANE, f) != COLOPY_PLANE) {
+        fclose(f);
+        return 1;
+    }
+    fclose(f);
+    /* the DOS dump carries the colony bits of a game already under way;
+     * the placer saw a bare plane-2 (only the builder's own bits) */
+    for (int i = 0; i < COLOPY_PLANE; i++) CS.improve[i] &= (uint8_t)~0x03;
+    CS.globals[0x26] = (uint8_t)diff;
+    CS.globals[0x14] = (uint8_t)nation;
+    colopy_init(seed);
+    colopy_oracle_place_natives((uint8_t)nation, (uint8_t)diff, mode);
+    printf("{\"villages\":[");
+    for (int i = 0; i < CS.n_villages; i++) {
+        const NativeSettlement *v = &CS.villages[i];
+        printf("%s[%d,%d,%d,%d,%d]", i ? "," : "", v->map_x, v->map_y,
+               v->owner_tribe, v->flags, v->population);
+    }
+    printf("],\"units\":[");
+    for (int i = 0; i < CS.n_units; i++) {
+        const UnitRecord *u = &CS.units[i];
+        printf("%s[%d,%d,%d,%d,%d]", i ? "," : "", u->map_x, u->map_y, u->type,
+               u->owner_flags & 0x0F, u->home_settlement);
+    }
+    printf("],\"tension\":[");
+    for (int t = 0; t < 8; t++) {
+        printf("%s[", t ? "," : "");
+        for (int p = 0; p < 4; p++)
+            printf("%s%d", p ? "," : "",
+                   CS.tribes[t * 0x4E + 0x46 + 2 * p] | (CS.tribes[t * 0x4E + 0x47 + 2 * p] << 8));
+        printf("]");
+    }
+    printf("],\"rng\":%lu}\n", (unsigned long)CS.rng);
+    if (out) {
+        FILE *o = fopen(out, "wb");
+        if (o) { fwrite(CS.region, 1, COLOPY_PLANE, o); fclose(o); }
+    }
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -870,6 +963,16 @@ int main(int argc, char **argv) {
         return render_event_main(argv[2], argv[3], argv[4], argv[5],
                                  atoi(argv[6]), atoi(argv[7]),
                                  argc > 8 ? argv[8] : 0);
+    }
+    if (argc > 9 && strcmp(argv[1], "--worldcheck") == 0) {
+        int v[5] = { atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]),
+                     atoi(argv[8]) };
+        return world_check((uint32_t)strtoul(argv[2], 0, 10), atoi(argv[3]), v, argv[9]);
+    }
+    if (argc > 6 && strcmp(argv[1], "--nativescheck") == 0) {
+        return natives_check(argv[2], (uint32_t)strtoul(argv[3], 0, 10),
+                             atoi(argv[4]), atoi(argv[5]), atoi(argv[6]),
+                             argc > 7 ? argv[7] : 0);
     }
     if (argc > 3 && strcmp(argv[1], "--newgame") == 0) {
         int v[4] = { 1, 1, 1, 1 };
