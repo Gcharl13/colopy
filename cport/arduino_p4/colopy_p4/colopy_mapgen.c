@@ -38,17 +38,21 @@
  * dot counts as the coast.
  *
  * FLAGGED (named, small): (1) the relaxation tail's hill/mountain rolls
- * read two locals ([bp-0x20]/[bp-0x26]) that only the flat-land cases
- * set -- a hill/mountain tile visited BEFORE the first flat case rolls
- * with whatever the stack held (an ocean visit zeroes them first
- * @0x0651BA); modelled as 0 (no roll).  Neither captured world reached
- * it.  (3) Out-of-plane kernel reads in the river pass (a source on row 1
- * or h-2) are skipped; the original reads past the plane.  (4) The two
- * fixed 0xA0 writes @0x65C0D/@0x65C21 are gated on [0x2174] == 0, which
- * a normal new game does not satisfy (the fresh-game fixture savstart has
- * T(1,21) untouched) -- not applied.  The premade path's plane-2 bits and
- * start squares are diffed against savstart (1309/1309 western-sea tiles,
- * the H/5-band starts). */
+ * read two locals ([bp-0x20]/[bp-0x26]) that only the flat path sets --
+ * an ocean visit zeroes them first (@0x0651BA), so only a MOUNTAIN or
+ * HILLS visit before the first non-elevated visit reads the residue,
+ * which is stack content of the pre-builder calls (non-zero: a return
+ * IP, a saved BP, the band-fill offset), so the original draws
+ * random_int(0, residue) once per such leading visit -- modelled as no
+ * roll; neither captured world reached it.  (3) Out-of-plane kernel reads
+ * in the river pass (a source on row 1 or h-2) are skipped; the original
+ * reads, and on a head writes, past the plane through the unchecked
+ * far-address helper 0xA4E:0x8 (row 1 wraps 64 KB up; row h-2 runs into
+ * the block's slack / the next block).  Closed: (2) the P1 landmass count
+ * is the land class's size table (landmass_count); (4) the two
+ * [0x2174]-gated 0xA0 writes DO apply on the AMERICA path (P6d).  The
+ * premade path's plane-2 bits and start squares are diffed against
+ * savstart (1309/1309 western-sea tiles, the H/5-band starts). */
 #include <string.h>
 
 #include "colopy_core.h"
@@ -603,6 +607,17 @@ colopy_status colopy_generate_world(const colopy_world_options *world,
             }
             if (!land) AT(E, x, y) |= 4;
         }
+    /* P6d @0x065BF0..@0x065C21: on the premade path, with the custom-map
+     * flag [0x2174] clear (its only writer is the Map Editor's MAPTOLOAD
+     * picker @0x075D36, so every normal AMERICA game sees 0), OR 0xA0
+     * (mountains) into T(21,1) and T(43,68) -- func_005CE6 takes x first
+     * (push 1; push 0x15 = (x 21, y 1); push 0x44; push 0x2B = (43, 68)).
+     * AMER2.MP holds 0x00 at both, every AMERICA fixture 0xA0 (the earlier
+     * "not applied" FLAG had read the transposed square). */
+    if (premade) {
+        AT(T, 21, 1) |= 0xA0;
+        AT(T, 43, 68) |= 0xA0;
+    }
     /* P6e @0x065C25: the four H/5 bands, dealt to the powers at random
      * starting from the human; the start is the first Sea Lane square
      * east of the band's coast */

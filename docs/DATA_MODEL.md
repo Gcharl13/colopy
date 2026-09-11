@@ -329,7 +329,7 @@ Power index → record offset:
 | +0x2A | u32 | **`gold`** (treasury) | BYTE_VERIFIED — write-back updates UI immediately; user's 3552 / 4032 visible matches |
 | +0x1e | u16 | **`artillery_bought_count`** (Europe artillery-recruit escalation counter) | BYTE_VERIFIED 2026-05-31 — read×100 at `0x035124`/`0x03527B`, `inc` at `0x035282`, zeroed at new-game init `0x03662F`. Drives the artillery-only recruit escalation (see below). |
 | +0x30 | (none) | ~~`recruit_cost_europe`~~ — **NOT a runtime field** (zero accesses; see RESIDUAL_FINDINGS §14/§21). Recruit gold cost = recruit-pool slot `+0x04` word at DGROUP:0x978C+slot*6 (`func_074688`/read `0x051E52`,`0x035114`). For colonist type 0x0B (Artillery): `cost = base + artillery_bought_count*100`, then counter++ (`0x03527B`/`0x035282`). NOT `base<<count`. The pavelbel SAV "+0x30" is a serializer offset, not the runtime layout. |
-| +0x32 | u16 | `ref_strength_rating` (aggregate REF power) | Eng=12599, Du=15153, Sp=4899, Fr=5154 |
+| +0x32 | 2 bytes | **start square x, y** (the new-game spawn reads them @0x075865/@0x07586D into the starting units' +0x09/+0x0A; the values here decode to the AMERICA starts: Eng (55,49), Du (49,59), Sp (35,19), Fr (34,20)). The earlier `ref_strength_rating` gloss was an annotation error (RULINGS 2026-09-10b) | Eng=12599, Du=15153, Sp=4899, Fr=5154 |
 | +0x4C..+0x5B | 16×u8 | `market_sensitivity` per good | js-dos doc; values 1..20 typical |
 | +0x5C..+0x7B | 16×s16 | `market_pool` (supply/demand imbalance) | js-dos doc |
 | +0x7C..+0xBB | 16×s32 | `market_traded_volume` (cumulative units) | js-dos doc |

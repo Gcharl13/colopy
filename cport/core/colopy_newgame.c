@@ -153,6 +153,13 @@ static int add_unit(int type, int x, int y, int owner) {
     return CS.n_units++;
 }
 
+/* the @JOB row of an expert name (28 = none when absent) */
+static int expert_row(const char *name) {
+    for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
+        if (strcmp(dat_jobexpert[i], name) == 0) return i;
+    return DAT_JOBEXPERT_COUNT;
+}
+
 /* the 8-direction tables at DS:0xB4 / DS:0xBE (file 0x1DA54 / 0x1DA5E):
  * N, NE, E, SE, S, SW, W, NW, then two (0,0) entries -- the natives
  * placer walks entries 0..7 and scans 0..8 */
@@ -617,31 +624,69 @@ colopy_status colopy_new_game_ex(uint8_t nation, uint8_t difficulty,
      * REMEMBERED @KINGWAR country the tax cycle rerolls against
      * (king_war_cycle) -- one draw on the shared stream between the
      * builder and the natives (the JS beginGame draws at the same
-     * point).  The four calls between the builder and this draw
-     * (func_06892E, func_036574, func_063C58, func_063F3C @0x0757AB..
-     * @0x0757BA) are unread for draws, FLAGGED. */
+     * point).  Of the four calls between the builder and this draw
+     * (@0x0757AB..@0x0757BA): func_06892E clears the plane-3 owner
+     * nibble to 0xF on every square (0 draws; the ports' labeller ends
+     * the same way), func_063C58 builds the coarse connectivity grids
+     * and the per-landmass counts the SAV tail carries (0 draws; not
+     * computed here, the tail stays zero), func_063F3C the land-value
+     * plane (0 draws) -- read 2026-09-10 -- and func_036574 is the
+     * market/power init, which reseeds from the clock and draws its own
+     * (see seedMarket below: its ORDER here is the port's, not the
+     * original's, and stays FLAGGED). */
     g[0x27] = 0;
     g[0x28] = (uint8_t)rng_range(1, 8);   /* cr_reset_from_load reads it */
 
-    place_natives(nation, difficulty, world);
-
-    /* the player's starting force (682): ONE ship (Dutch = Merchantman)
-     * carrying Soldiers then Pioneers, at the nation's start tile —
-     * the riders are land units on the ship's water tile, exactly the
-     * encoding the importer reads back as ship cargo (game.js:10451) */
+    /* the starting forces (@0x075820..@0x075961, read 2026-09-10): for
+     * every power whose controller byte is not 2 -- all four play here --
+     * in power order 0..3: the ship (13, the Merchantman 14 for power 3
+     * @0x07587B), Pioneers (2) carrying 100 tools (+0x15 = 0x64 in the
+     * pristine capture) and Soldiers (1), the two riders sentried (+0x08 =
+     * 1 @0x07589B/@0x0758DB); the French Pioneers are Hardy (profession
+     * 0x14 @0x0758BB), the Spanish Soldiers and a human's at Discoverer /
+     * Explorer Veteran (0x15 @0x07590C, [bp-8] = controller 0 and
+     * [0x53A6] <= 1).  Each spawns at (p-28, p-28) with the start square
+     * at +0x09/+0x0A and crosses to it on the first turn: the port puts
+     * them on the start square directly (C1.26 open).  The record order
+     * is Pioneers THEN Soldiers, the tile stack chained newest-first
+     * (+0x18/+0x1A in the capture); the port keeps its Soldiers-then-
+     * Pioneers order -- the display order the live sidebar shows
+     * (LIVE_UI_CHECK 2026-08-05) -- until the sidebar's stack walk is
+     * read (C1.26).  The riders are land units on the ship's water tile,
+     * exactly the encoding the importer reads back as ship cargo
+     * (game.js:10451). */
     int sx = starts[nation][0], sy = starts[nation][1];
     int ship_type = unit_row(nation == 3 ? "Merchantman" : "Caravel");
-    add_unit(ship_type, sx, sy, nation);
-    add_unit(unit_row("Soldiers"), sx, sy, nation);
-    int pio = add_unit(unit_row("Pioneers"), sx, sy, nation);
-    if (pio >= 0) CS.units[pio].tools = PIONEER_TOOLS;
-
-    /* seedRivals (7301): one ship each at their own start tile */
     for (int n = 0; n < 4; n++) {
-        if (n == nation) continue;
-        add_unit(unit_row(n == 3 ? "Merchantman" : "Caravel"),
-                 starts[n][0], starts[n][1], n);
+        int x = starts[n][0], y = starts[n][1];
+        /* +0x32/+0x33: the square the spawn reads @0x075865.. */
+        CS.powers[n].start_x = (uint8_t)x;
+        CS.powers[n].start_y = (uint8_t)y;
+        add_unit(unit_row(n == 3 ? "Merchantman" : "Caravel"), x, y, n);
+        int sol = add_unit(unit_row("Soldiers"), x, y, n);
+        if (sol >= 0) {
+            CS.units[sol].orders = 1;
+            if (n == 2 || (n == (int)nation && difficulty <= 1))
+                CS.units[sol].profession = (uint8_t)expert_row("Veteran Soldiers");
+        }
+        int pio = add_unit(unit_row("Pioneers"), x, y, n);
+        if (pio >= 0) {
+            CS.units[pio].orders = 1;
+            CS.units[pio].tools = PIONEER_TOOLS;
+            if (n == 1)
+                CS.units[pio].profession = (uint8_t)expert_row("Hardy Pioneers");
+        }
     }
+
+    /* the natives AFTER the four powers' starting units: the original's
+     * unit records run ship/Soldiers/Pioneers for each power first and
+     * the braves after (the DOS captures of 2026-09-10, all four worlds:
+     * records 0..2 are the human's trio, 3.. the rivals', 12.. the
+     * braves), so record 0 is the ship the front end centres on
+     * (brief_begin) and the JS beginGame's order (mkUnit, seedNatives)
+     * holds here too; the placer runs on its own reseeded stream in the
+     * original, so the move costs no shared draw */
+    place_natives(nation, difficulty, world);
 
     /* counts + their globals mirrors */
     put16(g + 0x1A, CS.n_villages);

@@ -221,15 +221,26 @@ static void native_tick(void) {
     tribe_war_council();
     for (int vi = 0; vi < CS.n_villages; vi++) {
         NativeSettlement *v = &CS.villages[vi];
-        /* growth accumulator += population, acting at 20 (settlement +0x06) */
+        /* the growth tick func_04830E (0x1A1F:0x3E0, per settlement of the
+         * tribe @0x048770..@0x0487A9): mode 2 when the cap exceeds +0x04
+         * (@0x048331), mode 1 -- overriding -- when +0x03 bit 1 (a brave
+         * owed, @0x04833B); mode 0 returns WITHOUT touching the accumulator
+         * (@0x048346).  Otherwise +0x06 += +0x04 and at 20 it resets and
+         * either grows (mode 2, @0x048368) or spawns the owed brave
+         * (mode 1, @0x048385..@0x0483DE).  A settlement at its cap with no
+         * brave owed therefore keeps its accumulator (read 2026-09-10). */
+        int mode = settlement_cap(vi) > v->population ? 2 : 0;
+        if (CR.brave_owed[vi]) mode = 1;
+        if (mode == 0) goto mission;
         v->growth = (uint8_t)(v->growth + v->population);
         if (v->growth >= 20) {
             v->growth = 0;
-            if (CR.brave_owed[vi]) {
+            if (mode == 1) {
                 CR.brave_owed[vi] = 0;
                 spawn_brave(vi);
-            } else if (v->population < settlement_cap(vi)) v->population++;
+            } else v->population++;
         }
+mission:
         /* the mission tick: 8 feeder points = one -1 tension tick, and the
          * village alarm word falls 3*M (RULINGS 2026-08-01) */
         int m = mission_strength(vi);

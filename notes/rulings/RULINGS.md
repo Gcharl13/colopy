@@ -13000,3 +13000,94 @@ Not settled by these captures: the brave pass (a capture taken mid-run,
 before the tribes' first turn, is compared below); `[0x2174]` (all worlds
 had it 0, so the two fixed 0xA0 writes stay gated off).
 
+## 2026-09-10b — Batch-3 findings applied: the natives after the starting units, every power's starting trio, the growth tick's three modes, the AMERICA mountain pair; four annotation errors recorded
+
+**Record order (fixes a regression the natives port of 7305fa4 introduced).**
+The new-game routine spawns the starting units @0x075820..@0x075961 and
+calls the natives placer func_065D26 only afterwards (@0x07596A); all four
+DOS captures of 2026-09-10 show it -- records 0..2 are the human's ship /
+Pioneers / Soldiers, 3..11 the rivals', 12.. the braves.  The C port had
+placed the natives first (its record 0 was a brave, and the front end's
+`brief_begin` centred the opening view on it: the boot input oracle read
+4 disagreements from 7305fa4 on).  `place_natives` now runs after the
+starting units in `colopy_new_game_ex` (no shared draw moves: the placer
+runs on its own reseeded stream in the original), and `brief_begin`
+centres on the first unit the player owns, since the spawn loop runs in
+POWER order and the human is not always power 0.
+
+**The starting forces, read whole (@0x075820..@0x075961).** For each power
+p = 0..3 whose `AIPersonality.controller` (0x543F + 0x34p) is not 2
+(@0x075943): clear the power's 12-byte war-matrix row (@0x07582A..
+@0x07583E); `spawn_unit(13, p, p-28, p-28)` @0x07584D, type 14 when p == 3
+(@0x07587B), +0x08 = 0, +0x09/+0x0A = PowerRecord +0x32/+0x33; then
+`spawn_unit(2, ...)` (Pioneers) @0x07588D with +0x08 = 1 and profession
+0x14 (Hardy Pioneers) when p == 1 (@0x0758BB); then `spawn_unit(1, ...)`
+(Soldiers) @0x0758CD with +0x08 = 1 and profession 0x15 (Veteran Soldiers)
+when the power is the human's at difficulty <= 1 or p == 2 (@0x0758F5..
+@0x07590C).  The pristine capture (dosnw3, player 0, difficulty 4) carries
+exactly that: records at (0xE4+p, 0xE4+p), Pioneers +0x15 = 0x64 tools,
+professions 0x1C/0x14/0x1C/0x1C on the Pioneers and 0x1C/0x1C/0x15/0x1C on
+the Soldiers of powers 0..3, ships' +0x17 = 0, the riders' +0x08 = 1.
+Both engines now spawn the trio for every power with those professions
+(the rivals had a lone ship each) and the C writes the start square into
+PowerRecord +0x32/+0x33.  Kept as the port's: the manifest order
+Soldiers-then-Pioneers (the DOS records run Pioneers then Soldiers, the
+tile stack chained newest-first through +0x18/+0x1A, and the live sidebar
+lists Veteran above 100 Tools -- the sidebar's walk direction is unread,
+C1.25) and the start ON the start square (the original spawns on the high
+seas at (p-28, p-28) and the crossing lands the units on the first turn,
+C1.26).
+
+**The growth tick func_04830E (@0x04830E..@0x0483E2), per settlement of the
+tribe on turn (func_0485F6 @0x048770..@0x0487A9).** mode = 2 when the cap
+(call @0x048327) exceeds +0x04 (@0x048331 `jbe`), mode = 1 when +0x03 bit
+0x01 (a brave owed) is set (@0x04833B, overriding), else mode 0 returns
+WITHOUT touching the accumulator (@0x048346..@0x04834C).  Otherwise +0x06
++= +0x04 (@0x04834F) and at >= 20 (@0x048355) it resets (@0x04835E) and
+either increments +0x04 (mode 2, @0x048368) or spawns the brave (mode 1:
+random_int(0, difficulty) @0x048385, spawn_unit @0x0483C1, `and [bx+3],
+0xFE` @0x0483DE).  The ports had accumulated at cap with no brave owed;
+both now follow the three modes (`native_tick` / `nativeTick`).
+
+**The AMERICA mountain pair (func_064A10 @0x065BF0..@0x065C21).** The two
+fixed `or 0xA0` writes into the terrain plane at (21,1) and (43,68) run
+whenever premade != 0 and [0x2174] == 0 -- i.e. on every normal AMERICA
+game ([0x2174] is 1 only on the Map Editor's pick-a-file route; every
+capture had it 0).  AMER2.MP ships 0x00 at both squares and all four
+fixture saves hold 0xA0 there; the earlier "not applied" FLAG rested on
+the transposed square T(1,21).  Both engines write the pair on the premade
+path before P6e.
+
+**Zero-draw callees between the builder and the [0x53A8] draw** (read
+2026-09-10, single-caller each): func_06892E @0x06892E..@0x068969 clears
+the plane-3 owner nibble to 0xF on every square; func_063C58 @0x063BD8..
+@0x063F3B rebuilds the two 15x18 coarse connectivity grids ([0x85E8] land,
+[0x86F6] sea; uniform-cost BFS, max cost 9) and recounts the per-region
+land (0x85C8) and farmland (0x945E) arrays; func_063F3C the land-value
+plane.  None draws.  func_036574 (the market/power init) reseeds from the
+clock @0x03657D and draws its own -- its port stays FLAGGED for order
+until the dock model is ported.  The new game reseeds the C-runtime LCG
+four times: @0x075793 (before the builder), @0x03657D (in the market
+init), @0x07580F (before the starting units), @0x065D2F (the natives
+placer's entry) -- each block's stream starts from a 15-bit clock word.
+
+**Annotation errors recorded (VICEROY_annotated.asm / docs).**
+(1) `PowerRecord +0x10` is not "crosses_per_turn": @0x036387 writes the
+tax DELTA there.  (2) The AIPersonality array base is DGROUP 0x540E
+(serializer block 4 @0x07357D, 0xD0 bytes = 4 x 0x34), so 0x5426 is the
+record's +0x18 name field and 0x543F its +0x31 controller byte -- the
+"controller" label as if 0x540E+0x31 were a record start is wrong.
+(3) [0x53A7]/[0x53A8] are the wedding counter and the remembered @KINGWAR
+country before the Declaration (@0x0757D3/@0x0757E4 seed them; the tax
+cycle rerolls against +0x28); the DECLARE executor overwrites them with
+year/100 and year%100, which is the only reading "g_year_centuries /
+g_year_mod100" fits.  (4) `PowerRecord +0x32` is not an "REF strength
+rating": the two bytes are the power's start square x, y (@0x075865/
+@0x07586D copy them into the starting units' +0x09/+0x0A; @0x075916..
+@0x075929 into [0x17C]/[0x8540] and [0x17E]/[0x853E]); DATA_MODEL's own
+sample values decode to the AMERICA starts (Eng (55,49), Du (49,59),
+Sp (35,19), Fr (34,20)).
+
+Gate after the changes: newgame 12/12 at 0, turns/agitate/market/raid 0,
+input x5 at 0 (boot 3 -> 0, bootclick 2 -> 0), render x12 green, both
+sketches regenerated and mock-compiled, `make test` green.

@@ -348,9 +348,16 @@ static void brief_begin(void) {
                        &world);
     snprintf(CR.leader, sizeof(CR.leader), "%s", UI.leader);
     UI.sel = 0;
-    /* the start square is the ship's (unit 0): the shipped @SCENARIO
-     * start on AMERICA, the builder's pick on a generated world */
-    center_on(CS.units[0].map_x, CS.units[0].map_y);
+    /* the start square is the player's ship's: the shipped @SCENARIO
+     * start on AMERICA, the builder's pick on a generated world.  The
+     * records run in POWER order (@0x075820.. spawns power 0's trio
+     * first), so it is the first unit the player owns, not unit 0 */
+    {
+        int ui = 0;
+        for (int i = 0; i < CS.n_units; i++)
+            if ((CS.units[i].owner_flags & 0x0F) == (int)UI.nation) { ui = i; break; }
+        center_on(CS.units[ui].map_x, CS.units[ui].map_y);
+    }
     UI.screen = SCR_MAP;
 }
 

@@ -902,11 +902,17 @@ function mkUnit(spec, x, y, cargo) {
 // outline, fold, labels, the plane-2 bits, the start squares.  Returns the
 // four powers' start squares: the H/5 bands dealt at random from the human
 // -- NOT @SCENARIO (the fresh-game fixture savstart has England at (56,42)).
-// FLAGGED, named: (1) a hills/mountain relaxation visit before the first
-// flat visit rolls with stack garbage in the original, modelled as 0;
-// (2) landmass count = distinct region ids 1..15; (3) the river pass's
-// out-of-plane kernel reads are skipped; (4) the two [0x2174]-gated 0xA0
-// writes are not applied (savstart shows them off).
+// DOS-exact on three captured worlds (tools/dos_world_oracle.py, RULINGS
+// 2026-09-10a). FLAGGED, named: (1) a MOUNTAIN or HILLS relaxation visit
+// before the first non-elevated visit rolls with stack residue in the
+// original (an ocean visit zeroes the locals @0x0651BA); the residue is
+// non-zero, so the original draws once per such leading visit -- modelled
+// as no roll; (3) the river pass's out-of-plane kernel reads (a source on
+// row 1 / h-2) are skipped -- the original reads, and on a head writes,
+// past the plane through the unchecked far-address helper 0xA4E:0x8.
+// (2) and (4) are closed: the P1 count is the land class's size table
+// (landmassCount) and the two [0x2174]-gated 0xA0 writes DO apply on the
+// AMERICA path (P6d below).
 function generateNewWorld(premade, world) {
   const W = MAP.w, H = MAP.h, P = W * H;
   const OCEAN = 0x19, LANE = 0x1A, ARCTIC = 0x18;
@@ -1316,6 +1322,17 @@ function generateNewWorld(premade, world) {
     }
     if (!land) E[y * W + x] |= 4;
   }
+  // P6d @0x065BF0..@0x065C21: on the premade path, with the custom-map flag
+  // [0x2174] clear (its only writer is the Map Editor's MAPTOLOAD picker
+  // @0x075D36, so every normal AMERICA game sees 0), OR 0xA0 (mountains) into
+  // T(21,1) and T(43,68) -- func_005CE6 takes x first (push 1; push 0x15 =
+  // (x 21, y 1); push 0x44; push 0x2B = (43, 68)). AMER2.MP holds 0x00 at
+  // both, every AMERICA fixture 0xA0 (the earlier "not applied" FLAG had
+  // read the transposed square).
+  if (premade) {
+    T[1 * W + 21] |= 0xA0;
+    T[68 * W + 43] |= 0xA0;
+  }
   // P6e @0x065C25
   const slot = [-1, -1, -1, -1];
   for (let i = 0; i < 4; i++) {
@@ -1398,16 +1415,33 @@ function beginGame() {
   // [0x53A7] = 0 and [0x53A8] = random_int(1, 8) (@0x0757D3..@0x0757E4,
   // new_game_state_init): the wedding counter and the REMEMBERED @KINGWAR
   // country kingWarCycle rerolls against -- one draw on the shared stream
-  // between the builder and the natives. The four calls between the
-  // builder and this draw (func_06892E, func_036574, func_063C58,
-  // func_063F3C @0x0757AB..@0x0757BA) are unread for draws, FLAGGED.
+  // between the builder and the natives. Of the four calls between the
+  // builder and this draw (@0x0757AB..@0x0757BA): func_06892E clears the
+  // plane-3 owner nibble to 0xF on every square (0 draws; RESOURCE starts
+  // so), func_063C58 builds the coarse connectivity grids and per-landmass
+  // counts the SAV tail carries (0 draws; not computed here), func_063F3C
+  // the land-value plane (0 draws) -- read 2026-09-10 -- and func_036574 is
+  // the market/power init, which reseeds from the clock and draws its own
+  // (seedMarket's ORDER here is the port's, not the original's, FLAGGED).
   G.kingWeddings = 0;
   G.kingWarCountry = Math.floor(Math.random() * 8) + 1;
-  // Manifest order is Soldiers then Pioneers: the live opening turn lists
-  // "Veteran" above "100 Tools" in the sidebar
-  // (docs/screens/live_2026-08-05/07_map_opening_turn.png).
+  // The starting forces (@0x075820..@0x075961, read 2026-09-10): every
+  // power whose controller byte is not 2 -- all four play here -- spawns,
+  // in power order 0..3, the ship (Caravel; the Merchantman for the Dutch
+  // @0x07587B), Pioneers with 100 tools and Soldiers, the two riders
+  // sentried (+0x08 = 1); the French Pioneers are Hardy (profession 0x14
+  // @0x0758BB), the Spanish Soldiers and a human's at Discoverer/Explorer
+  // Veteran (0x15 @0x07590C). The records spawn at (p-28, p-28) with the
+  // start square as the +0x09/+0x0A target and cross to it on the first
+  // turn -- the ports put them on the start square directly (C1.26).
+  // Record order is Pioneers THEN Soldiers, the tile stack chained
+  // newest-first (the pristine capture's +0x18/+0x1A); the manifest keeps
+  // Soldiers-then-Pioneers, the display order the live sidebar shows
+  // (docs/screens/live_2026-08-05/07_map_opening_turn.png, LIVE_UI_CHECK),
+  // until the sidebar's stack walk is read (C1.26). The rivals' trios are
+  // seedRivals'.
   G.units = [mkUnit(G.nation === 3 ? 'Merchantman' : 'Caravel', sx, sy,
-                    ['Soldiers', 'Pioneers'])];
+                    [startSoldiers(G.nation), startPioneers(G.nation)])];
   G.sel = 0;
   G.landHo = false; G.newLand = ''; G.zoom = 0; G.openMenu = -1;
   G.colonies = []; G.europe = []; G.builtColony = false;
@@ -9472,14 +9506,24 @@ function tribeWarCouncil() {
 function nativeTick() {
   tribeWarCouncil();
   for (const v of G.villages) {
-    // Growth.
-    v.growth = (v.growth || 0) + v.pop;
-    if (v.growth >= 20) {
-      v.growth = 0;
-      if (v.braveOwed) {
-        v.braveOwed = false;
-        spawnBrave(v);
-      } else if (v.pop < settlementCap(v)) v.pop += 1;
+    // The growth tick func_04830E (0x1A1F:0x3E0): mode 2 when the cap exceeds
+    // the population (@0x048331), mode 1 -- overriding -- when a brave is owed
+    // (+0x03 bit 1, @0x04833B); mode 0 returns WITHOUT touching the
+    // accumulator (@0x048346). Otherwise growth += pop and at 20 it resets
+    // and either grows (mode 2, @0x048368) or spawns the owed brave (mode 1,
+    // @0x048385..@0x0483DE). A settlement at its cap with no brave owed keeps
+    // its accumulator (read 2026-09-10).
+    let mode = settlementCap(v) > v.pop ? 2 : 0;
+    if (v.braveOwed) mode = 1;
+    if (mode !== 0) {
+      v.growth = (v.growth || 0) + v.pop;
+      if (v.growth >= 20) {
+        v.growth = 0;
+        if (mode === 1) {
+          v.braveOwed = false;
+          spawnBrave(v);
+        } else v.pop += 1;
+      }
     }
     // The mission tick.
     const m = missionStrength(v);
@@ -11140,17 +11184,40 @@ function drawCombat(ctx) {
 // Their turn logic is a deliberate stand-in: the engine's AI (func_059B90 and
 // the heading planner) is largely unmapped, so rivals here sail inland, plant a
 // colony when they reach a coast, and otherwise hold. Flagged in the tracker.
+// The starting Soldiers / Pioneers of power n (@0x0758B5..@0x07590C, see
+// beginGame): Spain's Soldiers and the human's at Discoverer/Explorer are
+// Veteran, France's Pioneers Hardy; everyone else's are plain.
+function startSoldiers(n) {
+  return (n === 2 || (n === G.nation && G.difficulty <= 1))
+    ? { name: 'Veteran Soldiers', type: 'Soldiers' } : 'Soldiers';
+}
+function startPioneers(n) {
+  return n === 1 ? { name: 'Hardy Pioneers', type: 'Pioneers' } : 'Pioneers';
+}
 function seedRivals() {
   G.rivals = [];
   for (let n = 0; n < 4; n++) {
     if (n === G.nation) continue;
     const [sx, sy] = (G.mapStarts || DATA.starts)[n];
+    // the same trio the human gets (@0x075820.. runs for every power):
+    // the ship, then the two riders as land units on its square -- the
+    // importer's shape for a rival's units (no cargo model on this side)
+    const rider = (spec) => {
+      const name = typeof spec === 'object' ? spec.name : spec;
+      const type = typeof spec === 'object' ? spec.type : spec;
+      const u = { type, icon: unit(type).icon, x: sx, y: sy, nation: n,
+                  orders: 0, ship: false };
+      if (name !== type) u.profession = name;
+      if (type === 'Pioneers') u.tools = PIONEER_TOOLS;
+      return u;
+    };
     G.rivals.push({
       nation: n, met: false,
       colonies: [], nextColony: 0,
       units: [{ type: n === 3 ? 'Merchantman' : 'Caravel',
                 icon: unit(n === 3 ? 'Merchantman' : 'Caravel').icon,
-                x: sx, y: sy, nation: n, orders: 0, ship: true }],
+                x: sx, y: sy, nation: n, orders: 0, ship: true },
+              rider(startSoldiers(n)), rider(startPioneers(n))],
     });
   }
 }

@@ -149,7 +149,12 @@ typedef struct COLOPY_PACKED {
     int32_t  gold;                  /* +0x2A */
     uint16_t crosses_accum;         /* +0x2E  crosses toward next immigrant */
     uint16_t cross_threshold;       /* +0x30  the immigration threshold */
-    uint16_t ref_strength;          /* +0x32  (docs/DATA_MODEL.md) */
+    uint8_t  start_x;               /* +0x32  the power's start square: read
+                                     * @0x075865/@0x075916 into the starting
+                                     * units' +0x09/+0x0A and [0x17C]/[0x8540]
+                                     * (the old "ref_strength" gloss was an
+                                     * annotation error, RULINGS 2026-09-10b) */
+    uint8_t  start_y;               /* +0x33  (@0x07586D/@0x075922) */
     /* +0x34  the WAR-RELATION row, one byte per target: 4 powers then
      * 8 tribes (the newgame zero loop @0x7583A runs to 0xC).  Bits:
      * 0x01 resolved @0x5318F, 0x02 war @0x58A7B, 0x08 grievance
